@@ -1,0 +1,38 @@
+{
+	"variables": {
+		"http_directory": ""
+	},
+	"builders": [{
+		"type": "vmware-iso",
+		"name": "teamwire-server",
+		"iso_url": "http://releases.ubuntu.com/14.04/ubuntu-14.04-server-amd64.iso",
+		"iso_checksum": "ababb88a492e08759fddcf4f05e5ccc58ec9d47fa37550d63931d0a5fa4f7388",
+		"iso_checksum_type": "sha256",
+		"boot_wait": "5s",
+		"http_directory": "{{user `http_directory`}}",
+		"ssh_username": "vagrant",
+		"ssh_password": "vagrant",
+		"ssh_wait_timeout": "300s",
+		"tools_upload_flavor": "linux",
+		"shutdown_command": "sudo shutdown -P now",
+		"boot_command": [
+			"<esc><esc><enter><wait>",
+			"/install/vmlinuz noapic ",
+			"preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
+			"debian-installer=en_US auto locale=en_US kbd-chooser/method=de ",
+			"hostname={{ .Name }} ",
+			"fb=false debconf/frontend=noninteractive ",
+			"keyboard-configuration/modelcode=SKIP keyboard-configuration/layoutcode=de ",
+			"keyboard-configuration/variantcode=nodeadkeys console-setup/ask_detect=false ",
+			"initrd=/install/initrd.gz -- <enter>"
+		]
+	}],
+	"provisioners": [{
+		"type": "shell",
+		"scripts": [
+			"scripts/vagrant_key.sh",
+			"scripts/vm-guest-tools.sh"
+		]
+	}],
+	"post-processors": ["vagrant"]
+}
