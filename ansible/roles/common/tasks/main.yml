@@ -1,4 +1,8 @@
 ---
+# Ensure the application has been configured
+- fail: msg="Please copy group_vars/all.example to groups_vars/all and edit it."
+  when: config_done is not defined
+
 # install ntp and set timezone to UTC
 - name: set timezone to UTC
   copy: content='Etc/UTC' dest=/etc/timezone

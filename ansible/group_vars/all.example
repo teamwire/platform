@@ -2,6 +2,10 @@
 # Copy this file to "all" and add values for the parameters.
 # When a value contains a colon (:), it must be enclosed in double quotes.
 #
+# Uncomment the following line when you are finished setting all configuration
+# items, only then the configuration can be performed.
+# config_done: true
+
 # Insert your Docker Hub credentials below
 dockerhub_username:
 dockerhub_password:

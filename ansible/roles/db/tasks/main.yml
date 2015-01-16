@@ -1,4 +1,8 @@
 ---
+# Ensure the application has been configured
+- fail: msg="Please copy group_vars/all.example to groups_vars/all and edit it."
+  when: config_done is not defined
+
 - name: Install MySQL
   apt: name={{item}} state=present
   with_items:
