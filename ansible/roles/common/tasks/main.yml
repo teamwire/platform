@@ -3,6 +3,55 @@
 - fail: msg="Please copy group_vars/all.example to groups_vars/all and edit it."
   when: config_done is not defined
 
+- name: apt-get update
+  apt: update_cache=yes
+
+# do security upgrades
+- name: Install unattended-upgrades
+  action: apt pkg={{item}} state=present
+  with_items:
+  - unattended-upgrades
+  - update-notifier-common
+- name: Make sure unattended-upgrades only installs from $ubuntu_release-security
+  lineinfile: dest=/etc/apt/apt.conf.d/50unattended-upgrades regexp="$ubuntu_release-updates" state=absent
+- name: Mail root on unattended-upgrades
+  lineinfile: dest=/etc/apt/apt.conf.d/50unattended-upgrades regexp=Unattended-Upgrade::Mail line='Unattended-Upgrade::Mail "root";'
+- name: Set unattended-upgrade period
+  lineinfile: dest=/etc/apt/apt.conf.d/10periodic regexp=APT::Periodic::Unattended-Upgrade line='APT::Periodic::Unattended-Upgrade "1";'
+- name: Set apt-get cleanup period
+  lineinfile: dest=/etc/apt/apt.conf.d/10periodic regexp=APT::Periodic::AutocleanInterval line='APT::Periodic::AutocleanInterval "7";'
+- name: Set apt-get download period
+  lineinfile: dest=/etc/apt/apt.conf.d/10periodic regexp=APT::Periodic::Download-Upgradeable-Packages line='APT::Periodic::Download-Upgradeable-Packages "1";'
+
+- name: Install useful tools
+  apt: name={{item}} state=present
+  with_items:
+  - htop
+  - sysstat
+  - iotop
+  - glances
+  - mc
+
+- name: Remove useless packages
+  apt: pkg={{item}} state=absent
+  with_items:
+  - mlocate # sucks IO heavily
+
+# send mails to smarthost
+- name: install postfix
+  apt: pkg={{item}}
+  with_items:
+  - postfix
+  - mailutils
+- template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
+  notify: restart postfix
+- template: src=postfix-passwd.j2 dest=/etc/postfix/sasl/passwd mode=0600
+  notify: rebuild postfix passwd map
+- template: src=postfix-generic.j2 dest=/etc/postfix/generic
+  notify: rebuild postfix generic map
+- name: give root a speaking name
+  user: name=root comment="root@{{ inventory_hostname }}.{{ domain }}"
+
 # install ntp and set timezone to UTC
 - name: set timezone to UTC
   copy: content='Etc/UTC' dest=/etc/timezone
@@ -12,18 +61,10 @@
 - apt: pkg=ntp
 - service: name=ntp state=started enabled=true
 
-- name: Install useful tools
-  apt: name={{item}} state=present
-  with_items:
-  - htop
-  - sysstat
-  - iotop
-
-- name: Remove useless packages
-  apt: pkg={{item}} state=absent
-  with_items:
-  - mlocate # sucks IO heavily
-
 - name: disable SSH password root logins
   action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
+  notify: reload sshd
+
+- name: disable DNS lookup on SSH login
+  lineinfile: dest=/etc/ssh/sshd_config line="UseDNS no"
   notify: reload sshd

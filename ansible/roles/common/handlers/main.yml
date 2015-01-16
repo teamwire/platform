@@ -7,3 +7,12 @@
 
 - name: reload sshd
   service: name=ssh state=reloaded
+
+- name: rebuild postfix passwd map
+  command: postmap /etc/postfix/sasl/passwd
+
+- name: rebuild postfix generic map
+  command: postmap /etc/postfix/generic
+
+- name: restart postfix
+  service: name=postfix state=restarted

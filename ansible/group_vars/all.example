@@ -11,8 +11,31 @@ dockerhub_username:
 dockerhub_password:
 dockerhub_email:
 
+# The external fully qualified host name under which the clients can access
+# this server, e.g. teamwire.example.com
+external_hostname:
+
+##############################################################################
+## DATABASE
+##############################################################################
+
 # Define the MySQL user passwords
 teamwire_db_password: teamwire
 
 # Define the database encryption key
 aes_key:
+
+##############################################################################
+## MAIL
+##############################################################################
+
+# The email domain, e.g. example.com
+domain:
+
+# Configure the SMTP server that handles outgoing mail
+#
+# The name of the outgoing mail server, e.g. mail.example.com
+smtp_smarthost:
+# The credentials (user name and password) for the outgoing mail server
+smtp_smartuser:
+smtp_smartpass:
