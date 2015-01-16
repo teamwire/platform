@@ -1,0 +1,91 @@
+---
+# Install docker and the backend container and run it
+- apt_key: id=A88D21E9 keyserver=hkp://keyserver.ubuntu.com:80 state=present
+- apt_repository: repo='deb http://get.docker.io/ubuntu docker main' state=present
+- apt: pkg=lxc-docker state=present
+- apt: pkg=python-pip state=present
+- pip: name=docker-py
+
+- name: Retrieve and run the Teamwire backend main container
+  docker:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+
+    name: teamwire_backend
+    image: "teamwire/backend:master"
+    state: running
+    net: bridge
+    ports: "8080:8080"
+    env:
+      AESKEY: "{{aes_key}}"
+      MYSQL_HOST: 172.17.42.1
+      MYSQL_PORT: 3306
+      MYSQL_PASSWORD: "{{teamwire_db_password}}"
+      REDIS_URI: "172.17.42.1:6379:1"
+      DJANGO_EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+      FAKE_PIN: true
+
+- name: Run the Teamwire backend worker container
+  docker:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+
+    name: teamwire_worker
+    image: "teamwire/backend:master"
+    state: running
+    net: bridge
+    #ports: "8080:8081"
+    env:
+      MODE: worker
+      AESKEY: "{{aes_key}}"
+      MYSQL_HOST: 172.17.42.1
+      MYSQL_PORT: 3306
+      MYSQL_PASSWORD: "{{teamwire_db_password}}"
+      REDIS_URI: "172.17.42.1:6379:1"
+
+- name: Run the Teamwire beat container
+  docker:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+
+    name: teamwire_beat
+    image: "teamwire/backend:master"
+    state: running
+    net: bridge
+    env:
+      MODE: beat
+      AESKEY: "{{aes_key}}"
+      MYSQL_HOST: 172.17.42.1
+      MYSQL_PORT: 3306
+      MYSQL_PASSWORD: "{{teamwire_db_password}}"
+      REDIS_URI: "172.17.42.1:6379:1"
+
+  # Install and configure the nginx frontend proxy server
+  # Copy the SSL certificate
+- copy: src=teamwire-backend.crt dest=/etc/ssl/teamwire-backend.crt
+- copy: src=teamwire-backend.key dest=/etc/ssl/teamwire-backend.key
+
+- name: Install nginx
+  apt: name=nginx-light state=present
+
+- template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+  notify: reload nginx
+
+- template: src=teamwire-backend.j2 dest=/etc/nginx/sites-available/teamwire-backend
+  notify: reload nginx
+
+- name: Disable nginx default site
+  file:
+    dest: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
+- name: Enable nginx teamwire-backend site
+  file:
+    src: /etc/nginx/sites-available/teamwire-backend
+    dest: /etc/nginx/sites-enabled/teamwire-backend
+    state: link
+  notify: reload nginx

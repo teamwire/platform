@@ -1,0 +1,15 @@
+---
+- name: Apply common configuration to all nodes
+  hosts: all
+  roles:
+    - common
+
+- name: Deploy and configure MySQL and Redis database
+  hosts: all
+  roles:
+    - db
+
+- name: Deploy and configure the backend server
+  hosts: all
+  roles:
+    - web

@@ -1,0 +1,14 @@
+---
+# Copy this file to "all" and add values for the parameters.
+# When a value contains a colon (:), it must be enclosed in double quotes.
+#
+# Insert your Docker Hub credentials below
+dockerhub_username:
+dockerhub_password:
+dockerhub_email:
+
+# Define the MySQL user passwords
+teamwire_db_password: teamwire
+
+# Define the database encryption key
+aes_key:
