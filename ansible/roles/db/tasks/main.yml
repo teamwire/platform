@@ -15,6 +15,18 @@
   action: lineinfile dest=/etc/mysql/my.cnf regexp="^bind-address\s+=\s+127.0.0.1" line="bind-address=0.0.0.0"
   notify: restart MySQL
 
+- name: set utf8 as default
+  template: src=utf8.cnf.j2 dest=/etc/mysql/conf.d/utf8.cnf
+  notify: reload MySQL
+
+- name: set UTC as default
+  template: src=timezone.cnf.j2 dest=/etc/mysql/conf.d/timezone.cnf
+  notify: reload MySQL
+
+- name: log slow queries
+  template: src=slow_query_log.cnf.j2 dest=/etc/mysql/conf.d/slow_query_log.cnf
+  notify: reload MySQL
+
 - name: Start and enable MySQL server
   service: name=mysql state=started enabled=yes
 

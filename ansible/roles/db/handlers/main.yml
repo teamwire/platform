@@ -2,5 +2,8 @@
 - name: restart redis
   service: name=redis-server state=restarted
 
+- name: reload MySQL
+  service: name=mysql state=reloaded
+
 - name: restart MySQL
   service: name=mysql state=restarted
