@@ -67,6 +67,13 @@
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
 
+- name: Install the backend container upstart configuration
+  template: src=docker-upstart.conf.j2 dest="/etc/init/teamwire_{{ item }}.conf"
+  with_items:
+   - backend
+   - worker
+   - beat
+
   # Install and configure the nginx frontend proxy server
   # Copy the SSL certificate
 - copy: src=teamwire-backend.crt dest=/etc/ssl/teamwire-backend.crt
