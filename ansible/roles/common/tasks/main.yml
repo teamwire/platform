@@ -37,7 +37,10 @@
   with_items:
   - mlocate # sucks IO heavily
 
-# send mails to smarthost
+- name: Set hostname
+  hostname: name="{{ external_hostname }}"
+
+# send outgoing mail over smarthost
 - name: install postfix
   apt: pkg={{item}}
   with_items:
@@ -47,10 +50,8 @@
   notify: restart postfix
 - template: src=postfix-passwd.j2 dest=/etc/postfix/sasl/passwd mode=0600
   notify: rebuild postfix passwd map
-- template: src=postfix-generic.j2 dest=/etc/postfix/generic
-  notify: rebuild postfix generic map
 - name: give root a speaking name
-  user: name=root comment="root@{{ inventory_hostname }}.{{ domain }}"
+  user: name=root comment="root@{{ external_hostname }}"
 
 # install ntp and set timezone to UTC
 - name: set timezone to UTC
