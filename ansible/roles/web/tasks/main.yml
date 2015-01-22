@@ -40,6 +40,10 @@
       REDIS_URI: "172.17.42.1:6379:1"
       EMAIL_HOST: 172.17.42.1
       BLOBDIR: /assets
+      FAKE_PIN: "{{ fake_pin|default() }}"
+      FAKE_SMS: "{{ fake_sms|default() }}"
+      FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation|default() }}"
+      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
 - name: Run the Teamwire backend worker container
   docker:
@@ -62,6 +66,7 @@
       BLOBDIR: /assets
       APNS_CERT_1: /app/certs/apns/aps-production.cer
       GCM_API_KEY: "{{ gcm_api_key }}"
+      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
 - name: Run the Teamwire beat container
   docker:
@@ -82,6 +87,7 @@
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
+      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
 - name: Install the backend container upstart configuration
   template: src=docker-upstart.conf.j2 dest="/etc/init/teamwire_{{ item }}.conf"

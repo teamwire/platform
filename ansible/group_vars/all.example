@@ -50,3 +50,21 @@ smtp_smarthost:
 # The credentials (user name and password) for the outgoing mail server
 smtp_smartuser:
 smtp_smartpass:
+
+##############################################################################
+## DEBUGGING
+##############################################################################
+
+# Do not anable any of these parameters unless you know what you are doing
+
+# Do not generate PINs but use a predefined value
+# fake_pin: true
+
+# Do not send SMS with the registration PIN
+# fake_sms: true
+
+# Use a predefined device confirmation URL in the email confirmation
+# fake_email_confirmation: true
+
+# do not encrypt the database
+# fake_db_encryption: true
