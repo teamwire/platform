@@ -27,12 +27,25 @@
 			"initrd=/install/initrd.gz -- <enter>"
 		]
 	}],
-	"provisioners": [{
-		"type": "shell",
-		"scripts": [
-			"scripts/vagrant_key.sh",
-			"scripts/vm-guest-tools.sh"
-		]
-	}],
+	"provisioners": [
+		{
+			"type": "shell",
+			"scripts": [
+				"scripts/vagrant_key.sh",
+				"scripts/vm-guest-tools.sh",
+				"scripts/install_ansible.sh"
+			]
+		},
+		{
+			"type": "ansible-local",
+			"command": "sudo ansible-playbook",
+			"playbook_file": "../ansible/site.yml",
+			"playbook_dir": "../ansible"
+		},
+		{
+			"type": "shell",
+			"inline": "sudo apt-get clean"
+		}
+	],
 	"post-processors": ["vagrant"]
 }
