@@ -11,7 +11,7 @@
 - file: path=/data/beat owner=daemon mode=0750 state=directory
 
 - name: Install the APNS certificate
-  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.cer mode=0640
+  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.cer mode=0640 group=daemon
 
 # Install docker and the backend container and run it
 - apt_key: id=A88D21E9 keyserver=hkp://keyserver.ubuntu.com:80 state=present
