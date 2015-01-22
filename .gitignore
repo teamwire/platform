@@ -1,4 +1,5 @@
 .DS_Store
 .vagrant/
+packer/*.box
 packer/packer_cache/
 ansible/group_vars/all
