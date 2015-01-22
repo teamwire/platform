@@ -1,8 +1,4 @@
 ---
-# Ensure the application has been configured
-- fail: msg="Please copy group_vars/all.example to groups_vars/all and edit it."
-  when: config_done is not defined
-
 # Create the backend storage directories
 - file: path=/data owner=daemon mode=0750 state=directory
 - file: path=/data/assets owner=daemon mode=0750 state=directory
@@ -11,6 +7,7 @@
 - file: path=/data/beat owner=daemon mode=0750 state=directory
 
 - name: Install the APNS certificate
+  when: config_done is defined
   copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.cer mode=0640 group=daemon
 
 # Install docker and the backend container and run it
@@ -21,6 +18,7 @@
 - pip: name=docker-py
 
 - name: Retrieve and run the Teamwire backend main container
+  when: config_done is defined
   docker:
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
@@ -46,6 +44,7 @@
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
 - name: Run the Teamwire backend worker container
+  when: config_done is defined
   docker:
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
@@ -69,6 +68,7 @@
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
 - name: Run the Teamwire beat container
+  when: config_done is defined
   docker:
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
@@ -90,6 +90,7 @@
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
 - name: Install the backend container upstart configuration
+  when: config_done is defined
   template: src=docker-upstart.conf.j2 dest="/etc/init/teamwire_{{ item }}.conf"
   with_items:
    - backend

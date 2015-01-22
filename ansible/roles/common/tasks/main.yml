@@ -1,8 +1,4 @@
 ---
-# Ensure the application has been configured
-- fail: msg="Please copy group_vars/all.example to groups_vars/all and edit it."
-  when: config_done is not defined
-
 - name: apt-get update
   apt: update_cache=yes
 
@@ -38,6 +34,7 @@
   - mlocate # sucks IO heavily
 
 - name: Set hostname
+  when: config_done is defined
   hostname: name="{{ external_hostname }}"
 
 # send outgoing mail over smarthost
@@ -46,11 +43,17 @@
   with_items:
   - postfix
   - mailutils
+
 - template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
+  when: config_done is defined
   notify: restart postfix
+
 - template: src=postfix-passwd.j2 dest=/etc/postfix/sasl/passwd mode=0600
+  when: config_done is defined
   notify: rebuild postfix passwd map
+
 - name: give root a speaking name
+  when: config_done is defined
   user: name=root comment="root@{{ external_hostname }}"
 
 # install ntp and set timezone to UTC
