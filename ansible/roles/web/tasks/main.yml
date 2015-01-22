@@ -3,6 +3,16 @@
 - fail: msg="Please copy group_vars/all.example to groups_vars/all and edit it."
   when: config_done is not defined
 
+# Create the backend storage directories
+- file: path=/data owner=daemon mode=0750 state=directory
+- file: path=/data/assets owner=daemon mode=0750 state=directory
+- file: path=/data/certs owner=root group=daemon mode=0750 state=directory
+- file: path=/data/certs/apns owner=root group=daemon mode=0750 state=directory
+- file: path=/data/beat owner=daemon mode=0750 state=directory
+
+- name: Install the APNS certificate
+  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.cer mode=0640
+
 # Install docker and the backend container and run it
 - apt_key: id=A88D21E9 keyserver=hkp://keyserver.ubuntu.com:80 state=present
 - apt_repository: repo='deb http://get.docker.io/ubuntu docker main' state=present
@@ -21,14 +31,15 @@
     state: running
     net: bridge
     ports: "8080:8080"
+    volumes: "/data/assets:/assets"
     env:
       AESKEY: "{{aes_key}}"
       MYSQL_HOST: 172.17.42.1
       MYSQL_PORT: 3306
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
-      DJANGO_EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
-      FAKE_PIN: true
+      EMAIL_HOST: 172.17.42.1
+      BLOBDIR: /assets
 
 - name: Run the Teamwire backend worker container
   docker:
@@ -40,7 +51,7 @@
     image: "teamwire/backend:master"
     state: running
     net: bridge
-    #ports: "8080:8081"
+    volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
     env:
       MODE: worker
       AESKEY: "{{aes_key}}"
@@ -48,6 +59,9 @@
       MYSQL_PORT: 3306
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
+      BLOBDIR: /assets
+      APNS_CERT_1: /app/certs/apns/aps-production.cer
+      GCM_API_KEY: "{{ gcm_api_key }}"
 
 - name: Run the Teamwire beat container
   docker:
@@ -59,6 +73,7 @@
     image: "teamwire/backend:master"
     state: running
     net: bridge
+    volumes: "/data/beat:/beat"
     env:
       MODE: beat
       AESKEY: "{{aes_key}}"
@@ -66,6 +81,7 @@
       MYSQL_PORT: 3306
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
+      CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
 
 - name: Install the backend container upstart configuration
   template: src=docker-upstart.conf.j2 dest="/etc/init/teamwire_{{ item }}.conf"

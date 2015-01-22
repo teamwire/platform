@@ -16,6 +16,17 @@ dockerhub_email:
 external_hostname:
 
 ##############################################################################
+## APPLICATION
+##############################################################################
+
+# You'll receive this key with your other credential.
+gcm_api_key:
+
+# You'll receive a certificate file with your other credentials.
+# Copy this file to the machine running ansible and give the full path here.
+apns_certificate:
+
+##############################################################################
 ## DATABASE
 ##############################################################################
 
