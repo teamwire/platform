@@ -46,6 +46,8 @@ Vagrant.configure(2) do |config|
     v.vmx["ethernet1.generatedAddress"] = nil
     v.vmx["ethernet1.addressType"] = "static"
     v.vmx["ethernet1.address"] = "00:0c:29:59:4f:39"
+    # Enable nested virtualisation
+    v.vmx["vhv.enable"] = "TRUE"
   end
 
   # Enable provisioning with Ansible.
