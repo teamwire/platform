@@ -65,6 +65,11 @@
 - apt: pkg=ntp
 - service: name=ntp state=started enabled=true
 
+# general firewall rules
+- apt: pkg=ufw state=present
+- ufw: rule=allow name=OpenSSH
+- ufw: state=enabled policy=reject
+
 - name: disable SSH password root logins
   action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
   notify: reload sshd
