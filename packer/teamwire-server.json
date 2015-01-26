@@ -5,8 +5,8 @@
 		"iso_checksum": "946a6077af6f5f95a51f82fdc44051c7aa19f9cfc5f737954845a6050543d7c2",
 		"iso_checksum_type": "sha256",
 		"vm_name": "teamwire-server",
-		"ssh_username": "vagrant",
-		"ssh_password": "vagrant",
+		"ssh_username": "teamwire",
+		"ssh_key_path": "",
 		"ssh_wait_timeout": "600s",
 		"shutdown_command": "sudo shutdown -P now"
 	},
@@ -20,7 +20,7 @@
 			"iso_checksum_type": "{{user `iso_checksum_type`}}",
 			"http_directory": "{{user `http_directory`}}",
 			"ssh_username": "{{user `ssh_username`}}",
-			"ssh_password": "{{user `ssh_password`}}",
+			"ssh_key_path": "{{user `ssh_key_path`}}",
 			"ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
 			"shutdown_command": "{{user `shutdown_command`}}",
 			"boot_wait": "5s",
@@ -46,7 +46,7 @@
 			"iso_checksum_type": "{{user `iso_checksum_type`}}",
 			"http_directory": "{{user `http_directory`}}",
 			"ssh_username": "{{user `ssh_username`}}",
-			"ssh_password": "{{user `ssh_password`}}",
+			"ssh_key_path": "{{user `ssh_key_path`}}",
 			"ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
 			"shutdown_command": "{{user `shutdown_command`}}",
 			"boot_wait": "5s",
@@ -70,7 +70,6 @@
 		{
 			"type": "shell",
 			"scripts": [
-				"scripts/vagrant_key.sh",
 				"scripts/vm-guest-tools.sh",
 				"scripts/install_ansible.sh"
 			]

@@ -6,14 +6,14 @@ if [[ $PACKER_BUILDER_TYPE =~ vmware ]]; then
 	# We need a subdirectory below /mnt as vmware-install tries to create
 	# /mnt/hgfs and will not build the filesystem driver (vmhgfs) if that fails.
 	sudo mkdir /mnt/cdrom
-	sudo mount -o loop /home/vagrant/linux.iso /mnt/cdrom
+	sudo mount -o loop ~/linux.iso /mnt/cdrom
 	tar zxf /mnt/cdrom/VMwareTools-*.tar.gz -C /tmp/
 
 	sudo /tmp/vmware-tools-distrib/vmware-install.pl -d
 
 	sudo umount /mnt/cdrom
 	sudo rmdir /mnt/cdrom
-	rm /home/vagrant/linux.iso
+	rm ~/linux.iso
 	rm -rf /tmp/vmware-tools-distrib
 
 	# Enable VMWare kernel module updates after kernel updates
