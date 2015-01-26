@@ -77,3 +77,9 @@
 - name: disable DNS lookup on SSH login
   lineinfile: dest=/etc/ssh/sshd_config line="UseDNS no"
   notify: reload sshd
+
+- name: Install git
+  apt: pkg=git state=present
+
+- name: check out the teamwire/plattform git repository
+  git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=yes
