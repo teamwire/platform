@@ -7,7 +7,7 @@
 		"vm_name": "teamwire-server",
 		"ssh_username": "vagrant",
 		"ssh_password": "vagrant",
-		"ssh_wait_timeout": "300s",
+		"ssh_wait_timeout": "600s",
 		"shutdown_command": "sudo shutdown -P now"
 	},
 	"builders": [
