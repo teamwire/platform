@@ -1,8 +1,8 @@
 Building a VM image or Vagrant box with packer
 ==============================================
 
-Packer can create images and Vagrant boxes for various Hypervisors.
-The table below shows the names of the various configuration.
+Packer can create images and Vagrant boxes for various hypervisors.
+The table below shows the names of the various configurations.
 
 Hypervisor   | Vagrant Box                        | packed image
 -------------|------------------------------------|---------------------------------
