@@ -1,28 +1,19 @@
-Building a VMWare image with packer
-===================================
+Building a VM image or Vagrant box with packer
+==============================================
 
-Change to this directory and run
+Packer can create images and Vagrant boxes for various Hypervisors.
+The table below shows the names of the various configuration.
 
-```sh
-packer build -var "http_directory=$PWD" -only teamwire-server-vmware teamwire-server.json
-```
+Hypervisor   | Vagrant Box                        | packed image
+-------------|------------------------------------|---------------------------------
+VMWare       | teamwire-server-vmware-vagrant     | teamwire-server-vmware
+qemu/libvirt | teamwire-server-kvm-vagrant        | teamwire-server-kvm
+VirtualBox   | teamwire-server-virtualbox-vagrant |
 
-or to build a Vagrant box for the VMWare provider
-
-```sh
-packer build -var "http_directory=$PWD" -only teamwire-server-vmware-vagrant teamwire-server.json
-```
-
-Building a KVM image with packer
-================================
-Change to this directory and run
+Change to this directory, choose the desired CONFIGURATION and run
 
 ```sh
-packer build -var "http_directory=$PWD" -only teamwire-server-kvm teamwire-server.json
+packer build -var "http_directory=$PWD" -only <CONFIGURATION> teamwire-server.json
 ```
 
-or to build a Vagrant box for the Libvirt provider
-
-```sh
-packer build -var "http_directory=$PWD" -only teamwire-server-kvm-vagrant teamwire-server.json
-```
+to build the desired virtual machine.

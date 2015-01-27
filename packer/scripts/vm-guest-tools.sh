@@ -18,4 +18,8 @@ if [[ $PACKER_BUILDER_TYPE =~ vmware ]]; then
 
 	# Enable VMWare kernel module updates after kernel updates
 	sudo sed -i -e 's/^\(answer AUTO_KMODS_ENABLED\) no/\1 yes/' /etc/vmware-tools/locations
+elif [[ $PACKER_BUILDER_TYPE =~ virtualbox ]]; then
+	echo "Installing VirtualBox Guest Additions"
+
+	sudo apt-get install -y --no-install-recommends virtualbox-guest-dkms virtualbox-guest-utils
 fi
