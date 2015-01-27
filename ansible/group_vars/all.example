@@ -15,6 +15,11 @@ dockerhub_email:
 # this server, e.g. teamwire.example.com
 external_hostname:
 
+# Uncomment the following line if you want to disable SSH logins with passwords.
+# Make sure to test your SSH keys first, otherwise this you might lock yourself
+# out of the server.
+# ssh_disable_passwords: True
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################

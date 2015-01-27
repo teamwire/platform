@@ -70,8 +70,14 @@
 - ufw: rule=allow name=OpenSSH
 - ufw: state=enabled policy=reject
 
-- name: disable SSH password root logins
+- name: disable SSH password logins
+  when: ssh_disable_passwords is defined and ssh_disable_passwords
   action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
+  notify: reload sshd
+
+- name: enable SSH password logins
+  when: ssh_disable_passwords is not defined or not ssh_disable_passwords
+  action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication yes"
   notify: reload sshd
 
 - name: disable DNS lookup on SSH login
