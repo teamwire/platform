@@ -27,6 +27,9 @@
   - iotop
   - glances
   - mc
+  - zile
+  - vim-tiny
+  - nano
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent
