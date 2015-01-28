@@ -32,8 +32,8 @@ Vagrant.configure(2) do |config|
 
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
-  # your network.
-  config.vm.network "public_network"
+  # your network. Set the MAC address to get the same IP address from DHCP.
+  config.vm.network "public_network", :mac => "000c29594f39"
 
   # Share an additional folder to the guest VM. The first argument is
   # the path on the host to the actual folder. The second argument is
@@ -44,10 +44,6 @@ Vagrant.configure(2) do |config|
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   config.vm.provider :vmware_fusion do |v|
-    # Set the MAC address (public interface) to get the same IP address from DHCP
-    v.vmx["ethernet1.generatedAddress"] = nil
-    v.vmx["ethernet1.addressType"] = "static"
-    v.vmx["ethernet1.address"] = "00:0c:29:59:4f:39"
     # Enable nested virtualisation
     v.vmx["vhv.enable"] = "TRUE"
   end
