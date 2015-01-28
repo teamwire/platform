@@ -1,7 +1,7 @@
 ---
 # Copy this file to "all" and add values for the parameters.
 # When a value contains a colon (:), it must be enclosed in double quotes.
-#
+
 # Uncomment the following line when you are finished setting all configuration
 # items, only then the configuration can be performed.
 # config_done: true
@@ -12,7 +12,7 @@ dockerhub_password:
 dockerhub_email:
 
 # The external fully qualified host name under which the clients can access
-# this server, e.g. teamwire.example.com
+# this server, e.g. "teamwire.example.com"
 external_hostname:
 
 # Uncomment the following line if you want to disable SSH logins with passwords.
@@ -24,11 +24,12 @@ external_hostname:
 ## APPLICATION
 ##############################################################################
 
-# You'll receive this key with your other credential.
+# You'll receive this key with your other credentials.
 gcm_api_key:
 
-# You'll receive a certificate file with your other credentials.
-# Copy this file to the machine running ansible and give the full path here.
+# You've received a certificate file with your other credentials.
+# Copy the file to this virtual machine and give the full path to it here, e.g.
+# "/home/teamwire/example.cert"
 apns_certificate:
 
 ##############################################################################
@@ -38,19 +39,20 @@ apns_certificate:
 # Define the MySQL user passwords
 teamwire_db_password: teamwire
 
-# Define the database encryption key
+# Define the database encryption key.
+# This key must be 32 byte (i.e. 256 bit) long.
 aes_key:
 
 ##############################################################################
 ## MAIL
 ##############################################################################
 
-# The email domain, e.g. example.com
+# The email domain, e.g. "example.com"
 domain:
 
 # Configure the SMTP server that handles outgoing mail
 #
-# The name of the outgoing mail server, e.g. mail.example.com
+# The name of the outgoing mail server, e.g. "mail.example.com"
 smtp_smarthost:
 # The credentials (user name and password) for the outgoing mail server
 smtp_smartuser:
