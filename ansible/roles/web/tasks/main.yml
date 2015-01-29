@@ -38,6 +38,7 @@
       REDIS_URI: "172.17.42.1:6379:1"
       EMAIL_HOST: 172.17.42.1
       BLOBDIR: /assets
+      DEFAULT_FROM_EMAIL: "{{sender_address}}"
       FAKE_PIN: "{{ fake_pin|default() }}"
       FAKE_SMS: "{{ fake_sms|default() }}"
       FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation|default() }}"

@@ -50,6 +50,10 @@ aes_key:
 # The email domain, e.g. "example.com"
 domain:
 
+# The sender address of the emails sent by the application when a user or
+# administrator registers, e.g. "Example TWAdmin <teamwire@example.com>".
+sender_address:
+
 # Configure the SMTP server that handles outgoing mail
 #
 # The name of the outgoing mail server, e.g. "mail.example.com"
