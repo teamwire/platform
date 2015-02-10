@@ -32,6 +32,11 @@ gcm_api_key:
 # "/home/teamwire/example.cert"
 apns_certificate:
 
+# When you want to install your SSL certificate on the backend server, add the
+# full paths to the key file and the certificate file below
+# ssl_certfile:
+# ssl_keyfile:
+
 ##############################################################################
 ## DATABASE
 ##############################################################################

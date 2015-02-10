@@ -100,17 +100,19 @@
 
   # Install and configure the nginx frontend proxy server
   # Copy the SSL certificate
-- copy: src=teamwire-backend.crt dest=/etc/ssl/teamwire-backend.crt
-- copy: src=teamwire-backend.key dest=/etc/ssl/teamwire-backend.key
+- copy: src={{ ssl_certfile }} dest=/etc/ssl/teamwire-backend.crt
+  when: ssl_certfile is defined
+
+- copy: src={{ ssl_keyfile }} dest=/etc/ssl/teamwire-backend.key
+  when: ssl_keyfile is defined
 
 - name: Install nginx
   apt: name=nginx-light state=present
 
 - template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
   notify: reload nginx
-
-- template: src=teamwire-backend.j2 dest=/etc/nginx/sites-available/teamwire-backend
-  notify: reload nginx
+- template: src=teamwire-backend-http.j2 dest=/etc/nginx/sites-available/teamwire-backend-http
+- template: src=teamwire-backend-https.j2 dest=/etc/nginx/sites-available/teamwire-backend-https
 
 - name: Disable nginx default site
   file:
@@ -118,13 +120,22 @@
     state: absent
   notify: reload nginx
 
-- name: Enable nginx teamwire-backend site
+- name: Enable nginx teamwire-backend-http site
   file:
-    src: /etc/nginx/sites-available/teamwire-backend
-    dest: /etc/nginx/sites-enabled/teamwire-backend
+    src: /etc/nginx/sites-available/teamwire-backend-http
+    dest: /etc/nginx/sites-enabled/teamwire-backend-http
+    state: link
+  notify: reload nginx
+
+- name: Enable nginx teamwire-backend-https site
+  when: ssl_certfile is defined and ssl_keyfile is defined
+  file:
+    src: /etc/nginx/sites-available/teamwire-backend-https
+    dest: /etc/nginx/sites-enabled/teamwire-backend-https
     state: link
   notify: reload nginx
 
 # open firewall ports
-- ufw: rule=allow port=443 proto=tcp
 - ufw: rule=allow port=80 proto=tcp
+- ufw: rule=allow port=443 proto=tcp
+  when: ssl_certfile is defined and ssl_keyfile is defined
