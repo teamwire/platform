@@ -8,7 +8,7 @@
 
 - name: Install the APNS certificate
   when: config_done is defined
-  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.cer mode=0640 group=daemon
+  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.pem mode=0640 group=daemon
 
 # Install docker and the backend container and run it
 - apt_key: id=A88D21E9 keyserver=hkp://keyserver.ubuntu.com:80 state=present
@@ -64,7 +64,7 @@
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
       BLOBDIR: /assets
-      APNS_CERT_1: /app/certs/apns/aps-production.cer
+      APNS_CERT_1: /app/certs/apns/aps-production.pem,push_production,com.teamwire.messenger
       GCM_API_KEY: "{{ gcm_api_key }}"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
