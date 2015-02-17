@@ -103,3 +103,12 @@
 - name: check out the teamwire/platform git repository
   git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=yes
   notify: fix ownership of git checkout
+
+# Prepare tmate usage
+# It needs any ssh key for the calling user to funciton
+- user: name=teamwire generate_ssh_key=yes
+  when: config_done is defined
+
+# Install tmate
+- apt_repository: repo=ppa:nviennot/tmate
+- apt: pkg=tmate
