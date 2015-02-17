@@ -81,6 +81,7 @@
 - ufw: rule=allow interface=docker0 direction=in
 - ufw: state=enabled policy=reject
 
+# SSH
 - name: disable SSH password logins
   when: ssh_disable_passwords is defined and ssh_disable_passwords
   action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
@@ -95,6 +96,7 @@
   lineinfile: dest=/etc/ssh/sshd_config line="UseDNS no"
   notify: reload sshd
 
+# Keep track of the plattform repository
 - name: Install git
   apt: pkg=git state=present
 
