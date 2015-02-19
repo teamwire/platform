@@ -37,7 +37,7 @@
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
       EMAIL_HOST: 172.17.42.1
-      BLOBDIR: /assets
+      BLOB_DIR: /assets
       DEFAULT_FROM_EMAIL: "{{sender_address}}"
       FAKE_PIN: "{{ fake_pin|default() }}"
       FAKE_SMS: "{{ fake_sms|default() }}"
