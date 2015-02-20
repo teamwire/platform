@@ -27,10 +27,11 @@ external_hostname:
 # You'll receive this key with your other credentials.
 gcm_api_key:
 
-# You've received a certificate file with your other credentials.
-# Copy the file to this virtual machine and give the full path to it here, e.g.
-# "/home/teamwire/example.pem"
+# You've received a certificate file and a password for it with your other
+# credentials. Copy the file to this virtual machine and give the full path to
+# it here, e.g. "/home/teamwire/example.pem"
 apns_certificate:
+apns_password:
 
 # When you want to install your SSL certificate on the backend server, add the
 # full paths to the key file and the certificate file below
