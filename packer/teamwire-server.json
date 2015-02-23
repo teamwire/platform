@@ -7,7 +7,7 @@
 		"vm_name": "teamwire-server",
 		"ssh_username": "teamwire",
 		"ssh_key_path": "",
-		"ssh_wait_timeout": "600s",
+		"ssh_wait_timeout": "900s",
 		"shutdown_command": "sudo shutdown -P now"
 	},
 	"builders": [
