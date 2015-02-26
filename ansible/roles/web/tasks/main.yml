@@ -145,7 +145,7 @@
 
 # open firewall ports for the web server
 - ufw: rule=allow port=80 proto=tcp
-  when: ssl_certfile is not defined and ssl_keyfile is not defined
+  when: config_done is defined and ssl_certfile is not defined and ssl_keyfile is not defined
 - ufw: rule=allow port=80 proto=tcp delete=yes
   when: ssl_certfile is defined and ssl_keyfile is defined
 - ufw: rule=allow port=443 proto=tcp
