@@ -1,6 +1,10 @@
 ---
 # Copy this file to "all" and add values for the parameters.
+#
 # When a value contains a colon (:), it must be enclosed in double quotes.
+#
+# To activate an optional configuration values, uncomment the line by removing
+# the hash (#) in front of the parameter.
 
 # Uncomment the following line when you are finished setting all configuration
 # items, only then the configuration can be performed.
