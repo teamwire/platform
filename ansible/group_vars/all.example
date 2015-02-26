@@ -38,7 +38,9 @@ apns_certificate:
 apns_password:
 
 # When you want to install your SSL certificate on the backend server, add the
-# full paths to the key file and the certificate file below
+# full paths to the key file and the certificate file below and remove the
+# hash. When you configure these values, unencrypted access to the backend
+# (i.e. access via the HTTP protocol on port 80) will be disabled.
 # ssl_certfile:
 # ssl_keyfile:
 
