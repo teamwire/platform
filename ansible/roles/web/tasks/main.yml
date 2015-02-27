@@ -25,7 +25,7 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_backend
-    image: "teamwire/backend:master"
+    image: "teamwire/backend:prod"
     state: running
     net: bridge
     ports: "8080:8080"
@@ -52,7 +52,7 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_worker
-    image: "teamwire/backend:master"
+    image: "teamwire/backend:prod"
     state: running
     net: bridge
     volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
@@ -76,7 +76,7 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_beat
-    image: "teamwire/backend:master"
+    image: "teamwire/backend:prod"
     state: running
     net: bridge
     volumes: "/data/beat:/beat"
