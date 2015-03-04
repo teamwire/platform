@@ -30,6 +30,7 @@
   - zile
   - vim-tiny
   - nano
+  - haveged
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent
