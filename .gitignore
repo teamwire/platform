@@ -1,7 +1,7 @@
 .DS_Store
 .vagrant/
 packer/*.box
-packer/teamwire-server-*.tar.gz
+packer/teamwire-server-*.tar.*
 packer/packer_cache/
 packer/output-teamwire-server*
 ansible/group_vars/all

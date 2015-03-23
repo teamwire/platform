@@ -19,3 +19,7 @@ packer build -var "http_directory=$PWD" -var "ssh_key_path=/path/to/private/key"
 ```
 
 to build the desired virtual machine.
+
+To build the VMWare packed image target, use the supplied script
+`build-vmware.sh` - it converts the generated image to the OVF format
+required for ESX Server.

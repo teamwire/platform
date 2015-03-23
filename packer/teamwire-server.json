@@ -175,11 +175,6 @@
 		},
 		{
 			"type": "compress",
-			"output": "teamwire-server-vmware.tar.gz",
-			"only": ["teamwire-server-vmware"]
-		},
-		{
-			"type": "compress",
 			"output": "teamwire-server-kvm.tar.gz",
 			"only": ["teamwire-server-kvm"]
 		}
