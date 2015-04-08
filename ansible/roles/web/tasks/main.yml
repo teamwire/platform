@@ -15,7 +15,7 @@
 - apt_repository: repo='deb http://get.docker.io/ubuntu docker main' state=present
 - apt: pkg=lxc-docker state=present
 - apt: pkg=python-pip state=present
-- pip: name=docker-py
+- pip: name=docker-py version=1.0.0
 
 - name: Retrieve and run the Teamwire backend main container
   when: config_done is defined
