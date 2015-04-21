@@ -64,7 +64,7 @@
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.42.1:6379:1"
       BLOBDIR: /assets
-      APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,com.teamwire.messenger,{{ apns_password }}"
+      APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid|default('com.teamwire.messenger') }},{{ apns_password }}"
       GCM_API_KEY: "{{ gcm_api_key }}"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
