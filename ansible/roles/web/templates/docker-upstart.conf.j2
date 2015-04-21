@@ -2,6 +2,11 @@ description "Teamwire {{ item }} container"
 start on filesystem and started docker
 stop on runlevel [!2345]
 respawn
+
 script
   /usr/bin/docker start -a teamwire_{{ item }}
+end script
+
+post-stop script
+  /usr/bin/docker stop teamwire_{{ item }}
 end script
