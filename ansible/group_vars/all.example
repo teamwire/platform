@@ -31,15 +31,15 @@ external_hostname:
 # You'll receive this key with your other credentials.
 gcm_api_key:
 
-# You've received a certificate file and a password for it with your other
-# credentials. Copy the file to this virtual machine and give the full path to
-# it here, e.g. "/home/teamwire/example.pem".
-# When you have resigned the app with your corporate certificate, use the
-# matching APNS certificate and password instead.
+# You've received a certificate file with your other credentials. Copy
+# the file to this virtual machine and give the full path to it here,
+# e.g. "/home/teamwire/example.pem".
+# When you have resigned the app with your corporate certificate, use
+# the matching APNS certificate instead.
 apns_certificate:
-apns_password:
-# When you have resigned the app with your corporate certificate, enter the new
-# app id below and uncomment the line.
+
+# When you have resigned the app with your corporate certificate, enter the
+# new app id below and uncomment the line.
 # apns_appid:
 
 # When you want to install your SSL certificate on the backend server, add the
