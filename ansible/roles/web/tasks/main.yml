@@ -2,6 +2,7 @@
 # Create the backend storage directories
 - file: path=/data owner=daemon mode=0750 state=directory
 - file: path=/data/assets owner=daemon mode=0750 state=directory
+- file: path=/data/website-screenshot-cache owner=daemon mode=0750 state=directory
 - file: path=/data/certs owner=root group=daemon mode=0750 state=directory
 - file: path=/data/certs/apns owner=root group=daemon mode=0750 state=directory
 - file: path=/data/beat owner=daemon mode=0750 state=directory
@@ -90,6 +91,23 @@
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
+- name: Run the Teamwire backend web screenshot container
+  when: config_done is defined
+  docker:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+
+    name: teamwire_screenshot_server
+    image: "teamwire/backend:prod"
+    state: running
+    net: bridge
+    ports: "8081:8080"
+    volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
+    env:
+      MODE: web-screenshot-server
+      CACHE_DIR: /website-screenshot-cache
+
 - name: Install the backend container upstart configuration
   when: config_done is defined
   template: src=docker-upstart.conf.j2 dest="/etc/init/teamwire_{{ item }}.conf"
@@ -97,6 +115,7 @@
    - backend
    - worker
    - beat
+   - screenshot_server
 
   # Install and configure the nginx frontend proxy server
   # Copy the SSL certificate

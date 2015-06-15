@@ -19,6 +19,11 @@ server {
 	# path for static files
 	root /path/to/app/current/public;
 
+	# The web screenshot service
+	location /web-screenshot/ {
+		proxy_pass    http://127.0.0.1:8081/;
+	}
+
 	location / {
 		# checks for static file, if not found proxy to app
 		try_files $uri @proxy_to_app;
