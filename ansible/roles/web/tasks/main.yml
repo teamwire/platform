@@ -99,13 +99,12 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_screenshot_server
-    image: "teamwire/backend:prod"
+    image: "teamwire/web-screenshot-server:prod"
     state: running
     net: bridge
     ports: "8081:8080"
     volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
     env:
-      MODE: web-screenshot-server
       CACHE_DIR: /website-screenshot-cache
 
 - name: Install the backend container upstart configuration
