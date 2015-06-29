@@ -69,7 +69,7 @@
 
 # install ntp and set timezone to UTC
 - name: set timezone to UTC
-  copy: content='Etc/UTC' dest=/etc/timezone
+  copy: content="Etc/UTC\n" dest=/etc/timezone
   notify: update timezone
 - template: src=ntp.conf.j2 dest=/etc/ntp.conf
   notify: restart NTP
