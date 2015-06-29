@@ -8,7 +8,7 @@
 
 # Unfortunately MySQL cannot be configure to listen on multiple interfaces
 - name: Configure MySQL to listen on all interfaces
-  action: lineinfile dest=/etc/mysql/my.cnf regexp="^bind-address\s+=\s+127.0.0.1" line="bind-address=0.0.0.0"
+  action: lineinfile dest=/etc/mysql/my.cnf regexp="^bind-address\s*=\s*127.0.0.1" backrefs=yes line="bind-address=0.0.0.0"
   notify: restart MySQL
 
 - name: set utf8 as default
