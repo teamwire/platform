@@ -46,6 +46,11 @@ Vagrant.configure(2) do |config|
   config.vm.provider :vmware_fusion do |v|
     # Enable nested virtualisation
     v.vmx["vhv.enable"] = "TRUE"
+    v.vmx["memsize"] = "1024"
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 1024
   end
 
   # Enable provisioning with Ansible.
