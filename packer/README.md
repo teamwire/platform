@@ -23,3 +23,21 @@ to build the desired virtual machine.
 To build the VMWare packed image target, use the supplied script
 `build-vmware.sh` - it converts the generated image to the OVF format
 required for ESX Server.
+
+Using the Vagrant Box
+=====================
+
+Copy the private key of the Teamwire administraive user to
+`~/.ssh/teamwire-server-vm-admin` before starting the VM.
+
+Use the following commands to make the .box file available for Vagrant and
+create and start the virtual machine:
+
+```sh
+vagrant box add --name teamwire/backend teamwire-server-vmware-vagrant.box
+vagrant init teamwire/backend
+vagrant up
+```
+
+Connect to the Box with ```vagrant ssh```. Once ```vagrant box add```is
+completed, you can delete the .box file.
