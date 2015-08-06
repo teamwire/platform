@@ -102,7 +102,7 @@
   apt: pkg=git state=present
 
 - name: check out the teamwire/platform git repository
-  git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=yes
+  git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=no
   notify: fix ownership of git checkout
 
 # Prepare tmate usage
