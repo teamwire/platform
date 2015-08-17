@@ -4,10 +4,15 @@
   roles:
     - common
 
-- name: Deploy and configure MySQL and Redis database
+- name: Deploy and configure MySQL database
   hosts: all
   roles:
     - db
+
+- name: Deploy and configure Redis database
+  hosts: all
+  roles:
+    - redis
 
 - name: Deploy and configure the backend server
   hosts: all
