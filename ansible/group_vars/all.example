@@ -24,6 +24,11 @@ external_hostname:
 # out of the server.
 # ssh_disable_passwords: True
 
+# If you need a proxy for outgoing connections, you can uncomment the following
+# line and adapt it to your environment. The proxy server must also support
+# HTTPS.
+# http_proxy: "http://your.proxy:3128"
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################

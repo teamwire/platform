@@ -19,6 +19,15 @@
 - pip: name=docker-py version=1.0.0
 - user: name=teamwire groups=docker append=yes
 
+- name: Configure proxy for docker
+  when: http_proxy is defined
+  lineinfile: dest=/etc/default/docker regexp=http_proxy line='export http_proxy="{{http_proxy}}"'
+  notify: restart docker
+
+# Make sure docker is restarted before the containers are set up, otherwise
+# the restart would kill the running containers.
+- meta: flush_handlers
+
 - name: Retrieve and run the Teamwire backend main container
   when: config_done is defined
   docker:
