@@ -24,7 +24,8 @@ popd > /dev/null
 pushd "$WORKDIR"/output-teamwire-server-vmware > /dev/null
 ovftool teamwire-server.vmx teamwire-server.ovf
 rm disk-s0* disk.vmdk teamwire-server.vmx
-tar cfjv ../teamwire-server-vmware.tar.bz2  *
+# The order of files is significant, see the OVF spec: http://www.dmtf.org/sites/default/files/standards/documents/DSP0243_1.0.0.pdf
+tar cfv ../teamwire-server.ova teamwire-server.ovf teamwire-server.mf teamwire-server-disk1.vmdk teamwire-server.nvram teamwire-server.vmsd teamwire-server.vmxf
 popd > /dev/null
 
 # Remove build artefacts
