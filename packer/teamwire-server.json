@@ -164,6 +164,10 @@
 		},
 		{
 			"type": "shell",
+			"inline": "sudo sed -i -e 's|^\\(deb-src\\)|# \\1|' /etc/apt/sources.list"
+		},
+		{
+			"type": "shell",
 			"inline": "sudo apt-get clean"
 		}
 	],
