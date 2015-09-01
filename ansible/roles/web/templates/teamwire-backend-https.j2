@@ -19,6 +19,7 @@ server {
 	ssl on;
 	ssl_certificate /etc/ssl/teamwire-backend.crt;
 	ssl_certificate_key /etc/ssl/teamwire-backend.key;
+	ssl_dhparam /etc/ssl/private/dhparams.pem;
 
 	ssl_session_timeout 5m;
 
