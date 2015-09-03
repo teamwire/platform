@@ -104,7 +104,7 @@ smtp_use_tls: yes
 ## DEBUGGING
 ##############################################################################
 
-# Do not anable any of these parameters unless you know what you are doing
+# Do not enable any of these parameters unless you know what you are doing
 
 # Do not generate PINs but use a predefined value
 # fake_pin: true
