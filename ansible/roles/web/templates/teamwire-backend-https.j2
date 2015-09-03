@@ -5,6 +5,10 @@ upstream app_server {
 	server 127.0.0.1:8080 fail_timeout=0;
 }
 
+# Enable SSL session caching for improved performance
+# http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_session_cache
+ssl_session_cache shared:ssl_session_cache:10m;
+
 # HTTPS server
 #
 server {
