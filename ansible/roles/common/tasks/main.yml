@@ -37,7 +37,7 @@
   - haveged
 
 - name: Remove useless packages
-  apt: pkg={{item}} state=absent
+  apt: pkg={{item}} state=absent purge=yes
   with_items:
   - mlocate # sucks IO heavily
 
