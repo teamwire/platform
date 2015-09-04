@@ -20,7 +20,8 @@ inet_interfaces = all
 # SMTP relay
 relayhost = [{{smtp_smarthost}}]:{{smtp_port|default('587')}}
 smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
-smtp_use_tls = {{smtp_use_tls|default('yes')}}
+smtp_use_tls = {% if smtp_use_tls is defined and not smtp_use_tls %}no{% else %}yes{% endif %}
+
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 smtp_tls_note_starttls_offer = yes
 tls_random_source = dev:/dev/urandom
