@@ -33,6 +33,11 @@ external_hostname:
 ## APPLICATION
 ##############################################################################
 
+# Allow users that were not invited or imported by CSV to register on this
+# server. Please note that this only configures the default for newly created
+# organisations; the default configuration can be changed by an administrator.
+allow_unknown_users: no
+
 # You'll receive this key with your other credentials.
 gcm_api_key:
 
