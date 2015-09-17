@@ -43,7 +43,7 @@
     volumes: "/data/assets:/assets"
     env:
       AESKEY: "{{aes_key}}"
-      ORG_DEFAULT_ALLOW_USER_REG: {{allow_unknown_users|default('true')}}"
+      ORG_DEFAULT_ALLOW_USER_REG: "{{allow_unknown_users|default('true')}}"
       MYSQL_HOST: "{{mysql_host|default('172.17.42.1')}}"
       MYSQL_PORT: "{{mysql_port|default('3306')}}"
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
