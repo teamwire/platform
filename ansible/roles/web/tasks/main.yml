@@ -27,6 +27,14 @@
   lineinfile: dest=/etc/default/docker regexp=http_proxy line='export http_proxy="{{http_proxy}}"'
   notify: restart docker
 
+- name: Log in on Docker Hub
+  command: docker login -e "{{ dockerhub_email }}" -u "{{ dockerhub_username }}" -p "{{ dockerhub_password }}"
+  become: True
+  become_user: teamwire
+  when: config_done is defined
+  args:
+    creates: /home/teamwire/.docker/config.json
+
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers.
 - meta: flush_handlers
