@@ -62,6 +62,8 @@
       EMAIL_HOST: 172.17.42.1
       BLOB_DIR: /assets
       DEFAULT_FROM_EMAIL: "{{sender_address}}"
+      http_proxy: "{{http_proxy|default()}}"
+      https_proxy: "{{http_proxy|default()}}"
       FAKE_PIN: "{{ fake_pin|default() }}"
       FAKE_SMS: "{{ fake_sms|default() }}"
       FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation|default() }}"
