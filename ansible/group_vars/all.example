@@ -1,6 +1,7 @@
 ---
 # Copy this file to "all" and add values for the parameters.
 #
+# Please leave a space after the colon (:) as in the preconfigured values.
 # When a value contains a colon (:), it must be enclosed in double quotes.
 #
 # To activate an optional configuration values, uncomment the line by removing
@@ -72,7 +73,8 @@ teamwire_db_password: teamwire
 aes_key:
 
 # If you don't want to run the MySQL server on this VM, you can change these
-# defaults to settings that match your external MySQL server.
+# defaults to settings that match your external MySQL server. These defaults
+# are required to connect to MySQL on this VM.
 # In this case you'll need to create the "teamwire" user on that DB with the
 # password given above and enable access from this host.
 mysql_host: 172.17.42.1
