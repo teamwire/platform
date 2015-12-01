@@ -35,7 +35,8 @@
 				"keyboard-configuration/variantcode=nodeadkeys console-setup/ask_detect=false ",
 				"initrd=/install/initrd.gz -- <enter>"
 			],
-			"tools_upload_flavor": "linux"
+			"tools_upload_flavor": "linux",
+			"headless": true
 		},
 		{
 			"name": "teamwire-server-vmware-vagrant",
@@ -61,7 +62,8 @@
 				"keyboard-configuration/variantcode=nodeadkeys console-setup/ask_detect=false ",
 				"initrd=/install/initrd.gz -- <enter>"
 			],
-			"tools_upload_flavor": "linux"
+			"tools_upload_flavor": "linux",
+			"headless": true
 		},
 		{
 			"name": "teamwire-server-virtualbox-vagrant",
