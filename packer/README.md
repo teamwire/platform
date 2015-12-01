@@ -34,8 +34,8 @@ Use the following commands to make the .box file available for Vagrant and
 create and start the virtual machine:
 
 ```sh
-vagrant box add --name teamwire/backend teamwire-server-vmware-vagrant.box
-vagrant init teamwire/backend
+vagrant box add --name teamwire/server teamwire-server-vmware-vagrant.box
+vagrant init teamwire/server
 vagrant up
 ```
 
