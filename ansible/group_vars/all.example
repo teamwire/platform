@@ -77,7 +77,7 @@ aes_key:
 # are required to connect to MySQL on this VM.
 # In this case you'll need to create the "teamwire" user on that DB with the
 # password given above and enable access from this host.
-mysql_host: 172.17.42.1
+mysql_host: 172.17.0.1
 mysql_port: 3306
 
 ##############################################################################

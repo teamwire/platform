@@ -6,7 +6,7 @@
   - python-redis
 
 - name: Configure redis to listen on the docker0 interface
-  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" line="bind 127.0.0.1 172.17.42.1"
+  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" line="bind 127.0.0.1 172.17.0.1"
   notify: restart redis
 
 - name: Start and enable Redis server
