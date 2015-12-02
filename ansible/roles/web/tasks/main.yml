@@ -91,6 +91,8 @@
       BLOBDIR: /assets
       APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid|default('com.teamwire.messenger') }}"
       GCM_API_KEY: "{{ gcm_api_key }}"
+      http_proxy: "{{http_proxy|default()}}"
+      https_proxy: "{{http_proxy|default()}}"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
 - name: Run the Teamwire beat container
