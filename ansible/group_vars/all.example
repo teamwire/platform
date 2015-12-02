@@ -81,6 +81,46 @@ mysql_host: 172.17.0.1
 mysql_port: 3306
 
 ##############################################################################
+## LDAP
+##############################################################################
+
+# URI of LDAP server to connect to
+# ldap_uri:
+
+# DN and password to use for binding (optional)
+# ldap_binddn:
+# ldap_bindpw:
+
+# The LDAP server's base DN
+# ldap_basedn:
+
+# Both ldap_users_basedn and ldap_groups_basedn may optionally end in the
+# suffix "?" where specifies the search scope:
+#
+#	"base" (only search the LDAP object itself)
+#	"one"  (also search the LDAP object's immediate children)
+#	"sub"  (also search all descendants, this is the default)
+#
+# A specified scope is currently ignored for ldap_basedn.
+
+# Base DN for searching users and groups (optional, defaults to ldap_basedn)
+# ldap_users_basedn:
+# ldap_group_basedn:
+
+# Verify server certificate for ldaps:// URIs (0 or 1)
+# ldap_tls_cacert_verify:
+
+# File with certs for server certificate verification (optional)
+# ldap_tls_cacert_file:
+
+# Deny user registration without LDAP account (0 or 1)
+# ldap_userreg_req_ldapuser:
+
+# Comma-separated list of LDAP groups a user must be additionally member of in
+# order to be allowed to register
+# ldap_userreg_req_ldapgroups:
+
+##############################################################################
 ## MAIL
 ##############################################################################
 

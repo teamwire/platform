@@ -11,6 +11,10 @@
   when: config_done is defined
   copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.pem mode=0640 group=daemon
 
+- name: Install the LDAP CA certificate
+  when: ldap_tls_cacert_file is defined
+  copy: src="{{ ldap_tls_cacert_file }}" dest=/data/certs/ldap/{{ ldap_tls_cacert_file | basename }} mode=0640 group=daemon
+
 # Install docker and the backend container and run it
 - apt_key: id=58118E89F3A912897C070ADBF76221572C52609D keyserver=hkp://p80.pool.sks-keyservers.net:80 state=present
   when: http_proxy is not defined
@@ -51,7 +55,7 @@
     state: running
     net: bridge
     ports: "8080:8080"
-    volumes: "/data/assets:/assets"
+    volumes: "/data/assets:/assets,/data/certs/ldap:/app/certs/ldap"
     env:
       AESKEY: "{{aes_key}}"
       ORG_DEFAULT_ALLOW_USER_REG: "{{allow_unknown_users|default('true')}}"
@@ -68,6 +72,16 @@
       FAKE_SMS: "{{ fake_sms|default() }}"
       FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation|default() }}"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
+      LDAP_URI: "{{ ldap_uri | default() }}"
+      LDAP_BINDDN: "{{ ldap_binddn | default() }}"
+      LDAP_BINDPW: "{{ ldap_bindpw | default() }}"
+      LDAP_BASEDN: "{{ ldap_basedn | default() }}"
+      LDAP_USERS_BASEDN: "{{ ldap_users_basedn | default() }}"
+      LDAP_GROUPS_BASEDN: "{{ ldap_group_basedn | default() }}"
+      LDAP_TLS_CACERT_VERIFY: "{{ ldap_tls_cacert_verify | default() }}"
+      LDAP_TLS_CACERT_FILE: "{{ '/app/certs/ldap/%s' % (ldap_tls_cacert_file | basename) if ldap_tls_cacert_file is defined else '' }}"
+      LDAP_USERREG_REQ_LDAPUSER: "{{ ldap_userreg_req_ldapuser | default() }}"
+      LDAP_USERREG_REQ_LDAPGROUPS: "{{ ldap_userreg_req_ldapgroups | default() }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
