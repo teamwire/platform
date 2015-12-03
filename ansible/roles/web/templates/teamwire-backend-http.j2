@@ -16,6 +16,11 @@ server {
 
 	keepalive_timeout 5;
 
+	# The notification server
+	location /notifications/ {
+		proxy_pass    http://127.0.0.1:9080/;
+	}
+
 	# The web screenshot service
 	location /web-screenshot/ {
 		proxy_pass    http://127.0.0.1:8081/;

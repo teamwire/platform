@@ -102,6 +102,7 @@
       MYSQL_PORT: "{{mysql_port|default('3306')}}"
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.0.1:6379:1"
+      NOTIFICATION_SERVER_URL: "http://172.17.0.1:9081"
       BLOBDIR: /assets
       APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid|default('com.teamwire.messenger') }}"
       GCM_API_KEY: "{{ gcm_api_key }}"
@@ -131,7 +132,22 @@
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
 
-- name: Run the Teamwire backend web screenshot container
+- name: Retrieve and run the Teamwire notification server container
+  when: config_done is defined
+  docker:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+
+    name: teamwire_notification_server
+    image: "teamwire/notification-server:prod"
+    state: running
+    net: bridge
+    ports: "9080:9080,9081:9081"
+    env:
+      REDIS_URI: "172.17.0.1:6379:1"
+
+- name: Retrieve and run the Teamwire backend web screenshot container
   when: config_done is defined
   docker:
     username: "{{ dockerhub_username }}"
@@ -155,6 +171,7 @@
    - backend
    - worker
    - beat
+   - teamwire_notification_server
    - screenshot_server
 
   # Install and configure the nginx frontend proxy server

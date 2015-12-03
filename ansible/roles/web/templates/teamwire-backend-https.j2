@@ -31,6 +31,11 @@ server {
 	ssl_ciphers "HIGH:!aNULL:!eNULL:!MEDIUM:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4:!SEED";
 	ssl_prefer_server_ciphers on;
 
+	# The notification server
+	location /notifications/ {
+		proxy_pass    http://127.0.0.1:9080/;
+	}
+
 	# The web screenshot service
 	location /web-screenshot/ {
 		proxy_pass    http://127.0.0.1:8081/;
