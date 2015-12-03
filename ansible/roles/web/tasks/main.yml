@@ -171,7 +171,7 @@
    - backend
    - worker
    - beat
-   - teamwire_notification_server
+   - notification_server
    - screenshot_server
 
   # Install and configure the nginx frontend proxy server
