@@ -63,7 +63,7 @@
       MYSQL_PORT: "{{mysql_port|default('3306')}}"
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
       REDIS_URI: "172.17.0.1:6379:1"
-      EMAIL_HOST: 172.17.0.1
+      EMAIL_HOST: "{{ '172.17.0.1' if fake_email_confirmation is not defined else '' }}"
       BLOB_DIR: /assets
       DEFAULT_FROM_EMAIL: "{{sender_address}}"
       http_proxy: "{{http_proxy|default()}}"
