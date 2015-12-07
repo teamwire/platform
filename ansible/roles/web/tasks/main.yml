@@ -73,6 +73,7 @@
       FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation|default() }}"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
       LDAP_URI: "{{ ldap_uri | default() }}"
+      LDAP_SCHEMA: "{{ ldap_schema | default() }}"
       LDAP_BINDDN: "{{ ldap_binddn | default() }}"
       LDAP_BINDPW: "{{ ldap_bindpw | default() }}"
       LDAP_BASEDN: "{{ ldap_basedn | default() }}"

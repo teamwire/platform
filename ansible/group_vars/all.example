@@ -87,6 +87,10 @@ mysql_port: 3306
 # URI of LDAP server to connect to
 # ldap_uri:
 
+# Either "inetorgperson" for standard Linux/OpenLDAP setups
+# or "ad" for Active Directory (optional, defaults to "inetorgperson")
+# ldap_schema: inetorgperson
+
 # DN and password to use for binding (optional)
 # ldap_binddn:
 # ldap_bindpw:
