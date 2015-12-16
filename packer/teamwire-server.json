@@ -35,7 +35,6 @@
 				"keyboard-configuration/variantcode=nodeadkeys console-setup/ask_detect=false ",
 				"initrd=/install/initrd.gz -- <enter>"
 			],
-			"tools_upload_flavor": "linux",
 			"headless": true
 		},
 		{
@@ -62,7 +61,6 @@
 				"keyboard-configuration/variantcode=nodeadkeys console-setup/ask_detect=false ",
 				"initrd=/install/initrd.gz -- <enter>"
 			],
-			"tools_upload_flavor": "linux",
 			"headless": true
 		},
 		{

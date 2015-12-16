@@ -26,6 +26,9 @@ Vagrant.configure(2) do |config|
   # your network. Set the MAC address to get the same IP address from DHCP.
   config.vm.network "public_network", :mac => "000c29594f39"
 
+  # Disable the default shared folder
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   config.vm.provider :vmware_fusion do |v|
