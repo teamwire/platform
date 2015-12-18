@@ -1,10 +1,11 @@
 user www-data;
-worker_processes 4;
+worker_processes auto;
 pid /run/nginx.pid;
 
 events {
-	worker_connections 768;
-	# multi_accept on;
+	use epoll;
+	worker_connections 1024;
+	multi_accept on;
 }
 
 http {
