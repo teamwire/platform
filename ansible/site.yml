@@ -17,4 +17,5 @@
 - name: Deploy and configure the backend server
   hosts: all
   roles:
+    - docker
     - web
