@@ -12,7 +12,7 @@
 - name: Deploy and configure Redis database
   hosts: all
   roles:
-    - { role: redis, when: config_done is defined }
+    - { role: redis, when: config_done is defined and redis_host == "172.17.0.1" }
 
 - name: Deploy and configure the backend server
   hosts: all
