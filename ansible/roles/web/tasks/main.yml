@@ -1,11 +1,18 @@
 ---
 # Create the backend storage directories
 - file: path=/data owner=daemon mode=0750 state=directory
-- file: path=/data/assets owner=daemon mode=0750 state=directory
-- file: path=/data/website-screenshot-cache owner=daemon mode=0750 state=directory
-- file: path=/data/certs owner=root group=daemon mode=0750 state=directory
-- file: path=/data/certs/apns owner=root group=daemon mode=0750 state=directory
-- file: path=/data/beat owner=daemon mode=0750 state=directory
+- mount: name=/data fstype=nfs src="{{ external_storage_path }}" state=mounted
+  when: external_storage_path is defined
+
+# Create the backend storage directories
+- file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
+  when: config_done is defined
+  with_items:
+    - assets
+    - website-screenshot-cache
+    - certs
+    - certs/apns
+    - beat
 
 - name: Install the APNS certificate
   when: config_done is defined
