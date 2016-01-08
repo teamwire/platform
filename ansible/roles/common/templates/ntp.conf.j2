@@ -4,9 +4,9 @@ filegen loopstats file loopstats type day enable
 filegen peerstats file peerstats type day enable
 filegen clockstats file clockstats type day enable
 
-server ptbtime1.ptb.de
-server ptbtime2.ptb.de
-server ptbtime3.ptb.de
+{% for server in ntp_servers | default(['ptbtime1.ptb.de', 'ptbtime2.ptb.de', 'ptbtime3.ptb.de']) %}
+server {{ server }}
+{% endfor %}
 
 restrict -4 default kod notrap nomodify nopeer noquery
 restrict -6 default kod notrap nomodify nopeer noquery

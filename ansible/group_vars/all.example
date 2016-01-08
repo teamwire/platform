@@ -30,6 +30,14 @@ external_hostname:
 # HTTPS.
 # http_proxy: "http://your.proxy:3128"
 
+# Custom NTP servers.
+# The servers listed below are used per default. Uncomment the entire structure
+# and keep the indentation of two spaces when changing the server names.
+# ntp_servers:
+#   - ptbtime1.ptb.de
+#   - ptbtime2.ptb.de
+#   - ptbtime3.ptb.de
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################
