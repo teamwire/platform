@@ -151,6 +151,10 @@
 	"provisioners": [
 		{
 			"type": "shell",
+			"inline": "sudo sed -i -e 's|^\\(deb-src\\)|# \\1|' /etc/apt/sources.list"
+		},
+		{
+			"type": "shell",
 			"scripts": [
 				"scripts/vm-guest-tools.sh",
 				"scripts/install_ansible.sh"
@@ -164,11 +168,10 @@
 		},
 		{
 			"type": "shell",
-			"inline": "sudo sed -i -e 's|^\\(deb-src\\)|# \\1|' /etc/apt/sources.list"
-		},
-		{
-			"type": "shell",
-			"inline": "sudo apt-get clean"
+			"inline": [
+				"sudo apt-get clean",
+				"sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+			]
 		}
 	],
 	"post-processors": [
