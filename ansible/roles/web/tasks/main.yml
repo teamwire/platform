@@ -1,6 +1,8 @@
 ---
 # Create the backend storage directories
 - file: path=/data owner=daemon mode=0750 state=directory
+- apt: pkg=nfs-common state=present
+  when: external_storage_path is defined
 - mount: name=/data fstype=nfs src="{{ external_storage_path }}" state=mounted
   when: external_storage_path is defined
 
