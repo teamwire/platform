@@ -13,5 +13,9 @@
   action: lineinfile dest=/etc/redis/redis.conf regexp="^(# )+requirepass" backrefs=yes line="requirepass {{ redis_pass }}"
   notify: restart redis
 
+# See http://redis.io/topics/faq for details
+- name: Enable vm.overcommit_memory for Redis
+  sysctl: name=vm.overcommit_memory value=1 state=present reload=yes
+
 - name: Start and enable Redis server
   service: name=redis-server state=started enabled=yes
