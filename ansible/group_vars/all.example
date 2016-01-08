@@ -100,6 +100,10 @@ mysql_port: 3306
 # multiple backend servers!
 redis_host: 172.17.0.1
 redis_port: 6379
+# Configure a password for Redis. This is not required when Redis is running
+# as a single instance on the same machine as the backend, but highly
+# recommended when using a remote Redis server
+# redis_pass:
 
 ##############################################################################
 ## LDAP

@@ -9,5 +9,9 @@
   action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" line="bind 127.0.0.1 172.17.0.1"
   notify: restart redis
 
+- name: Configure password for Redis
+  action: lineinfile dest=/etc/redis/redis.conf regexp="^(# )+requirepass" backrefs=yes line="requirepass {{ redis_pass }}"
+  notify: restart redis
+
 - name: Start and enable Redis server
   service: name=redis-server state=started enabled=yes
