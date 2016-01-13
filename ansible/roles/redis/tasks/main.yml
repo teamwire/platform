@@ -11,6 +11,7 @@
 
 - name: Configure password for Redis
   action: lineinfile dest=/etc/redis/redis.conf regexp="^(# )+requirepass" backrefs=yes line="requirepass {{ redis_pass }}"
+  when: redis_pass is defined
   notify: restart redis
 
 # See http://redis.io/topics/faq for details
