@@ -29,6 +29,11 @@ Vagrant.configure(2) do |config|
   # Disable the default shared folder
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
+  # Set a fake host name to simplify the Ansible playbooks
+  config.vm.define "localhost" do |localhost|
+    localhost.vm.hostname = "localhost"
+  end
+
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   config.vm.provider :vmware_fusion do |v|
