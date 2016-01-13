@@ -84,7 +84,7 @@
       MYSQL_HOST: "{{mysql_host|default('172.17.0.1')}}"
       MYSQL_PORT: "{{mysql_port|default('3306')}}"
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
-      REDIS_URI: "172.17.0.1:6379:1"
+      REDIS_URI: "{{ redis_host|default('172.17.0.1') }}:{{ redis_port|default('6379') }}:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       NOTIFICATION_SERVER_URL: "http://172.17.0.1:9081"
       BLOBDIR: /assets
@@ -112,7 +112,7 @@
       MYSQL_HOST: "{{mysql_host|default('172.17.0.1')}}"
       MYSQL_PORT: "{{mysql_port|default('3306')}}"
       MYSQL_PASSWORD: "{{teamwire_db_password}}"
-      REDIS_URI: "172.17.0.1:6379:1"
+      REDIS_URI: "{{ redis_host|default('172.17.0.1') }}:{{ redis_port|default('6379') }}:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
@@ -130,7 +130,7 @@
     net: bridge
     ports: "9080:9080,9081:9081"
     env:
-      REDIS_URI: "172.17.0.1:6379:1"
+      REDIS_URI: "{{ redis_host|default('172.17.0.1') }}:{{ redis_port|default('6379') }}:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
 
 - name: Retrieve and run the Teamwire backend web screenshot container
