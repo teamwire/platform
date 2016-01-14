@@ -30,6 +30,10 @@ external_hostname:
 # HTTPS.
 # http_proxy: "http://your.proxy:3128"
 
+# If you use a frontend proxy for incoming connections, please give its IP
+# address here, otherwise the access logs will only show the proxy's address
+# frontend_proxy:
+
 # Custom NTP servers.
 # The servers listed below are used per default. Uncomment the entire structure
 # and keep the indentation of two spaces when changing the server names.
