@@ -59,7 +59,7 @@
 
 - name: Add hostname to localhost
   when: config_done is defined
-  lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }}"
+  lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }} {{ inventory_hostname if inventory_hostname != 'localhost' }}"
 
 # send outgoing mail over smarthost
 - name: install postfix
