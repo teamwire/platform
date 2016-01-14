@@ -10,6 +10,7 @@
 - file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
   when: config_done is defined
   with_items:
+    - archiving/gpg
     - assets
     - website-screenshot-cache
     - certs
@@ -36,9 +37,11 @@
     state: running
     net: bridge
     ports: "8080:8080"
-    volumes: "/data/assets:/assets,/data/certs/ldap:/app/certs/ldap"
+    volumes: "/data/archiving:/archiving,/data/assets:/assets,/data/certs/ldap:/app/certs/ldap"
     env:
       AESKEY: "{{aes_key}}"
+      ARCHIVING_CONFIG: "/archiving/archiving.yaml"
+      ARCHIVING_GPGHOME: "/archiving/gpg"
       ORG_DEFAULT_ALLOW_USER_REG: "{{allow_unknown_users|default('true')}}"
       MYSQL_HOST: "{{mysql_host|default('172.17.0.1')}}"
       MYSQL_PORT: "{{mysql_port|default('3306')}}"
