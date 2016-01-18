@@ -1,0 +1,24 @@
+---
+- name: Apply common configuration to all nodes
+  hosts: all
+  roles:
+    - common
+
+- name: Deploy and configure MySQL database
+  hosts: database_server
+  roles:
+    - role: db
+
+- name: Deploy and configure Redis database
+  hosts: database_server
+  roles:
+    - redis
+
+- name: Deploy and configure the backend servers
+  hosts: backend_servers
+  roles:
+    - docker
+    - web
+  vars:
+    - redis_host: "{{ hostvars[groups['database_server'][0]].ansible_eth0.ipv4.address }}"
+    - mysql_host: "{{ hostvars[groups['database_server'][0]].ansible_eth0.ipv4.address }}"

@@ -1,0 +1,57 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+HOSTS = {
+  'tw1' => {},
+  'tw2' => {},
+  'tw3' => {},
+  'db1' => {},
+}
+
+GROUPS = {
+  'database_server' => [ 'db1' ],
+  'backend_servers' => [ 'tw1', 'tw2', 'tw3' ]
+}
+
+Vagrant.configure(2) do |config|
+  HOSTS.each do |name, conf|
+    config.vm.define name do |node|
+      node.vm.hostname = name
+      # Provision the machines with Ansible when the last one is provisioned
+      if name == HOSTS.keys[HOSTS.length - 1]
+        # Default provisioning
+        node.vm.provision "ansible" do |ansible|
+          ansible.playbook = "../ansible/cluster.yml"
+          ansible.groups = GROUPS
+          ansible.limit = 'all'
+          ansible.sudo = true
+          # ansible.verbose = 'vvv'
+        end
+      end
+    end
+  end
+
+  config.vm.box = "teamwire/server"
+
+  # The ssh user name used to connect to the created VM with "vagrant ssh"
+  config.ssh.username = "teamwire"
+
+  # Path to the ssh key for that user
+  config.ssh.private_key_path = File.expand_path("~/.ssh/teamwire-server-vm-admin")
+
+  # Disable the default shared folder
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  config.vm.provider :vmware_fusion do |v|
+    v.vmx["memsize"] = "1024"
+  end
+
+  config.vm.provider "virtualbox" do |vm|
+    vm.customize ["modifyvm", :id, "--memory", "1024"]
+    vm.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+  end
+
+  config.vm.provider "libvirt" do |vm|
+    vm.memory = 1024
+  end
+end

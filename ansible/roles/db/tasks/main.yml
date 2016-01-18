@@ -32,3 +32,7 @@
 - name: Create Teamwire database user
   when: config_done is defined
   mysql_user: name=teamwire host=% password={{teamwire_db_password}} priv=teamwire.*:ALL state=present
+
+- name: Allow the backend servers to access the database
+  ufw: rule=allow port=3306 src={{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}
+  with_items: "{{ groups['backend_servers'] |default([]) }} "
