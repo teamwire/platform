@@ -10,12 +10,14 @@
 - file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
   when: config_done is defined
   with_items:
-    - archiving/gpg
+    - archiving
     - assets
     - website-screenshot-cache
     - certs
     - certs/apns
     - beat
+- file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
+  when: config_done is defined
 
 - name: Install the APNS certificate
   when: config_done is defined
