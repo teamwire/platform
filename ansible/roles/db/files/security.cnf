@@ -9,3 +9,5 @@ local-infile=0
 secure-auth
 # Don't allow user creation when user has no write access to user table
 safe-user-create
+# Restrict loading data from files to the /root directory
+secure-file-priv=/root/
