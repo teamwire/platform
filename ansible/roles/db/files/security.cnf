@@ -1,0 +1,3 @@
+[mysqld]
+# Disable symbolic link support
+skip-symbolic-links

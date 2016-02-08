@@ -23,6 +23,10 @@
   template: src=slow_query_log.cnf.j2 dest=/etc/mysql/conf.d/slow_query_log.cnf
   notify: reload MySQL
 
+- name: Disable unsecure functionality
+  copy: src=security.cnf dest=/etc/mysql/conf.d/security.cnf
+  notify: reload MySQL
+
 - name: Start and enable MySQL server
   service: name=mysql state=started enabled=yes
 
