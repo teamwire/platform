@@ -1,3 +1,5 @@
 [mysqld]
 # Disable symbolic link support
 skip-symbolic-links
+# Dont expose list of databases
+skip-show-database
