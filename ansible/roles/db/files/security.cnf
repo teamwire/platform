@@ -5,3 +5,5 @@ skip-symbolic-links
 skip-show-database
 # disable all LOAD DATA LOCAL statements
 local-infile=0
+# Disable pre 4.1 passwords and privilege tables
+secure-auth
