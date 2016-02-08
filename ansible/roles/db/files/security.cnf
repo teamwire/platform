@@ -7,3 +7,5 @@ skip-show-database
 local-infile=0
 # Disable pre 4.1 passwords and privilege tables
 secure-auth
+# Don't allow user creation when user has no write access to user table
+safe-user-create
