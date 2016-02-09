@@ -1,29 +1,49 @@
 #!/bin/sh
 
-CONTAINERS="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
+IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
+CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
 
 help() {
 	echo "Command line options:"
 	echo
-	echo "--help	Show help"
-	echo "--pull	Pull containers for a given tag"
-	echo "--tag	Use given tag for production"
+	echo "--help      Show help"
+	echo "--pull TAG  Pull containers for a given tag"
+	echo "--stop      Stop all running Teamwire containers"
+	echo "--start     Start all stopped Teamwire containers"
+	echo "--tag TAG   Use given tag for production"
 }
 
-pull_containers() {
-	echo "Pulling Teamwire containers for version $TAG"
-	for CONTAINER in $CONTAINERS; do
-		docker pull "$CONTAINER":"$TAG"
+pull_images() {
+	echo "Pulling Teamwire container images for version $TAG"
+	echo
+	for IMAGE in $IMAGES; do
+		docker pull "$IMAGE":"$TAG"
 	done
 }
 
-tag_containers() {
+tag_images() {
 	echo "Using $TAG as production version"
-	for CONTAINER in $CONTAINERS; do
-		docker tag -f "$CONTAINER":"$TAG" "$CONTAINER":prod
+	for IMAGE in $IMAGES; do
+		docker tag -f "$IMAGE":"$TAG" "$IMAGE":prod
 	done
 }
 
+stop_containers() {
+	for CONTAINER in $CONTAINERS; do
+		# First check if the container was started by upstart
+		if sudo initctl status "$CONTAINER" | grep -q 'running' ; then
+			sudo initctl stop "$CONTAINER"
+		elif docker ps -qf name="$CONTAINER" | egrep -q '^.+$' ; then
+			docker stop "$CONTAINER"
+		fi
+	done
+}
+
+start_containers() {
+	for CONTAINER in $CONTAINERS; do
+		sudo initctl start "$CONTAINER"
+	done
+}
 
 TAG=""
 TASK=""
@@ -34,10 +54,18 @@ while [ $# -gt 0 ] ; do
 			exit
 			;;
 		-p|--pull)
-			TASK="pull_containers"
+			TASK="pull_images"
+			TAG_REQUIRED=yes
+			;;
+		--start)
+			TASK="start_containers"
+			;;
+		-s|--stop)
+			TASK="stop_containers"
 			;;
 		-t|--tag)
-			TASK="tag_containers"
+			TASK="tag_images"
+			TAG_REQUIRED=yes
 			;;
 		*)
 			TAG="$1"
@@ -48,12 +76,15 @@ done
 
 if [ -z "$TASK" ] ; then
 	echo "Mission operation"
+	echo
 	help
 	exit 1
 fi
 
-if [ -z "$TAG" ] ; then
-	echo "Please specify a tag!"
+if [ "$TAG_REQUIRED" = "yes" ] && [ -z "$TAG" ] ; then
+	echo "Please specify a release tag!"
+	echo
+	help
 	exit 1
 fi
 
