@@ -8,6 +8,7 @@ help() {
 	echo
 	echo "--help      Show help"
 	echo "--pull TAG  Pull containers for a given tag"
+	echo "--rm        Remove all stopped Teamwire containers"
 	echo "--stop      Stop all running Teamwire containers"
 	echo "--start     Start all stopped Teamwire containers"
 	echo "--tag TAG   Use given tag for production"
@@ -18,6 +19,12 @@ pull_images() {
 	echo
 	for IMAGE in $IMAGES; do
 		docker pull "$IMAGE":"$TAG"
+	done
+}
+
+remove_containers() {
+	for CONTAINER in $CONTAINERS; do
+		docker rm "$CONTAINER"
 	done
 }
 
@@ -56,6 +63,9 @@ while [ $# -gt 0 ] ; do
 		-p|--pull)
 			TASK="pull_images"
 			TAG_REQUIRED=yes
+			;;
+		-r|--rm)
+			TASK="remove_containers"
 			;;
 		--start)
 			TASK="start_containers"
