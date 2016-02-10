@@ -7,6 +7,7 @@ help() {
 	echo "Command line options:"
 	echo
 	echo "--help      Show help"
+	echo "--migrate   Run database migrations"
 	echo "--pull TAG  Pull containers for a given tag"
 	echo "--rm        Remove all stopped Teamwire containers"
 	echo "--stop      Stop all running Teamwire containers"
@@ -26,6 +27,33 @@ remove_containers() {
 	for CONTAINER in $CONTAINERS; do
 		docker rm "$CONTAINER"
 	done
+}
+
+run_migrations() {
+	CONFIG_FILE=~teamwire/platform/ansible/group_vars/all
+	MYSQL_HOST="$(awk '/^mysql_host/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
+	MYSQL_PORT="$(awk '/^mysql_port/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
+	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
+	AESKEY="$(awk '/aes_key:/ { print $2 }' "$CONFIG_FILE" | sed 's|^\"\(.*\)\"$|\1|' )" 2> /dev/null
+
+	if [ -z "$MYSQL_HOST" ] || [ -z "$MYSQL_PORT" ] || [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
+		echo "Cannot read required parameters from $CONFIG_FILE."
+		echo "Please ensure the file exists and the database is configured."
+		exit 1
+	fi
+
+	ERROR_LOG="$(tempfile)"
+
+	echo "Running database migrations"
+	echo
+	docker run --rm -e MODE=migration -e MYSQL_HOST="$MYSQL_HOST" \
+		-e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_PASSWORD="$MYSQL_PASS" \
+		-e AESKEY="$AESKEY" teamwire/backend:prod 2> "$ERROR_LOG" | egrep -v '^(.+)='
+
+	if [ $? -gt 0 ] ; then
+		cat "$ERROR_LOG"
+	fi
+	rm -f "$ERROR_LOG"
 }
 
 tag_images() {
@@ -59,6 +87,9 @@ while [ $# -gt 0 ] ; do
 		-h|--help)
 			help
 			exit
+			;;
+		-m|--migrate)
+			TASK="run_migrations"
 			;;
 		-p|--pull)
 			TASK="pull_images"
