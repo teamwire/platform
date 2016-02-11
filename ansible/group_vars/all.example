@@ -98,20 +98,20 @@ teamwire_db_password: teamwire
 # This key must be 32 byte (i.e. 256 bit) long.
 aes_key:
 
-# If you don't want to run the MySQL server on this VM, you can change these
-# defaults to settings that match your external MySQL server. These defaults
-# are required to connect to MySQL on this VM.
+# If you don't want to run the MySQL server on this machine, you can set these
+# values to the settings that point to your external MySQL server.
 # In this case you'll need to create the "teamwire" user on that DB with the
 # password given above and enable access from this host.
-mysql_host: 172.17.0.1
-mysql_port: 3306
+# mysql_host:
+# mysql_port:
 
 # Redis connection information.
-# If you leave these defaults, a local Redis instance will be installed and
-# used. This will give unexpected and inconsistant results when running
+# If you don't configure this values, a local Redis server will be installed
+# and used. This will give unexpected and inconsistant results when running
 # multiple backend servers!
-redis_host: 172.17.0.1
-redis_port: 6379
+# redis_host:
+# redis_port:
+#
 # Configure a password for Redis. This is not required when Redis is running
 # as a single instance on the same machine as the backend, but highly
 # recommended when using a remote Redis server
