@@ -5,6 +5,7 @@
   - mariadb-server
   - mariadb-client
   - python-mysqldb
+  register: mysql_initial_installation
 
 # Unfortunately MySQL cannot be configure to listen on multiple interfaces
 - name: Configure MySQL to listen on all interfaces
@@ -30,12 +31,16 @@
 - name: Start and enable MySQL server
   service: name=mysql state=started enabled=yes
 
+- name: Set password for MySQL root user
+  mysql_user: name=root password="{{mysql_root_password}}"
+  when: mysql_initial_installation | bool
+
 - name: Create Teamwire database
-  mysql_db: name=teamwire state=present
+  mysql_db: name=teamwire state=present login_user=root login_password="{{mysql_root_password}}"
 
 - name: Create Teamwire database user
   when: config_done is defined
-  mysql_user: name=teamwire host=% password={{teamwire_db_password}} priv=teamwire.*:ALL state=present
+  mysql_user: name=teamwire host=% password={{teamwire_db_password}} priv=teamwire.*:ALL state=present login_user=root login_password="{{mysql_root_password}}"
 
 - name: Allow the backend servers to access the database
   ufw: rule=allow port=3306 src={{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}

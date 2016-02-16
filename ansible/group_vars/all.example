@@ -105,6 +105,10 @@ aes_key:
 # mysql_host:
 # mysql_port:
 
+# When running the database on the same machine, you *must* configure a password
+# for the DB's root user here, otherwise you can comment this line.
+mysql_root_password:
+
 # Redis connection information.
 # If you don't configure this values, a local Redis server will be installed
 # and used. This will give unexpected and inconsistant results when running
