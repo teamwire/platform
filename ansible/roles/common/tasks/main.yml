@@ -118,6 +118,13 @@
   git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=no
   notify: fix ownership of git checkout
 
+- stat: path=/home/teamwire/platform/ansible/group_vars/all
+  register: config_file
+
+- name: Secure permissions of Ansible configuration file
+  file: path=/home/teamwire/platform/ansible/group_vars/all state=file mode=0600 owner=teamwire group=teamwire
+  when: config_file.stat.exists
+
 # Prepare tmate usage
 # It needs any ssh key for the calling user to funciton
 - user: name=teamwire generate_ssh_key=yes
