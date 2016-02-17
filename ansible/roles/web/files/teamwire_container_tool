@@ -36,7 +36,15 @@ run_migrations() {
 	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
 	AESKEY="$(awk '/aes_key:/ { print $2 }' "$CONFIG_FILE" | sed 's|^\"\(.*\)\"$|\1|' )" 2> /dev/null
 
-	if [ -z "$MYSQL_HOST" ] || [ -z "$MYSQL_PORT" ] || [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
+	if [ -z "$MYSQL_HOST" ]; then
+		MYSQL_HOST=$(ifconfig docker0 | awk -F'[ :]+' '/inet addr/{print $4}')
+	fi
+
+	if [ -z "$MYSQL_PORT" ]; then
+		MYSQL_PORT=3306
+	fi
+
+	if [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
 		echo "Cannot read required parameters from $CONFIG_FILE."
 		echo "Please ensure the file exists and the database is configured."
 		exit 1
