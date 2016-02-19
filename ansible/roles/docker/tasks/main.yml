@@ -26,5 +26,3 @@
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers.
 - meta: flush_handlers
-
-
