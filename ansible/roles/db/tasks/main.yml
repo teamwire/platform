@@ -31,6 +31,10 @@
 - name: Start and enable MySQL server
   service: name=mysql state=started enabled=yes
 
+# Make sure MySQL is restarted before the databse is created, otherwise
+# the configured defaults are not used.
+- meta: flush_handlers
+
 - name: Set password for MySQL root user
   mysql_user: name=root password="{{mysql_root_password}}"
   when: mysql_initial_installation.changed
