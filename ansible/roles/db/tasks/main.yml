@@ -39,6 +39,13 @@
   mysql_user: name=root password="{{mysql_root_password}}"
   when: mysql_initial_installation.changed
 
+- name: Set password for the other MySQL root users
+  mysql_user: name=root password="{{mysql_root_password}}" host="{{item}}" login_user=root login_password="{{mysql_root_password}}"
+  with_items:
+    - 127.0.0.1
+    - ::1
+    - "{{external_hostname}}"
+
 - name: Create Teamwire database
   mysql_db: name=teamwire state=present login_user=root login_password="{{mysql_root_password}}"
 
