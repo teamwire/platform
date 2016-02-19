@@ -33,7 +33,7 @@
 
 - name: Set password for MySQL root user
   mysql_user: name=root password="{{mysql_root_password}}"
-  when: mysql_initial_installation | bool
+  when: mysql_initial_installation.changed
 
 - name: Create Teamwire database
   mysql_db: name=teamwire state=present login_user=root login_password="{{mysql_root_password}}"
