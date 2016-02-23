@@ -62,51 +62,60 @@
   lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }} {{ inventory_hostname if inventory_hostname != 'localhost' else '' }}"
 
 # send outgoing mail over smarthost
-- name: install postfix
+- name: Install Postfix
   apt: pkg={{item}}
   with_items:
   - postfix
   - mailutils
 
-- template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
+- name: Write the Postfix configuration file
+  template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
   when: config_done is defined
   notify: restart postfix
 
-- template: src=postfix-passwd.j2 dest=/etc/postfix/sasl/passwd mode=0600
+- name: Write the Postfix password file
+  template: src=postfix-passwd.j2 dest=/etc/postfix/sasl/passwd mode=0600
   when: config_done is defined
   notify: rebuild postfix passwd map
 
-- name: give root a speaking name
+- name: Give root a speaking name
   when: config_done is defined
   user: name=root comment="root@{{ external_hostname }}"
 
 # install ntp and set timezone to UTC
-- name: set timezone to UTC
+- name: Set timezone to UTC
   copy: content="Etc/UTC\n" dest=/etc/timezone
   notify: update timezone
-- template: src=ntp.conf.j2 dest=/etc/ntp.conf
+- name: Install the NTP daemon
+  apt: pkg=ntp
+- name: Enable and start the NTP daemon
+  service: name=ntp state=started enabled=true
+- name: Write NTP configuration file
+  template: src=ntp.conf.j2 dest=/etc/ntp.conf
   notify: restart NTP
-- apt: pkg=ntp
-- service: name=ntp state=started enabled=true
 
 # general firewall rules
-- apt: pkg=ufw state=present
-- ufw: rule=allow name=OpenSSH
-- ufw: rule=allow interface=docker0 direction=in
-- ufw: state=enabled policy=reject
+- name: Install the UFW firewall
+  apt: pkg=ufw state=present
+- name: Allow incoming SSH access
+  ufw: rule=allow name=OpenSSH
+- name: Allow Docker containers to access the container host
+  ufw: rule=allow interface=docker0 direction=in
+- name: Configure default firewall policy
+  ufw: state=enabled policy=reject
 
 # SSH
-- name: disable SSH password logins
+- name: Disable SSH password logins
   when: ssh_disable_passwords is defined and ssh_disable_passwords
   action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
   notify: reload sshd
 
-- name: enable SSH password logins
+- name: Enable SSH password logins
   when: ssh_disable_passwords is not defined or not ssh_disable_passwords
   action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication yes"
   notify: reload sshd
 
-- name: disable DNS lookup on SSH login
+- name: Disable DNS lookup on SSH login
   lineinfile: dest=/etc/ssh/sshd_config line="UseDNS no"
   notify: reload sshd
 
@@ -114,7 +123,7 @@
 - name: Install git
   apt: pkg=git state=present
 
-- name: check out the teamwire/platform git repository
+- name: Check out the teamwire/platform git repository
   git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=no
   notify: fix ownership of git checkout
 
@@ -126,10 +135,13 @@
   when: config_file.stat.exists
 
 # Prepare tmate usage
-# It needs any ssh key for the calling user to funciton
-- user: name=teamwire generate_ssh_key=yes
+# It needs any ssh key for the calling user to function
+- name: Create SSH keys for the teamwire user
+  user: name=teamwire generate_ssh_key=yes
   when: config_done is defined
 
 # Install tmate
-- apt_repository: repo=ppa:nviennot/tmate
-- apt: pkg=tmate
+- name: Configure the tmate repository
+  apt_repository: repo=ppa:nviennot/tmate
+- name: Install tmate
+  apt: pkg=tmate
