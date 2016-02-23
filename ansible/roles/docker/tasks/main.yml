@@ -23,6 +23,9 @@
   args:
     creates: /home/teamwire/.docker/config.json
 
+- name: Configure firewall to allow Docker containers access to the host
+  ufw: rule=allow interface=docker0 direction=in
+
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers.
 - meta: flush_handlers

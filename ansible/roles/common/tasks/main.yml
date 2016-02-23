@@ -99,8 +99,6 @@
   apt: pkg=ufw state=present
 - name: Allow incoming SSH access
   ufw: rule=allow name=OpenSSH
-- name: Allow Docker containers to access the container host
-  ufw: rule=allow interface=docker0 direction=in
 - name: Configure default firewall policy
   ufw: state=enabled policy=reject
 
