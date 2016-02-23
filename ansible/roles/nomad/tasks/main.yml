@@ -1,0 +1,63 @@
+- name: Download Nomad
+  get_url:
+    url: https://releases.hashicorp.com/nomad/0.5.0/nomad_0.5.0_linux_amd64.zip
+    dest: /var/cache/downloads/nomad_0.5.0_linux_amd64.zip
+    checksum: sha256:7f7b9af2b1ff3e2c6b837b6e95968415237bb304e1e82802bc42abf6f8645a43
+    mode: 0440
+  register: nomad_downloaded
+
+- name: Unzip Nomad
+  unarchive: src=/var/cache/downloads/nomad_0.5.0_linux_amd64.zip dest=/usr/local/sbin copy=no
+  when: nomad_downloaded.changed
+  notify: Restart Nomad agent
+
+- name: Create Nomad config firectory
+  file: dest=/etc/nomad state=directory mode=0755
+
+- name: Create Nomad data directory
+  file: dest=/var/lib/nomad state=directory mode=0755
+
+- name: Write Nomad config
+  template: src=nomad.hcl.j2 dest=/etc/nomad/nomad.hcl
+  notify: Restart Nomad agent
+
+- name: Nomad systemd config
+  copy: src=nomad.service dest=/etc/systemd/system/nomad.service
+  notify:
+    - reload systemd
+    - Restart Nomad agent
+
+- name: Enable the Nomad service
+  service: name=nomad state=started enabled=yes
+
+- include: ../../backend/tasks/configuration.yml
+
+- name: Wait for nomad API port to start listening
+  wait_for:
+    port: 4646
+  delegate_to: "{{ groups['backend_servers'][0] }}"
+  run_once: true
+
+- name: Obtain total CPU compute power
+  shell: nomad node-status -self -json | awk -F'[^0-9]*' '/cpu.totalcompute/{print $2}'
+  delegate_to: "{{ groups['backend_servers'][0] }}"
+  register: cpu_calculation
+  run_once: true
+
+- name: Obtain total RAM
+  shell: nomad node-status -self -json | awk -F'[^0-9]*' '/memory.totalbytes/{print $2}'
+  delegate_to: "{{ groups['backend_servers'][0] }}"
+  register: ram_calculation
+  run_once: true
+
+#Setting facts for total CPU power (cores*frequency) and total RAM on backend nomad hosts
+- set_fact:
+     total_cpu_power: "{{ cpu_calculation.stdout }}"
+     total_ram: "{{ ram_calculation.stdout }}"
+
+- name: Write Teamwire cluster nomad job
+  template:
+    src: teamwire.nomad.j2
+    dest: /data/cluster_config/teamwire.nomad
+    owner: teamwire
+  run_once: true
