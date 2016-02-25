@@ -61,6 +61,11 @@
   when: config_done is defined
   lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }} {{ inventory_hostname if inventory_hostname != 'localhost' else '' }}"
 
+- name: Add other cluster nodes to /etc/hosts
+  lineinfile: dest=/etc/hosts line="{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}\t{{ item }} "
+  with_items: "{{ groups['all'] | default([]) }}"
+  when: item != inventory_hostname
+
 # send outgoing mail over smarthost
 - name: Install Postfix
   apt: pkg={{item}}
