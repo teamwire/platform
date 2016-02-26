@@ -1,0 +1,346 @@
+job "teamwire" {
+	# Specify the datacenters within the region this job can run in.
+	datacenters = ["dc1"]
+
+	# Priority controls our access to resources and scheduling priority.
+	# This can be 1 to 100, inclusively, and defaults to 50.
+	# priority = 50
+
+	constraint {
+		attribute = "${attr.kernel.name}"
+		value = "linux"
+	}
+
+	# Configure the job to do rolling updates
+	update {
+		# Stagger updates every 10 seconds
+		stagger = "10s"
+
+		# Update a single task at a time
+		max_parallel = 1
+	}
+
+	group "redundant" {
+		count = {{ groups['backend_servers'] | count }}
+
+		restart {
+			interval = "5m"
+			attempts = 10
+			delay = "25s"
+			mode = "delay"
+		}
+
+		task "backend" {
+			driver = "docker"
+
+			config {
+				image = "teamwire/backend:{{ version }}"
+				auth {
+					username = "{{ dockerhub_username }}"
+					password = "{{ dockerhub_password }}"
+				}
+				port_map {
+					http = 8080
+				}
+				logging {
+					type = "syslog"
+					config {
+						tag = "teamwire-backend"
+						syslog-facility = "local6"
+					}
+				}
+				volumes = [
+					"/data/archiving:/archiving",
+					"/data/assets:/assets"
+				]
+			}
+
+			service {
+				name = "${TASK}"
+				tags = ["teamwire"]
+				port = "http"
+				check {
+					type = "http"
+					path = "/health"
+					interval = "15s"
+					timeout = "2s"
+				}
+			}
+
+			env {
+				AESKEY = "{{ aes_key }}"
+				ARCHIVING_CONFIG = "/archiving/archiving.conf"
+				ARCHIVING_GPGHOME = "/archiving/gpg"
+				ORG_DEFAULT_ALLOW_USER_REG = "{{ allow_unknown_users|default('true') }}"
+				ORG_DEFAULT_ALLOW_USER_QUERY = "{{ allow_user_query|default('false') }}"
+				MYSQL_HOST = "{{ mysql_host | default() }}"
+				MYSQL_PORT = "{{ mysql_port | default() }}"
+				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
+				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
+				MYSQL_PASSWORD = "{{ teamwire_db_password if mysql_host is defined else '' }}"
+				ORA_HOST = "{{ oracle_host | default() }}"
+				ORA_PORT = "{{ oracle_port | default() }}"
+				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
+				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
+				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
+				REDIS_URI = "{{ redis_host }}:{{ redis_port }}:1"
+				REDIS_PASSWORD = "{{ redis_pass|default() }}"
+				EMAIL_HOST = "{{ '172.17.0.1' if fake_email_confirmation is not defined else '' }}"
+				BLOB_DIR = "/assets"
+				DEFAULT_FROM_EMAIL = "{{ sender_address }}"
+				http_proxy = "{{ http_proxy|default() }}"
+				https_proxy = "{{ http_proxy|default() }}"
+				VERSION = "{{ version }}"
+				FAKE_PIN = "{{ fake_pin|default() }}"
+				FAKE_SMS = "{{ fake_sms|default() }}"
+				FAKE_EMAIL_CONFIRMATION = "{{ fake_email_confirmation|default() }}"
+				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
+			}
+
+			resources {
+				network {
+					mbits = 100
+					port "http" {}
+				}
+			}
+		}
+
+		task "web-screenshot-server" {
+			driver = "docker"
+
+			config {
+				image = "teamwire/web-screenshot-server:{{ version }}"
+				auth {
+					username = "{{ dockerhub_username }}"
+					password = "{{ dockerhub_password }}"
+				}
+				port_map {
+					http = 8080
+				}
+				logging {
+					type = "syslog"
+					config {
+						tag = "teamwire-screenshot-server"
+						syslog-facility = "local6"
+					}
+				}
+				volumes = [
+					"/data/website-screenshot-cache:/website-screenshot-cache"
+				]
+			}
+
+			service {
+				name = "${TASK}"
+				tags = ["teamwire"]
+				port = "http"
+				check {
+					type = "http"
+					path = "/health"
+					interval = "15s"
+					timeout = "2s"
+				}
+			}
+
+			env {
+				CACHE_DIR = "/website-screenshot-cache"
+				HTTP_PROXY = "{{ http_proxy|default() }}"
+			}
+
+			resources {
+				network {
+					mbits = 100
+					port "http" {}
+				}
+			}
+		}
+
+		task "worker" {
+			driver = "docker"
+
+			config {
+				image = "teamwire/backend:{{ version }}"
+				auth {
+					username = "{{ dockerhub_username }}"
+					password = "{{ dockerhub_password }}"
+				}
+				port_map {
+					health = 8080
+				}
+				logging {
+					type = "syslog"
+					config {
+						tag = "teamwire-worker"
+						syslog-facility = "local6"
+					}
+				}
+				volumes = [
+					"/data/assets:/assets",
+					"/data/certs/apns:/app/certs/apns"
+				]
+			}
+
+			service {
+				name = "${TASK}"
+				tags = ["teamwire"]
+				port = "health"
+				check {
+					type = "http"
+					path = "/health"
+					interval = "15s"
+					timeout = "2s"
+				}
+			}
+
+			env {
+				MODE = "worker"
+				AESKEY = "{{ aes_key }}"
+				MYSQL_HOST = "{{ mysql_host | default() }}"
+				MYSQL_PORT = "{{ mysql_port | default() }}"
+				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
+				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
+				MYSQL_PASSWORD = "{{ teamwire_db_password if mysql_host is defined else '' }}"
+				ORA_HOST = "{{ oracle_host | default() }}"
+				ORA_PORT = "{{ oracle_port | default() }}"
+				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
+				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
+				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
+				REDIS_URI = "{{ redis_host }}:{{ redis_port }}:1"
+				REDIS_PASSWORD = "{{ redis_pass|default() }}"
+				NOTIFICATION_SERVER_URL = "http://notification-server-9081.service.consul:9081"
+				BLOBDIR = "/assets"
+				APNS_CERT_1 = "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}"
+{% if apns_certificate_2 is defined %}
+				APNS_CERT_2=/app/certs/apns/{{ apns_certificate_2 | basename }},push_production,{{ apns_appid_2 }}
+{% endif %}
+				GCM_API_KEY = "{{ gcm_api_key }}"
+				WNS_CLIENT_ID = "{{ wns_client_id|default() }}"
+				WNS_CLIENT_SECRET = "{{ wns_client_secret|default() }}"
+				http_proxy = "{{ http_proxy|default() }}"
+				https_proxy = "{{ http_proxy|default() }}"
+				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
+			}
+
+			resources {
+				network {
+					mbits = 100
+					port "health" {}
+				}
+			}
+		}
+	}
+
+	group "unique" {
+		count = 1
+
+		task "beat" {
+			driver = "docker"
+
+			config {
+				image = "teamwire/backend:{{ version }}"
+				auth {
+					username = "{{ dockerhub_username }}"
+					password = "{{ dockerhub_password }}"
+				}
+				logging {
+					type = "syslog"
+					config {
+						tag = "teamwire-beat"
+						syslog-facility = "local6"
+					}
+				}
+				volumes = [
+					"/data/beat:/beat"
+				]
+			}
+
+			service {
+				name = "${TASK}"
+				tags = ["teamwire"]
+			}
+
+			env {
+				MODE = "beat"
+				AESKEY = "{{ aes_key }}"
+				MYSQL_HOST = "{{ mysql_host | default() }}"
+				MYSQL_PORT = "{{ mysql_port | default() }}"
+				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
+				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
+				MYSQL_PASSWORD = "{{ teamwire_db_password if mysql_host is defined else '' }}"
+				ORA_HOST = "{{ oracle_host | default() }}"
+				ORA_PORT = "{{ oracle_port | default() }}"
+				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
+				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
+				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
+				REDIS_URI = "{{ redis_host }}:{{ redis_port }}:1"
+				REDIS_PASSWORD = "{{ redis_pass|default() }}"
+				CELERY_BEAT_SCHEDULE = "/beat/celerybeat-schedule"
+				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
+			}
+
+			resources {
+				network {
+					mbits = 100
+				}
+			}
+		}
+
+		task "notification-server" {
+			driver = "docker"
+
+			config {
+				image = "teamwire/notification-server:{{ version }}"
+				auth {
+					username = "{{ dockerhub_username }}"
+					password = "{{ dockerhub_password }}"
+				}
+				port_map {
+					http = 9080
+					rest = 9081
+				}
+				logging {
+					type = "syslog"
+					config {
+						tag = "teamwire-notifications"
+						syslog-facility = "local6"
+					}
+				}
+				volumes = [
+					"/data/beat:/beat"
+				]
+			}
+
+			service {
+				name = "${TASK}-9080"
+				tags = ["teamwire"]
+				port = "http"
+				check {
+					type = "http"
+					path = "/"
+					interval = "15s"
+					timeout = "2s"
+				}
+			}
+			service {
+				name = "${TASK}-9081"
+				tags = ["teamwire"]
+				port = "rest"
+			}
+
+			env {
+				REDIS_URI = "{{ redis_host }}:{{ redis_port|default('6379') }}:1"
+				REDIS_PASSWORD = "{{ redis_pass|default() }}"
+				LOGLEVEL = "{{ notification_loglevel|default() }}"
+			}
+
+			resources {
+				network {
+					mbits = 100
+					port "http" {}
+					port "rest" {
+						static = 9081
+					}
+				}
+			}
+		}
+	}
+}
