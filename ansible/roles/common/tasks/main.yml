@@ -68,10 +68,7 @@
 
 # send outgoing mail over smarthost
 - name: Install Postfix
-  apt: pkg={{item}}
-  with_items:
-  - postfix
-  - mailutils
+  apt: pkg=postfix
 
 - name: Write the Postfix configuration file
   template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
