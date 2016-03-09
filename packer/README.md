@@ -10,11 +10,11 @@ VMWare       | teamwire-server-vmware-vagrant     | teamwire-server-vmware
 qemu/libvirt | teamwire-server-kvm-vagrant        | teamwire-server-kvm
 VirtualBox   | teamwire-server-virtualbox-vagrant |
 
-You'll need the private and public key for the "teamwire" user.
+You'll need the password for the "teamwire" user.
 Change to this directory, choose the desired CONFIGURATION and run
 
 ```sh
-packer build -var "http_directory=$PWD" -var "ssh_key_path=/path/to/private/key" \
+packer build -var "http_directory=$PWD" -var "ssh_password=PASSWORD" \
     -only <CONFIGURATION> teamwire-server.json
 ```
 
