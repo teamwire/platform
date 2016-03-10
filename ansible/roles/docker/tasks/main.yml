@@ -15,6 +15,11 @@
   lineinfile: dest=/etc/default/docker regexp=http_proxy line='export http_proxy="{{http_proxy}}"'
   notify: restart docker
 
+# Make sure docker is restarted before the containers are set up, otherwise
+# the restart would kill the running containers. We need to restart before the
+# following step, otherwise the login would fail when a proxy is configured.
+- meta: flush_handlers
+
 - name: Log in on Docker Hub
   command: docker login -e "{{ dockerhub_email }}" -u "{{ dockerhub_username }}" -p "{{ dockerhub_password }}"
   become: True
@@ -25,7 +30,3 @@
 
 - name: Configure firewall to allow Docker containers access to the host
   ufw: rule=allow interface=docker0 direction=in
-
-# Make sure docker is restarted before the containers are set up, otherwise
-# the restart would kill the running containers.
-- meta: flush_handlers
