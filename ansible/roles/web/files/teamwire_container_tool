@@ -1,7 +1,41 @@
-#!/bin/sh
+#!/bin/bash
 
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
 CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
+DOCKER_VERSION=$(docker --version | awk '{ gsub(",",""); print $3}')
+
+# The following function was written by Dennis Williamson (https://stackoverflow.com/users/26428)
+# and posted on http://stackoverflow.com/questions/4023830 (licensed cc-by-sa)
+vercomp () {
+	if [[ $1 == $2 ]]
+	then
+		return 0
+	fi
+	local IFS=.
+	local i ver1=($1) ver2=($2)
+	# fill empty fields in ver1 with zeros
+	for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+	do
+		ver1[i]=0
+	done
+	for ((i=0; i<${#ver1[@]}; i++))
+	do
+		if [[ -z ${ver2[i]} ]]
+		then
+			# fill empty fields in ver2 with zeros
+			ver2[i]=0
+		fi
+		if ((10#${ver1[i]} > 10#${ver2[i]}))
+		then
+			return 1
+		fi
+		if ((10#${ver1[i]} < 10#${ver2[i]}))
+		then
+			return 2
+		fi
+	done
+	return 0
+}
 
 help() {
 	echo "Command line options:"
@@ -66,8 +100,17 @@ run_migrations() {
 
 tag_images() {
 	echo "Using $TAG as production version"
+
+	# Use -f vor Docker versions < 1.10.0 (See https://github.com/docker/docker/pull/18350)
+	vercomp "$DOCKER_VERSION" "1.10.0"
+	if [ $? -eq 2 ] ; then
+		PARAM="-f"
+	else
+		PARAM=""
+	fi
+
 	for IMAGE in $IMAGES; do
-		docker tag -f "$IMAGE":"$TAG" "$IMAGE":prod
+		docker tag $PARAM "$IMAGE":"$TAG" "$IMAGE":prod
 	done
 }
 
