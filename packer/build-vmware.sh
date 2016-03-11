@@ -8,6 +8,11 @@ if [ -z "$PASSWORD" ] ; then
 	exit 1
 fi
 
+if [ -f ../ansible/group_vars/all ] ; then
+	echo "Please remove the Ansible config before building!"
+	exit 1
+fi
+
 echo directory part: "$WORKDIR"
 
 # Run packer to create the VM
