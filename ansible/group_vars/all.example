@@ -95,7 +95,8 @@ apns_certificate:
 teamwire_db_password: teamwire
 
 # Define the database encryption key.
-# This key must be 32 byte (i.e. 256 bit) long.
+# This key must be 32 byte (i.e. 256 bit) long and must only contain ASCII
+# characters (i.e. unicode characters are not allowed).
 aes_key:
 
 # If you don't want to run the MySQL server on this machine, you can set these
