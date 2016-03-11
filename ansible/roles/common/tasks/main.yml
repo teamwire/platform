@@ -54,12 +54,12 @@
 - lineinfile: dest=/etc/hosts regexp="^127.0.1.1\s+teamwire-server" state=absent
 
 - name: Set hostname
-  when: config_done is defined or inventory_hostname != "localhost"
-  hostname: name="{{ inventory_hostname if inventory_hostname != "localhost" else external_hostname }}"
+  when: config_done is defined or inventory_hostname not in ignore_hostname
+  hostname: name="{{ inventory_hostname if inventory_hostname not in ignore_hostnames else external_hostname }}"
 
 - name: Add hostname to localhost
   when: config_done is defined
-  lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }} {{ inventory_hostname if inventory_hostname != 'localhost' else '' }}"
+  lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }} {{ inventory_hostname if inventory_hostname not in ignore_hostnames else '' }}"
 
 - name: Add other cluster nodes to /etc/hosts
   lineinfile: dest=/etc/hosts line="{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}\t{{ item }} "
