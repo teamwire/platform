@@ -4,7 +4,7 @@
 		"iso_url": "http://releases.ubuntu.com/14.04/ubuntu-14.04.3-server-amd64.iso",
 		"iso_checksum": "a3b345908a826e262f4ea1afeb357fd09ec0558cf34e6c9112cead4bb55ccdfb",
 		"iso_checksum_type": "sha256",
-		"vm_name": "teamwire-server",
+		"vm_name": "localhost",
 		"ssh_username": "teamwire",
 		"ssh_password": "",
 		"ssh_wait_timeout": "900s",
