@@ -41,6 +41,7 @@
 
 - name: Set password for the other MySQL root users
   mysql_user: name=root password="{{mysql_root_password}}" host="{{item}}" login_user=root login_password="{{mysql_root_password}}"
+  when: mysql_root_password is defined
   with_items:
     - 127.0.0.1
     - ::1
