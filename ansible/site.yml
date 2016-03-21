@@ -18,4 +18,4 @@
   hosts: all
   roles:
     - docker
-    - web
+    - { role: web, when: config_done is defined }
