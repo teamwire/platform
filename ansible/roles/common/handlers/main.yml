@@ -18,4 +18,4 @@
   service: name=postfix state=restarted
 
 - name: fix ownership of git checkout
-  command: chown -R teamwire:teamwire /home/teamwire/platform
+  file: path=/home/teamwire/platform owner=teamwire group=teamwire recurse=yes
