@@ -1,0 +1,3 @@
+---
+- name: reload NFS server
+  service: name=nfs-kernel-server state=reloaded

@@ -10,6 +10,7 @@ HOSTS = {
 
 GROUPS = {
   'database_server' => [ 'db1' ],
+  'nfs_server' => [ 'db1' ],
   'backend_servers' => [ 'tw1', 'tw2', 'tw3' ]
 }
 

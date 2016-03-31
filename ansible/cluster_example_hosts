@@ -5,3 +5,6 @@ tw3
 
 [database_server]
 db1
+
+[nfs_server]
+db1

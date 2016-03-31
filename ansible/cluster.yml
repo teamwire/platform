@@ -14,6 +14,11 @@
   roles:
     - redis
 
+- name: Deploy and configure NFS server
+  hosts: nfs_server
+  roles:
+    - { role: storage, when: config_done is defined and external_storage_path is not defined }
+
 - name: Deploy and configure the backend servers
   hosts: backend_servers
   roles:
