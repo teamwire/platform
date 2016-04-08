@@ -23,6 +23,11 @@
   lineinfile: dest=/etc/default/docker regexp=http_proxy line='export http_proxy="{{http_proxy}}"'
   notify: restart docker
 
+- name: Disable proxy for docker when no proxy is configured
+  when: http_proxy is not defined
+  lineinfile: dest=/etc/default/docker regexp=http_proxy line='# export http_proxy=""'
+  notify: restart docker
+
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
 # following step, otherwise the login would fail when a proxy is configured.
