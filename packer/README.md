@@ -15,7 +15,7 @@ Change to this directory, choose the desired CONFIGURATION and run
 
 ```sh
 packer build -var "http_directory=$PWD" -var "ssh_password=PASSWORD" \
-    -only <CONFIGURATION> teamwire-server.json
+    -only <CONFIGURATION> teamwire-server-ubuntu.json
 ```
 
 to build the desired virtual machine.
