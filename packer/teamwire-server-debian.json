@@ -1,0 +1,174 @@
+{
+	"variables": {
+		"http_directory": "",
+		"iso_url": "http://cdimage.debian.org/debian-cd/8.4.0/amd64/iso-cd/debian-8.4.0-amd64-netinst.iso",
+		"iso_checksum": "7a6b418e6a4ee3ca75dda04d79ed96c9e2c33bb0c703ca7e40c6374ab4590748",
+		"iso_checksum_type": "sha256",
+		"vm_name": "localhost",
+		"ssh_username": "teamwire",
+		"ssh_password": "",
+		"ssh_wait_timeout": "900s",
+		"shutdown_command": "sudo shutdown -P now"
+	},
+	"builders": [
+		{
+			"name": "teamwire-server-vmware",
+			"type": "vmware-iso",
+			"vm_name": "{{user `vm_name`}}",
+			"iso_url": "{{user `iso_url`}}",
+			"iso_checksum": "{{user `iso_checksum`}}",
+			"iso_checksum_type": "{{user `iso_checksum_type`}}",
+			"http_directory": "{{user `http_directory`}}",
+			"ssh_username": "{{user `ssh_username`}}",
+			"ssh_password": "{{user `ssh_password`}}",
+			"ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+			"shutdown_command": "{{user `shutdown_command`}}",
+			"boot_wait": "5s",
+			"boot_command": [
+				"<esc><wait>",
+				"install auto ",
+				"preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/debian.cfg ",
+				"debian-installer=en_US locale=en_US keymap=de ",
+				"hostname={{ .Name }} domain=localdomain",
+				"<enter>"
+			],
+			"headless": true
+		},
+		{
+			"name": "teamwire-server-vmware-vagrant",
+			"type": "vmware-iso",
+			"vm_name": "{{user `vm_name`}}",
+			"iso_url": "{{user `iso_url`}}",
+			"iso_checksum": "{{user `iso_checksum`}}",
+			"iso_checksum_type": "{{user `iso_checksum_type`}}",
+			"http_directory": "{{user `http_directory`}}",
+			"ssh_username": "{{user `ssh_username`}}",
+			"ssh_password": "{{user `ssh_password`}}",
+			"ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+			"shutdown_command": "{{user `shutdown_command`}}",
+			"boot_wait": "5s",
+			"boot_command": [
+				"<esc><wait>",
+				"install auto ",
+				"preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/debian.cfg ",
+				"debian-installer=en_US locale=en_US keymap=de ",
+				"hostname={{ .Name }} domain=localdomain",
+				"<enter>"
+			],
+			"headless": true
+		},
+		{
+			"name": "teamwire-server-virtualbox-vagrant",
+			"type": "virtualbox-iso",
+			"vm_name": "{{user `vm_name`}}",
+			"iso_url": "{{user `iso_url`}}",
+			"iso_checksum": "{{user `iso_checksum`}}",
+			"iso_checksum_type": "{{user `iso_checksum_type`}}",
+			"http_directory": "{{user `http_directory`}}",
+			"ssh_username": "{{user `ssh_username`}}",
+			"ssh_password": "{{user `ssh_password`}}",
+			"ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+			"shutdown_command": "{{user `shutdown_command`}}",
+			"boot_wait": "5s",
+			"boot_command": [
+				"<esc><wait>",
+				"install auto ",
+				"preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/debian.cfg ",
+				"debian-installer=en_US locale=en_US keymap=de ",
+				"hostname={{ .Name }} domain=localdomain",
+				"<enter>"
+			],
+			"guest_additions_mode": "disable",
+			"guest_os_type": "Ubuntu_64",
+			"headless": "true"
+		},
+		{
+			"name": "teamwire-server-kvm",
+			"type": "qemu",
+			"vm_name": "{{user `vm_name`}}",
+			"iso_url": "{{user `iso_url`}}",
+			"iso_checksum": "{{user `iso_checksum`}}",
+			"iso_checksum_type": "{{user `iso_checksum_type`}}",
+			"http_directory": "{{user `http_directory`}}",
+			"ssh_username": "{{user `ssh_username`}}",
+			"ssh_password": "{{user `ssh_password`}}",
+			"ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+			"shutdown_command": "{{user `shutdown_command`}}",
+			"boot_wait": "5s",
+			"boot_command": [
+				"<esc><wait>",
+				"install auto ",
+				"preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/debian.cfg ",
+				"debian-installer=en_US locale=en_US keymap=de ",
+				"hostname={{ .Name }} domain=localdomain",
+				"<enter>"
+			],
+			"format": "qcow2",
+			"accelerator": "kvm",
+			"headless": "true"
+		},
+		{
+			"name": "teamwire-server-kvm-vagrant",
+			"type": "qemu",
+			"vm_name": "{{user `vm_name`}}",
+			"iso_url": "{{user `iso_url`}}",
+			"iso_checksum": "{{user `iso_checksum`}}",
+			"iso_checksum_type": "{{user `iso_checksum_type`}}",
+			"http_directory": "{{user `http_directory`}}",
+			"ssh_username": "{{user `ssh_username`}}",
+			"ssh_password": "{{user `ssh_password`}}",
+			"ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+			"shutdown_command": "{{user `shutdown_command`}}",
+			"boot_wait": "5s",
+			"boot_command": [
+				"<esc><wait>",
+				"install auto ",
+				"preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/debian.cfg ",
+				"debian-installer=en_US locale=en_US keymap=de ",
+				"hostname={{ .Name }} domain=localdomain",
+				"<enter>"
+			],
+			"format": "qcow2",
+			"accelerator": "kvm",
+			"headless": "true"
+		}
+	],
+	"provisioners": [
+		{
+			"type": "shell",
+			"inline": "sudo sed -i -e 's|^\\(deb-src\\)|# \\1|' /etc/apt/sources.list"
+		},
+		{
+			"type": "shell",
+			"scripts": [
+				"scripts/vm-guest-tools.sh",
+				"scripts/install_ansible.sh"
+			]
+		},
+		{
+			"type": "ansible-local",
+			"command": "ansible-playbook --sudo",
+			"playbook_file": "../ansible/site.yml",
+			"playbook_dir": "../ansible"
+		},
+		{
+			"type": "shell",
+			"inline": [
+				"sudo apt-get clean",
+				"sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+			]
+		}
+	],
+	"post-processors": [
+		{
+			"type": "vagrant",
+			"output": "{{.BuildName}}.box",
+			"except": ["teamwire-server-vmware", "teamwire-server-kvm"]
+		},
+		{
+			"type": "compress",
+			"output": "teamwire-server-kvm.tar.gz",
+			"only": ["teamwire-server-kvm"]
+		}
+	]
+}

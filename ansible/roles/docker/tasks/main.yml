@@ -7,7 +7,7 @@
   command: apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
   when: http_proxy is defined
 - name: Add the Docker repository
-  apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-trusty main' state=present
+  apt_repository: repo='deb https://apt.dockerproject.org/repo {{ansible_distribution|lower}}-{{ansible_distribution_release}} main' state=present
 
 - name: Install Docker
   apt: pkg=docker-engine state=present
