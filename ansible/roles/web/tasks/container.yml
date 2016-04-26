@@ -1,4 +1,7 @@
 ---
+- set_fact: restart_policy="always"
+  when: ansible_distribution == "Debian"
+
 - name: Install the container helper tool
   copy: src=teamwire_container_tool dest=/usr/local/bin/teamwire_container_tool mode=0755 owner=root group=root
 
@@ -12,6 +15,7 @@
     name: teamwire_backend
     image: "teamwire/backend:prod"
     state: running
+    restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     ports: "8080:8080"
     volumes: "/data/archiving:/archiving,/data/assets:/assets"
@@ -45,6 +49,7 @@
     name: teamwire_worker
     image: "teamwire/backend:prod"
     state: running
+    restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
     env:
@@ -75,6 +80,7 @@
     name: teamwire_beat
     image: "teamwire/backend:prod"
     state: running
+    restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     volumes: "/data/beat:/beat"
     env:
@@ -98,6 +104,7 @@
     name: teamwire_notification_server
     image: "teamwire/notification-server:prod"
     state: running
+    restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     ports: "9080:9080,9081:9081"
     env:
@@ -114,6 +121,7 @@
     name: teamwire_screenshot_server
     image: "teamwire/web-screenshot-server:prod"
     state: running
+    restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     ports: "8081:8080"
     volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
@@ -122,7 +130,7 @@
       HTTP_PROXY: "{{ http_proxy|default() }}"
 
 - name: Install the backend container upstart configuration
-  when: config_done is defined
+  when: config_done is defined and ansible_distribution == "Ubuntu"
   template: src=docker-upstart.conf.j2 dest="/etc/init/teamwire_{{ item }}.conf"
   with_items:
    - backend
