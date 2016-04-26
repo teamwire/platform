@@ -20,7 +20,7 @@
   when: ansible_distribution == "Ubuntu"
 
 - name: Mail root on unattended-upgrades
-  lineinfile: dest=/etc/apt/apt.conf.d/50unattended-upgrades regexp=Unattended-Upgrade::Mail line='Unattended-Upgrade::Mail "root";'
+  lineinfile: dest=/etc/apt/apt.conf.d/50unattended-upgrades regexp='^//Unattended-Upgrade::Mail "root";' line='Unattended-Upgrade::Mail "root";' backrefs=yes
 
 - name: Configure unattended-upgrade
   copy: src=02periodic dest=/etc/apt/apt.conf.d/02periodic
