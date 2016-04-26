@@ -45,7 +45,7 @@
   with_items:
     - 127.0.0.1
     - ::1
-    - "{{external_hostname}}"
+    - "{{external_hostname|default()}}"
 
 - name: Create Teamwire database
   mysql_db: name=teamwire state=present login_user=root login_password="{{mysql_root_password}}"
