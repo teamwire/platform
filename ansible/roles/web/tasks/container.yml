@@ -13,8 +13,8 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_backend
-    image: "teamwire/backend:prod"
-    state: running
+    image: "teamwire/backend:{{version|default('prod')}}"
+    state: reloaded
     restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     ports: "8080:8080"
@@ -47,8 +47,8 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_worker
-    image: "teamwire/backend:prod"
-    state: running
+    image: "teamwire/backend:{{version|default('prod')}}"
+    state: reloaded
     restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
@@ -78,8 +78,8 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_beat
-    image: "teamwire/backend:prod"
-    state: running
+    image: "teamwire/backend:{{version|default('prod')}}"
+    state: reloaded
     restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     volumes: "/data/beat:/beat"
@@ -102,8 +102,8 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_notification_server
-    image: "teamwire/notification-server:prod"
-    state: running
+    image: "teamwire/notification-server:{{version|default('prod')}}"
+    state: reloaded
     restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     ports: "9080:9080,9081:9081"
@@ -119,8 +119,8 @@
     email: "{{ dockerhub_email }}"
 
     name: teamwire_screenshot_server
-    image: "teamwire/web-screenshot-server:prod"
-    state: running
+    image: "teamwire/web-screenshot-server:{{version|default('prod')}}"
+    state: reloaded
     restart_policy: "{{restart_policy|default('no')}}"
     net: bridge
     ports: "8081:8080"

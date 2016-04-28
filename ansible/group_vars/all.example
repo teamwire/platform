@@ -46,6 +46,11 @@ external_hostname:
 ## APPLICATION
 ##############################################################################
 
+# The Teamwire server version. During initial installation, prod is the
+# latest available version, when updating, you'll be supplied with a specific
+# version tag.
+version: prod
+
 # Allow users that were not invited or imported by CSV to register on this
 # server. Please note that this only configures the default for newly created
 # organisations; the default configuration can be changed by an administrator.
