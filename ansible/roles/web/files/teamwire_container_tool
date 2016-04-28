@@ -116,10 +116,7 @@ tag_images() {
 
 stop_containers() {
 	for CONTAINER in $CONTAINERS; do
-		# First check if the container was started by upstart
-		if sudo initctl status "$CONTAINER" | grep -q 'running' ; then
-			sudo initctl stop "$CONTAINER"
-		elif docker ps -qf name="$CONTAINER" | egrep -q '^.+$' ; then
+		if docker ps -qf name="$CONTAINER" | egrep -q '^.+$' ; then
 			docker stop "$CONTAINER"
 		fi
 	done
@@ -127,7 +124,7 @@ stop_containers() {
 
 start_containers() {
 	for CONTAINER in $CONTAINERS; do
-		sudo initctl start "$CONTAINER"
+		docker start "$CONTAINER"
 	done
 }
 
