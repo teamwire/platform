@@ -6,3 +6,4 @@ packer/teamwire-server.ova
 packer/packer_cache/
 packer/output-teamwire-server*
 ansible/group_vars/all
+**/*.retry
