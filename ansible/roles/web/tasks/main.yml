@@ -3,7 +3,11 @@
 - include: container.yml
 
 - name: Install the container helper tool
-  copy: src=teamwire_container_tool dest=/usr/local/bin/teamwire_container_tool mode=0755 owner=root group=root
+  copy: src=twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
+
+# Transitional
+- name: Remove obsoleted teamwire tool
+  file: dest=/usr/local/bin/teamwire_container_tool state=absent
 
   # Install and configure the nginx frontend proxy server
   # Copy the SSL certificate
