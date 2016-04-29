@@ -2,6 +2,9 @@
 - include: storage.yml
 - include: container.yml
 
+- name: Install the container helper tool
+  copy: src=teamwire_container_tool dest=/usr/local/bin/teamwire_container_tool mode=0755 owner=root group=root
+
   # Install and configure the nginx frontend proxy server
   # Copy the SSL certificate
 - copy: src={{ ssl_certfile }} dest=/etc/ssl/private/teamwire-backend.crt mode=0640

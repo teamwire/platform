@@ -3,6 +3,7 @@
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
 CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
 DOCKER_VERSION=$(docker --version | awk '{ gsub(",",""); print $3}')
+ANSIBLE_DIR=~teamwire/platform/ansible
 
 # The following function was written by Dennis Williamson (https://stackoverflow.com/users/26428)
 # and posted on http://stackoverflow.com/questions/4023830 (licensed cc-by-sa)
@@ -46,6 +47,7 @@ help() {
 	echo "--rm        Remove all stopped Teamwire containers"
 	echo "--stop      Stop all running Teamwire containers"
 	echo "--start     Start all stopped Teamwire containers"
+	echo "--setup     Configure and run Teamwire containers"
 	echo "--tag TAG   Use given tag for production"
 }
 
@@ -64,7 +66,7 @@ remove_containers() {
 }
 
 run_migrations() {
-	CONFIG_FILE=~teamwire/platform/ansible/group_vars/all
+	CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 	MYSQL_HOST="$(awk '/^mysql_host/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
 	MYSQL_PORT="$(awk '/^mysql_port/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
 	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
@@ -128,6 +130,10 @@ start_containers() {
 	done
 }
 
+setup_containers() {
+	ansible-playbook --sudo -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
+}
+
 TAG=""
 TASK=""
 while [ $# -gt 0 ] ; do
@@ -151,6 +157,9 @@ while [ $# -gt 0 ] ; do
 			;;
 		-s|--stop)
 			TASK="stop_containers"
+			;;
+		--setup)
+			TASK="setup_containers"
 			;;
 		-t|--tag)
 			TASK="tag_images"
