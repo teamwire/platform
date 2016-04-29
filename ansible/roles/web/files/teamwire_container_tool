@@ -2,53 +2,43 @@
 
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
 CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
-DOCKER_VERSION=$(docker --version | awk '{ gsub(",",""); print $3}')
 ANSIBLE_DIR=~teamwire/platform/ansible
+CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 
-# The following function was written by Dennis Williamson (https://stackoverflow.com/users/26428)
-# and posted on http://stackoverflow.com/questions/4023830 (licensed cc-by-sa)
-vercomp () {
-	if [[ $1 == $2 ]]
-	then
-		return 0
+check_tag() {
+	local TAG=$1
+	for IMAGE in $IMAGES ; do
+		if ! docker images "$IMAGE" | grep -q "$TAG" ; then
+			# Required image not found for given tag
+			echo "ERROR: Containers for the requested tag could not be found."
+			echo "       Please pull the containers first using the pull action."
+			exit 1
+		fi
+	done
+}
+
+check_config_file() {
+	if [ ! -f "$CONFIG_FILE" ]; then
+		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
+		echo "       Please configure the server before using this tool."
+		exit 1
 	fi
-	local IFS=.
-	local i ver1=($1) ver2=($2)
-	# fill empty fields in ver1 with zeros
-	for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
-	do
-		ver1[i]=0
-	done
-	for ((i=0; i<${#ver1[@]}; i++))
-	do
-		if [[ -z ${ver2[i]} ]]
-		then
-			# fill empty fields in ver2 with zeros
-			ver2[i]=0
-		fi
-		if ((10#${ver1[i]} > 10#${ver2[i]}))
-		then
-			return 1
-		fi
-		if ((10#${ver1[i]} < 10#${ver2[i]}))
-		then
-			return 2
-		fi
-	done
-	return 0
 }
 
 help() {
 	echo "Command line options:"
 	echo
 	echo "--help      Show help"
-	echo "--migrate   Run database migrations"
-	echo "--pull TAG  Pull containers for a given tag"
-	echo "--rm        Remove all stopped Teamwire containers"
-	echo "--stop      Stop all running Teamwire containers"
-	echo "--start     Start all stopped Teamwire containers"
-	echo "--setup     Configure and run Teamwire containers"
-	echo "--tag TAG   Use given tag for production"
+	echo "--tag TAG   Specifiy tag for actions that require a tag"
+	echo
+	echo "Actions:"
+	echo
+	echo "pull        Pull containers for a given tag (requires tag)"
+	echo "migrate     Run database migrations (requires tag)"
+	echo "setup       Configure and run Teamwire containers (requires tag)"
+	echo "start       Start all stopped Teamwire containers"
+	echo "stop        Stop all running Teamwire containers"
+	echo "rm          Remove all stopped Teamwire containers"
 }
 
 pull_images() {
@@ -66,7 +56,9 @@ remove_containers() {
 }
 
 run_migrations() {
-	CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
+	check_tag "$TAG"
+	check_config_file
+
 	MYSQL_HOST="$(awk '/^mysql_host/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
 	MYSQL_PORT="$(awk '/^mysql_port/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
 	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
@@ -81,8 +73,8 @@ run_migrations() {
 	fi
 
 	if [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
-		echo "Cannot read required parameters from $CONFIG_FILE."
-		echo "Please ensure the file exists and the database is configured."
+		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
+		echo "       Please ensure the file exists and the database is configured."
 		exit 1
 	fi
 
@@ -92,28 +84,12 @@ run_migrations() {
 	echo
 	docker run --rm -e MODE=migration -e MYSQL_HOST="$MYSQL_HOST" \
 		-e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_PASSWORD="$MYSQL_PASS" \
-		-e AESKEY="$AESKEY" teamwire/backend:prod 2> "$ERROR_LOG" | egrep -v '^(.+)='
+		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2> "$ERROR_LOG" | egrep -v '^(.+)='
 
 	if [ $? -gt 0 ] ; then
 		cat "$ERROR_LOG"
 	fi
 	rm -f "$ERROR_LOG"
-}
-
-tag_images() {
-	echo "Using $TAG as production version"
-
-	# Use -f vor Docker versions < 1.10.0 (See https://github.com/docker/docker/pull/18350)
-	vercomp "$DOCKER_VERSION" "1.10.0"
-	if [ $? -eq 2 ] ; then
-		PARAM="-f"
-	else
-		PARAM=""
-	fi
-
-	for IMAGE in $IMAGES; do
-		docker tag $PARAM "$IMAGE":"$TAG" "$IMAGE":prod
-	done
 }
 
 stop_containers() {
@@ -131,6 +107,18 @@ start_containers() {
 }
 
 setup_containers() {
+	check_tag "$TAG"
+	check_config_file
+
+	if ! grep -q '^version' "$CONFIG_FILE" ; then
+		echo "ERROR: Please update the configuration file ${CONFIG_FILE}"
+		echo "       from the provided example before using this action. "
+		exit 1
+	fi
+
+	# Write given tag into config file
+	sed -i -e 's/^\(version: \).*$/\1'"$TAG"'/' $CONFIG_FILE
+
 	ansible-playbook --sudo -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
 }
 
@@ -142,45 +130,44 @@ while [ $# -gt 0 ] ; do
 			help
 			exit
 			;;
-		-m|--migrate)
-			TASK="run_migrations"
+		-t|--tag)
+			TAG=$2
+			shift
 			;;
-		-p|--pull)
+		pull)
 			TASK="pull_images"
 			TAG_REQUIRED=yes
 			;;
-		-r|--rm)
-			TASK="remove_containers"
-			;;
-		--start)
-			TASK="start_containers"
-			;;
-		-s|--stop)
-			TASK="stop_containers"
-			;;
-		--setup)
-			TASK="setup_containers"
-			;;
-		-t|--tag)
-			TASK="tag_images"
+		migrate)
+			TASK="run_migrations"
 			TAG_REQUIRED=yes
 			;;
-		*)
-			TAG="$1"
+		setup)
+			TASK="setup_containers"
+			TAG_REQUIRED=yes
+			;;
+		start)
+			TASK="start_containers"
+			;;
+		stop)
+			TASK="stop_containers"
+			;;
+		rm)
+			TASK="remove_containers"
 			;;
 	esac
 	shift
 done
 
 if [ -z "$TASK" ] ; then
-	echo "Mission operation"
+	echo "ERROR: Mission action"
 	echo
 	help
 	exit 1
 fi
 
 if [ "$TAG_REQUIRED" = "yes" ] && [ -z "$TAG" ] ; then
-	echo "Please specify a release tag!"
+	echo "ERROR: Please specify a release tag!"
 	echo
 	help
 	exit 1
