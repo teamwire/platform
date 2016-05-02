@@ -11,7 +11,7 @@
 {% endif %}
         # The notification server
         location /notifications/ {
-                proxy_pass http://127.0.0.1:9080/;
+                proxy_pass http://teamwire_notification_server/;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
@@ -21,7 +21,7 @@
         location /web-screenshot/ {
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header Host $http_host;
-                proxy_pass http://127.0.0.1:8081/;
+                proxy_pass http://teamwire_screenshot_server/;
                 proxy_read_timeout 180;
         }
 
