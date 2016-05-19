@@ -3,9 +3,11 @@
 - name: Add the Docker repository signing key (direct connection)
   apt_key: id=58118E89F3A912897C070ADBF76221572C52609D keyserver=hkp://p80.pool.sks-keyservers.net:80 state=present
   when: http_proxy is not defined
+
 - name: Add the Docker repository signing key (via proxy server)
   command: /bin/bash -c "gpg --keyring /etc/apt/trusted.gpg -k 2C52609D || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --keyserver-options http-proxy=\"{{http_proxy}}\" --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
   when: http_proxy is defined
+
 - name: Add the Docker repository
   apt_repository: repo='deb https://apt.dockerproject.org/repo {{ansible_distribution|lower}}-{{ansible_distribution_release}} main' state=present
 
@@ -37,6 +39,17 @@
   lineinfile: dest=/etc/default/docker regexp=http_proxy line='# export http_proxy=""'
   notify: restart docker
 
+- name: Create systemd drop-in directory for docker (Debian)
+  file: name=/etc/systemd/system/docker.service.d state=directory
+  when: ansible_distribution == "Debian"
+
+- name: Configure the Docker registry proxy cache (Debian)
+  when: ansible_distribution == "Debian" and 'docker_registry' in groups and inventory_hostname != groups['docker_registry'] | first
+  template: src=registry.conf.j2 dest=/etc/systemd/system/docker.service.d/registry.conf
+  notify:
+    - reload systemd
+    - restart docker
+
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
 # following step, otherwise the login would fail when a proxy is configured.
@@ -52,7 +65,7 @@
 
 # Requires docker-py >= 1.7, hence can only be used on Debian
 - name: Log in on Docker Hub (Debian)
-  when: config_done is defined and ansible_distribution == "Debian"
+  when: config_done is defined and ansible_distribution == "Debian" and 'docker_registry' not in groups
   docker_login:
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"

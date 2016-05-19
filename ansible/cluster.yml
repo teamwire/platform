@@ -14,6 +14,12 @@
   roles:
     - redis
 
+- name: Deploy and configure Docker registry
+  hosts: docker_registry
+  roles:
+    - docker
+    - docker-registry
+
 - name: Deploy and configure NFS server
   hosts: nfs_server
   roles:

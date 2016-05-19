@@ -1,0 +1,25 @@
+---
+- name: Create Docker Registry storage directory
+  file: name="{{ item }}" state=directory
+  with_items:
+    - /data
+    - /data/registry
+
+- name: Write Docker registry config file
+  template: src=registry-config.yml.j2 dest=/data/registry/config.yml
+
+- name: Retrieve and run the Docker Registry container
+  when: config_done is defined
+  docker:
+    name: docker-registry
+    image: "registry:2"
+    state: reloaded
+    restart_policy: always
+    net: bridge
+    ports: "5000:5000"
+    volumes: "/data/registry:/var/lib/registry,/data/registry/config.yml:/etc/docker/registry/config.yml"
+
+- name: Allow backend nodes to access the Docker registry server
+  ufw: rule=allow port=5000 src={{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}
+  with_items:
+    - "{{ groups['backend_servers'] }}"

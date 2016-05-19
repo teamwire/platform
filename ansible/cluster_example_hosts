@@ -8,3 +8,6 @@ db1
 
 [nfs_server]
 db1
+
+[docker_registry]
+db1

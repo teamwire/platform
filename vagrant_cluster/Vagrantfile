@@ -2,22 +2,25 @@
 # vi: set ft=ruby :
 
 HOSTS = {
-  'tw1' => {},
-  'tw2' => {},
-  'tw3' => {},
-  'db1' => {},
+  'tw1' => { :private_ip => '10.0.1.5' },
+  'tw2' => { :private_ip => '10.0.1.6' },
+  'tw3' => { :private_ip => '10.0.1.7' },
+  'db1' => { :private_ip => '10.0.1.8' },
 }
 
 GROUPS = {
+  'backend_servers' => [ 'tw1', 'tw2', 'tw3' ],
   'database_server' => [ 'db1' ],
-  'nfs_server' => [ 'db1' ],
-  'backend_servers' => [ 'tw1', 'tw2', 'tw3' ]
+  'docker_registry' => [ 'db1' ],
+  'nfs_server' => [ 'db1' ]
 }
 
 Vagrant.configure(2) do |config|
   HOSTS.each do |name, conf|
     config.vm.define name do |node|
       node.vm.hostname = name
+      node.vm.network "private_network", ip: conf[:private_ip]
+
       # Provision the machines with Ansible when the last one is provisioned
       if name == HOSTS.keys[HOSTS.length - 1]
         # Default provisioning
