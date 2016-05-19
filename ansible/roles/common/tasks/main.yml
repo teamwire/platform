@@ -44,6 +44,7 @@
   - vim
   - nano
   - haveged
+  - ldap-utils
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent purge=yes
