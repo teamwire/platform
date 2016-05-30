@@ -1,5 +1,5 @@
 ---
-- file: path=/data owner=daemon mode=0750 state=directory
+- file: path=/data owner=daemon group=ssl-cert mode=0750 state=directory
 
 # Mount external storage
 
@@ -20,12 +20,15 @@
     - archiving
     - assets
     - website-screenshot-cache
+    - beat
+- file: path=/data/{{ item }} owner=daemon group=ssl-cert mode=0750 state=directory
+  when: config_done is defined
+  with_items:
     - certs
     - certs/apns
-    - beat
 - file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
   when: config_done is defined
 
 - name: Install the APNS certificate
   when: config_done is defined
-  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.pem mode=0640 group=daemon
+  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.pem mode=0440 owner=daemon group=ssl-cert
