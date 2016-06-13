@@ -45,6 +45,7 @@
   - nano
   - haveged
   - ldap-utils
+  - heirloom-mailx
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent purge=yes
