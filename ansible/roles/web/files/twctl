@@ -51,6 +51,7 @@ help() {
 	echo
 	echo "--help      Show help"
 	echo "--tag TAG   Specifiy tag for actions that require a tag"
+	echo "--file NAME Specify a filename for actions that require it"
 	echo
 	echo "Actions:"
 	echo
@@ -60,6 +61,27 @@ help() {
 	echo "start       Start all stopped Teamwire containers"
 	echo "stop        Stop all running Teamwire containers"
 	echo "rm          Remove all stopped Teamwire containers"
+	echo "backupdb    Create a backup of the database (requires file name)"
+}
+
+backupdb() {
+	get_mysql_configuration
+	local MYSQLDUMP_CONFIG_FILE
+
+	if [ -f "$FILENAME" ] ; then
+		echo "$FILENAME exists, please specify a name that doesn't exists!"
+		exit 1
+	fi
+
+	MYSQLDUMP_CONFIG_FILE=$(mktemp)
+	chmod 0600 "$MYSQLDUMP_CONFIG_FILE"
+	echo -e "[mysqldump]\nuser=teamwire\npassword=$MYSQL_PASS" > "$MYSQLDUMP_CONFIG_FILE"
+
+	mysqldump --defaults-file="$MYSQLDUMP_CONFIG_FILE" \
+		-h "$MYSQL_HOST" -P "$MYSQL_PORT" \
+		-u teamwire teamwire > "$FILENAME"
+
+	rm -f "$MYSQLDUMP_CONFIG_FILE"
 }
 
 pull_images() {
@@ -137,6 +159,10 @@ while [ $# -gt 0 ] ; do
 			TAG=$2
 			shift
 			;;
+		-f|--file)
+			FILENAME=$2
+			shift
+			;;
 		pull)
 			TASK="pull_images"
 			TAG_REQUIRED=yes
@@ -158,6 +184,9 @@ while [ $# -gt 0 ] ; do
 		rm)
 			TASK="remove_containers"
 			;;
+		backupdb)
+			TASK="backupdb"
+			FILENAME_REQUIRED=yes
 	esac
 	shift
 done
@@ -171,6 +200,13 @@ fi
 
 if [ "$TAG_REQUIRED" = "yes" ] && [ -z "$TAG" ] ; then
 	echo "ERROR: Please specify a release tag!"
+	echo
+	help
+	exit 1
+fi
+
+if [ "$FILENAME_REQUIRED" = "yes" ] && [ -z "$FILENAME" ] ; then
+	echo "ERROR: Please specify a file name!"
 	echo
 	help
 	exit 1
