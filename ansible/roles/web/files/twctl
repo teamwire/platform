@@ -25,6 +25,27 @@ check_config_file() {
 	fi
 }
 
+get_mysql_configuration() {
+	MYSQL_HOST="$(awk '/^mysql_host/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
+	MYSQL_PORT="$(awk '/^mysql_port/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
+	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
+	AESKEY="$(awk '/aes_key:/ { print $2 }' "$CONFIG_FILE" | sed 's|^\"\(.*\)\"$|\1|' )" 2> /dev/null
+
+	if [ -z "$MYSQL_HOST" ]; then
+		MYSQL_HOST=$(ifconfig docker0 | awk -F'[ :]+' '/inet addr/{print $4}')
+	fi
+
+	if [ -z "$MYSQL_PORT" ]; then
+		MYSQL_PORT=3306
+	fi
+
+	if [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
+		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
+		echo "       Please ensure the file exists and the database is configured."
+		exit 1
+	fi
+}
+
 help() {
 	echo "Command line options:"
 	echo
@@ -58,25 +79,7 @@ remove_containers() {
 run_migrations() {
 	check_tag "$TAG"
 	check_config_file
-
-	MYSQL_HOST="$(awk '/^mysql_host/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
-	MYSQL_PORT="$(awk '/^mysql_port/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
-	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
-	AESKEY="$(awk '/aes_key:/ { print $2 }' "$CONFIG_FILE" | sed 's|^\"\(.*\)\"$|\1|' )" 2> /dev/null
-
-	if [ -z "$MYSQL_HOST" ]; then
-		MYSQL_HOST=$(ifconfig docker0 | awk -F'[ :]+' '/inet addr/{print $4}')
-	fi
-
-	if [ -z "$MYSQL_PORT" ]; then
-		MYSQL_PORT=3306
-	fi
-
-	if [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
-		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
-		echo "       Please ensure the file exists and the database is configured."
-		exit 1
-	fi
+	get_mysql_configuration
 
 	ERROR_LOG="$(tempfile)"
 
