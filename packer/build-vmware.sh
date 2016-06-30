@@ -21,7 +21,7 @@ packer build \
 	-var "http_directory=." \
 	-var "ssh_password=$PASSWORD" \
     -only teamwire-server-vmware \
-	"teamwire-server-ubuntu.json"
+	"teamwire-server-debian.json"
 popd > /dev/null
 
 # Convert the VM and create a compressed archive of the result
