@@ -155,7 +155,9 @@
 			"type": "shell",
 			"inline": [
 				"sudo apt-get clean",
-				"sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+				"sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+				"sudo dd if=/dev/zero of=/zeroes bs=1M || true",
+				"sudo rm -f /zeroes"
 			]
 		}
 	],
