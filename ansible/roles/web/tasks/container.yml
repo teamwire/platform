@@ -1,4 +1,8 @@
 ---
+- name: Ensure aes_key is configured before setting up containers
+  fail: msg="AES key is not defined. Please check the configuration file"
+  when: config_done is defined and aes_key is defined and aes_key == None
+
 - name: Retrieve and run the Teamwire backend main container
   when: config_done is defined
   docker:
