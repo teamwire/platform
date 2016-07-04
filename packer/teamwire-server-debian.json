@@ -32,7 +32,12 @@
 				"hostname={{ .Name }} domain=localdomain",
 				"<enter>"
 			],
-			"headless": true
+			"headless": true,
+			"guest_os_type": "debian8-64",
+			"vmx_data": {
+				"memsize": "2048",
+				"numvcpus": "2"
+			}
 		},
 		{
 			"name": "teamwire-server-vmware-vagrant",
@@ -55,7 +60,12 @@
 				"hostname={{ .Name }} domain=localdomain",
 				"<enter>"
 			],
-			"headless": true
+			"headless": true,
+			"guest_os_type": "debian8-64",
+			"vmx_data": {
+				"memsize": "2048",
+				"numvcpus": "2"
+			}
 		},
 		{
 			"name": "teamwire-server-virtualbox-vagrant",
