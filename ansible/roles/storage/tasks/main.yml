@@ -4,6 +4,7 @@
   with_items:
   - nfs-kernel-server
   - rpcbind
+  notify: restart NFS server
 
 - name: Create the NFS root directory
   file: name=/data state=directory
