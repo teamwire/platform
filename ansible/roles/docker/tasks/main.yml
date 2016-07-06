@@ -29,19 +29,33 @@
 - name: Add user 'teamwire' to the docker group
   user: name=teamwire groups=docker append=yes
 
-- name: Configure proxy for docker
-  when: http_proxy is defined
-  lineinfile: dest=/etc/default/docker regexp=http_proxy line='export http_proxy="{{http_proxy}}"'
-  notify: restart docker
-
-- name: Disable proxy for docker when no proxy is configured
-  when: http_proxy is not defined
-  lineinfile: dest=/etc/default/docker regexp=http_proxy line='# export http_proxy=""'
-  notify: restart docker
-
 - name: Create systemd drop-in directory for docker (Debian)
   file: name=/etc/systemd/system/docker.service.d state=directory
   when: ansible_distribution == "Debian"
+
+- name: Configure proxy for docker (Ubuntu)
+  when: http_proxy is defined and ansible_distribution == "Ubuntu"
+  lineinfile: dest=/etc/default/docker regexp=http_proxy line='export http_proxy="{{http_proxy}}"'
+  notify: restart docker
+
+- name: Disable proxy for docker when no proxy is configured (Ubuntu)
+  when: http_proxy is not defined and ansible_distribution == "Ubuntu"
+  lineinfile: dest=/etc/default/docker regexp=http_proxy line='# export http_proxy=""'
+  notify: restart docker
+
+- name: Configure proxy for docker (Debian)
+  when: http_proxy is defined and ansible_distribution == "Debian" and (not 'docker_registry' in groups or inventory_hostname == groups['docker_registry'] | first)
+  template: src=http-proxy.conf.j2 dest=/etc/systemd/system/docker.service.d/http-proxy.conf
+  notify:
+    - reload systemd
+    - restart docker
+
+- name: Disable proxy for docker when no proxy is configured (Debian)
+  when: http_proxy is not defined and ansible_distribution == "Debian"
+  file: name=/etc/systemd/system/docker.service.d/http-proxy.conf state=absent
+  notify:
+    - reload systemd
+    - restart docker
 
 - name: Configure the Docker registry proxy cache (Debian)
   when: ansible_distribution == "Debian" and 'docker_registry' in groups and inventory_hostname != groups['docker_registry'] | first
