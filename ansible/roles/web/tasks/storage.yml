@@ -1,32 +1,38 @@
 ---
-- file: path=/data owner=daemon group=ssl-cert mode=0750 state=directory
+- name: Create NFS mount point
+  file: path=/data owner=daemon group=ssl-cert mode=0750 state=directory
 
 # Mount external storage
+- name: Install NFS client
+  apt: pkg=nfs-common state=present
+  when: external_storage_path is defined or 'nfs_server' in groups
 
-
-- apt: pkg=nfs-common state=present
-  when: external_storage_path is defined or "'nfs_server' in group_names"
 - name: Mount NFS share (external)
   mount: name=/data fstype=nfs src="{{ external_storage_path }}" state=mounted
   when: external_storage_path is defined
+
 - name: "Mount NFS share (cluster)"
   mount: name=/data fstype=nfs src="{{ groups['nfs_server'] | first }}:/data" state=mounted
-  when: "'nfs_server' in groups"
+  when: external_storage_path is not defined and 'nfs_server' in groups
 
-# Create the backend storage directories
-- file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
+- name: Create the backend storage directories
+  file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
   when: config_done is defined
   with_items:
     - archiving
     - assets
     - website-screenshot-cache
     - beat
-- file: path=/data/{{ item }} owner=daemon group=ssl-cert mode=0750 state=directory
+
+- name: Create the backend certificate storage directories
+  file: path=/data/{{ item }} owner=daemon group=ssl-cert mode=0750 state=directory
   when: config_done is defined
   with_items:
     - certs
     - certs/apns
-- file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
+
+- name: Create the backend GPG storage directories
+  file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
   when: config_done is defined
 
 - name: Install the APNS certificate
