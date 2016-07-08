@@ -1,5 +1,5 @@
 ---
-- name: Create NFS mount point
+- name: Create local storage directory / NFS mount point
   file: path=/data owner=daemon group=ssl-cert mode=0750 state=directory
 
 # Mount external storage
