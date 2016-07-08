@@ -46,6 +46,27 @@ get_mysql_configuration() {
 	fi
 }
 
+save_container_logs() {
+	local LOGDIR=/var/log/teamwire
+	local CONTAINER
+
+	if [ ! -d "$LOGDIR" ] ; then
+		sudo mkdir "$LOGDIR"
+	fi
+
+	for CONTAINER in $CONTAINERS ; do
+		local DATE_CREATED
+		local LOG_FILE
+
+		DATE_CREATED=$(docker inspect -f "{{ .Created }}" "$CONTAINER")
+		LOG_FILE=$(docker inspect -f "{{ .LogPath }}" "$CONTAINER")
+		local OUT_FILE="$LOGDIR/$CONTAINER-$DATE_CREATED.log"
+		sudo cp "$LOG_FILE" "$OUT_FILE"
+		sudo chgrp docker "$OUT_FILE"
+		sudo gzip -f "$OUT_FILE" &
+	done
+}
+
 help() {
 	echo "Command line options:"
 	echo
@@ -93,6 +114,9 @@ pull_images() {
 }
 
 remove_containers() {
+	# Save the logs of the containers before deleting them
+	save_container_logs
+
 	for CONTAINER in $CONTAINERS; do
 		docker rm "$CONTAINER"
 	done
@@ -141,6 +165,9 @@ setup_containers() {
 		exit 1
 	fi
 
+	# Save the logs of the running containers
+	save_container_logs
+
 	# Write given tag into config file
 	sed -i -e 's/^\(version: \).*$/\1'"$TAG"'/' $CONFIG_FILE
 
@@ -187,6 +214,9 @@ while [ $# -gt 0 ] ; do
 		backupdb)
 			TASK="backupdb"
 			FILENAME_REQUIRED=yes
+			;;
+		exportlogs)
+			TASK="save_container_logs"
 	esac
 	shift
 done
