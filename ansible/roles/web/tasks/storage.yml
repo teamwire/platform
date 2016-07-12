@@ -13,7 +13,7 @@
 
 - name: "Mount NFS share (cluster)"
   mount: name=/data fstype=nfs src="{{ groups['nfs_server'] | first }}:/data" state=mounted
-  when: external_storage_path is not defined and 'nfs_server' in groups
+  when: config_done is defined and external_storage_path is not defined and 'nfs_server' in groups
 
 - name: Create the backend storage directories
   file: path=/data/{{ item }} owner=daemon mode=0750 state=directory

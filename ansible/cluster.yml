@@ -7,7 +7,7 @@
 - name: Deploy and configure MySQL database
   hosts: database_server
   roles:
-    - role: db
+    - { role: db, when: config_done is defined and mysql_host is not defined }
 
 - name: Deploy and configure Redis database
   hosts: database_server
@@ -18,7 +18,7 @@
   hosts: docker_registry
   roles:
     - docker
-    - docker-registry
+    - { role: docker-registry, when: config_done is defined }
 
 - name: Deploy and configure NFS server
   hosts: nfs_server
