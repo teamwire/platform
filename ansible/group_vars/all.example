@@ -42,6 +42,14 @@ external_hostname:
 #   - ptbtime2.ptb.de
 #   - ptbtime3.ptb.de
 
+# DNS server
+# If you do not use DHCP to configure the network, you can uncomment the
+# following section to configure DNS servers manually. The defaults given
+# here are the public DNS servers provided by Google.
+# dns_servers:
+#   - 8.8.8.8
+#   - 8.8.4.4
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################

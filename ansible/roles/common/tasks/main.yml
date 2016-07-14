@@ -79,6 +79,10 @@
   with_items: "{{ groups['all'] | default([]) }}"
   when: item != inventory_hostname
 
+- name: Configure DNS servers
+  template: src=resolv.conf.j2 dest=/etc/resolv.conf
+  when: dns_servers is defined
+
 # send outgoing mail over smarthost
 - name: Install Postfix
   apt: pkg=postfix
