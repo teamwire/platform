@@ -5,5 +5,6 @@ packer/teamwire-server-*.tar.*
 packer/teamwire-server.ova
 packer/packer_cache/
 packer/output-teamwire-server*
-ansible/group_vars/all
+ansible/group_vars/*
+!ansible/group_vars/*.example
 **/*.retry
