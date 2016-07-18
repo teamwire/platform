@@ -171,7 +171,7 @@ setup_containers() {
 	# Write given tag into config file
 	sed -i -e 's/^\(version: \).*$/\1'"$TAG"'/' $CONFIG_FILE
 
-	ansible-playbook --sudo -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
+	ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
 }
 
 TAG=""
