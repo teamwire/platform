@@ -64,6 +64,11 @@
     - reload systemd
     - restart docker
 
+- name: Start Docker after mounting NFS shares (Debian)
+  when: ansible_distribution == "Debian"
+  copy: src=wait_for_nfs.conf dest=/etc/systemd/system/docker.service.d/wait_for_nfs.conf
+  notify: reload systemd
+
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
 # following step, otherwise the login would fail when a proxy is configured.
