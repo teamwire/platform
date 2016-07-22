@@ -4,6 +4,12 @@
   roles:
     - common
 
+- name: Configure Consul on all nodes
+  hosts: all
+  serial: 1
+  roles:
+    - consul
+
 - name: Deploy and configure MySQL database
   hosts: database_server
   roles:

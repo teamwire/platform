@@ -46,6 +46,7 @@
   - haveged
   - ldap-utils
   - heirloom-mailx
+  - unzip
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent purge=yes
@@ -81,7 +82,7 @@
 
 - name: Configure DNS servers
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
-  when: dns_servers is defined
+  when: dns_servers is defined and consul_role is not defined
 
 # send outgoing mail over smarthost
 - name: Install Postfix

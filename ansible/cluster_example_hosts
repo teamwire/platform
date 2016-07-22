@@ -1,3 +1,9 @@
+[all]
+tw1 consul_role=server
+tw2 consul_role=server
+tw3 consul_role=server
+db1 consul_role=client
+
 [backend_servers]
 tw1
 tw2

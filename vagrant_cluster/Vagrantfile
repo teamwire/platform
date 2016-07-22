@@ -10,9 +10,13 @@ HOSTS = {
 
 GROUPS = {
   'backend_servers' => [ 'tw1', 'tw2', 'tw3' ],
+  'backend_servers:vars' => { 'consul_role' => 'server' },
   'database_server' => [ 'db1' ],
+  'database_server:vars' => { 'consul_role' => 'client' },
   'docker_registry' => [ 'db1' ],
-  'nfs_server' => [ 'db1' ]
+  'docker_registry:vars' => { 'consul_role' => 'client' },
+  'nfs_server' => [ 'db1' ],
+  'nfs_server:vars' => { 'consul_role' => 'client' }
 }
 
 Vagrant.configure(2) do |config|

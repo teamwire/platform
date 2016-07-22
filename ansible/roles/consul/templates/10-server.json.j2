@@ -1,0 +1,5 @@
+{
+	"server": true,
+	"ui_dir": "/usr/local/share/consul-ui/",
+	"bootstrap_expect": {{ groups['backend_servers'] | length() }}
+}

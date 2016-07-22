@@ -1,0 +1,16 @@
+{
+	"data_dir": "/var/lib/consul",
+	"client_addr": "0.0.0.0",
+	"retry_join": [ {% for host in groups['backend_servers'] %}"{{ host }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
+	"rejoin_after_leave": true,
+	"dns_config": {
+		"allow_stale": true,
+		"max_stale": "10s",
+		"service_ttl": {
+			"*": "2s"
+		}
+	},
+	"enable_syslog": true,
+	"disable_update_check": true,
+	"disable_remote_exec": true
+}

@@ -1,0 +1,5 @@
+# This playbook applies to backend cluster nodes and the single server installation
+- hosts: all:!local
+  roles:
+  - role: ../../roles/consul
+  serial: 1
