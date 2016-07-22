@@ -9,6 +9,15 @@
 	real_ip_recursive on;
 
 {% endif %}
+
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+	proxy_set_header Host $http_host;
+	proxy_buffering off;
+	# we don't want nginx trying to do something clever with
+	# redirects, we set the Host: header above already.
+	proxy_redirect off;
+
 	# The notification server
 	location /notifications/ {
 		proxy_pass http://teamwire_notification_server/;
@@ -19,27 +28,10 @@
 
 	# The web screenshot service
 	location /web-screenshot/ {
-		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-		proxy_set_header Host $http_host;
 		proxy_pass http://teamwire_screenshot_server/;
 		proxy_read_timeout 180;
 	}
 
 	location / {
-		# checks for static file, if not found proxy to app
-		try_files $uri @proxy_to_app;
-	}
-
-	location @proxy_to_app {
-		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-		proxy_set_header X-Forwarded-Proto $scheme;
-		proxy_set_header Host $http_host;
-
-		# we don't want nginx trying to do something clever with
-		# redirects, we set the Host: header above already.
-		proxy_redirect off;
-
-		proxy_buffering off;
-
 		proxy_pass http://teamwire_backend;
 	}
