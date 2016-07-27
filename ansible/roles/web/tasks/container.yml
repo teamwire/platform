@@ -50,6 +50,7 @@
     state: reloaded
     restart_policy: always
     net: bridge
+    ports: "8082:8080"
     volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
     env:
       MODE: worker
