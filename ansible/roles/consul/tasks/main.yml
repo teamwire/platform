@@ -15,6 +15,13 @@
 - name: Resolve DNS using dnsmasq
   copy: content="nameserver 127.0.0.1\n" dest=/etc/resolv.conf
 
+- name: Configure DHCP client to use local DNS server
+  lineinfile:
+    regexp="^#+prepend domain-name-servers"
+    backrefs=yes
+    line="prepend domain-name-servers 127.0.0.1;"
+    dest=/etc/dhcp/dhclient.conf
+
 # Ensure we have a valid DNS configuragtion
 - meta: flush_handlers
 
