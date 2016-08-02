@@ -49,25 +49,6 @@
   unarchive: src=/root/consul_0.6.4_web_ui.zip dest=/usr/local/share/consul-ui copy=no
   when: consul_ui_downloaded.changed
 
-# 8300: Server RPC
-# 8400: CLI RPC
-# 8500: HTTP API
-- name: Allow Consul nodes to access the Consul Server on the other nodes (TCP)
-  ufw: rule=allow port={{ item[0] }} proto=tcp src={{ hostvars[item[1]]['ansible_eth0']['ipv4']['address'] }}
-  with_nested:
-    - [ 8300, 8400, 8500 ]
-    - "{{ groups['all'] }}"
-  when: item[1] != inventory_hostname
-
-# 8301: Serf LAN
-# 8600: DNS
-- name: Allow Consul nodes to access the Consul Server on the other nodes (TCP + UDP)
-  ufw: rule=allow port={{ item[0] }} src={{ hostvars[item[1]]['ansible_eth0']['ipv4']['address'] }}
-  with_nested:
-    - [ 8301, 8600 ]
-    - "{{ groups['all'] }}"
-  when: item[1] != inventory_hostname
-
 - name: Create Consul config directory
   file: name=/etc/consul.d state=directory
 

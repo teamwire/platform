@@ -12,9 +12,3 @@
 - name: Write the NFS config
   template: src=exports.j2 dest=/etc/exports
   notify: reload NFS server
-
-- name: Allow Backend nodes to access the NFS server
-  ufw: rule=allow port={{ item[0] }} src={{ hostvars[item[1]]['ansible_eth0']['ipv4']['address'] }}
-  with_nested:
-    - [ 111, 2049 ]
-    - "{{ groups['backend_servers'] }}"

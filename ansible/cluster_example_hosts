@@ -1,8 +1,8 @@
 [all]
-tw1 consul_role=server
-tw2 consul_role=server
-tw3 consul_role=server
-db1 consul_role=client
+tw1 consul_role=server private_ip=10.0.1.5/24
+tw2 consul_role=server private_ip=10.0.1.6/24
+tw3 consul_role=server private_ip=10.0.1.7/24
+db1 consul_role=client private_ip=10.0.1.8/24
 
 [backend_servers]
 tw1

@@ -6,7 +6,7 @@
   - python-redis
 
 - name: Configure redis to listen on the docker0 interface
-  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" line="bind 127.0.0.1 172.17.0.1 {{ hostvars[inventory_hostname]['ansible_eth0']['ipv4']['address'] if 'backend_servers' in groups else '' }}"
+  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" line="bind 127.0.0.1 172.17.0.1 {{ hostvars[inventory_hostname]['ansible_eth1']['ipv4']['address'] if 'backend_servers' in groups else '' }}"
   notify: restart redis
 
 - name: Configure password for Redis
@@ -20,7 +20,3 @@
 
 - name: Start and enable Redis server
   service: name=redis-server state=started enabled=yes
-
-- name: Allow the backend servers to access Redis
-  ufw: rule=allow port=6379 src={{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}
-  with_items: "{{ groups['backend_servers'] |default([]) }} "

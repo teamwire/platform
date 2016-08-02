@@ -78,11 +78,6 @@
   when: config_done is defined
   lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }} {{ inventory_hostname if inventory_hostname not in ignore_hostnames else '' }}"
 
-- name: Add other cluster nodes to /etc/hosts
-  lineinfile: dest=/etc/hosts line="{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}\t{{ item }} "
-  with_items: "{{ groups['all'] | default([]) }}"
-  when: item != inventory_hostname
-
 - name: Configure DNS servers
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
   when: dns_servers is defined and consul_role is not defined
@@ -167,3 +162,6 @@
   when: ansible_distribution == "Ubuntu"
 - name: Install tmate
   apt: pkg=tmate
+
+- include: cluster.yml
+  when: groups['all'] | length() > 1

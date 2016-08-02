@@ -1,0 +1,5 @@
+auto eth1
+iface eth1 inet static
+	address {{ private_ip | ipaddr('address') }}
+	netmask {{ private_ip | ipaddr('netmask') }}
+	broadcast {{ private_ip | ipaddr('broadcast') }}

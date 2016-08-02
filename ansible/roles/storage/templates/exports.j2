@@ -1,1 +1,1 @@
-/data   {% for host in groups['backend_servers'] %}{{ host }}(rw,sync,no_root_squash,no_subtree_check){% if not loop.last %} {% endif %}{% endfor %}
+/data   {{ private_ip | ipaddr('subnet') }}(rw,sync,no_root_squash,no_subtree_check)

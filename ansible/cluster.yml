@@ -37,5 +37,5 @@
     - docker
     - web
   vars:
-    - redis_host: "{{ hostvars[groups['database_server'][0]].ansible_eth0.ipv4.address }}"
-    - mysql_host: "{{ hostvars[groups['database_server'][0]].ansible_eth0.ipv4.address }}"
+    - redis_host: "{{ hostvars[groups['database_server'][0]].ansible_eth1.ipv4.address }}"
+    - mysql_host: "{{ hostvars[groups['database_server'][0]].ansible_eth1.ipv4.address }}"
