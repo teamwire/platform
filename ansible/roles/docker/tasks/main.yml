@@ -1,12 +1,16 @@
 ---
 # Install and configure docker
+- name: Check if the Docker repository signing key needs to be installed
+  shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 2C52609D > /dev/null 2>&1 && echo present || echo absent"
+  register: docker_repo_key
+
 - name: Add the Docker repository signing key (direct connection)
   apt_key: id=58118E89F3A912897C070ADBF76221572C52609D keyserver=hkp://p80.pool.sks-keyservers.net:80 state=present
-  when: http_proxy is not defined
+  when: docker_repo_key.stdout == "absent" and http_proxy is not defined
 
 - name: Add the Docker repository signing key (via proxy server)
-  command: /bin/bash -c "gpg --keyring /etc/apt/trusted.gpg -k 2C52609D || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --keyserver-options http-proxy=\"{{http_proxy}}\" --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
-  when: http_proxy is defined
+  command: apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --keyserver-options http-proxy=\"{{http_proxy}}\" --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+  when: docker_repo_key.stdout == "absent" and http_proxy is defined
 
 - name: Add the Docker repository
   apt_repository: repo='deb https://apt.dockerproject.org/repo {{ansible_distribution|lower}}-{{ansible_distribution_release}} main' state=present
