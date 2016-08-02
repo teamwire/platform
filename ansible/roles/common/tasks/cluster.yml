@@ -14,7 +14,6 @@
 - name: Configure private network interface
   template: src=eth1.j2 dest=/etc/network/interfaces.d/eth1
   notify: start eth1
-  when: skip_private_if is not defined or not skip_private_if
 
 - name: Add other cluster nodes to /etc/hosts
   lineinfile: dest=/etc/hosts line="{{ hostvars[item]['private_ip'] | ipaddr('address') }}\t{{ item }} "
