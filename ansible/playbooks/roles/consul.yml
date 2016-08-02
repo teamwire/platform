@@ -1,4 +1,4 @@
-# This playbook applies to backend cluster nodes and the single server installation
+# This playbook applies to backend cluster nodes, not the single server installation
 - hosts: all:!local
   roles:
   - role: ../../roles/consul
