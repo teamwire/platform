@@ -99,3 +99,14 @@
 
 - name: Configure firewall to allow Docker containers access to the host
   ufw: rule=allow interface=docker0 direction=in
+
+- name: Run registrator in clustered setups
+  when: consul_role is defined and private_ip is defined
+  docker:
+    name: registrator
+    image: "gliderlabs/registrator:latest"
+    state: reloaded
+    restart_policy: always
+    net: host
+    volumes: "/var/run/docker.sock:/tmp/docker.sock"
+    command: "-ip {{ private_ip | ipaddr('address') }} consul://localhost:8500"
