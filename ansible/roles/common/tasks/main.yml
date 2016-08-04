@@ -7,6 +7,10 @@
   when: http_proxy is not defined
   file: dest=/etc/apt/apt.conf.d/01proxy state=absent
 
+- name: Ensure backports are enabled (Debian)
+  apt_repository: repo='deb http://ftp.debian.org/debian jessie-backports main' state=present
+  when: ansible_distribution == "Debian"
+
 - name: apt-get update
   apt: update_cache=yes
 
