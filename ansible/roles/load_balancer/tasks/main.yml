@@ -1,0 +1,83 @@
+---
+- name: Install packages
+  apt: pkg={{ item }}
+  with_items:
+  - unzip
+  - keepalived
+  - nginx-light
+
+- name: Open required firewall ports
+  ufw: rule=allow port={{ item }} proto=tcp
+  with_items:
+  - 80
+  - 443
+  - 2222
+
+- name: Re-use sockets in TIME_WAIT state for new connections
+  sysctl: name=net.ipv4.tcp_tw_reuse value=1 state=present
+
+- name: Allow incoming keepalived multicast traffic
+  ufw: rule=allow src=224.0.0.18
+
+- name: Write keepalived configuration file
+  template: src=keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf
+  notify: restart keepalived
+
+- name: Copy nginx main configuration file
+  copy: src=nginx.conf dest=/etc/nginx/nginx.conf
+  notify: reload nginx
+
+- name: Unlink the nginx default config
+  file: path=/etc/nginx/sites-enabled/default state=absent
+
+- name: Link generated backend config
+  file: src=/etc/nginx/sites-available/teamwire-backend dest=/etc/nginx/sites-enabled/teamwire-backend state=link force=yes
+
+  # Copy the SSL certificate
+- copy: src={{ ssl_certfile }} dest=/etc/ssl/private/teamwire-backend.crt mode=0640
+  notify: reload nginx
+  when: ssl_certfile is defined
+
+- copy: src={{ ssl_keyfile }} dest=/etc/ssl/private/teamwire-backend.key mode=0640
+  notify: reload nginx
+  when: ssl_keyfile is defined
+
+# Generate a new Diffie-Hellman group
+- command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
+  notify: reload nginx
+  when: ssl_certfile is defined and ssl_keyfile is defined
+  args:
+    creates: /etc/ssl/private/dhparams.pem
+
+- name: Download Consul Template
+  get_url:
+    url: https://releases.hashicorp.com/consul-template/0.14.0/consul-template_0.14.0_linux_amd64.zip
+    dest: /root/consul-template_0.14.0_linux_amd64.zip
+    checksum: sha256:7c70ea5f230a70c809333e75fdcff2f6f1e838f29cfb872e1420a63cdf7f3a78
+  register: consul_template_downloaded
+
+- name: Install the Consul Template binary
+  unarchive: src=/root/consul-template_0.14.0_linux_amd64.zip dest=/usr/local/sbin mode=0755 copy=no
+  notify: restart Consul Template
+  when: consul_template_downloaded.changed
+
+- name: Install Consul Template systemd config
+  copy: src=consul-template.service dest=/etc/systemd/system/consul-template.service
+  notify: reload systemd
+
+- name: Enable the Consul Template service
+  service: name=consul-template enabled=yes
+
+- name: Create Consul Template config directory
+  file: name=/etc/consul-template state=directory mode=0750
+
+- name: Create Consul Template template directory
+  file: name=/etc/consul-template/templates state=directory mode=0750
+
+- name: Copy Consul Template configuration file
+  copy: src=consul-template.hcl dest=/etc/consul-template/consul-template.hcl
+  notify: restart Consul Template
+
+- name: Write Consul Template nginx upstream templates
+  template: src=teamwire-backend.tmpl.j2 dest=/etc/consul-template/templates/teamwire-backend.tmpl
+  notify: restart Consul Template

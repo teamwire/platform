@@ -39,3 +39,8 @@
   vars:
     - redis_host: "{{ hostvars[groups['database_server'][0]].ansible_eth1.ipv4.address }}"
     - mysql_host: "{{ hostvars[groups['database_server'][0]].ansible_eth1.ipv4.address }}"
+
+- name: Deploy and configure the load balancers
+  hosts: load_balancers
+  roles:
+    - load_balancer

@@ -1,0 +1,71 @@
+{% raw -%}
+# Backend
+upstream teamwire_backend {
+	# fail_timeout=0 means we always retry an upstream even if it failed
+	# to return a good HTTP response.
+	least_conn;
+	{{- range service "backend"}}
+	server {{.Address}}:{{.Port}} fail_timeout=0;
+	{{- end}}
+}
+
+# Notification Server
+upstream teamwire_notification_server {
+	{{- range service "notification-server-9080"}}
+	server {{.Address}}:{{.Port}};
+	{{- end}}
+}
+
+# Web Screenshot Server
+upstream teamwire_screenshot_server {
+	least_conn;
+	{{- range service "web-screenshot-server"}}
+	server {{.Address}}:{{.Port}};
+	{{- end}}
+}
+
+server {
+{% endraw %}
+{% if ssl_certfile is defined and ssl_keyfile is defined %}
+	listen 443 ssl default_server;
+
+	ssl_certificate /etc/ssl/private/teamwire-backend.crt;
+	ssl_certificate_key /etc/ssl/private/teamwire-backend.key;
+	ssl_dhparam /etc/ssl/private/dhparams.pem;
+{% else %}
+	listen 80 default_server;
+{% endif %}
+{% raw %}
+	client_max_body_size 64M;
+	keepalive_timeout 10;
+
+	# The notification server
+	location /notifications/ {
+		proxy_pass http://teamwire_notification_server;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection "upgrade";
+	}
+
+	# The web screenshot service
+	location /web-screenshot/ {
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header Host $http_host;
+		proxy_pass http://teamwire_screenshot_server/;
+		proxy_read_timeout 180;
+	}
+
+	location / {
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+		proxy_set_header Host $http_host;
+
+		# we don't want nginx trying to do something clever with
+		# redirects, we set the Host: header above already.
+		proxy_redirect off;
+
+		proxy_buffering off;
+		proxy_pass http://teamwire_backend;
+	}
+}
+{% endraw -%}

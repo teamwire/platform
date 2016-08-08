@@ -1,0 +1,12 @@
+---
+- name: reload systemd
+  command: systemctl daemon-reload
+
+- name: restart keepalived
+  service: name=keepalived state=restarted
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+
+- name: restart Consul Template
+  service: name=consul-template state=restarted
