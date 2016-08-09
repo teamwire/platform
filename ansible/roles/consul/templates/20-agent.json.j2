@@ -1,7 +1,7 @@
 {
 	"data_dir": "/var/lib/consul",
 	"client_addr": "0.0.0.0",
-	"retry_join": [ {% for host in groups['backend_servers'] %}"{{ host }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
+	"retry_join": [ {% for srv in groups['consul_servers'] %}"{{ srv }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
 	"rejoin_after_leave": true,
 	"dns_config": {
 		"allow_stale": true,

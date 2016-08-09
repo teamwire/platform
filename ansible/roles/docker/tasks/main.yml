@@ -101,7 +101,7 @@
   ufw: rule=allow interface=docker0 direction=in
 
 - name: Run registrator in clustered setups
-  when: consul_role is defined and private_ip is defined
+  when: private_ip is defined and 'consul_servers' in groups
   docker:
     name: registrator
     image: "gliderlabs/registrator:latest"

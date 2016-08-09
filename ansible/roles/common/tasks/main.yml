@@ -84,7 +84,7 @@
 
 - name: Configure DNS servers
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
-  when: dns_servers is defined and consul_role is not defined
+  when: dns_servers is defined and "consul_servers" not in group_names
 
 # send outgoing mail over smarthost
 - name: Install Postfix

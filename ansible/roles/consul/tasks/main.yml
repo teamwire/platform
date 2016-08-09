@@ -26,10 +26,6 @@
 - meta: flush_handlers
 
 # Consul
-- name: Ensure consul_role is defined before installing Consul
-  fail: msg="consul_role is not defined. Please check the hosts file"
-  when: consul_role is not defined
-
 - name: Download Consul
   get_url:
     url: https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip
@@ -61,7 +57,7 @@
 
 - name: Write Consul server configuration file
   template: src=10-server.json.j2 dest=/etc/consul.d/10-server.json
-  when: consul_role == "server"
+  when: '"consul_servers" in group_names'
   notify: restart consul
 
 - name: Write Consul agent configuration file

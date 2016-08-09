@@ -1,12 +1,17 @@
 [all]
 lb1 private_ip=10.0.1.3/24
 lb2 private_ip=10.0.1.4/24
-tw1 consul_role=server private_ip=10.0.1.5/24
-tw2 consul_role=server private_ip=10.0.1.6/24
-tw3 consul_role=server private_ip=10.0.1.7/24
-db1 consul_role=client private_ip=10.0.1.8/24
+tw1 private_ip=10.0.1.5/24
+tw2 private_ip=10.0.1.6/24
+tw3 private_ip=10.0.1.7/24
+db1 private_ip=10.0.1.8/24
 
 [backend_servers]
+tw1
+tw2
+tw3
+
+[consul_servers]
 tw1
 tw2
 tw3
@@ -25,6 +30,5 @@ lb1
 lb2
 
 [load_balancers:vars]
-consul_role=client
 loadbalancer_external_ip=10.0.1.2
 loadbalancer_password="12secr34"
