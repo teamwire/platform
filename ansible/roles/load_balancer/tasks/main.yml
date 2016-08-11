@@ -16,6 +16,9 @@
 - name: Re-use sockets in TIME_WAIT state for new connections
   sysctl: name=net.ipv4.tcp_tw_reuse value=1 state=present
 
+- name: Ensure netfilter can handle a sufficient amount of connections
+  sysctl: name=net.nf_conntrack_max value=65536 state=present
+
 - name: Allow incoming keepalived multicast traffic
   ufw: rule=allow src=224.0.0.18
 
