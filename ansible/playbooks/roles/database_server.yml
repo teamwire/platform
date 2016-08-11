@@ -1,0 +1,5 @@
+- hosts: database_server
+  roles:
+    - { role: ../../roles/db, when: config_done is defined and mysql_host is not defined }
+
+
