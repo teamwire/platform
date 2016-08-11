@@ -2,21 +2,25 @@
 # vi: set ft=ruby :
 
 HOSTS = {
+  'lb1' => { :private_ip => '10.0.1.3/24' },
+  'lb2' => { :private_ip => '10.0.1.4/24' },
   'tw1' => { :private_ip => '10.0.1.5/24' },
   'tw2' => { :private_ip => '10.0.1.6/24' },
   'tw3' => { :private_ip => '10.0.1.7/24' },
-  'db1' => { :private_ip => '10.0.1.8/24' },
+  'tw4' => { :private_ip => '10.0.1.8/24' },
+  'tw5' => { :private_ip => '10.0.1.9/24' },
+  'tw6' => { :private_ip => '10.0.1.10/24' },
+  'db1' => { :private_ip => '10.0.1.11/24' },
 }
 
 GROUPS = {
-  'backend_servers' => [ 'tw1', 'tw2', 'tw3' ],
-  'backend_servers:vars' => { 'consul_role' => 'server' },
+  'backend_servers' => [ 'tw1', 'tw2', 'tw3', 'tw4', 'tw5', 'tw6' ],
+  'consul_servers'  => [ 'tw1', 'tw2', 'tw3' ],
   'database_server' => [ 'db1' ],
-  'database_server:vars' => { 'consul_role' => 'client' },
   'docker_registry' => [ 'db1' ],
-  'docker_registry:vars' => { 'consul_role' => 'client' },
+  'load_balancers'  => [ 'lb1', 'lb2' ],
+  'load_balancers:vars' => { 'loadbalancer_password' => 'foobar99', 'loadbalancer_external_ip' => '10.0.1.2' },
   'nfs_server' => [ 'db1' ],
-  'nfs_server:vars' => { 'consul_role' => 'client' }
 }
 
 Vagrant.configure(2) do |config|
