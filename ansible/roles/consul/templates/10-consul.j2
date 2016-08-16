@@ -1,5 +1,5 @@
 server=/consul/127.0.0.1#8600
-{% for host in groups['backend_servers'] -%}
+{% for host in groups['consul_servers'] -%}
 {% if host != inventory_hostname -%}
 server=/consul/{{ hostvars[host]['private_ip'] | ipaddr('address') }}#8600
 {% endif %}
