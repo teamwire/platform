@@ -80,7 +80,7 @@
 
 - name: Add hostname to localhost
   when: config_done is defined
-  lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }} {{ inventory_hostname if inventory_hostname not in ignore_hostnames else '' }}"
+  lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }}"
 
 - name: Configure DNS servers
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
