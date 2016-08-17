@@ -64,9 +64,9 @@
     - reload systemd
     - restart docker
 
-- name: Configure the Docker registry proxy cache (Debian)
-  when: ansible_distribution == "Debian" and 'docker_registry' in groups and inventory_hostname != groups['docker_registry'] | first
-  template: src=registry.conf.j2 dest=/etc/systemd/system/docker.service.d/registry.conf
+- name: Configure Docker daemon parameters (Debian)
+  when: ansible_distribution == "Debian"
+  template: src=docker.conf.j2 dest=/etc/systemd/system/docker.service.d/docker.conf
   notify:
     - reload systemd
     - restart docker

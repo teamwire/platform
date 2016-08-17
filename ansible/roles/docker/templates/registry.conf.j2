@@ -1,3 +1,0 @@
-[Service]
-ExecStart=
-ExecStart=/usr/bin/docker daemon -H fd:// --registry-mirror http://{{ groups['docker_registry'] | first }}:5000 --insecure-registry {{ groups['docker_registry'] | first }}:5000"
