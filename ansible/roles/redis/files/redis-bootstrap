@@ -1,0 +1,137 @@
+#!/bin/bash
+
+. /usr/local/etc/redis-bootstrap.conf
+
+REDIS_CMD="/usr/bin/redis-cli"
+
+if [ ! -x "$REDIS_CMD" ] ; then
+	echo "Redis CLI is not installed, cannot continue!"
+	exit 1
+fi
+
+if [ -n "$REDIS_PASS" ] ; then
+	REDIS_CMD+=" -a ${REDIS_PASS}"
+fi
+
+REDIS_DIR="/local/redis"
+
+DOCKER_BASE_CMD="/usr/bin/docker run
+		--detach
+		--restart always
+		--network host
+		--volume ${REDIS_DIR}:/data:rw"
+
+REDIS_CHECK_SCRIPT="${REDIS_CMD} -h ${HOSTNAME} -p ${REDIS_PORT} info | egrep role:master || return 2"
+
+get_redis_master() {
+	for NODE in "${CLUSTER_NODES[@]}"; do
+		if $REDIS_CMD -h $NODE info 2> /dev/null | egrep -q "role:master" ; then
+			echo "$NODE"
+			return
+		fi
+	done
+	echo ""
+}
+
+check_local_service() {
+	local SERVICE="$1"
+	local STATE
+
+	if [ -z "$SERVICE" ] ; then
+		echo "Error: please specify a service to check."
+		exit 1
+	fi
+
+	if ! STATE=$(docker inspect -f "{{ .State.Status }}" "$SERVICE") ; then
+		return 1
+	fi
+
+	if [ "$STATE" != "running" ] ; then
+		# remove stopped service
+		docker rm "$SERVICE"
+		return 1
+	fi
+
+	return
+}
+
+setup_redis() {
+	local REDIS_MASTER="$1"
+	local REDIS_CMDLINE="redis-server /data/redis.conf
+			--dir /data
+			--bind ${HOSTNAME}
+			--loglevel verbose
+			--port ${REDIS_PORT}
+			--min-slaves-to-write 1"
+
+	if [ -n "$REDIS_PASS" ] ; then
+		REDIS_CMDLINE+="
+			--masterauth ${REDIS_PASS}
+			--requirepass ${REDIS_PASS}"
+	fi
+
+	if [ -n "$REDIS_MASTER" ] ; then
+		REDIS_CMDLINE+=" --slaveof ${REDIS_MASTER} ${REDIS_PORT}"
+	fi
+
+	# Ensure config file is present
+	touch "${REDIS_DIR}/redis.conf"
+
+	${DOCKER_BASE_CMD} \
+		-p ${REDIS_PORT}:${REDIS_PORT} \
+		--name redis \
+		--env SERVICE_CHECK_SCRIPT="${REDIS_CHECK_SCRIPT}" \
+		--env SERVICE_TAGS=${SERVICE_NAME} \
+		${DOCKER_IMAGE} \
+		${REDIS_CMDLINE}
+}
+
+setup_sentinel() {
+	local REDIS_MASTER="$1"
+
+	if [ -z "$REDIS_MASTER" ] ; then
+		echo "Error: cannot setup redis sentinel without master"
+	fi
+
+	# Ensure config file is present
+	if [ ! -f /local/redis/sentinel.conf ] ; then
+		echo "
+			dir /data
+			loglevel verbose
+			bind ${HOSTNAME}
+			port 2${REDIS_PORT}
+			sentinel monitor ${SERVICE_NAME} ${REDIS_MASTER} ${REDIS_PORT} 2
+			sentinel down-after-milliseconds ${SERVICE_NAME} 5000" | sudo tee /local/redis/sentinel.conf > /dev/null
+
+		if [ -n "$REDIS_PASS" ] ; then
+			echo "
+				masterauth ${REDIS_PASS}
+				sentinel auth-pass ${SERVICE_NAME} ${REDIS_PASS}" | sudo tee -a /local/redis/sentinel.conf > /dev/null
+		fi
+	fi
+
+	local SENTINEL_CMDLINE="redis-sentinel /data/sentinel.conf"
+
+	sudo touch "${REDIS_DIR}/redis.conf"
+	${DOCKER_BASE_CMD} \
+		-p 2${REDIS_PORT}:2${REDIS_PORT} \
+		--name redis-sentinel \
+		--env SERVICE_NAME=redis-sentinel \
+		--env SERVICE_TAGS=${SERVICE_NAME} \
+		${DOCKER_IMAGE} \
+		${SENTINEL_CMDLINE}
+}
+
+# Setup Redis
+if ! check_local_service redis ; then
+	setup_redis $(get_redis_master)
+else
+	echo "Not configuring Redis. Already running."
+fi
+
+# Setup Sentinel
+if ! check_local_service redis-sentinel ; then
+	setup_sentinel $(get_redis_master)
+else
+	echo "Not configuring Redis Sentinel. Already running."
+fi

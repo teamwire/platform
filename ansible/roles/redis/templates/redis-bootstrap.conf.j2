@@ -1,0 +1,5 @@
+CLUSTER_NODES=({% for host in groups['redis_servers'] -%}{{ host }} {% endfor %})
+REDIS_PASS="{{ redis_pass }}"
+REDIS_PORT=6379
+DOCKER_IMAGE="redis:3.2.3-alpine"
+SERVICE_NAME="teamwire"

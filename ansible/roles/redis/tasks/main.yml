@@ -1,22 +1,16 @@
+---
 - name: Install Redis
   apt: name={{item}} state=present
   with_items:
-  - redis-server
   - redis-tools
   - python-redis
-
-- name: Configure redis to listen on the docker0 interface
-  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" line="bind 127.0.0.1 172.17.0.1 {{ hostvars[inventory_hostname]['ansible_eth1']['ipv4']['address'] if 'backend_servers' in groups else '' }}"
-  notify: restart redis
-
-- name: Configure password for Redis
-  action: lineinfile dest=/etc/redis/redis.conf regexp="^(# )+requirepass" backrefs=yes line="requirepass {{ redis_pass }}"
-  when: redis_pass is defined
-  notify: restart redis
 
 # See http://redis.io/topics/faq for details
 - name: Enable vm.overcommit_memory for Redis
   sysctl: name=vm.overcommit_memory value=1 state=present reload=yes
 
-- name: Start and enable Redis server
-  service: name=redis-server state=started enabled=yes
+- include: single.yml
+  when: "'redis_servers' not in groups"
+
+- include: cluster.yml
+  when: "'redis_servers' in groups"

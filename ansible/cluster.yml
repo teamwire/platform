@@ -15,8 +15,9 @@
   roles:
     - { role: db, when: config_done is defined and mysql_host is not defined }
 
-- name: Deploy and configure Redis database
-  hosts: database_server
+- name: Deploy and configure Redis database cluster
+  hosts: redis_servers
+  serial: 1
   roles:
     - redis
 
@@ -37,7 +38,6 @@
     - docker
     - web
   vars:
-    - redis_host: "{{ hostvars[groups['database_server'][0]].ansible_eth1.ipv4.address }}"
     - mysql_host: "{{ hostvars[groups['database_server'][0]].ansible_eth1.ipv4.address }}"
 
 - name: Deploy and configure the load balancers

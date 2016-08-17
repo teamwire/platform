@@ -1,0 +1,15 @@
+---
+- name: Copy Redis cluster bootstrap script
+  copy: src=redis-bootstrap dest=/usr/local/bin mode=0750 owner=root group=root
+
+- name: Write Redis cluster bootstrap script config
+  template: src=redis-bootstrap.conf.j2 dest=/usr/local/etc/redis-bootstrap.conf mode=0600 owner=root group=root
+
+- name: Create Redis cluster data directory
+  file: dest={{ item }} state=directory owner=root group=root mode=0750
+  with_items:
+  - /local
+  - /local/redis
+
+- name: Run Redis cluster bootstrap script
+  command: /usr/local/bin/redis-bootstrap

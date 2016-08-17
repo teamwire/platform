@@ -17,6 +17,7 @@ GROUPS = {
   'backend_servers' => [ 'tw1', 'tw2', 'tw3', 'tw4', 'tw5', 'tw6' ],
   'consul_servers'  => [ 'tw1', 'tw2', 'tw3' ],
   'database_server' => [ 'db1' ],
+  'redis_servers'   => [ 'tw1', 'tw2', 'tw3' ],
   'docker_registry' => [ 'db1' ],
   'load_balancers'  => [ 'lb1', 'lb2' ],
   'load_balancers:vars' => { 'loadbalancer_password' => 'foobar99', 'loadbalancer_external_ip' => '10.0.1.2' },
