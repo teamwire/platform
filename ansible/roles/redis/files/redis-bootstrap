@@ -21,7 +21,7 @@ DOCKER_BASE_CMD="/usr/bin/docker run
 		--network host
 		--volume ${REDIS_DIR}:/data:rw"
 
-REDIS_CHECK_SCRIPT="${REDIS_CMD} -h ${HOSTNAME} -p ${REDIS_PORT} info | egrep role:master || return 2"
+REDIS_CHECK_SCRIPT="${REDIS_CMD} -h ${REDIS_BINDIP} -p ${REDIS_PORT} info | egrep role:master || return 2"
 
 get_redis_master() {
 	for NODE in "${CLUSTER_NODES[@]}"; do
@@ -59,7 +59,7 @@ setup_redis() {
 	local REDIS_MASTER="$1"
 	local REDIS_CMDLINE="redis-server /data/redis.conf
 			--dir /data
-			--bind ${HOSTNAME}
+			--bind ${REDIS_BINDIP}
 			--loglevel verbose
 			--port ${REDIS_PORT}
 			--min-slaves-to-write 1"
@@ -98,7 +98,7 @@ setup_sentinel() {
 		echo "
 			dir /data
 			loglevel verbose
-			bind ${HOSTNAME}
+			bind ${REDIS_BINDIP}
 			port 2${REDIS_PORT}
 			sentinel monitor ${SERVICE_NAME} ${REDIS_MASTER} ${REDIS_PORT} 2
 			sentinel down-after-milliseconds ${SERVICE_NAME} 5000" | sudo tee /local/redis/sentinel.conf > /dev/null
