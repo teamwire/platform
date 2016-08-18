@@ -1,6 +1,3 @@
 ---
-- name: reload MySQL
-  service: name=mysql state=reloaded
-
-- name: restart MySQL
+- name: restart MariaDB
   service: name=mysql state=restarted

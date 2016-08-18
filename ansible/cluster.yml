@@ -11,7 +11,7 @@
     - consul
 
 - name: Deploy and configure MySQL database
-  hosts: database_server
+  hosts: database_servers
   roles:
     - { role: db, when: config_done is defined and mysql_host is not defined }
 
@@ -37,8 +37,6 @@
   roles:
     - docker
     - web
-  vars:
-    - mysql_host: "{{ hostvars[groups['database_server'][0]].ansible_eth1.ipv4.address }}"
 
 - name: Deploy and configure the load balancers
   hosts: load_balancers

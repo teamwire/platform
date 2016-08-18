@@ -1,0 +1,20 @@
+- hosts: database_servers
+  tasks:
+  - name: Stop MySQL on all cluster nodes
+    service: name=mysql state=stopped
+
+  - name: fetch debian.conf from first master
+    fetch: src=/etc/mysql/debian.cnf dest=debian.cnf flat=yes
+    when: inventory_hostname == groups['database_servers'] | first
+
+  - name: copy debian.conf to other masters
+    copy: src=debian.cnf dest=/etc/mysql/debian.cnf
+    when: inventory_hostname != groups['database_servers'] | first
+
+  - name: bootstrap database on first master
+    command: /usr/bin/galera_new_cluster
+    when: inventory_hostname == groups['database_servers'] | first
+
+  - name: start service normally on other masters
+    service: name=mysql state=started
+    when: inventory_hostname != groups['database_servers'] | first
