@@ -142,10 +142,12 @@
 # Keep track of the plattform repository
 - name: Install git
   apt: pkg=git state=present
+  when: groups['all'] | length() == 1
 
 - name: Check out the teamwire/platform git repository
   git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=no
   notify: fix ownership of git checkout
+  when: groups['all'] | length() == 1
 
 - stat: path=/home/teamwire/platform/ansible/group_vars/all
   register: config_file
