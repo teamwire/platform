@@ -24,8 +24,10 @@ tw3
 [database_servers]
 db1
 
-[nfs_server]
+[nfs_servers]
 db1
+db2
+db3
 
 [docker_registry]
 db1

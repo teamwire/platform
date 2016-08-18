@@ -5,15 +5,23 @@
 # Mount external storage
 - name: Install NFS client
   apt: pkg=nfs-common state=present
-  when: external_storage_path is defined or 'nfs_server' in groups
+  when: external_storage_path is defined or ('nfs_servers' in groups and groups['nfs_servers'] | length == 1)
+
+- name: Install GlusterFS client
+  apt: pkg=glusterfs-client state=present
+  when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1
 
 - name: Mount NFS share (external)
   mount: name=/data fstype=nfs src="{{ external_storage_path }}" state=mounted
   when: external_storage_path is defined
 
 - name: "Mount NFS share (cluster)"
-  mount: name=/data fstype=nfs src="{{ groups['nfs_server'] | first }}:/data" state=mounted
-  when: config_done is defined and external_storage_path is not defined and 'nfs_server' in groups
+  mount: name=/data fstype=nfs src="{{ groups['nfs_servers'] | first }}:/data" state=mounted
+  when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length == 1
+
+- name: Mount GlusterFS share (cluster)
+  mount: name=/data fstype=glusterfs src="{{ groups['nfs_servers'] | first }}:/data" opts="{% for host in groups['nfs_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable" state=mounted
+  when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1
 
 - name: Create the backend storage directories
   file: path=/data/{{ item }} owner=daemon mode=0750 state=directory

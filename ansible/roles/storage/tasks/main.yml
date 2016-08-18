@@ -1,14 +1,11 @@
 ---
-- name: Install NFS server
-  apt: name={{item}} state=present
-  with_items:
-  - nfs-kernel-server
-  - rpcbind
-  notify: restart NFS server
+- name: Check if installing a storage cluster
+  set_fact:
+    glusterfs_cluster: True
+  when: '"nfs_servers" in groups and groups["nfs_servers"] | length > 1'
 
-- name: Create the NFS root directory
-  file: name=/data state=directory
+- include: single.yml
+  when: glusterfs_cluster is not defined
 
-- name: Write the NFS config
-  template: src=exports.j2 dest=/etc/exports
-  notify: reload NFS server
+- include: glusterfs.yml
+  when: glusterfs_cluster is defined

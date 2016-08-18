@@ -18,7 +18,7 @@ GROUPS = {
   'database_servers' => [ 'db1', 'db2', 'db3' ],
   'redis_servers'    => [ 'db1', 'db2', 'db3' ],
   'docker_registry'  => [ 'db1' ],
-  'nfs_server'       => [ 'db1' ],
+  'nfs_servers'      => [ 'db1', 'db2', 'db3' ],
   'load_balancers'   => [ 'lb1', 'lb2' ],
   'load_balancers:vars' => { 'loadbalancer_password' => 'foobar99', 'loadbalancer_external_ip' => '10.0.1.2' },
 }
