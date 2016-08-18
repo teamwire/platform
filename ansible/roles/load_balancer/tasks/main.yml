@@ -11,7 +11,6 @@
   with_items:
   - 80
   - 443
-  - 2222
 
 - name: Re-use sockets in TIME_WAIT state for new connections
   sysctl: name=net.ipv4.tcp_tw_reuse value=1 state=present
