@@ -19,6 +19,7 @@
   hosts: redis_servers
   serial: 1
   roles:
+    - docker
     - redis
 
 - name: Deploy and configure Docker registry
