@@ -61,8 +61,12 @@ setup_redis() {
 			--dir /data
 			--bind ${REDIS_BINDIP}
 			--loglevel verbose
-			--port ${REDIS_PORT}
+			--port ${REDIS_PORT}"
+
+	if [ ${#CLUSTER_NODES[@]} -gt 2 ] ; then
+		REDIS_CMDLINE+="
 			--min-slaves-to-write 1"
+	fi
 
 	if [ -n "$REDIS_PASS" ] ; then
 		REDIS_CMDLINE+="
@@ -91,6 +95,7 @@ setup_sentinel() {
 
 	if [ -z "$REDIS_MASTER" ] ; then
 		echo "Error: cannot setup redis sentinel without master"
+		return
 	fi
 
 	# Ensure config file is present
