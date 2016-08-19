@@ -1,0 +1,5 @@
+- hosts: redis_servers
+  serial: 1
+  roles:
+    - ../../roles/docker
+    - ../../roles/redis
