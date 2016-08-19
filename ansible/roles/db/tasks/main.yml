@@ -19,7 +19,6 @@
 - name: Configure MariaDB repository (cluster setups)
   apt_repository: repo="deb http://mirror2.hs-esslingen.de/mariadb/repo/10.1/debian jessie main" state=present update_cache=yes
   when: galera_cluster is defined
-  notify: apt-get update
 
 - name: Install MariaDB
   apt: name={{item}} state=present
