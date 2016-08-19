@@ -26,6 +26,10 @@
 - meta: flush_handlers
 
 # Consul
+- name: Check if Consul is already installed
+  stat: path=/usr/local/bin/consul
+  register: consul_binary
+
 - name: Download Consul
   get_url:
     url: https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip
@@ -36,7 +40,11 @@
 - name: Install the Consul binary
   unarchive: src=/root/consul_0.6.4_linux_amd64.zip dest=/usr/local/bin mode=0755 copy=no
   notify: restart consul
-  when: consul_downloaded.changed
+  when: consul_downloaded.changed or not consul_binary.stat.exists
+
+- name: Check if Consul web UI is already installed
+  stat: path=/usr/local/share/consul-ui/index.html
+  register: consul_web_ui
 
 - name: download consul-ui
   get_url:
@@ -50,7 +58,7 @@
 
 - name: Install the Consul web UI
   unarchive: src=/root/consul_0.6.4_web_ui.zip dest=/usr/local/share/consul-ui copy=no
-  when: consul_ui_downloaded.changed
+  when: consul_ui_downloaded.changed or not consul_web_ui.stat.exists
 
 - name: Create Consul config directory
   file: name=/etc/consul.d state=directory
