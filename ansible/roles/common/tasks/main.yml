@@ -11,8 +11,13 @@
   apt_repository: repo='deb http://ftp.debian.org/debian jessie-backports main' state=present
   when: ansible_distribution == "Debian"
 
+- name: Check if installing offline
+  stat: path=/etc/offline_installation
+  register: offline_mode
+
 - name: apt-get update
   apt: update_cache=yes
+  when: not offline_mode.stat.exists
 
 # do security upgrades
 - name: Install unattended-upgrades

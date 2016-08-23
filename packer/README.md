@@ -14,11 +14,23 @@ You'll need the password for the "teamwire" user.
 Change to this directory, choose the desired CONFIGURATION and run
 
 ```sh
-packer build -var "http_directory=$PWD" -var "ssh_password=PASSWORD" \
-    -only <CONFIGURATION> teamwire-server-debian.json
+packer build
+	-var "http_directory=$PWD" \
+	-var "ssh_password=PASSWORD" \
+	-only <CONFIGURATION> \
+	teamwire-server-debian.json
 ```
 
 to build the desired virtual machine.
+
+When building an image for offline installation, add the following parameters:
+
+```
+	-var "offline_installation=true" \
+	-var "dockerhub_password=<Docker Hub password>" \
+	-var "dockerhub_username=<Docker Hub user name>" \
+```
+
 
 To build the VMWare packed image target, use the supplied script
 `build-vmware.sh` - it converts the generated image to the OVF format

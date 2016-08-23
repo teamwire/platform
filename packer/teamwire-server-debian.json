@@ -1,10 +1,13 @@
 {
 	"variables": {
+		"dockerhub_password": "",
+		"dockerhub_username": "",
 		"http_directory": "",
 		"iso_url": "http://cdimage.debian.org/debian-cd/8.5.0/amd64/iso-cd/debian-8.5.0-amd64-netinst.iso",
 		"iso_checksum": "ad4e8c27c561ad8248d5ebc1d36eb172f884057bfeb2c22ead823f59fa8c3dff",
 		"iso_checksum_type": "sha256",
 		"vm_name": "localhost",
+		"offline_installation": "",
 		"ssh_username": "teamwire",
 		"ssh_password": "",
 		"ssh_wait_timeout": "900s",
@@ -163,11 +166,14 @@
 		},
 		{
 			"type": "shell",
-			"inline": [
-				"sudo apt-get clean",
-				"sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
-				"sudo dd if=/dev/zero of=/zeroes bs=1M || true",
-				"sudo rm -f /zeroes"
+			"scripts": [
+				"scripts/prepare-offline-installation.sh",
+				"scripts/shrink-image.sh"
+			],
+			"environment_vars": [
+				"dockerhub_password={{user `dockerhub_password`}}",
+				"dockerhub_username={{user `dockerhub_username`}}",
+				"offline_installation={{user `offline_installation`}}"
 			]
 		}
 	],
