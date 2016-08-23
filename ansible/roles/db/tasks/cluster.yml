@@ -3,6 +3,7 @@
   apt: name={{ item }} state=present
   with_items:
   - galera
+  - mytop
   - rsync
   - socat
 

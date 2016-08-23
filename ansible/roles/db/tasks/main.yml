@@ -26,7 +26,6 @@
   - mariadb-server
   - mariadb-client
   - python-mysqldb
-  - mytop
   register: mysql_initial_installation
 
 # Unfortunately MariaDB cannot be configure to listen on multiple interfaces
