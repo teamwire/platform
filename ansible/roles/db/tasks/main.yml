@@ -10,20 +10,20 @@
 
 - name: Check if the MariaDB repository signing key needs to be installed
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 1BB943DB > /dev/null 2>&1 && echo present || echo absent"
+  when: ansible_distribution == "Debian"
   register: mariadb_repo_key
-  when: galera_cluster is defined
 
 - name: Add MariaDB repo signing key (direct, cluster setups)
   apt_key: keyserver="hkp://keyserver.ubuntu.com:80" id="cbcb082a1bb943db"
-  when: http_proxy is not defined and galera_cluster is defined and mariadb_repo_key.stdout == "absent"
+  when: ansible_distribution == "Debian" and mariadb_repo_key.stdout == "absent" and http_proxy is not defined
 
 - name: Add MariaDB repo signing key (via proxy, cluster setups)
   command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
-  when: http_proxy is defined and galera_cluster is defined and mariadb_repo_key.stdout == "absent"
+  when: ansible_distribution == "Debian" and mariadb_repo_key.stdout == "absent" and http_proxy is defined
 
 - name: Configure MariaDB repository (cluster setups)
   apt_repository: repo="deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main" state=present update_cache=yes
-  when: galera_cluster is defined
+  when: ansible_distribution == "Debian"
 
 - name: Install MariaDB
   apt: name={{item}} state=present
@@ -32,6 +32,10 @@
   - mariadb-client
   - python-mysqldb
   register: mysql_initial_installation
+
+- name: Work around MariaDB bug MDEV-10507
+  copy: src=mariadb.conf dest=/usr/lib/tmpfiles.d mode=0644
+  when: ansible_distribution == "Debian"
 
 # Unfortunately MariaDB cannot be configure to listen on multiple interfaces
 - name: Configure MariaDB to listen on all interfaces
