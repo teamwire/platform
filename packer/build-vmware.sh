@@ -75,8 +75,6 @@ if [ -f ../ansible/group_vars/all ] ; then
 	exit 1
 fi
 
-echo directory part: "$WORKDIR"
-
 # Run packer to create the VM
 pushd "$WORKDIR" > /dev/null
 packer build \
