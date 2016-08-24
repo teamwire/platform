@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ -z "$offline_installation" ] ; then
+if [ -z "$OFFLINE_INSTALLATION" ] ; then
 	echo "Deleting apt cache"
 	sudo apt-get clean
 	sudo rm -rf /var/lib/apt/lists/*

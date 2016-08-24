@@ -1,5 +1,6 @@
 {
 	"variables": {
+		"backend_release": "",
 		"dockerhub_password": "",
 		"dockerhub_username": "",
 		"http_directory": "",
@@ -171,9 +172,10 @@
 				"scripts/shrink-image.sh"
 			],
 			"environment_vars": [
-				"dockerhub_password={{user `dockerhub_password`}}",
-				"dockerhub_username={{user `dockerhub_username`}}",
-				"offline_installation={{user `offline_installation`}}"
+				"BACKEND_RELEASE={{user `backend_release`}}",
+				"DOCKERHUB_PASSWORD={{user `dockerhub_password`}}",
+				"DOCKERHUB_USERNAME={{user `dockerhub_username`}}",
+				"OFFLINE_INSTALLATION={{user `offline_installation`}}"
 			]
 		}
 	],

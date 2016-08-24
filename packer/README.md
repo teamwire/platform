@@ -14,7 +14,7 @@ You'll need the password for the "teamwire" user.
 Change to this directory, choose the desired CONFIGURATION and run
 
 ```sh
-packer build
+packer build \
 	-var "http_directory=$PWD" \
 	-var "ssh_password=PASSWORD" \
 	-only <CONFIGURATION> \
@@ -27,6 +27,7 @@ When building an image for offline installation, add the following parameters:
 
 ```
 	-var "offline_installation=true" \
+	-var "backend_release=<version tag>" \
 	-var "dockerhub_password=<Docker Hub password>" \
 	-var "dockerhub_username=<Docker Hub user name>" \
 ```

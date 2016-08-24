@@ -34,7 +34,7 @@ teamwire/web-screenshot-server
 teamwire/notification-server
 "
 
-if [ -z "$offline_installation" ] ; then
+if [ -z "$OFFLINE_INSTALLATION" ] ; then
 	echo "Not preparing for offline installation."
 	exit
 fi
@@ -54,8 +54,12 @@ sudo apt-get install -t jessie-backports -qyd $BACKPORTS_PACKAGES
 echo "Step 2: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
-sudo docker login -u "$dockerhub_username" -p "$dockerhub_password"
+sudo docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
 for IMAGE in $DOCKER_IMAGES ; do
-	sudo docker pull "$IMAGE":prod
+	sudo docker pull "${IMAGE}:${BACKEND_RELEASE}"
 done
 sudo rm -rf /root/.docker
+
+cd ~/platform/ansible/group_vars
+cp all.example all
+sed -i -e 's/^\(version: \).*$/\1'"$BACKEND_RELEASE"'/' all
