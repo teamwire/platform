@@ -81,17 +81,21 @@
 # following step, otherwise the login would fail when a proxy is configured.
 - meta: flush_handlers
 
+- name: Check if installing offline
+  stat: path=/etc/offline_installation
+  register: offline_mode
+
 - name: Log in on Docker Hub (Ubuntu)
   command: docker login -e "{{ dockerhub_email }}" -u "{{ dockerhub_username }}" -p "{{ dockerhub_password }}"
   become: True
   become_user: teamwire
-  when: config_done is defined and ansible_distribution == "Ubuntu"
+  when: config_done is defined and ansible_distribution == "Ubuntu" and not offline_mode.stat.exists
   args:
     creates: /home/teamwire/.docker/config.json
 
 # Requires docker-py >= 1.7, hence can only be used on Debian
 - name: Log in on Docker Hub (Debian)
-  when: config_done is defined and ansible_distribution == "Debian" and 'docker_registry' not in groups
+  when: config_done is defined and ansible_distribution == "Debian" and 'docker_registry' not in groups and not offline_mode.stat.exists
   docker_login:
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
