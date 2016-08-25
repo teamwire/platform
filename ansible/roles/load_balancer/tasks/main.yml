@@ -51,6 +51,10 @@
   args:
     creates: /etc/ssl/private/dhparams.pem
 
+- name: Check if Consul is already installed
+  stat: path=/usr/local/sbin/consul-template
+  register: consul_template_binary
+
 - name: Download Consul Template
   get_url:
     url: https://releases.hashicorp.com/consul-template/0.14.0/consul-template_0.14.0_linux_amd64.zip
@@ -61,7 +65,7 @@
 - name: Install the Consul Template binary
   unarchive: src=/root/consul-template_0.14.0_linux_amd64.zip dest=/usr/local/sbin mode=0755 copy=no
   notify: restart Consul Template
-  when: consul_template_downloaded.changed
+  when: consul_template_downloaded.changed or not consul_template_binary.stat.exists
 
 - name: Install Consul Template systemd config
   copy: src=consul-template.service dest=/etc/systemd/system/consul-template.service
