@@ -57,13 +57,13 @@
 
 - name: Download Consul Template
   get_url:
-    url: https://releases.hashicorp.com/consul-template/0.14.0/consul-template_0.14.0_linux_amd64.zip
-    dest: /root/consul-template_0.14.0_linux_amd64.zip
-    checksum: sha256:7c70ea5f230a70c809333e75fdcff2f6f1e838f29cfb872e1420a63cdf7f3a78
+    url: https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip
+    dest: /root/consul-template_0.15.0_linux_amd64.zip
+    checksum: sha256:b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
   register: consul_template_downloaded
 
 - name: Install the Consul Template binary
-  unarchive: src=/root/consul-template_0.14.0_linux_amd64.zip dest=/usr/local/sbin mode=0755 copy=no
+  unarchive: src=/root/consul-template_0.15.0_linux_amd64.zip dest=/usr/local/sbin mode=0755 copy=no
   notify: restart Consul Template
   when: consul_template_downloaded.changed or not consul_template_binary.stat.exists
 
