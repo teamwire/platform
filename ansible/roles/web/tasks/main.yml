@@ -1,9 +1,11 @@
 ---
 - include: storage.yml
 - include: container.yml
+  when: "'backend_servers' not in groups"
 
 - name: Install the container helper tool
   copy: src=twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
+  when: "'backend_servers' not in groups"
 
 # Transitional
 - name: Remove obsoleted teamwire tool

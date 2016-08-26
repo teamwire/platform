@@ -167,6 +167,10 @@
 		},
 		{
 			"type": "shell",
+			"inline": "sudo rm -f /etc/docker/key.json"
+		},
+		{
+			"type": "shell",
 			"scripts": [
 				"scripts/prepare-offline-installation.sh",
 				"scripts/shrink-image.sh"
