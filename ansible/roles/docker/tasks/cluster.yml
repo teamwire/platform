@@ -21,6 +21,14 @@
     ports: "4000:4000"
     command: "manage -H :4000 --replication --advertise {{ private_ip | ipaddr('address') }}:4000 consul://localhost:8500"
 
+- name: Ensure pip is installed on manager nodes
+  apt: pkg=python-pip state=present install_recommends=no
+  when: "'consul_servers' in group_names"
+
+- name: Ensure docker-compose is installed on manager nodes
+  pip: name=docker-compose version=1.8.0
+  when: "'consul_servers' in group_names"
+
 - name: Run Swarm agent
   when: "'backend_servers' in group_names"
   docker:
