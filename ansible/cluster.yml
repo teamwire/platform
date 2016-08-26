@@ -26,17 +26,20 @@
     - docker
     - { role: docker-registry, when: config_done is defined }
 
+- name: Deploy Docker
+  hosts: redis_servers:backend_servers
+  roles:
+    - docker
+
 - name: Deploy and configure Redis database cluster
   hosts: redis_servers
   serial: 1
   roles:
-    - docker
     - redis
 
 - name: Deploy and configure the backend servers
   hosts: backend_servers
   roles:
-    - docker
     - web
 
 - name: Deploy and configure the load balancers
