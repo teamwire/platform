@@ -51,7 +51,7 @@
   args:
     creates: /etc/ssl/private/dhparams.pem
 
-- name: Check if Consul is already installed
+- name: Check if Consul Template is already installed
   stat: path=/usr/local/sbin/consul-template
   register: consul_template_binary
 
