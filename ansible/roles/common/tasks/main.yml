@@ -75,8 +75,8 @@
 - name: Disable system-wide proxy when no proxy is configured (HTTPS)
   lineinfile: dest=/etc/environment regexp="^https_proxy=" state=absent
   when: http_proxy is not defined
-- name: Don't access localhost via proxy
-  lineinfile: dest=/etc/environment line="no_proxy=localhost,127.0.0.1"
+- name: Don't access localhost and local services via proxy
+  lineinfile: dest=/etc/environment line="no_proxy=localhost,127.0.0.1,.consul"
   when: http_proxy is defined
 
 - name: Set hostname
