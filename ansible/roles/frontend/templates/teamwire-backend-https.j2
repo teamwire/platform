@@ -1,0 +1,13 @@
+# HTTPS server
+#
+server {
+	listen 443 default_server;
+	listen [::]:443 default_server ipv6only=on;
+
+	ssl on;
+	ssl_certificate /etc/ssl/private/teamwire-backend.crt;
+	ssl_certificate_key /etc/ssl/private/teamwire-backend.key;
+	ssl_dhparam /etc/ssl/private/dhparams.pem;
+
+	{% include 'teamwire-backend-common.j2' with context %}
+}

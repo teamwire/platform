@@ -1,9 +1,11 @@
 # This play only applies to the single server installation
 - hosts: local
   tasks:
-  - include: ../../roles/web/tasks/container.yml
+  - include: ../../roles/backend/tasks/single.yml
+
 # This play only applies to cluster installation
+# It needs to run on one of the Swarm manager nodes.
 - hosts: consul_servers
   run_once: true
   tasks:
-  - include: ../../roles/web/tasks/cluster.yml
+  - include: ../../roles/backend/tasks/cluster.yml

@@ -18,4 +18,5 @@
   hosts: all
   roles:
     - docker
-    - { role: web, when: config_done is defined }
+    - { role: backend, when: config_done is defined }
+    - { role: frontend, when: config_done is defined }

@@ -1,36 +1,10 @@
 ---
-- include: storage.yml
-- include: container.yml
-  when: "'backend_servers' not in groups"
-
 - name: Install the container helper tool
   copy: src=twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
-  when: "'backend_servers' not in groups"
 
 # Transitional
 - name: Remove obsoleted teamwire tool
   file: dest=/usr/local/bin/teamwire_container_tool state=absent
-
-  # Install and configure the nginx frontend proxy server
-  # Copy the SSL certificate
-- copy: src={{ ssl_certfile }} dest=/etc/ssl/private/teamwire-backend.crt mode=0640
-  when: ssl_certfile is defined
-
-- copy: src={{ ssl_keyfile }} dest=/etc/ssl/private/teamwire-backend.key mode=0640
-  when: ssl_keyfile is defined
-
-# Generate a new Diffie-Hellman group
-- command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
-  when: ssl_certfile is defined and ssl_keyfile is defined
-  args:
-    creates: /etc/ssl/private/dhparams.pem
-
-- name: Install nginx
-  apt: name=nginx-light state=present
-
-- name: Configure nginx
-  copy: src=nginx.conf dest=/etc/nginx/nginx.conf
-  notify: reload nginx
 
 - name: Main Teamwire backend configuration
   copy: src=teamwire_backend.conf dest=/etc/nginx/conf.d/teamwire_backend.conf
@@ -41,12 +15,6 @@
 
 - name: Teamwire backend configuration (HTTPS)
   template: src=teamwire-backend-https.j2 dest=/etc/nginx/sites-available/teamwire-backend-https
-
-- name: Disable nginx default site
-  file:
-    dest: /etc/nginx/sites-enabled/default
-    state: absent
-  notify: reload nginx
 
 - name: Enable HTTP
   when: ssl_certfile is not defined and ssl_keyfile is not defined
@@ -79,11 +47,3 @@
   - /etc/ssl/private/teamwire-backend.key
   - /etc/ssl/private/teamwire-backend.crt
   notify: reload nginx
-
-# open firewall ports for the web server
-- ufw: rule=allow port=80 proto=tcp
-  when: config_done is defined and ssl_certfile is not defined and ssl_keyfile is not defined
-- ufw: rule=allow port=80 proto=tcp delete=yes
-  when: ssl_certfile is defined and ssl_keyfile is defined
-- ufw: rule=allow port=443 proto=tcp
-  when: ssl_certfile is defined and ssl_keyfile is defined

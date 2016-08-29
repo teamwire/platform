@@ -8,20 +8,15 @@ db1 private_ip=10.0.1.20/24
 db1 private_ip=10.0.1.21/24
 db1 private_ip=10.0.1.22/24
 
-[backend_servers]
-tw1
-tw2
-tw3
-
 [consul_servers]
-tw1
-tw2
-tw3
+db1
+db2
+db3
 
 [redis_servers]
-tw1
-tw2
-tw3
+db1
+db2
+db3
 
 [database_servers]
 db1
@@ -35,6 +30,15 @@ db3
 
 [docker_registry]
 db1
+
+[backend_servers]
+tw1
+tw2
+tw3
+
+[frontend_servers]
+lb1
+lb2
 
 [load_balancers]
 lb1

@@ -1,0 +1,7 @@
+---
+- include: storage.yml
+
+- include: single.yml
+  when: "'backend_servers' not in groups"
+
+# The cluster backend deployment is delegated to the swarm managers

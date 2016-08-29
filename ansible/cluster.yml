@@ -37,10 +37,23 @@
   roles:
     - redis
 
-- name: Deploy and configure the backend servers
+- name: Configure the backend servers
   hosts: backend_servers
   roles:
-    - web
+    - backend
+
+# This play only applies to cluster installation
+# It needs to run on one of the Swarm manager nodes.
+- name: Deploy the backend containers
+  hosts: consul_servers
+  run_once: true
+  tasks:
+  - include: roles/backend/tasks/cluster.yml
+
+- name: Deploy and configure the frontend servers
+  hosts: frontend_servers
+  roles:
+    - frontend
 
 - name: Deploy and configure the load balancers
   hosts: load_balancers

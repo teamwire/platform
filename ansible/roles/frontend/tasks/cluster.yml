@@ -1,0 +1,43 @@
+---
+- name: Ensure unzip is present
+  apt: pkg=unzip
+
+- name: Link generated backend config
+  file: src=/etc/nginx/sites-available/teamwire-backend dest=/etc/nginx/sites-enabled/teamwire-backend state=link force=yes
+
+- name: Check if Consul Template is already installed
+  stat: path=/usr/local/sbin/consul-template
+  register: consul_template_binary
+
+- name: Download Consul Template
+  get_url:
+    url: https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip
+    dest: /root/consul-template_0.15.0_linux_amd64.zip
+    checksum: sha256:b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
+  register: consul_template_downloaded
+
+- name: Install the Consul Template binary
+  unarchive: src=/root/consul-template_0.15.0_linux_amd64.zip dest=/usr/local/sbin mode=0755 copy=no
+  notify: restart Consul Template
+  when: consul_template_downloaded.changed or not consul_template_binary.stat.exists
+
+- name: Install Consul Template systemd config
+  copy: src=consul-template.service dest=/etc/systemd/system/consul-template.service
+  notify: reload systemd
+
+- name: Enable the Consul Template service
+  service: name=consul-template enabled=yes
+
+- name: Create Consul Template config directory
+  file: name=/etc/consul-template state=directory mode=0750
+
+- name: Create Consul Template template directory
+  file: name=/etc/consul-template/templates state=directory mode=0750
+
+- name: Copy Consul Template configuration file
+  copy: src=consul-template.hcl dest=/etc/consul-template/consul-template.hcl
+  notify: restart Consul Template
+
+- name: Write Consul Template nginx upstream templates
+  template: src=teamwire-backend.tmpl.j2 dest=/etc/consul-template/templates/teamwire-backend.tmpl
+  notify: restart Consul Template
