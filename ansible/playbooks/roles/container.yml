@@ -1,5 +1,9 @@
-# This playbook applies to backend cluster nodes and the single server installation
-- hosts: backend_servers:local
+# This play only applies to the single server installation
+- hosts: local
   tasks:
   - include: ../../roles/web/tasks/container.yml
-  serial: 1
+# This play only applies to cluster installation
+- hosts: consul_servers
+  run_once: true
+  tasks:
+  - include: ../../roles/web/tasks/cluster.yml

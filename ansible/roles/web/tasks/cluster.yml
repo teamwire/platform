@@ -1,0 +1,126 @@
+---
+- include: configuration.yml
+
+- docker_service:
+    project_name: teamwire
+    docker_host: "tcp://{{ private_ip | ipaddr('address') }}:4000"
+# FIXME: the docker_service module doesn't accept variables as parameters for the
+# scale setting; this needs to be calculated dynamically once ansible is fixed.
+# see https://github.com/ansible/ansible-modules-core/issues/4592
+    scale:
+      backend: 3
+      worker: 3
+      screenshot-server: 3
+    definition:
+      version: "2"
+
+      services:
+        backend:
+          image: teamwire/backend:{{ version | default('prod') }}
+          restart: always
+          labels:
+            - com.docker.swarm.reschedule-policies=["on-node-failure"]
+          network_mode: "bridge"
+          ports:
+            - "8080"
+          volumes:
+            - /data/archiving:/archiving
+            - /data/assets:/assets
+          environment:
+            - AESKEY={{ aes_key }}
+            - ARCHIVING_CONFIG=/archiving/archiving.yaml
+            - ARCHIVING_GPGHOME=/archiving/gpg
+            - ORG_DEFAULT_ALLOW_USER_REG={{ allow_unknown_users|default('true') }}
+            - MYSQL_HOST={{ mysql_host }}
+            - MYSQL_PORT={{ mysql_port }}
+            - MYSQL_PASSWORD={{ teamwire_db_password }}
+            - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
+            - REDIS_PASSWORD={{ redis_pass|default() }}
+            - EMAIL_HOST={{ '172.17.0.1' if fake_email_confirmation is not defined else '' }}
+            - BLOB_DIR=/assets
+            - DEFAULT_FROM_EMAIL={{ sender_address }}
+            - http_proxy={{ http_proxy|default() }}
+            - https_proxy={{ http_proxy|default() }}
+            - SERVICE_NAME=backend
+            - VERSION={{ version }}
+            - FAKE_PIN={{ fake_pin|default() }}
+            - FAKE_SMS={{ fake_sms|default() }}
+            - FAKE_EMAIL_CONFIRMATION={{ fake_email_confirmation|default() }}
+            - FAKE_DB_ENCRYPTION={{ fake_db_encryption|default() }}
+
+        worker:
+          image: teamwire/backend:{{ version | default('prod') }}
+          restart: always
+          labels:
+            - com.docker.swarm.reschedule-policies=["on-node-failure"]
+          network_mode: "bridge"
+          ports:
+            - "8080"
+          volumes:
+            - /data/assets:/assets
+            - /data/certs/apns:/app/certs/apns
+          environment:
+            - MODE=worker
+            - AESKEY={{ aes_key }}
+            - MYSQL_HOST={{ mysql_host }}
+            - MYSQL_PORT={{ mysql_port }}
+            - MYSQL_PASSWORD={{ teamwire_db_password }}
+            - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
+            - REDIS_PASSWORD={{ redis_pass|default() }}
+            - NOTIFICATION_SERVER_URL=http://notification-server-9081.service.consul:9081
+            - BLOBDIR=/assets
+            - APNS_CERT_1=/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}
+            - GCM_API_KEY={{ gcm_api_key }}
+            - WNS_CLIENT_ID={{ wns_client_id|default() }}
+            - WNS_CLIENT_SECRET={{ wns_client_secret|default() }}
+            - http_proxy={{ http_proxy|default() }}
+            - https_proxy={{ http_proxy|default() }}
+            - SERVICE_NAME=worker
+            - FAKE_DB_ENCRYPTION={{ fake_db_encryption|default() }}
+
+        beat:
+          image: teamwire/backend:{{ version | default('prod') }}
+          restart: always
+          labels:
+            - com.docker.swarm.reschedule-policies=["on-node-failure"]
+          network_mode: "bridge"
+          volumes:
+            - /data/beat:/beat
+          environment:
+            - MODE=beat
+            - AESKEY={{ aes_key }}
+            - MYSQL_HOST={{ mysql_host }}
+            - MYSQL_PORT={{ mysql_port }}
+            - MYSQL_PASSWORD={{ teamwire_db_password }}
+            - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
+            - REDIS_PASSWORD={{ redis_pass|default() }}
+            - CELERY_BEAT_SCHEDULE=/beat/celerybeat-schedule
+            - FAKE_DB_ENCRYPTION={{ fake_db_encryption|default() }}
+
+        notifications:
+          image: teamwire/notification-server:{{ version | default('prod') }}
+          restart: always
+          labels:
+            - com.docker.swarm.reschedule-policies=["on-node-failure"]
+          network_mode: "bridge"
+          ports:
+            - "9080"
+            - "9081:9081"
+          environment:
+            - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
+            - REDIS_PASSWORD={{ redis_pass|default() }}
+
+        screenshot-server:
+          image: teamwire/web-screenshot-server:{{ version | default('prod') }}
+          restart: always
+          labels:
+            - com.docker.swarm.reschedule-policies=["on-node-failure"]
+          network_mode: "bridge"
+          ports:
+            - "8080"
+          volumes:
+            - /data/website-screenshot-cache:/website-screenshot-cache
+          environment:
+            - CACHE_DIR=/website-screenshot-cache
+            - HTTP_PROXY={{ http_proxy|default() }}
+
