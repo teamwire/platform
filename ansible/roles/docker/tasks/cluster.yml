@@ -21,13 +21,29 @@
     ports: "4000:4000"
     command: "manage -H :4000 --replication --advertise {{ private_ip | ipaddr('address') }}:4000 consul://localhost:8500"
 
-- name: Ensure pip is installed on manager nodes
-  apt: pkg=python-pip state=present install_recommends=no
+- name: Ensure pip and Docker Compose requirements are installed on manager nodes
+  apt: pkg=python-pip state=present default_release=jessie-backports install_recommends=no
   when: "'consul_servers' in group_names"
+  with_items:
+    - python-pip
+    - python-jsonschema
+    - python-docopt
+    - python-texttable
+    - python-functools32
+    - python-requests
 
 - name: Ensure docker-compose is installed on manager nodes
   pip: name=docker-compose version=1.8.0
   when: "'consul_servers' in group_names"
+
+# docker-compose pulls in reqeusts 2.7, which breaks pip, so we need to remove
+# the local installation; compose seems to work fine with requests 2.8 from
+# backports
+- name: Remove outdated version of python requests module
+  file: path={{item}} state=absent
+  with_items:
+    - /usr/local/lib/python2.7/dist-packages/requests
+    - /usr/local/lib/python2.7/dist-packages/requests-2.7.0.dist-info
 
 - name: Run Swarm agent
   when: "'backend_servers' in group_names"
