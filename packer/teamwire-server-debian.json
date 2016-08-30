@@ -167,11 +167,8 @@
 		},
 		{
 			"type": "shell",
-			"inline": "sudo rm -f /etc/docker/key.json"
-		},
-		{
-			"type": "shell",
 			"scripts": [
+				"scripts/make-unique.sh",
 				"scripts/prepare-offline-installation.sh",
 				"scripts/shrink-image.sh"
 			],
