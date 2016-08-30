@@ -52,7 +52,7 @@
   hosts: consul_servers
   run_once: true
   tasks:
-  - include: roles/backend/tasks/cluster.yml
+    - { include: roles/backend/tasks/cluster.yml, when: '"backend_servers" in groups' }
 
 - name: Deploy and configure the frontend servers
   hosts: frontend_servers
