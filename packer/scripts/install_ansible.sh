@@ -25,5 +25,4 @@ case "$ID" in
 esac
 
 sudo apt-get update -qq
-apt-cache policy ansible
 sudo DEBIAN_FRONTEND=noninteractive apt-get $OPTION install -y ansible
