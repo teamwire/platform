@@ -45,6 +45,7 @@
 - name: Check if Consul web UI is already installed
   stat: path=/usr/local/share/consul-ui/index.html
   register: consul_web_ui
+  when: inventory_hostname in groups['consul_servers']
 
 - name: download consul-ui
   get_url:
@@ -52,13 +53,15 @@
     dest: /root/consul_0.6.4_web_ui.zip
     checksum: sha256:5f8841b51e0e3e2eb1f1dc66a47310ae42b0448e77df14c83bb49e0e0d5fa4b7
   register: consul_ui_downloaded
+  when: inventory_hostname in groups['consul_servers']
 
 - name: Create the Consul web UI directory
   file: name=/usr/local/share/consul-ui state=directory
+  when: inventory_hostname in groups['consul_servers']
 
 - name: Install the Consul web UI
   unarchive: src=/root/consul_0.6.4_web_ui.zip dest=/usr/local/share/consul-ui copy=no
-  when: consul_ui_downloaded.changed or not consul_web_ui.stat.exists
+  when: inventory_hostname in groups['consul_servers'] and (consul_ui_downloaded.changed or not consul_web_ui.stat.exists)
 
 - name: Create Consul config directory
   file: name=/etc/consul.d state=directory
