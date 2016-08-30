@@ -4,9 +4,14 @@
   roles:
     - common
 
-- name: Configure Consul on all nodes
-  hosts: all
+- name: Configure Consul on Consul server nodes
+  hosts: consul_servers
   serial: 1
+  roles:
+    - consul
+
+- name: Configure Consul on Consul member nodes
+  hosts: all:!consul_servers
   roles:
     - consul
 
