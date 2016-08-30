@@ -1,0 +1,11 @@
+---
+- include: roles/common.yml
+- include: roles/consul.yml
+- include: roles/nfs_servers.yml
+- include: roles/database_servers.yml
+- include: roles/docker.yml
+- include: roles/redis_servers.yml
+- include: roles/backend.yml
+- include: roles/container.yml
+- include: roles/frontend.yml
+- include: roles/load_balancers.yml

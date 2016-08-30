@@ -1,3 +1,4 @@
-- hosts: load_balancers
+- name: Deploy and configure the load balancers
+  hosts: load_balancers
   roles:
   - role: ../../roles/load_balancer

@@ -1,4 +1,5 @@
-- hosts: database_servers
+- name: Deploy and configure MySQL database
+  hosts: database_servers
   roles:
     - { role: ../../roles/db, when: config_done is defined and mysql_host is not defined }
 

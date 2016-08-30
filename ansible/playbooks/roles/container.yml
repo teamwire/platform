@@ -5,7 +5,8 @@
 
 # This play only applies to cluster installation
 # It needs to run on one of the Swarm manager nodes.
-- hosts: consul_servers
+- name: Deploy the backend containers
+  hosts: consul_servers
   run_once: true
   tasks:
   - { include: ../../roles/backend/tasks/cluster.yml, when: "'backend_servers' in groups" }

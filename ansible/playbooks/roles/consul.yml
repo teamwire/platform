@@ -1,9 +1,12 @@
 # This playbook applies to backend cluster nodes, not the single server installation
 # The Consul servers need to be run individually.
-- hosts: consul_servers
+- name: Configure Consul on Consul server nodes
+  hosts: consul_servers
+  serial: 1
   roles:
   - role: ../../roles/consul
-  serial: 1
-- hosts: all:!consul_servers:!local
+
+- name: Configure Consul on Consul member nodes
+  hosts: all:!consul_servers:!local
   roles:
   - role: ../../roles/consul

@@ -1,4 +1,5 @@
 # This playbook applies to frontend cluster nodes and the single server installation
-- hosts: frontend_servers:local
+- name: Deploy and configure the frontend servers
+  hosts: frontend_servers:local
   roles:
   - role: ../../roles/frontend

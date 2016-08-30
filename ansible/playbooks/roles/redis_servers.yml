@@ -1,4 +1,5 @@
-- hosts: redis_servers
+- name: Deploy and configure Redis database cluster
+  hosts: redis_servers
   serial: 1
   roles:
     - ../../roles/redis
