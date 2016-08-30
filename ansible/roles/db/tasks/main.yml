@@ -8,13 +8,18 @@
     galera_cluster: True
   when: '"database_servers" in groups and groups["database_servers"] | length > 1'
 
+- name: Check if the MariaDB repository signing key needs to be installed
+  shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 1BB943DB > /dev/null 2>&1 && echo present || echo absent"
+  register: mariadb_repo_key
+  when: galera_cluster is defined
+
 - name: Add MariaDB repo signing key (direct, cluster setups)
   apt_key: keyserver="hkp://keyserver.ubuntu.com:80" id="cbcb082a1bb943db"
-  when: http_proxy is not defined and galera_cluster is defined
+  when: http_proxy is not defined and galera_cluster is defined and mariadb_repo_key.stdout == "absent"
 
 - name: Add MariaDB repo signing key (via proxy, cluster setups)
   command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
-  when: http_proxy is defined and galera_cluster is defined
+  when: http_proxy is defined and galera_cluster is defined and mariadb_repo_key.stdout == "absent"
 
 - name: Configure MariaDB repository (cluster setups)
   apt_repository: repo="deb http://mirror2.hs-esslingen.de/mariadb/repo/10.1/debian jessie main" state=present update_cache=yes
