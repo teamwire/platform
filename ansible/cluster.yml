@@ -25,13 +25,12 @@
   roles:
     - { role: db, when: config_done is defined and mysql_host is not defined }
 
-- name: Deploy and configure Docker registry
+- name: Deploy Docker (registry host)
   hosts: docker_registry
   roles:
     - docker
-    - { role: docker-registry, when: config_done is defined }
 
-- name: Deploy Docker
+- name: Deploy Docker (non-registry hosts)
   hosts: redis_servers:backend_servers
   roles:
     - docker

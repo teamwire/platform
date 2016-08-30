@@ -1,4 +1,8 @@
 ---
+- name: Ensure only on Docker Registry mirror is defined
+  fail: msg="Only one docker_registry may be specified"
+  when: groups.docker_registry | length > 1
+
 - name: Create Docker Registry storage directory
   file: name="{{ item }}" state=directory
   with_items:

@@ -4,7 +4,9 @@ ExecStart=/usr/bin/dockerd -H fd://
 {%- if 'backend_servers' in group_names  %}
  -H tcp://{{ private_ip | ipaddr('address') }}:2375
 {%- endif %}
+{%- if 'docker_registry' in groups %}
  --registry-mirror http://{{ groups['docker_registry'] | first }}:5000 --insecure-registry {{ groups['docker_registry'] | first }}:5000
+{%- endif %}
 {%- if 'consul_servers' in groups %}
 {%- for host in groups['consul_servers'] %}
  --dns {{ hostvars[host].private_ip | ipaddr('address') }}{% endfor %}

@@ -85,6 +85,10 @@
   stat: path=/etc/offline_installation
   register: offline_mode
 
+- name: Install Docker Registry on configured host
+  include: registry.yml
+  when: config_done is defined and 'docker_registry' in group_names
+
 - name: Log in on Docker Hub (Ubuntu)
   command: docker login -e "{{ dockerhub_email }}" -u "{{ dockerhub_username }}" -p "{{ dockerhub_password }}"
   become: True
