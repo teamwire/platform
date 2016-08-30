@@ -1,5 +1,5 @@
 # This is the address of the Consul agent.
-consul = "consul.service.consul:8500"
+consul = "127.0.0.1:8500"
 
 # This is the amount of time to wait before retrying a connection to Consul.
 retry = "10s"
