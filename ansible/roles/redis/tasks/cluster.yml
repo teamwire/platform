@@ -5,11 +5,12 @@
 - name: Write Redis cluster bootstrap script config
   template: src=redis-bootstrap.conf.j2 dest=/usr/local/etc/redis-bootstrap.conf mode=0600 owner=root group=root
 
+- name: Create local directory
+  file: dest=/local state=directory owner=root group=root mode=0750
+
+# The redis group inside the Redis container uses gid 101
 - name: Create Redis cluster data directory
-  file: dest={{ item }} state=directory owner=root group=root mode=0750
-  with_items:
-  - /local
-  - /local/redis
+  file: dest=/local/redis state=directory owner=root group=101 mode=0770
 
 - name: Run Redis cluster bootstrap script
   command: /usr/local/bin/redis-bootstrap
