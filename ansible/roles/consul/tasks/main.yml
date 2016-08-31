@@ -1,7 +1,7 @@
 # Before installing Consul set up DNS with local dnsmasq
 - name: Ensure dns_servers are configured before installing dnsmasq
   fail: msg="DNS servers are not defined. Please check the configuration file"
-  when: config_done is defined and dns_servers is not defined
+  when: dns_servers is not defined
 
 - name: Install dnsmasq
   apt: pkg=dnsmasq
