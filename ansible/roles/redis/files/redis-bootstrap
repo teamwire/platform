@@ -106,7 +106,8 @@ setup_sentinel() {
 			bind ${REDIS_BINDIP}
 			port 2${REDIS_PORT}
 			sentinel monitor ${SERVICE_NAME} ${REDIS_MASTER} ${REDIS_PORT} 2
-			sentinel down-after-milliseconds ${SERVICE_NAME} 5000" | sudo tee /local/redis/sentinel.conf > /dev/null
+			sentinel down-after-milliseconds ${SERVICE_NAME} 5000
+			sentinel failover-timeout ${SERVICE_NAME} 30000" | sudo tee /local/redis/sentinel.conf > /dev/null
 
 		if [ -n "$REDIS_PASS" ] ; then
 			echo "
