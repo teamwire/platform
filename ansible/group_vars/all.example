@@ -108,8 +108,8 @@ apns_certificate:
 ## DATABASE
 ##############################################################################
 
-# Define the MySQL user password
-# The application expects the user name "teamwire"
+# Define the database user password
+# For MySQL, the application expects the user name "teamwire"
 teamwire_db_password: teamwire
 
 # Define the database encryption key.
@@ -125,13 +125,21 @@ aes_key:
 # mysql_host:
 # mysql_port:
 
-# When running the database on the same machine, you *must* configure a password
-# for the DB's root user here, otherwise you can comment this line.
+# When running the MySQL database on the same machine or as part of the cluster,
+# you *must* configure a password for the DB's root user here, otherwise you can
+# leave this this line commented.
 mysql_root_password:
 
-# When running a clustered database, uncomment the following value and specify
-# a password for the database health check user:
+# When running a clustered MySQL database as part of the cluster, uncomment the
+# following value and specify a password for the database health check user:
 # clustercheck_password:
+
+# When using an Oracle database, uncomment the following lines and add the
+# values matching your setup.
+# oracle_host:
+# oracle_port: 1521
+# oracle_database:
+# oracle_user:
 
 # Redis connection information.
 # If you don't configure this values, a local Redis server will be installed

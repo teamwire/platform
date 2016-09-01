@@ -31,9 +31,14 @@
             - ARCHIVING_CONFIG=/archiving/archiving.yaml
             - ARCHIVING_GPGHOME=/archiving/gpg
             - ORG_DEFAULT_ALLOW_USER_REG={{ allow_unknown_users|default('true') }}
-            - MYSQL_HOST={{ mysql_host }}
-            - MYSQL_PORT={{ mysql_port }}
-            - MYSQL_PASSWORD={{ teamwire_db_password }}
+            - MYSQL_HOST={{ mysql_host | default() }}
+            - MYSQL_PORT={{ mysql_port | default() }}
+            - MYSQL_PASSWORD={{ teamwire_db_password if mysql_host is defined else '' }}
+            - ORA_HOST={{ oracle_host | default() }}
+            - ORA_PORT={{ oracle_port | default() }}
+            - ORA_DATABASE={{ oracle_database | default() }}
+            - ORA_USER={{ oracle_user | default() }}
+            - ORA_PASSWORD={{ teamwire_db_password if oracle_host is defined else '' }}
             - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
             - REDIS_PASSWORD={{ redis_pass|default() }}
             - EMAIL_HOST={{ '172.17.0.1' if fake_email_confirmation is not defined else '' }}
@@ -62,9 +67,14 @@
           environment:
             - MODE=worker
             - AESKEY={{ aes_key }}
-            - MYSQL_HOST={{ mysql_host }}
-            - MYSQL_PORT={{ mysql_port }}
-            - MYSQL_PASSWORD={{ teamwire_db_password }}
+            - MYSQL_HOST={{ mysql_host | default() }}
+            - MYSQL_PORT={{ mysql_port | default() }}
+            - MYSQL_PASSWORD={{ teamwire_db_password if mysql_host is defined else '' }}
+            - ORA_HOST={{ oracle_host | default() }}
+            - ORA_PORT={{ oracle_port | default() }}
+            - ORA_DATABASE={{ oracle_database | default() }}
+            - ORA_USER={{ oracle_user | default() }}
+            - ORA_PASSWORD={{ teamwire_db_password if oracle_host is defined else '' }}
             - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
             - REDIS_PASSWORD={{ redis_pass|default() }}
             - NOTIFICATION_SERVER_URL=http://notification-server-9081.service.consul:9081
@@ -89,9 +99,14 @@
           environment:
             - MODE=beat
             - AESKEY={{ aes_key }}
-            - MYSQL_HOST={{ mysql_host }}
-            - MYSQL_PORT={{ mysql_port }}
-            - MYSQL_PASSWORD={{ teamwire_db_password }}
+            - MYSQL_HOST={{ mysql_host | default() }}
+            - MYSQL_PORT={{ mysql_port | default() }}
+            - MYSQL_PASSWORD={{ teamwire_db_password if mysql_host is defined else '' }}
+            - ORA_HOST={{ oracle_host | default() }}
+            - ORA_PORT={{ oracle_port | default() }}
+            - ORA_DATABASE={{ oracle_database | default() }}
+            - ORA_USER={{ oracle_user | default() }}
+            - ORA_PASSWORD={{ teamwire_db_password if oracle_host is defined else '' }}
             - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
             - REDIS_PASSWORD={{ redis_pass|default() }}
             - CELERY_BEAT_SCHEDULE=/beat/celerybeat-schedule
