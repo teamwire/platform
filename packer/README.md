@@ -18,7 +18,7 @@ packer build \
 	-var "http_directory=$PWD" \
 	-var "ssh_password=PASSWORD" \
 	-only <CONFIGURATION> \
-	teamwire-server-debian.json
+	teamwire-server.json
 ```
 
 to build the desired virtual machine.

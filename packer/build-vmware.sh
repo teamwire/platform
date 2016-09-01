@@ -85,7 +85,7 @@ packer build \
 	-var "dockerhub_password=${DOCKERHUB_PASSWORD}" \
 	-var "dockerhub_username=${DOCKERHUB_USERNAME}" \
 	-only teamwire-server-vmware \
-	"teamwire-server-debian.json"
+	"teamwire-server.json"
 popd > /dev/null
 
 # Convert the VM and create a compressed archive of the result
