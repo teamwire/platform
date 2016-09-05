@@ -16,7 +16,7 @@
   when: config_done is defined
   docker:
     name: docker-registry
-    image: "registry:2"
+    image: "registry:2.5.0"
     state: reloaded
     restart_policy: always
     net: bridge

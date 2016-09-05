@@ -3,7 +3,7 @@
   when: private_ip is defined and 'consul_servers' in groups
   docker:
     name: registrator
-    image: "gliderlabs/registrator:latest"
+    image: "gliderlabs/registrator:v7"
     state: reloaded
     restart_policy: always
     net: host
