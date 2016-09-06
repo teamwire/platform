@@ -1,0 +1,82 @@
+#!/usr/bin/python
+
+import argparse
+from docker import Client
+
+
+class TWImg():
+    def __init__(self, registry):
+        self.registry = registry
+        self.cli = Client(base_url='unix://var/run/docker.sock')
+
+    def _remoteNameFor(self, repo):
+        return "{}/{}".format(self.registry, repo)
+
+    def getUntaggedImages(self):
+        images = self.cli.images()
+
+        localImages = {}
+
+        for image in images:
+            localTags = []
+            remoteTags = []
+            for tag in image['RepoTags']:
+                if tag.startswith(self.registry):
+                    remoteTags.append(tag)
+                else:
+                    localTags.append(tag)
+
+            for tag in localTags:
+                if self._remoteNameFor(tag) not in remoteTags:
+                    id = image['Id'].split(':')[1]
+                    if id not in localImages:
+                        localImages[id] = [tag]
+                    else:
+                        localImages[id].append(tag)
+
+        return localImages
+
+    def pushImagesToRegistry(self, images):
+        for ID, repos_and_tags in images.items():
+            for repo_and_tag in repos_and_tags:
+                print("Tagging %s - %s" % (ID, repo_and_tag))
+                repo, tag = repo_and_tag.split(':')
+
+                if self.cli.tag(ID, self._remoteNameFor(repo), tag):
+                    self.cli.push(self._remoteNameFor(repo), tag)
+                else:
+                    print("Failed to tag {}".format(repo_and_tag))
+
+    def actionPush(self):
+        untaggedImages = twimg.getUntaggedImages()
+        twimg.pushImagesToRegistry(untaggedImages)
+
+    def performAction(self, action):
+        methodName = "action%s" % action.capitalize()
+        method = getattr(self, methodName)
+        method()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="""Work with Docker images and a local registry"""
+    )
+
+    parser.add_argument(
+        "--registry",
+        dest='registry',
+        type=str,
+        required=True,
+        help='The Docker registry to use'
+    )
+
+    parser.add_argument(
+        "action",
+        type=str,
+        choices=['push'],
+        help="Action to perform."
+    )
+
+    args = parser.parse_args()
+    twimg = TWImg(args.registry)
+    twimg.performAction(args.action)

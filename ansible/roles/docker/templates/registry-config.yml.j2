@@ -16,7 +16,9 @@ health:
     enabled: true
     interval: 10s
     threshold: 3
+{% if not offline_mode.stat.exists %}
 proxy:
       remoteurl: https://registry-1.docker.io
       username: {{ dockerhub_username }}
       password: {{ dockerhub_password }}
+{% endif %}

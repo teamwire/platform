@@ -29,9 +29,13 @@ python-docker
 "
 
 DOCKER_IMAGES="
-teamwire/backend
-teamwire/web-screenshot-server
-teamwire/notification-server
+teamwire/backend:${BACKEND_RELEASE}
+teamwire/web-screenshot-server:${BACKEND_RELEASE}
+teamwire/notification-server:${BACKEND_RELEASE}
+redis:3.2.3-alpine
+swarm:1.2.5
+registry:2.5.0
+gliderlabs/registrator:v7
 "
 
 if [ -z "$OFFLINE_INSTALLATION" ] ; then
@@ -56,7 +60,7 @@ echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
 sudo docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
 for IMAGE in $DOCKER_IMAGES ; do
-	sudo docker pull "${IMAGE}:${BACKEND_RELEASE}"
+	sudo docker pull "${IMAGE}"
 done
 sudo rm -rf /root/.docker
 
