@@ -80,6 +80,9 @@ setup_redis() {
 
 	# Ensure config file is present
 	touch "${REDIS_DIR}/redis.conf"
+	# Ensure the file can be read by the redis user in the container
+	chgrp 101 /local/redis/redis.conf
+	chmod 660 /local/redis/redis.conf
 
 	${DOCKER_BASE_CMD} \
 		-p ${REDIS_PORT}:${REDIS_PORT} \
@@ -107,13 +110,17 @@ setup_sentinel() {
 			port 2${REDIS_PORT}
 			sentinel monitor ${SERVICE_NAME} ${REDIS_MASTER} ${REDIS_PORT} $(( ${#CLUSTER_NODES[@]} - 1 ))
 			sentinel down-after-milliseconds ${SERVICE_NAME} 5000
-			sentinel failover-timeout ${SERVICE_NAME} 30000" | sudo tee /local/redis/sentinel.conf > /dev/null
+			sentinel failover-timeout ${SERVICE_NAME} 30000" > /local/redis/sentinel.conf
 
 		if [ -n "$REDIS_PASS" ] ; then
 			echo "
 				masterauth ${REDIS_PASS}
-				sentinel auth-pass ${SERVICE_NAME} ${REDIS_PASS}" | sudo tee -a /local/redis/sentinel.conf > /dev/null
+				sentinel auth-pass ${SERVICE_NAME} ${REDIS_PASS}" >> /local/redis/sentinel.conf
 		fi
+
+		# Ensure the generated file can be read by the redis user in the container
+		chgrp 101 /local/redis/sentinel.conf
+		chmod 660 /local/redis/sentinel.conf
 	fi
 
 	local SENTINEL_CMDLINE="redis-sentinel /data/sentinel.conf"
