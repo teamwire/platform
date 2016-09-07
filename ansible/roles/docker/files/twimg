@@ -1,7 +1,16 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import argparse
+import csv
+import os.path
+import sys
+import tarfile
 from docker import Client
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 class TWImg():
@@ -45,16 +54,56 @@ class TWImg():
                 if self.cli.tag(ID, self._remoteNameFor(repo), tag):
                     self.cli.push(self._remoteNameFor(repo), tag)
                 else:
-                    print("Failed to tag {}".format(repo_and_tag))
+                    eprint("Failed to tag {}".format(repo_and_tag))
+                    return 1
 
-    def actionPush(self):
-        untaggedImages = twimg.getUntaggedImages()
-        twimg.pushImagesToRegistry(untaggedImages)
+    def importImagesFromTarfile(self, filename):
+        if not os.path.isfile(filename):
+            eprint("Cannot find %s." % filename)
+            return 1
 
-    def performAction(self, action):
+        if not tarfile.is_tarfile(filename):
+            eprint("Cannot read %s. Is it a valid archive?" % filename)
+            return 1
+
+        print("Importing images from %s:\n" % filename)
+        archive = tarfile.open(filename)
+
+        images = {}
+
+        indexFile = archive.extractfile("index.txt")
+        indexReader = csv.reader(indexFile, delimiter=';')
+        for row in indexReader:
+            if len(row) != 3:
+                continue
+
+            images[row[0]] = {'repository': row[1], 'tag': row[2]}
+
+        indexFile.close()
+
+        for image, attributes in images.items():
+            print("%s:%s"  % (attributes['repository'], attributes['tag']))
+            imageFile = archive.extractfile(image)
+
+            self.cli.import_image_from_data(
+                imageFile.read(),
+                attributes['repository'],
+                attributes['tag']
+            )
+
+            imageFile.close()
+
+    def actionImport(self, args):
+        return self.importImagesFromTarfile(args.archive)
+
+    def actionPush(self, args):
+        untaggedImages = self.getUntaggedImages()
+        return self.pushImagesToRegistry(untaggedImages)
+
+    def performAction(self, action, args):
         methodName = "action%s" % action.capitalize()
         method = getattr(self, methodName)
-        method()
+        return method(args)
 
 
 if __name__ == '__main__':
@@ -71,12 +120,19 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        "--archive",
+        dest='archive',
+        type=str,
+        help='The Docker image export file to import'
+    )
+
+    parser.add_argument(
         "action",
         type=str,
-        choices=['push'],
+        choices=['push', 'import'],
         help="Action to perform."
     )
 
     args = parser.parse_args()
     twimg = TWImg(args.registry)
-    twimg.performAction(args.action)
+    exit(twimg.performAction(args.action, args))
