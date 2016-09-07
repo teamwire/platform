@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ $UID -ne 0 ] ; then
+	echo "Please run this script as root."
+	exit 1
+fi
+
+# Load configuration
 . /usr/local/etc/redis-bootstrap.conf
 
 REDIS_CMD="/usr/bin/redis-cli"
