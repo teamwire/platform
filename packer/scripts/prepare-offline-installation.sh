@@ -46,6 +46,13 @@ https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_web_ui.zip;5f8841b51e0e
 https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip;b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
 "
 
+# Add additional repo signing keys
+# Always perform this step, even if not preparing for offline installation - this spares us one firewall rule
+echo "Step 1: Import additional repo signing keys"
+echo "==========================================="
+sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D # Docker
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys cbcb082a1bb943db # MariaDB
+
 if [ -z "$OFFLINE_INSTALLATION" ] ; then
 	echo "Not preparing for offline installation."
 	exit
@@ -57,13 +64,13 @@ echo "Preparing for offline installation."
 # the apt cache will not be updated.
 sudo touch /etc/offline_installation
 
-echo "Step 1: Caching packages"
+echo "Step 2: Caching packages"
 echo "========================"
 
 sudo apt-get install -qyd $REGULAR_PACKAGES
 sudo apt-get install -t jessie-backports -qyd $BACKPORTS_PACKAGES
 
-echo "Step 2: Getting Docker containers"
+echo "Step 3: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
 sudo docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
@@ -76,7 +83,7 @@ cd ~/platform/ansible/group_vars
 cp all.example all
 sed -i -e 's/^\(version: \).*$/\1'"$BACKEND_RELEASE"'/' all
 
-echo "Step 3: Downloading 3rd party software"
+echo "Step 4: Downloading 3rd party software"
 echo "======================================"
 for DOWNLOAD in $DOWNLOADS ; do
 	# split line into URL and SHA256 checksum
