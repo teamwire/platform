@@ -8,7 +8,7 @@
   file: dest=/etc/apt/apt.conf.d/01proxy state=absent
 
 - name: Ensure backports are enabled (Debian)
-  apt_repository: repo='deb http://ftp.de.debian.org/debian jessie-backports main' state=present
+  apt_repository: repo='deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian/ jessie-backports main' state=present
   when: ansible_distribution == "Debian"
 
 - name: Check if installing offline

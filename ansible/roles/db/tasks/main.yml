@@ -22,7 +22,7 @@
   when: http_proxy is defined and galera_cluster is defined and mariadb_repo_key.stdout == "absent"
 
 - name: Configure MariaDB repository (cluster setups)
-  apt_repository: repo="deb http://mirror2.hs-esslingen.de/mariadb/repo/10.1/debian jessie main" state=present update_cache=yes
+  apt_repository: repo="deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main" state=present update_cache=yes
   when: galera_cluster is defined
 
 - name: Install MariaDB
