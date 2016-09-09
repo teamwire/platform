@@ -24,6 +24,8 @@ rpcbind
 glusterfs-server
 glusterfs-client
 nfs-common
+mytop
+galera
 "
 
 BACKPORTS_PACKAGES="
@@ -85,6 +87,9 @@ sudo touch /etc/offline_installation
 echo "Step 2: Caching packages"
 echo "========================"
 
+# Add MariaDB repo
+echo 'deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main' | sudo tee -a /etc/apt/sources.list > /dev/null
+sudo apt-get update -q
 sudo apt-get install -qyd $REGULAR_PACKAGES
 sudo apt-get install -t jessie-backports -qyd $BACKPORTS_PACKAGES
 
