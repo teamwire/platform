@@ -76,7 +76,7 @@
   lineinfile: dest=/etc/environment regexp="^https_proxy=" state=absent
   when: http_proxy is not defined
 - name: Don't access localhost and local services via proxy
-  lineinfile: dest=/etc/environment line="no_proxy=localhost,127.0.0.1,.consul"
+  lineinfile: dest=/etc/environment line="no_proxy=localhost,127.0.0.1,{{ inventory_hostname }},.consul"
   when: http_proxy is defined
 
 - name: Set hostname
