@@ -22,25 +22,43 @@
     command: "manage -H :4000 --replication --advertise {{ private_ip | ipaddr('address') }}:4000 consul://localhost:8500"
 
 - name: Ensure pip and Docker Compose requirements are installed on manager nodes
-  apt: pkg=python-pip state=present default_release=jessie-backports install_recommends=no
+  apt: pkg={{ item }} state=present default_release=jessie-backports install_recommends=no
   when: "'consul_servers' in group_names"
   with_items:
     - python-pip
-    - python-jsonschema
+    - python-backports.ssl-match-hostname
     - python-docopt
-    - python-texttable
+    - python-enum34
     - python-functools32
+    - python-ipaddress
+    - python-jsonschema
     - python-requests
+    - python-texttable
 
-- name: Ensure docker-compose is installed on manager nodes
+- name: Check if a wheelhouse exists
+  stat: path=/var/cache/wheelhouse
+  register: wheelhouse
+
+- name: Ensure docker-compose is installed on manager nodes (online)
   pip: name=docker-compose version=1.8.0
-  when: "'consul_servers' in group_names"
+  when: "'consul_servers' in group_names and not wheelhouse.stat.exists"
+
+- name: Ensure docker-compose is installed on manager nodes (offline)
+  pip: name=/var/cache/wheelhouse/{{ item }} extra_args="--no-deps"
+  when: "'consul_servers' in group_names and wheelhouse.stat.exists"
+  with_items:
+    - cached_property-1.2.0-py2.py3-none-any.whl
+    - dockerpty-0.4.1-py2-none-any.whl
+    - websocket_client-0.32.0-py2-none-any.whl
+    - docker_py-1.9.0-py2.py3-none-any.whl
+    - docker_compose-1.8.0-py2-none-any.whl
 
 # docker-compose pulls in reqeusts 2.7, which breaks pip, so we need to remove
 # the local installation; compose seems to work fine with requests 2.8 from
 # backports
 - name: Remove outdated version of python requests module
   file: path={{item}} state=absent
+  when: "'consul_servers' in group_names and not wheelhouse.stat.exists"
   with_items:
     - /usr/local/lib/python2.7/dist-packages/requests
     - /usr/local/lib/python2.7/dist-packages/requests-2.7.0.dist-info
@@ -54,4 +72,3 @@
     restart_policy: always
     net: host
     command: "join --advertise={{ private_ip | ipaddr('address') }}:2375 consul://localhost:8500"
-

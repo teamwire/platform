@@ -5,6 +5,7 @@
 # * Download debian packages into the local package cache
 # * Pull required docker images
 # * Download 3rd party files
+# * Build Python modules
 #
 
 REGULAR_PACKAGES="
@@ -26,7 +27,15 @@ nfs-common
 "
 
 BACKPORTS_PACKAGES="
+python-backports.ssl-match-hostname
 python-docker
+python-docopt
+python-enum34
+python-functools32
+python-ipaddress
+python-jsonschema
+python-requests
+python-texttable
 "
 
 DOCKER_IMAGES="
@@ -44,6 +53,15 @@ DOWNLOADS="
 https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip;abdf0e1856292468e2c9971420d73b805e93888e006c76324ae39416edcf0627
 https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_web_ui.zip;5f8841b51e0e3e2eb1f1dc66a47310ae42b0448e77df14c83bb49e0e0d5fa4b7
 https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip;b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
+"
+
+PYTHON_MODULES="
+cached_property==1.2.0
+docker_compose==1.8.0
+docker-py==1.9.0
+dockerpty==0.4.1
+python_consul==0.6.1
+websocket_client==0.32.0
 "
 
 # Add additional repo signing keys
@@ -97,3 +115,14 @@ for DOWNLOAD in $DOWNLOADS ; do
 	fi
 	sudo mv "$FILENAME" /root
 done
+
+echo "Step 5: Building Python modules"
+echo "======================================"
+WHEEL_DIR="$(mktemp -d)"
+sudo apt-get -y install python-pip python-wheel
+for PYTHON_MODULE in $PYTHON_MODULES ; do
+	pip wheel --wheel-dir "$WHEEL_DIR" --no-deps "$PYTHON_MODULE"
+done
+sudo apt-get -y remove python-pip python-wheel
+sudo apt-get -y autoremove
+sudo mv "$WHEEL_DIR" /var/cache/wheelhouse

@@ -28,8 +28,17 @@
   - python-pip
   - python-requests
 
-- name: Ensure python-consul module is installed
+- name: Check if a wheelhouse exists
+  stat: path=/var/cache/wheelhouse
+  register: wheelhouse
+
+- name: Ensure python-consul module is installed (online)
   pip: name=python-consul version=0.6.1
+  when: not wheelhouse.stat.exists
+
+- name: Ensure python-consul module is installed (offline)
+  pip: name=/var/cache/wheelhouse/python_consul-0.6.1-py2-none-any.whl
+  when: wheelhouse.stat.exists
 
 - name: Register MariaDB database and its health check in Consul
   consul:
