@@ -20,7 +20,7 @@
   copy: src=clustercheck dest=/usr/local/bin/clustercheck mode=0755
 
 - name: Ensure pip and python-requests are installed
-  apt: pkg={{ item }} state=present install_recommends=no
+  apt: pkg={{ item }} state=present default_release=jessie-backports install_recommends=no
   with_items:
   - python-pip
   - python-requests
