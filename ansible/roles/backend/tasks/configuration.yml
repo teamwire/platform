@@ -15,7 +15,7 @@
 
 - name: Determine MariaDB host (Galera cluster)
   set_fact:
-    mysql_host: galera.service.consul
+    mysql_host: "{{ database_cluster_ip }}"
   when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
 
 - name: Determine MariaDB port (unless defined)

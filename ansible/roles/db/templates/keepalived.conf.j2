@@ -1,0 +1,20 @@
+vrrp_script chk_pxc {
+        script "/usr/local/bin/clustercheck clustercheck {{ clustercheck_password }} 1"
+        interval 1
+}
+
+vrrp_instance PXC {
+    state MASTER
+    interface eth1
+    virtual_router_id 52
+    priority 100
+    nopreempt
+
+    virtual_ipaddress {
+        {{ database_cluster_ip }}
+    }
+
+    track_script {
+        chk_pxc
+    }
+}

@@ -1,4 +1,8 @@
 ---
+- name: Ensure database_cluster_ip is configured before installing the Database
+  fail: msg="Virtual DB server IP address is not defined. Please check the inventory file"
+  when: database_cluster_ip is not defined or database_cluster_ip == None
+
 - name: Install Galera and requirements
   apt: name={{ item }} state=present
   with_items:
@@ -19,27 +23,12 @@
 - name: Install Galera cluster check script
   copy: src=clustercheck dest=/usr/local/bin/clustercheck mode=0755
 
-- name: Ensure pip and python-requests are installed
-  apt: pkg={{ item }} state=present default_release=jessie-backports install_recommends=no
-  with_items:
-  - python-pip
-  - python-requests
+- name: Install keepalived
+  apt: pkg=keepalived
 
-- name: Check if a wheelhouse exists
-  stat: path=/var/cache/wheelhouse
-  register: wheelhouse
+- name: Allow incoming keepalived multicast traffic
+  ufw: rule=allow src=224.0.0.18
 
-- name: Ensure python-consul module is installed (online)
-  pip: name=python-consul version=0.6.1
-  when: not wheelhouse.stat.exists
-
-- name: Ensure python-consul module is installed (offline)
-  pip: name=/var/cache/wheelhouse/python_consul-0.6.1-py2-none-any.whl
-  when: wheelhouse.stat.exists
-
-- name: Register MariaDB database and its health check in Consul
-  consul:
-    service_name: galera
-    service_port: 3306
-    script: "/usr/local/bin/clustercheck clustercheck {{ clustercheck_password }} 1"
-    interval: 30s
+- name: Write keepalived configuration file
+  template: src=keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf mode=0640
+  notify: restart keepalived

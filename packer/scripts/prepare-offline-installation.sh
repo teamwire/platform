@@ -62,7 +62,6 @@ cached_property==1.2.0
 docker_compose==1.8.0
 docker-py==1.9.0
 dockerpty==0.4.1
-python_consul==0.6.1
 websocket_client==0.32.0
 "
 

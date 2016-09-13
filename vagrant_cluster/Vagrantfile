@@ -7,15 +7,16 @@ HOSTS = {
   'tw1' => { :private_ip => '10.0.1.5/24' },
   'tw2' => { :private_ip => '10.0.1.6/24' },
   'tw3' => { :private_ip => '10.0.1.7/24' },
-  'db1' => { :private_ip => '10.0.1.20/24' },
-  'db2' => { :private_ip => '10.0.1.21/24' },
-  'db3' => { :private_ip => '10.0.1.22/24' },
+  'db1' => { :private_ip => '10.0.1.21/24' },
+  'db2' => { :private_ip => '10.0.1.22/24' },
+  'db3' => { :private_ip => '10.0.1.23/24' },
 }
 
 GROUPS = {
   'backend_servers'  => [ 'tw1', 'tw2', 'tw3' ],
   'consul_servers'   => [ 'db1', 'db2', 'db3' ],
   'database_servers' => [ 'db1', 'db2', 'db3' ],
+  'database_servers:vars' => { 'database_cluster_ip' => '10.0.1.20' },
   'redis_servers'    => [ 'db1', 'db2', 'db3' ],
   'docker_registry'  => [ 'db1' ],
   'nfs_servers'      => [ 'db1', 'db2', 'db3' ],
