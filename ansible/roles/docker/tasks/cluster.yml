@@ -39,6 +39,10 @@
   stat: path=/var/cache/wheelhouse
   register: wheelhouse
 
+- name: Ensure docker-py 1.9.0 is installed on manager nodes (online)
+  pip: name=docker-py version=1.9.0
+  when: "'consul_servers' in group_names and not wheelhouse.stat.exists"
+
 - name: Ensure docker-compose is installed on manager nodes (online)
   pip: name=docker-compose version=1.8.0
   when: "'consul_servers' in group_names and not wheelhouse.stat.exists"
