@@ -2,11 +2,23 @@
 - include: configuration.yml
 
 - name: Create compose config directory
-  file: dest=/usr/share/teamwire state=directory mode=0750
+  file: dest=/usr/share/teamwire state=directory mode=0770
 
 # Arcane path sorcery; required as this file is only included from the playbook
-- name: Write Compose file
-  template: src=../../roles/backend/templates/docker-compose.yml.j2 dest=/usr/share/teamwire/docker-compose.yml mode=0640
+- name: Install the container helper tool
+  copy: src=../../roles/backend/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
+
+- name: Write compose file
+  template:
+    src: ../../roles/backend/templates/docker-compose.yml.j2
+    dest: /usr/share/teamwire/docker-compose.yml
+    mode: 0660
+
+- name: write cluster configuration file
+  template:
+    src: ../../roles/backend/templates/cluster.conf.j2
+    dest: /usr/share/teamwire/cluster.conf
+    mode: 0640
 
 - docker_service:
     project_name: teamwire

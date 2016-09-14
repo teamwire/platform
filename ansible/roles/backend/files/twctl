@@ -1,8 +1,36 @@
 #!/bin/bash
 
+CLUSTER_CONFIG_DIR=/usr/share/teamwire
+
+if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
+	# Clustered setup
+	INSTALLATION=cluster
+
+	if [ "$UID" != "0" ] && [ ! -r "$CLUSTER_CONFIG_DIR" ] ; then
+		# Try to grant read permissions to the required files
+		sudo chgrp -R teamwire "$CLUSTER_CONFIG_DIR"
+	fi
+
+	COMPOSE_FILE="${CLUSTER_CONFIG_DIR}/docker-compose.yml"
+	DOCKER_CONTROL_HOST=tcp://localhost:4000
+else
+	# Single server installation
+	INSTALLATION=single
+	CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
+fi
+
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
-CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
-ANSIBLE_DIR=~teamwire/platform/ansible
+
+# Find Ansible configuration
+if [ -d ~/platform/ansible ] ; then
+	ANSIBLE_DIR=~/platform/ansible
+elif [ -d ~teamwire/platform/ansible ] ; then
+	ANSIBLE_DIR=~teamwire/platform/ansible
+else
+	echo "Cannot find platform directory."
+	exit 1
+fi
+
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 
 check_tag() {
@@ -25,7 +53,12 @@ check_config_file() {
 	fi
 }
 
-get_mysql_configuration() {
+get_database_configuration() {
+	if [ "$INSTALLATION" == "cluster" ] ; then
+		. "${CLUSTER_CONFIG_DIR}/cluster.conf"
+		return
+	fi
+
 	MYSQL_HOST="$(awk '/^mysql_host/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
 	MYSQL_PORT="$(awk '/^mysql_port/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
 	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
@@ -80,13 +113,14 @@ help() {
 	echo "migrate     Run database migrations (requires tag)"
 	echo "setup       Configure and run Teamwire containers (requires tag)"
 	echo "start       Start all stopped Teamwire containers"
+	echo "status      Show status of Teamwire containers"
 	echo "stop        Stop all running Teamwire containers"
 	echo "rm          Remove all stopped Teamwire containers"
 	echo "backupdb    Create a backup of the database (requires file name)"
 }
 
-backupdb() {
-	get_mysql_configuration
+backupdb_single() {
+	get_database_configuration
 	local MYSQLDUMP_CONFIG_FILE
 
 	if [ -f "$FILENAME" ] ; then
@@ -105,7 +139,13 @@ backupdb() {
 	rm -f "$MYSQLDUMP_CONFIG_FILE"
 }
 
-pull_images() {
+backupdb_cluster() {
+	echo "Database backup is not supported on clustered setups!"
+	echo "Please use the tool appropriate for your database to perform a manual backup."
+	exit 1
+}
+
+pull_images_base() {
 	echo "Pulling Teamwire container images for version $TAG"
 	echo
 	for IMAGE in $IMAGES; do
@@ -113,7 +153,22 @@ pull_images() {
 	done
 }
 
-remove_containers() {
+pull_images_single() {
+	pull_images_base
+}
+
+pull_images_cluster() {
+	pull_images_base
+
+	. "${CLUSTER_CONFIG_DIR}/cluster.conf"
+	if [ -n "$REGISTRY" ] ; then
+		echo
+		echo "Pushing images to registry"
+		/usr/local/bin/twimg --registry "$REGISTRY" push
+	fi
+}
+
+remove_containers_single() {
 	# Save the logs of the containers before deleting them
 	save_container_logs
 
@@ -122,17 +177,23 @@ remove_containers() {
 	done
 }
 
-run_migrations() {
+remove_containers_cluster() {
+	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" rm
+}
+
+run_migrations_base() {
 	check_tag "$TAG"
 	check_config_file
-	get_mysql_configuration
+	get_database_configuration
 
 	ERROR_LOG="$(tempfile)"
 
 	echo "Running database migrations"
 	echo
-	docker run --rm -e MODE=migration -e MYSQL_HOST="$MYSQL_HOST" \
-		-e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_PASSWORD="$MYSQL_PASS" \
+	docker run --rm -e MODE=migration \
+		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_PASSWORD="$MYSQL_PASS" \
+		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
+		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
 		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2> "$ERROR_LOG" | egrep -v '^(.+)='
 
 	if [ $? -gt 0 ] ; then
@@ -141,7 +202,23 @@ run_migrations() {
 	rm -f "$ERROR_LOG"
 }
 
-stop_containers() {
+run_migrations_single() {
+	run_migrations_base
+}
+
+run_migrations_cluster() {
+	run_migrations_base
+}
+
+status_single() {
+	docker ps
+}
+
+status_cluster() {
+	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" ps
+}
+
+stop_containers_single() {
 	for CONTAINER in $CONTAINERS; do
 		if docker ps -qf name="$CONTAINER" | egrep -q '^.+$' ; then
 			docker stop "$CONTAINER"
@@ -149,13 +226,21 @@ stop_containers() {
 	done
 }
 
-start_containers() {
+stop_containers_cluster() {
+	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" stop
+}
+
+start_containers_single() {
 	for CONTAINER in $CONTAINERS; do
 		docker start "$CONTAINER"
 	done
 }
 
-setup_containers() {
+start_containers_cluster() {
+	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" start
+}
+
+setup_containers_base() {
 	check_tag "$TAG"
 	check_config_file
 
@@ -165,13 +250,27 @@ setup_containers() {
 		exit 1
 	fi
 
+	# Write given tag into config file
+	sed -i -e 's/^\(version: \).*$/\1'"$TAG"'/' $CONFIG_FILE
+}
+
+setup_containers_single() {
+	setup_containers_base
 	# Save the logs of the running containers
 	save_container_logs
 
-	# Write given tag into config file
-	sed -i -e 's/^\(version: \).*$/\1'"$TAG"'/' $CONFIG_FILE
-
 	ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
+}
+
+setup_containers_cluster() {
+	setup_containers_base
+
+	# Patch the compose file
+	for IMAGE in $IMAGES ; do
+		sed -i -e 's|\('"$IMAGE"':\)[[:alnum:]-]*|\1'"$TAG"'|' "$COMPOSE_FILE"
+	done
+
+	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" up -d
 }
 
 TAG=""
@@ -204,6 +303,9 @@ while [ $# -gt 0 ] ; do
 			;;
 		start)
 			TASK="start_containers"
+			;;
+		status)
+			TASK="status"
 			;;
 		stop)
 			TASK="stop_containers"
@@ -242,4 +344,4 @@ if [ "$FILENAME_REQUIRED" = "yes" ] && [ -z "$FILENAME" ] ; then
 	exit 1
 fi
 
-$TASK
+"${TASK}_${INSTALLATION}"
