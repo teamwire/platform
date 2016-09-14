@@ -37,10 +37,6 @@
 - name: Automatically remove obsolete packages
   copy: src=apt-autoremove dest=/etc/cron.daily/apt-autoremove mode=0755
 
-# Transitional: remove obsoleted package
-- name: remove update-notifier-common package
-  apt: pkg=update-notifier-common state=absent purge=yes
-
 - name: Install useful tools
   apt: name={{item}} state=present
   with_items:

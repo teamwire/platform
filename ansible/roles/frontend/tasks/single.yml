@@ -2,10 +2,6 @@
 - name: Install the container helper tool
   copy: src=twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
 
-# Transitional
-- name: Remove obsoleted teamwire tool
-  file: dest=/usr/local/bin/teamwire_container_tool state=absent
-
 - name: Main Teamwire backend configuration
   copy: src=teamwire_backend.conf dest=/etc/nginx/conf.d/teamwire_backend.conf
   notify: reload nginx

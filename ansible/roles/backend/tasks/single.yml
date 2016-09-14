@@ -143,12 +143,3 @@
     env:
       CACHE_DIR: /website-screenshot-cache
       HTTP_PROXY: "{{ http_proxy|default() }}"
-
-- name: Delete the backend container upstart configuration
-  file: dest="/etc/init/teamwire_{{ item }}.conf" state=absent
-  with_items:
-   - backend
-   - worker
-   - beat
-   - notification_server
-   - screenshot_server
