@@ -1,0 +1,8 @@
+/var/log/cluster/*.log {
+        daily
+        missingok
+        rotate 31
+        compress
+        notifempty
+        nocreate
+}

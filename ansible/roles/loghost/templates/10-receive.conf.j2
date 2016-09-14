@@ -1,0 +1,14 @@
+module(load="imtcp")
+input(type="imtcp" port="514")
+module(load="imudp")
+input(type="imudp" port="514")
+
+$ModLoad imtcp
+$ModLoad imudp
+
+# from a syslog tag like /usr/sbin/gmeta[42] extract the gmeta, file path and pid optionally
+$Template RemoteHost,"/var/log/cluster/%syslogtag:R,ERE,2,DFLT:(.*/)?([^[]+)(\[[0-9]{1,5}\])?--end%.log"
+
+# log into the file above and don't continue
+user.* -?RemoteHost
+& ~
