@@ -190,7 +190,7 @@ run_migrations_base() {
 
 	echo "Running database migrations"
 	echo
-	docker run --rm -e MODE=migration \
+	docker run --rm -e MODE=migration --name teamwire-migrations \
 		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_PASSWORD="$MYSQL_PASS" \
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
 		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
