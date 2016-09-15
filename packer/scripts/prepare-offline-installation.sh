@@ -48,6 +48,7 @@ redis:3.2.3-alpine
 swarm:1.2.5
 registry:2.5.0
 gliderlabs/registrator:v7
+gliderlabs/logspout:v3.1
 "
 
 # File URL and SHA256 checksum separated by a semicolon

@@ -1,0 +1,3 @@
+SYSLOG_TAG={% raw %}{{ if index .Container.Config.Labels "com.docker.compose.project" }}{{index .Container.Config.Labels "com.docker.compose.project"}}-{{index .Container.Config.Labels "com.docker.compose.service"}}{{ else }}{{.ContainerName}}{{ end }}
+{% endraw %}
+SYSLOG_HOSTNAME={{ inventory_hostname }}
