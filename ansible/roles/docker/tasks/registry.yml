@@ -29,3 +29,4 @@
 
 - name: Push local images to registry
   command: /usr/local/bin/twimg --registry "{{ inventory_hostname }}:5000" push
+  when: offline_mode.stat.exists
