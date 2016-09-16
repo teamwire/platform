@@ -16,7 +16,7 @@
   when: private_ip is defined and 'consul_servers' in groups
   docker:
     name: registrator
-    image: "gliderlabs/registrator:v7"
+    image: "{{ registrator_version }}"
     state: reloaded
     restart_policy: always
     net: host
@@ -27,7 +27,7 @@
   when: "'consul_servers' in group_names"
   docker:
     name: swarm-manager
-    image: "swarm:1.2.5"
+    image: "{{ swarm_version }}"
     state: reloaded
     restart_policy: always
     net: host
@@ -84,7 +84,7 @@
   when: "'backend_servers' in group_names"
   docker:
     name: swarm-agent
-    image: "swarm:1.2.5"
+    image: "{{ swarm_version }}"
     state: reloaded
     restart_policy: always
     net: host
