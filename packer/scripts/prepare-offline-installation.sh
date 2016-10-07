@@ -108,6 +108,9 @@ sed -i -e 's/^\(version: \).*$/\1'"$BACKEND_RELEASE"'/' all
 
 echo "Step 4: Downloading 3rd party software"
 echo "======================================"
+if [ ! -d /var/cache/downloads ] ; then
+	sudo mkdir /var/cache/downloads
+fi
 for DOWNLOAD in $DOWNLOADS ; do
 	# split line into URL and SHA256 checksum
 	UC=(${DOWNLOAD//;/ })
@@ -118,7 +121,7 @@ for DOWNLOAD in $DOWNLOADS ; do
 		echo "${FILENAME}: Checksum failure"
 		exit 1
 	fi
-	sudo mv "$FILENAME" /root
+	sudo mv "$FILENAME" /var/cache/downloads
 done
 
 echo "Step 5: Building Python modules"

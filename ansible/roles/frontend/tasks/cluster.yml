@@ -5,6 +5,9 @@
 - name: Link generated backend config
   file: src=/etc/nginx/sites-available/teamwire-backend dest=/etc/nginx/sites-enabled/teamwire-backend state=link force=yes
 
+- name: Create 3rd party download directory
+  file: dest=/var/cache/downloads state=directory mode=0755
+
 - name: Check if Consul Template is already installed
   stat: path=/usr/local/sbin/consul-template
   register: consul_template_binary
@@ -12,12 +15,12 @@
 - name: Download Consul Template
   get_url:
     url: https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip
-    dest: /root/consul-template_0.15.0_linux_amd64.zip
+    dest: /var/cache/downloads/consul-template_0.15.0_linux_amd64.zip
     checksum: sha256:b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
   register: consul_template_downloaded
 
 - name: Install the Consul Template binary
-  unarchive: src=/root/consul-template_0.15.0_linux_amd64.zip dest=/usr/local/sbin mode=0755 copy=no
+  unarchive: src=/var/cache/downloads/consul-template_0.15.0_linux_amd64.zip dest=/usr/local/sbin mode=0755 copy=no
   notify: restart Consul Template
   when: consul_template_downloaded.changed or not consul_template_binary.stat.exists
 

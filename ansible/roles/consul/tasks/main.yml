@@ -26,6 +26,9 @@
 - meta: flush_handlers
 
 # Consul
+- name: Create 3rd party download directory
+  file: dest=/var/cache/downloads state=directory mode=0755
+
 - name: Check if Consul is already installed
   stat: path=/usr/local/bin/consul
   register: consul_binary
@@ -33,12 +36,12 @@
 - name: Download Consul
   get_url:
     url: https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip
-    dest: /root/consul_0.6.4_linux_amd64.zip
+    dest: /var/cache/downloads/consul_0.6.4_linux_amd64.zip
     checksum: sha256:abdf0e1856292468e2c9971420d73b805e93888e006c76324ae39416edcf0627
   register: consul_downloaded
 
 - name: Install the Consul binary
-  unarchive: src=/root/consul_0.6.4_linux_amd64.zip dest=/usr/local/bin mode=0755 copy=no
+  unarchive: src=/var/cache/downloads/consul_0.6.4_linux_amd64.zip dest=/usr/local/bin mode=0755 copy=no
   notify: restart consul
   when: consul_downloaded.changed or not consul_binary.stat.exists
 
@@ -50,7 +53,7 @@
 - name: download consul-ui
   get_url:
     url: https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_web_ui.zip
-    dest: /root/consul_0.6.4_web_ui.zip
+    dest: /var/cache/downloads/consul_0.6.4_web_ui.zip
     checksum: sha256:5f8841b51e0e3e2eb1f1dc66a47310ae42b0448e77df14c83bb49e0e0d5fa4b7
   register: consul_ui_downloaded
   when: inventory_hostname in groups['consul_servers']
@@ -60,7 +63,7 @@
   when: inventory_hostname in groups['consul_servers']
 
 - name: Install the Consul web UI
-  unarchive: src=/root/consul_0.6.4_web_ui.zip dest=/usr/local/share/consul-ui copy=no
+  unarchive: src=/var/cache/downloads/consul_0.6.4_web_ui.zip dest=/usr/local/share/consul-ui copy=no
   when: inventory_hostname in groups['consul_servers'] and (consul_ui_downloaded.changed or not consul_web_ui.stat.exists)
 
 - name: Create Consul config directory
