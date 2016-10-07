@@ -33,6 +33,7 @@
 
 - name: Configure unattended-upgrade
   copy: src=02periodic dest=/etc/apt/apt.conf.d/02periodic
+  when: not offline_mode.stat.exists
 
 - name: Automatically remove obsolete packages
   copy: src=apt-autoremove dest=/etc/cron.daily/apt-autoremove mode=0755
