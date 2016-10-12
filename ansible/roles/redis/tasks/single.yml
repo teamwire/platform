@@ -2,8 +2,8 @@
 - name: Install Redis server
   apt: name=redis-server state=present
 
-- name: Configure redis to listen on the docker0 interface
-  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" line="bind 127.0.0.1 172.17.0.1 {{ hostvars[inventory_hostname]['ansible_eth1']['ipv4']['address'] if 'backend_servers' in groups else '' }}"
+- name: Configure Redis to listen on all interfaces
+  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" backrefs=yes line="bind 0.0.0.0"
   notify: restart redis
 
 - name: Configure password for Redis
