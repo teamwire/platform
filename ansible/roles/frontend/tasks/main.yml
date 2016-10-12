@@ -12,15 +12,16 @@
     state: absent
   notify: reload nginx
 
-  # Copy the SSL certificate
-- copy: src={{ ssl_certfile }} dest=/etc/ssl/private/teamwire-backend.crt mode=0640
+- name: Copy the SSL certificate
+  copy: src={{ ssl_certfile }} dest=/etc/ssl/private/teamwire-backend.crt mode=0640
   when: ssl_certfile is defined
 
-- copy: src={{ ssl_keyfile }} dest=/etc/ssl/private/teamwire-backend.key mode=0640
+- name: Copy the SSL key
+  copy: src={{ ssl_keyfile }} dest=/etc/ssl/private/teamwire-backend.key mode=0640
   when: ssl_keyfile is defined
 
-# Generate a new Diffie-Hellman group
-- command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
+- name: Generate a new Diffie-Hellman group
+  command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
   when: ssl_certfile is defined and ssl_keyfile is defined
   args:
     creates: /etc/ssl/private/dhparams.pem
