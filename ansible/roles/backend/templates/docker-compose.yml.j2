@@ -14,7 +14,7 @@ services:
       - /data/assets:/assets
     environment:
       - AESKEY={{ aes_key }}
-      - ARCHIVING_CONFIG=/archiving/archiving.yaml
+      - ARCHIVING_CONFIG=/archiving/archiving.conf
       - ARCHIVING_GPGHOME=/archiving/gpg
       - ORG_DEFAULT_ALLOW_USER_REG={{ allow_unknown_users|default('true') }}
       - MYSQL_HOST={{ mysql_host | default() }}
