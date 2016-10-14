@@ -2,7 +2,7 @@
 - include: configuration.yml
 
 - name: Install the container helper tool
-  copy: src=twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
+  copy: src=./../roles/backend/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
 
 - name: Retrieve and run the Teamwire backend main container
   when: config_done is defined
