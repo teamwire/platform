@@ -269,6 +269,7 @@ setup_containers_cluster() {
 	for IMAGE in $IMAGES ; do
 		sed -i -e 's|\('"$IMAGE"':\)[[:alnum:]-]*|\1'"$TAG"'|' "$COMPOSE_FILE"
 	done
+	sed -i -e 's|\(VERSION=\)[[:alnum:]-]*|\1'"$TAG"'|' "$COMPOSE_FILE"
 
 	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" up -d
 }
