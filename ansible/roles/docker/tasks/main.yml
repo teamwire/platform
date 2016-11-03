@@ -18,6 +18,9 @@
 - name: Add the Docker repository
   apt_repository: repo='deb https://apt.dockerproject.org/repo {{ansible_distribution|lower}}-{{ansible_distribution_release}} main' state=present
 
+- name: Install aufs-tools
+  apt: pkg=aufs-tools state=present
+
 - name: Install Docker
   apt: pkg=docker-engine state=present
 
