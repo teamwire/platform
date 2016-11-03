@@ -1,0 +1,19 @@
+--- rsyslog.conf.orig	2016-11-04 14:59:32.737154676 +0000
++++ rsyslog.conf	2016-11-04 14:59:26.161245910 +0000
+@@ -59,7 +59,7 @@
+ # First some standard log files.  Log by facility.
+ #
+ auth,authpriv.*			/var/log/auth.log
+-*.*;auth,authpriv.none		-/var/log/syslog
++*.*;local6,auth,authpriv.none	-/var/log/syslog
+ #cron.*				/var/log/cron.log
+ daemon.*			-/var/log/daemon.log
+ kern.*				-/var/log/kern.log
+@@ -91,6 +91,7 @@
+ *.=info;*.=notice;*.=warn;\
+ 	auth,authpriv.none;\
+ 	cron,daemon.none;\
++	local6.none;\
+ 	mail,news.none		-/var/log/messages
+ 
+ #

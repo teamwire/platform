@@ -1,0 +1,6 @@
+action(
+   type="omfwd"
+   target="{{ hostvars[groups.loghost | first].private_ip | ipaddr('address') }}"
+   protocol="tcp"
+   port="514"
+)

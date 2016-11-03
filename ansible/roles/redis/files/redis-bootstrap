@@ -25,7 +25,9 @@ DOCKER_BASE_CMD="/usr/bin/docker run
 		--detach
 		--restart always
 		--network host
-		--volume ${REDIS_DIR}:/data:rw"
+		--volume ${REDIS_DIR}:/data:rw
+		--log-driver=syslog
+		--log-opt syslog-facility=local6"
 
 REDIS_CHECK_SCRIPT="${REDIS_CMD} -h ${REDIS_BINDIP} -p ${REDIS_PORT} info | egrep role:master || return 2"
 
@@ -91,6 +93,7 @@ setup_redis() {
 	chmod 660 /local/redis/redis.conf
 
 	${DOCKER_BASE_CMD} \
+		--log-opt tag="redis" \
 		-p ${REDIS_PORT}:${REDIS_PORT} \
 		--name redis \
 		--env SERVICE_CHECK_SCRIPT="${REDIS_CHECK_SCRIPT}" \
@@ -133,6 +136,7 @@ setup_sentinel() {
 
 	sudo touch "${REDIS_DIR}/redis.conf"
 	${DOCKER_BASE_CMD} \
+		--log-opt tag="redis-sentinel" \
 		-p 2${REDIS_PORT}:2${REDIS_PORT} \
 		--name redis-sentinel \
 		--env SERVICE_NAME=redis-sentinel \

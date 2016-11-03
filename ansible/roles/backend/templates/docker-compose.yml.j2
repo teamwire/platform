@@ -12,6 +12,11 @@ services:
     volumes:
       - /data/archiving:/archiving
       - /data/assets:/assets
+    logging:
+      driver: "syslog"
+      options:
+         tag: teamwire-backend
+         syslog-facility: "local6"
     environment:
       - AESKEY={{ aes_key }}
       - ARCHIVING_CONFIG=/archiving/archiving.conf
@@ -50,6 +55,11 @@ services:
     volumes:
       - /data/assets:/assets
       - /data/certs/apns:/app/certs/apns
+    logging:
+      driver: "syslog"
+      options:
+         tag: teamwire-worker
+         syslog-facility: "local6"
     environment:
       - MODE=worker
       - AESKEY={{ aes_key }}
@@ -82,6 +92,11 @@ services:
     network_mode: "bridge"
     volumes:
       - /data/beat:/beat
+    logging:
+      driver: "syslog"
+      options:
+         tag: teamwire-beat
+         syslog-facility: "local6"
     environment:
       - MODE=beat
       - AESKEY={{ aes_key }}
@@ -107,6 +122,11 @@ services:
     ports:
       - "9080"
       - "9081:9081"
+    logging:
+      driver: "syslog"
+      options:
+         tag: teamwire-notifications
+         syslog-facility: "local6"
     environment:
       - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
       - REDIS_PASSWORD={{ redis_pass|default() }}
@@ -121,6 +141,11 @@ services:
       - "8080"
     volumes:
       - /data/website-screenshot-cache:/website-screenshot-cache
+    logging:
+      driver: "syslog"
+      options:
+         tag: teamwire-screenshot-server
+         syslog-facility: "local6"
     environment:
       - CACHE_DIR=/website-screenshot-cache
       - HTTP_PROXY={{ http_proxy|default() }}

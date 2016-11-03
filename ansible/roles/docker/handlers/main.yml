@@ -5,5 +5,5 @@
 - name: restart docker
   service: name=docker state=restarted
 
-- name: restart logspout
-  service: name=logspout state=restarted enabled=true
+- name: restart rsyslog
+  service: name=rsyslog state=restarted

@@ -1,14 +1,20 @@
 module(load="imtcp")
-input(type="imtcp" port="514")
-module(load="imudp")
-input(type="imudp" port="514")
+input(type="imtcp" port="514" ruleset="remote")
 
-$ModLoad imtcp
-$ModLoad imudp
+template(name="PerServiceDockerLog" type="list") {
+    constant(value="/var/log/cluster/")
+    property(name="syslogtag" securepath="replace" \
+            regex.expression="\\(.*\\)\\[" regex.submatch="1")
+    constant(value=".log")
+}
 
-# from a syslog tag like /usr/sbin/gmeta[42] extract the gmeta, file path and pid optionally
-$Template RemoteHost,"/var/log/cluster/%syslogtag:R,ERE,2,DFLT:(.*/)?([^[]+)(\[[0-9]{1,5}\])?--end%.log"
+template(name="PerHostLog" type="list") {
+    constant(value="/var/log/cluster/")
+    property(name="hostname" securepath="replace")
+    constant(value=".log")
+}
 
-# log into the file above and don't continue
-user.* -?RemoteHost
-& ~
+ruleset(name="remote") {
+    if $syslogfacility-text == 'local6' then ?PerServiceDockerLog
+    else ?PerHostLog
+}

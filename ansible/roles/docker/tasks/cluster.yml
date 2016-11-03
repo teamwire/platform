@@ -1,16 +1,19 @@
 ---
-- name: Write logspout configutation
-  when: private_ip is defined and 'loghost' in groups
-  template: src=logspout.j2 dest=/etc/default/logspout
-  notify:
-    - restart logspout
+- name: Ensure rsyslog is installed
+  apt: pkg=rsyslog
 
-- name: Install logspout in clustered setups
-  when: private_ip is defined and 'loghost' in groups
-  template: src=logspout.service.j2 dest=/etc/systemd/system/logspout.service
-  notify:
-    - reload systemd
-    - restart logspout
+- name: Configure rsyslog for docker containers
+  copy: src=10-docker.conf dest=/etc/rsyslog.d/10-docker.conf
+  notify: restart rsyslog
+
+- name: Don't log container logs into /var/log/messages
+  patch: >
+    src=rsyslog.conf.patch
+    dest=/etc/rsyslog.conf
+  notify: restart rsyslog
+
+- name: Install logrotate job for cluster logs
+  copy: src=container-log dest=/etc/logrotate.d/container-log
 
 - name: Run registrator in clustered setups
   when: private_ip is defined and 'consul_servers' in groups
@@ -19,6 +22,10 @@
     image: "{{ registrator_version }}"
     state: reloaded
     restart_policy: always
+    log_driver: syslog
+    log_opt:
+      tag: registrator
+      syslog-facility: local6
     net: host
     volumes: "/var/run/docker.sock:/tmp/docker.sock"
     command: "-ip {{ private_ip | ipaddr('address') }} consul://localhost:8500"
@@ -30,6 +37,10 @@
     image: "{{ swarm_version }}"
     state: reloaded
     restart_policy: always
+    log_driver: syslog
+    log_opt:
+      tag: swarm-manager
+      syslog-facility: local6
     net: host
     ports: "4000:4000"
     command: "manage -H :4000 --replication --advertise {{ private_ip | ipaddr('address') }}:4000 consul://localhost:8500"
@@ -87,5 +98,9 @@
     image: "{{ swarm_version }}"
     state: reloaded
     restart_policy: always
+    log_driver: syslog
+    log_opt:
+      tag: swarm-agent
+      syslog-facility: local6
     net: host
     command: "join --advertise={{ private_ip | ipaddr('address') }}:2375 consul://localhost:8500"
