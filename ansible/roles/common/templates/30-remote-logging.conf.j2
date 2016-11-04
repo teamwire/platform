@@ -1,6 +1,10 @@
+# Remote log hosts
+{% for host in groups.loghost %}
 action(
-   type="omfwd"
-   target="{{ hostvars[groups.loghost | first].private_ip | ipaddr('address') }}"
-   protocol="tcp"
-   port="514"
+    name="remote_logging_on_{{ host }}"
+    type="omfwd"
+    target="{{ hostvars[host].private_ip | ipaddr('address') }}"
+    protocol="tcp"
+    port="514"
 )
+{% endfor %}
