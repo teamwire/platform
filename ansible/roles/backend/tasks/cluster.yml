@@ -19,15 +19,3 @@
     src: ../../roles/backend/templates/cluster.conf.j2
     dest: /usr/share/teamwire/cluster.conf
     mode: 0640
-
-- docker_service:
-    project_name: teamwire
-    project_src: /usr/share/teamwire
-    docker_host: "tcp://{{ private_ip | ipaddr('address') }}:4000"
-# FIXME: the docker_service module doesn't accept variables as parameters for the
-# scale setting; this needs to be calculated dynamically once ansible is fixed.
-# see https://github.com/ansible/ansible-modules-core/issues/4592
-    scale:
-      backend: 3
-      worker: 3
-      screenshot-server: 3
