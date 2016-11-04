@@ -111,6 +111,7 @@ help() {
 	echo
 	echo "pull        Pull containers for a given tag (requires tag)"
 	echo "migrate     Run database migrations (requires tag)"
+	echo "scale       Scale services (cluster only)"
 	echo "setup       Configure and run Teamwire containers (requires tag)"
 	echo "start       Start all stopped Teamwire containers"
 	echo "status      Show status of Teamwire containers"
@@ -210,6 +211,16 @@ run_migrations_cluster() {
 	run_migrations_base
 }
 
+scale_single() {
+	echo "Service scaling is only supported on clustered setups."
+	exit 1
+}
+
+scale_cluster() {
+	echo "$OPTIONS"
+	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" scale $OPTIONS
+}
+
 status_single() {
 	docker ps
 }
@@ -274,6 +285,7 @@ setup_containers_cluster() {
 	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" up -d
 }
 
+OPTIONS=""
 TAG=""
 TASK=""
 while [ $# -gt 0 ] ; do
@@ -297,6 +309,11 @@ while [ $# -gt 0 ] ; do
 		migrate)
 			TASK="run_migrations"
 			TAG_REQUIRED=yes
+			;;
+		scale)
+			TASK="scale"
+			shift
+			OPTIONS=$@
 			;;
 		setup)
 			TASK="setup_containers"
