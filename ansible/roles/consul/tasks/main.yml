@@ -35,13 +35,13 @@
 
 - name: Download Consul
   get_url:
-    url: https://releases.hashicorp.com/consul/0.7.0/consul_0.7.0_linux_amd64.zip
-    dest: /var/cache/downloads/consul_0.7.0_linux_amd64.zip
-    checksum: sha256:b350591af10d7d23514ebaa0565638539900cdb3aaa048f077217c4c46653dd8
+    url: https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_linux_amd64.zip
+    dest: /var/cache/downloads/consul_0.7.1_linux_amd64.zip
+    checksum: sha256:5dbfc555352bded8a39c7a8bf28b5d7cf47dec493bc0496e21603c84dfe41b4b
   register: consul_downloaded
 
 - name: Install the Consul binary
-  unarchive: src=/var/cache/downloads/consul_0.7.0_linux_amd64.zip dest=/usr/local/bin mode=0755 copy=no
+  unarchive: src=/var/cache/downloads/consul_0.7.1_linux_amd64.zip dest=/usr/local/bin mode=0755 copy=no
   notify: restart consul
   when: consul_downloaded.changed or not consul_binary.stat.exists
 
@@ -52,9 +52,9 @@
 
 - name: download consul-ui
   get_url:
-    url: https://releases.hashicorp.com/consul/0.7.0/consul_0.7.0_web_ui.zip
-    dest: /var/cache/downloads/consul_0.7.0_web_ui.zip
-    checksum: sha256:42212089c228a73a0881a5835079c8df58a4f31b5060a3b4ffd4c2497abe3aa8
+    url: https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_web_ui.zip
+    dest: /var/cache/downloads/consul_0.7.1_web_ui.zip
+    checksum: sha256:1b793c60e1af24cc470421d0411e13748f451b51d8a6ed5fcabc8d00bfb84264
   register: consul_ui_downloaded
   when: inventory_hostname in groups['consul_servers']
 

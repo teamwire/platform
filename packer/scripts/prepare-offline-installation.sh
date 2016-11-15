@@ -50,8 +50,8 @@ $(awk '{ gsub("\"",""); print $2; }' ~teamwire/platform/ansible/roles/docker/var
 
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
-https://releases.hashicorp.com/consul/0.7.0/consul_0.7.0_linux_amd64.zip;b350591af10d7d23514ebaa0565638539900cdb3aaa048f077217c4c46653dd8
-https://releases.hashicorp.com/consul/0.7.0/consul_0.7.0_web_ui.zip;42212089c228a73a0881a5835079c8df58a4f31b5060a3b4ffd4c2497abe3aa8
+https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_linux_amd64.zip;5dbfc555352bded8a39c7a8bf28b5d7cf47dec493bc0496e21603c84dfe41b4b
+https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_web_ui.zip;1b793c60e1af24cc470421d0411e13748f451b51d8a6ed5fcabc8d00bfb84264
 https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip;b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
 "
 
