@@ -3,6 +3,8 @@
   fail: msg="Only one docker_registry may be specified"
   when: groups.docker_registry | length > 1
 
+- include: ../../roles/common/tasks/storage.yml
+
 - name: Create Docker Registry storage directory
   file: name="{{ item }}" state=directory
   with_items:

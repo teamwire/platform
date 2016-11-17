@@ -1,5 +1,29 @@
 ---
-- include: storage.yml
+- include: ../../roles/common/tasks/storage.yml
+
+- name: Create the backend storage directories
+  file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
+  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
+  with_items:
+    - archiving
+    - assets
+    - website-screenshot-cache
+    - beat
+
+- name: Create the backend certificate storage directories
+  file: path=/data/{{ item }} owner=daemon group=ssl-cert mode=0750 state=directory
+  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
+  with_items:
+    - certs
+    - certs/apns
+
+- name: Create the backend GPG storage directories
+  file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
+  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
+
+- name: Install the APNS certificate
+  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.pem mode=0440 owner=daemon group=ssl-cert
+  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
 
 - include: single.yml
   when: "'backend_servers' not in groups"

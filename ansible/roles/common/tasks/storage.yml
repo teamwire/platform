@@ -22,27 +22,3 @@
 - name: Mount GlusterFS share (cluster)
   mount: name=/data fstype=glusterfs src="{{ groups['nfs_servers'] | first }}:/data" opts="{% for host in groups['nfs_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable" state=mounted
   when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1
-
-- name: Create the backend storage directories
-  file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
-  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
-  with_items:
-    - archiving
-    - assets
-    - website-screenshot-cache
-    - beat
-
-- name: Create the backend certificate storage directories
-  file: path=/data/{{ item }} owner=daemon group=ssl-cert mode=0750 state=directory
-  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
-  with_items:
-    - certs
-    - certs/apns
-
-- name: Create the backend GPG storage directories
-  file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
-  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
-
-- name: Install the APNS certificate
-  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.pem mode=0440 owner=daemon group=ssl-cert
-  when: config_done is defined and 'backend_servers' not in groups or inventory_hostname == groups['backend_servers'] | first
