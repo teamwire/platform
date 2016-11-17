@@ -42,7 +42,7 @@ server {
 	real_ip_recursive on;
 {% endif %}
 {% raw %}
-	client_max_body_size 64M;
+	client_max_body_size 256M;
 	keepalive_timeout 10;
 
 	# The notification server
