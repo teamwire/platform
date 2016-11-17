@@ -1,6 +1,6 @@
 ---
 - name: Create local storage directory / NFS mount point
-  file: path=/data owner=daemon group=ssl-cert mode=0750 state=directory
+  file: path=/data owner=root group=root mode=0755 state=directory
 
 # Mount external storage
 - name: Install NFS client

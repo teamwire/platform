@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CLUSTER_CONFIG_DIR=/usr/share/teamwire
+CLUSTER_CONFIG_DIR=/data/cluster_config
 
 if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	# Clustered setup
