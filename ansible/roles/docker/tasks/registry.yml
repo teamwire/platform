@@ -6,7 +6,7 @@
 - include: ../../roles/common/tasks/storage.yml
 
 - name: Create Docker Registry storage directory
-  file: name="{{ item }}" state=directory
+  file: name="{{ item }}" state=directory mode=0750
   with_items:
     - /data
     - /data/registry
