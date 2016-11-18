@@ -63,7 +63,7 @@
   when: inventory_hostname in groups['consul_servers']
 
 - name: Install the Consul web UI
-  unarchive: src=/var/cache/downloads/consul_0.7.0_web_ui.zip dest=/usr/local/share/consul-ui copy=no
+  unarchive: src=/var/cache/downloads/consul_0.7.1_web_ui.zip dest=/usr/local/share/consul-ui copy=no
   when: inventory_hostname in groups['consul_servers'] and (consul_ui_downloaded.changed or not consul_web_ui.stat.exists)
 
 - name: Create Consul config directory
