@@ -54,7 +54,7 @@
   notify: restart docker
 
 - name: Configure proxy for docker (Debian)
-  when: http_proxy is defined and ansible_distribution == "Debian" and (not 'docker_registry' in groups or inventory_hostname == groups['docker_registry'] | first)
+  when: http_proxy is defined and ansible_distribution == "Debian" and (not 'docker_registry' in groups or inventory_hostname in groups.docker_registry)
   template: src=http-proxy.conf.j2 dest=/etc/systemd/system/docker.service.d/http-proxy.conf
   notify:
     - reload systemd

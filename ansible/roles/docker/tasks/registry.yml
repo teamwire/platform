@@ -1,18 +1,13 @@
 ---
-- name: Ensure only on Docker Registry mirror is defined
-  fail: msg="Only one docker_registry may be specified"
-  when: groups.docker_registry | length > 1
-
 - include: ../../roles/common/tasks/storage.yml
 
 - name: Create Docker Registry storage directory
-  file: name="{{ item }}" state=directory mode=0750
-  with_items:
-    - /data
-    - /data/registry
+  file: name=/data/registry state=directory mode=0750
+  run_once: true
 
 - name: Write Docker registry config file
   template: src=registry-config.yml.j2 dest=/data/registry/config.yml
+  run_once: true
 
 - name: Retrieve and run the Docker Registry container
   when: config_done is defined
@@ -32,3 +27,4 @@
 - name: Push local images to registry
   command: /usr/local/bin/twimg --registry "{{ inventory_hostname }}:5000" push
   when: offline_mode.stat.exists
+  run_once: true
