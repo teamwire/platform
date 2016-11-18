@@ -162,7 +162,7 @@ pull_images_cluster() {
 	pull_images_base
 
 	. "${CLUSTER_CONFIG_DIR}/cluster.conf"
-	if [ -n "$REGISTRY" ] ; then
+	if [ -n "$REGISTRY" ] && [ -x /usr/local/bin/twimg ] ; then
 		echo
 		echo "Pushing images to registry"
 		/usr/local/bin/twimg --registry "$REGISTRY" push
