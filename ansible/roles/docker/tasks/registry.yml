@@ -1,5 +1,5 @@
 ---
-- include: ../../roles/common/tasks/storage.yml
+- include: ../../common/tasks/storage.yml
 
 - name: Create Docker Registry storage directory
   file: name=/data/registry state=directory mode=0750

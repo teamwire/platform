@@ -1,5 +1,5 @@
 ---
-- include: ../../roles/common/tasks/storage.yml
+- include: ../../common/tasks/storage.yml
 
 - name: Create the backend storage directories
   file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
