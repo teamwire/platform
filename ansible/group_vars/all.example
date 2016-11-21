@@ -34,6 +34,13 @@ external_hostname:
 # address here, otherwise the access logs will only show the proxy's address
 # frontend_proxy:
 
+# If you need to restrict access to the Admin Portal, list IP addresses or
+# ranges here, following the format given in the examples. When nothing is
+# specified, access to the Admin Portal is not restricted.
+# admin_ip_ranges:
+#   - 192.168.10.127
+#   - 10.0.10.0/24
+
 # Custom NTP servers.
 # The servers listed below are used per default. Uncomment the entire structure
 # and keep the indentation of two spaces when changing the server names.

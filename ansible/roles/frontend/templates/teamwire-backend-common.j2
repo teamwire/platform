@@ -33,6 +33,17 @@
 		proxy_read_timeout 180;
 	}
 
+{% if admin_ip_ranges is defined %}
+	location ~ ^/(dashboard|admin)/ {
+{% for range in admin_ip_ranges %}
+		allow {{ range }};
+{% endfor %}
+		deny all;
+
+		proxy_pass http://teamwire_backend;
+	}
+
+{% endif %}
 	location / {
 		proxy_pass http://teamwire_backend;
 	}
