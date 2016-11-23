@@ -14,9 +14,8 @@
 	proxy_set_header X-Forwarded-Proto $scheme;
 	proxy_set_header Host $http_host;
 	proxy_buffering off;
-	# we don't want nginx trying to do something clever with
-	# redirects, we set the Host: header above already.
 	proxy_redirect off;
+	proxy_read_timeout 180;
 
 	# The notification server
 	location /notifications/ {
@@ -30,7 +29,6 @@
 	# The web screenshot service
 	location /web-screenshot/ {
 		proxy_pass http://teamwire_screenshot_server/;
-		proxy_read_timeout 180;
 	}
 
 {% if admin_ip_ranges is defined %}
