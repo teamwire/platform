@@ -217,7 +217,6 @@ scale_single() {
 }
 
 scale_cluster() {
-	echo "$OPTIONS"
 	$DOCKER_COMPOSE scale $OPTIONS
 }
 
