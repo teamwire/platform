@@ -63,33 +63,36 @@
   stat: path=/var/cache/wheelhouse
   register: wheelhouse
 
-- name: Ensure docker-py 1.9.0 is installed on manager nodes (online)
-  pip: name=docker-py version=1.9.0
+- name: Check if Docker Compose is installed
+  stat: path=/usr/local/bin/docker-compose
+  register: compose
+
+- name: Install Python wheel (online)
+  apt: pkg=python-wheel
   when: "'consul_servers' in group_names and not wheelhouse.stat.exists"
 
-- name: Ensure docker-compose is installed on manager nodes (online)
-  pip: name=docker-compose version=1.8.0
+# Hackish, but Docker Compose's dependencies are notoriously broken
+- name: Prepare Docker Compose installation (online)
+  command: "pip wheel --no-deps -w /var/cache/wheelhouse {{ item }}"
+  with_items:
+    - cached-property==1.2.0
+    - docker-compose==1.8.1
+    - docker-py===1.10.3
+    - docker-pycreds==0.2.1
+    - dockerpty==0.4.1
+    - websocket_client==0.32.0
   when: "'consul_servers' in group_names and not wheelhouse.stat.exists"
 
-- name: Ensure docker-compose is installed on manager nodes (offline)
+- name: Install Docker Compose
   pip: name=/var/cache/wheelhouse/{{ item }} extra_args="--no-deps"
-  when: "'consul_servers' in group_names and wheelhouse.stat.exists"
+  when: "'consul_servers' in group_names and not compose.stat.exists"
   with_items:
     - cached_property-1.2.0-py2.py3-none-any.whl
+    - docker_compose-1.8.1-py2-none-any.whl
+    - docker_py-1.10.3-py2.py3-none-any.whl
+    - docker_pycreds-0.2.1-py2.py3-none-any.whl
     - dockerpty-0.4.1-py2-none-any.whl
     - websocket_client-0.32.0-py2-none-any.whl
-    - docker_py-1.9.0-py2.py3-none-any.whl
-    - docker_compose-1.8.0-py2-none-any.whl
-
-# docker-compose pulls in reqeusts 2.7, which breaks pip, so we need to remove
-# the local installation; compose seems to work fine with requests 2.8 from
-# backports
-- name: Remove outdated version of python requests module
-  file: path={{item}} state=absent
-  when: "'consul_servers' in group_names and not wheelhouse.stat.exists"
-  with_items:
-    - /usr/local/lib/python2.7/dist-packages/requests
-    - /usr/local/lib/python2.7/dist-packages/requests-2.7.0.dist-info
 
 - name: Run Swarm agent
   when: "'backend_servers' in group_names"

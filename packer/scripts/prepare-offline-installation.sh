@@ -57,8 +57,9 @@ https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_lin
 
 PYTHON_MODULES="
 cached_property==1.2.0
-docker_compose==1.8.0
-docker-py==1.9.0
+docker_compose==1.8.1
+docker-py==1.10.3
+docker-pycreds==0.2.1
 dockerpty==0.4.1
 websocket_client==0.32.0
 "
