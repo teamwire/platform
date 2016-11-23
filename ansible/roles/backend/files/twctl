@@ -12,7 +12,7 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	fi
 
 	COMPOSE_FILE="${CLUSTER_CONFIG_DIR}/docker-compose.yml"
-	DOCKER_CONTROL_HOST=tcp://localhost:4000
+	DOCKER_COMPOSE="/usr/local/bin/docker-compose -p teamwire -f "$COMPOSE_FILE" -H tcp://localhost:4000"
 else
 	# Single server installation
 	INSTALLATION=single
@@ -180,7 +180,7 @@ remove_containers_single() {
 }
 
 remove_containers_cluster() {
-	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" rm
+	$DOCKER_COMPOSE rm
 }
 
 run_migrations_base() {
@@ -218,7 +218,7 @@ scale_single() {
 
 scale_cluster() {
 	echo "$OPTIONS"
-	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" scale $OPTIONS
+	$DOCKER_COMPOSE scale $OPTIONS
 }
 
 status_single() {
@@ -226,7 +226,7 @@ status_single() {
 }
 
 status_cluster() {
-	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" ps
+	$DOCKER_COMPOSE ps
 }
 
 stop_containers_single() {
@@ -238,7 +238,7 @@ stop_containers_single() {
 }
 
 stop_containers_cluster() {
-	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" stop
+	$DOCKER_COMPOSE stop
 }
 
 start_containers_single() {
@@ -248,7 +248,7 @@ start_containers_single() {
 }
 
 start_containers_cluster() {
-	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" start
+	$DOCKER_COMPOSE start
 }
 
 setup_containers_base() {
@@ -284,7 +284,7 @@ setup_containers_cluster() {
 	done
 	sed -i -e 's|\(VERSION=\)[[:alnum:]-]*|\1'"$TAG"'|' "$COMPOSE_FILE"
 
-	DOCKER_HOST=$DOCKER_CONTROL_HOST docker-compose -f "$COMPOSE_FILE" up -d
+	$DOCKER_COMPOSE up -d
 }
 
 OPTIONS=""
