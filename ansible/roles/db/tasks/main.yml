@@ -33,10 +33,6 @@
   - python-mysqldb
   register: mysql_initial_installation
 
-- name: Work around MariaDB bug MDEV-10507
-  copy: src=mariadb.conf dest=/usr/lib/tmpfiles.d mode=0644
-  when: ansible_distribution == "Debian"
-
 # Unfortunately MariaDB cannot be configure to listen on multiple interfaces
 - name: Configure MariaDB to listen on all interfaces
   action: lineinfile dest=/etc/mysql/my.cnf regexp="^bind-address\s*=\s*127.0.0.1" backrefs=yes line="bind-address=0.0.0.0"
