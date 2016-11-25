@@ -2,7 +2,9 @@
 
 from __future__ import print_function
 import argparse
+import base64
 import csv
+import io
 import os.path
 import sys
 import tarfile
@@ -14,6 +16,12 @@ def eprint(*args, **kwargs):
 
 
 class TWImg():
+    IMAGES = [
+        'teamwire/backend',
+        'teamwire/web-screenshot-server',
+        'teamwire/notification-server'
+    ]
+
     def __init__(self, registry):
         self.registry = registry
         self.cli = Client(base_url='unix://var/run/docker.sock')
@@ -57,7 +65,68 @@ class TWImg():
                     eprint("Failed to tag {}".format(repo_and_tag))
                     return 1
 
+    def exportImagestoTarfile(self, filename, tag):
+        if not filename:
+            eprint("Please specify a file name.")
+            return 1
+
+        if not tag:
+            eprint("Please specify a tag.")
+            return 1
+
+        print("Exporting images to %s:\n" % filename)
+        archive = tarfile.open(filename, 'w:gz')
+
+        # Add container images to archive
+        files = []
+        for image in self.IMAGES:
+            containerName = '%s:%s' % (image, tag)
+            print(containerName)
+
+            # Ensure the container image is present
+            imageList = self.cli.images(image)
+            imageTags = sum([img['RepoTags'] for img in imageList], [])
+
+            if containerName not in imageTags:
+                eprint("The container image '%s' is not available." % containerName)
+                return 1
+
+            # Export the image
+            imageFile = io.BytesIO(self.cli.get_image(containerName).data)
+
+            # Append the image to the archive
+            fileName = base64.urlsafe_b64encode(containerName)
+
+            info = tarfile.TarInfo(name=fileName)
+            imageFile.seek(0, os.SEEK_END)
+            info.size = imageFile.tell()
+            imageFile.seek(0)
+            archive.addfile(tarinfo=info, fileobj=imageFile)
+            imageFile.close()
+
+            # Collect metadata
+            files.append([fileName, image, tag])
+
+        # Write index file
+        indexFile = io.StringIO()
+        for f in files:
+            indexFile.write(unicode('%s;%s;%s\n' % (f[0], f[1], f[2])))
+
+        indexFileTarInfo = tarfile.TarInfo('index.txt')
+        indexFile.seek(0, os.SEEK_END)
+        indexFileTarInfo.size = indexFile.tell()
+        indexFile.seek(0)
+        archive.addfile(tarinfo=indexFileTarInfo, fileobj=indexFile)
+        indexFile.close()
+
+        # Finish the archive
+        archive.close()
+
     def importImagesFromTarfile(self, filename):
+        if not filename:
+            eprint("Please specify a file name.")
+            return 1
+
         if not os.path.isfile(filename):
             eprint("Cannot find %s." % filename)
             return 1
@@ -82,7 +151,7 @@ class TWImg():
         indexFile.close()
 
         for image, attributes in images.items():
-            print("%s:%s"  % (attributes['repository'], attributes['tag']))
+            print("%s:%s" % (attributes['repository'], attributes['tag']))
             imageFile = archive.extractfile(image)
 
             self.cli.import_image_from_data(
@@ -92,6 +161,9 @@ class TWImg():
             )
 
             imageFile.close()
+
+    def actionExport(self, args):
+        return self.exportImagestoTarfile(args.archive, args.tag)
 
     def actionImport(self, args):
         return self.importImagesFromTarfile(args.archive)
@@ -112,24 +184,30 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        "--archive",
+        dest='archive',
+        type=str,
+        help='The Docker image export file'
+    )
+
+    parser.add_argument(
         "--registry",
         dest='registry',
         type=str,
-        required=True,
         help='The Docker registry to use'
     )
 
     parser.add_argument(
-        "--archive",
-        dest='archive',
+        "--tag",
+        dest='tag',
         type=str,
-        help='The Docker image export file to import'
+        help='The release tag that will be packaged (export operation)'
     )
 
     parser.add_argument(
         "action",
         type=str,
-        choices=['push', 'import'],
+        choices=['push', 'import', 'export'],
         help="Action to perform."
     )
 
