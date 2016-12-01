@@ -30,9 +30,12 @@ external_hostname:
 # HTTPS.
 # http_proxy: "http://your.proxy:3128"
 
-# If you use a frontend proxy for incoming connections, please give its IP
-# address here, otherwise the access logs will only show the proxy's address
+# If you use one or multiple frontend proxy servers for incoming connections,
+# please sepcify their IP addresses here, otherwise the access logs will only
+# show the proxy addresses.
 # frontend_proxy:
+#   - 10.0.10.121
+#   - 10.0.10.122
 
 # If you need to restrict access to the Admin Portal, list IP addresses or
 # ranges here, following the format given in the examples. When nothing is
