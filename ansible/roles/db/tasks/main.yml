@@ -38,15 +38,19 @@
   action: lineinfile dest=/etc/mysql/my.cnf regexp="^bind-address\s*=\s*127.0.0.1" backrefs=yes line="bind-address=0.0.0.0"
   notify: restart MariaDB
 
-- name: set utf8 as default
+- name: Increase max_allowed_packet size
+  action: replace dest=/etc/mysql/my.cnf regexp="^max_allowed_packet\s*=\s*\d+M" replace="max_allowed_packet=64M"
+  notify: restart MariaDB
+
+- name: Set UTF8 as default character set
   copy: src=utf8.cnf dest=/etc/mysql/conf.d/utf8.cnf
   notify: restart MariaDB
 
-- name: set UTC as default
+- name: Set UTC as default time zone
   copy: src=timezone.cnf dest=/etc/mysql/conf.d/timezone.cnf
   notify: restart MariaDB
 
-- name: log slow queries
+- name: Log slow queries
   copy: src=slow_query_log.cnf dest=/etc/mysql/conf.d/slow_query_log.cnf
   notify: restart MariaDB
 
