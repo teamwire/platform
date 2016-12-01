@@ -1,2 +1,9 @@
 [Service]
 Environment="HTTP_PROXY={{http_proxy}}"
+{%- if 'docker_registry' in groups %}
+ "NO_PROXY=
+{%- for host in groups.docker_registry %}
+{{ host }}{{"," if not loop.last else ""}}
+{%- endfor %}
+"
+{% endif %}
