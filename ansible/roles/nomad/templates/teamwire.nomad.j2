@@ -35,10 +35,12 @@ job "teamwire" {
 
 			config {
 				image = "teamwire/backend:{{ version }}"
+{% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
 					password = "{{ dockerhub_password }}"
 				}
+{%endif %}
 				port_map {
 					http = 8080
 				}
@@ -110,10 +112,12 @@ job "teamwire" {
 
 			config {
 				image = "teamwire/web-screenshot-server:{{ version }}"
+{% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
 					password = "{{ dockerhub_password }}"
 				}
+{%endif %}
 				port_map {
 					http = 8080
 				}
@@ -159,10 +163,12 @@ job "teamwire" {
 
 			config {
 				image = "teamwire/backend:{{ version }}"
+{% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
 					password = "{{ dockerhub_password }}"
 				}
+{%endif %}
 				port_map {
 					health = 8080
 				}
@@ -237,10 +243,12 @@ job "teamwire" {
 
 			config {
 				image = "teamwire/backend:{{ version }}"
+{% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
 					password = "{{ dockerhub_password }}"
 				}
+{%endif %}
 				logging {
 					type = "syslog"
 					config {
@@ -289,10 +297,12 @@ job "teamwire" {
 
 			config {
 				image = "teamwire/notification-server:{{ version }}"
+{% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
 					password = "{{ dockerhub_password }}"
 				}
+{%endif %}
 				port_map {
 					http = 9080
 					rest = 9081
