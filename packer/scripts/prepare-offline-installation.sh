@@ -26,6 +26,8 @@ glusterfs-client
 nfs-common
 mytop
 galera
+percona-xtrabackup-24
+socat
 "
 
 BACKPORTS_PACKAGES="
@@ -65,11 +67,12 @@ websocket_client==0.32.0
 "
 
 # Add additional repo signing keys
-# Always perform this step, even if not preparing for offline installation - this spares us one firewall rule
+# Always perform this step, even if not preparing for offline installation - this spares us some firewall rules
 echo "Step 1: Import additional repo signing keys"
 echo "==========================================="
 sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D # Docker
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys cbcb082a1bb943db # MariaDB
+sudo apt-key adv --keyserver keys.gnupg.net --recv-keys 9334A25F8507EFA5 # Percona
 
 if [ -z "$OFFLINE_INSTALLATION" ] ; then
 	echo "Not preparing for offline installation."
@@ -85,8 +88,9 @@ sudo touch /etc/offline_installation
 echo "Step 2: Caching packages"
 echo "========================"
 
-# Add MariaDB repo
+# Add MariaDB and Percona repo
 echo 'deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main' | sudo tee -a /etc/apt/sources.list > /dev/null
+echo 'deb http://repo.percona.com/apt jessie main' | sudo tee -a /etc/apt/sources.list > /dev/null
 sudo apt-get update -q
 sudo apt-get install -qyd $REGULAR_PACKAGES
 sudo apt-get install -t jessie-backports -qyd $BACKPORTS_PACKAGES

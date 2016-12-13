@@ -144,6 +144,10 @@ mysql_root_password:
 # following value and specify a password for the database health check user:
 # clustercheck_password:
 
+# When running a clustered MySQL database as part of the cluster, uncomment the
+# following line and specify a password for the database replication user:
+# xtrabackup_password:
+
 # When using an Oracle database, uncomment the following lines and add the
 # values matching your setup.
 # oracle_host:
