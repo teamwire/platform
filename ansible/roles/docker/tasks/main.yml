@@ -103,6 +103,8 @@
 # Requires docker-py >= 1.7, hence can only be used on Debian
 - name: Log in on Docker Hub (Debian)
   when: config_done is defined and ansible_distribution == "Debian" and 'docker_registry' not in groups and not offline_mode.stat.exists
+  become: True
+  become_user: teamwire
   docker_login:
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
