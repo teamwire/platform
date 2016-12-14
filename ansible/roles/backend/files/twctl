@@ -60,10 +60,10 @@ get_database_configuration() {
 	fi
 
 	check_config_file
-	MYSQL_HOST="$(awk '/^mysql_host/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
-	MYSQL_PORT="$(awk '/^mysql_port/ { print $2 }' "$CONFIG_FILE")"                      2> /dev/null
-	MYSQL_PASS="$(awk '/^teamwire_db_password/ { print $2 }' "$CONFIG_FILE")"            2> /dev/null
-	AESKEY="$(awk '/aes_key:/ { print $2 }' "$CONFIG_FILE" | sed 's|^\"\(.*\)\"$|\1|' )" 2> /dev/null
+	MYSQL_HOST="$(awk '/^mysql_host/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")"           2> /dev/null
+	MYSQL_PORT="$(awk '/^mysql_port/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")"           2> /dev/null
+	MYSQL_PASS="$(awk '/^teamwire_db_password/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")" 2> /dev/null
+	AESKEY="$(awk '/aes_key:/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")"                  2> /dev/null
 
 	if [ -z "$MYSQL_HOST" ]; then
 		MYSQL_HOST=$(/sbin/ifconfig docker0 | awk -F'[ :]+' '/inet addr/{print $4}')
