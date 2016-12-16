@@ -1,0 +1,4 @@
+- name: Mount cluster storage
+  hosts: backend_servers:consul_servers:docker_registry:local
+  roles:
+      - role: ../../roles/storage_client

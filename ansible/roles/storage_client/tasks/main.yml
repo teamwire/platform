@@ -20,5 +20,10 @@
   when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length == 1
 
 - name: Mount GlusterFS share (cluster)
-  mount: name=/data fstype=glusterfs src="{{ groups['nfs_servers'] | first }}:/data" opts="{% for host in groups['nfs_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable" state=mounted
-  when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1
+  mount:
+    name: /data
+    fstype: glusterfs
+    src: "{{ groups['nfs_servers'] | first }}:/data"
+    opts: "{% for host in groups['nfs_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable"
+    state: mounted
+  when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1 and not inventory_hostname in groups['nfs_servers']
