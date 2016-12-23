@@ -120,12 +120,6 @@
     - restart consul
   when: ansible_distribution == "Debian"
 
-- name: Install Consul default
-  template:
-    src: default.j2
-    dest: /etc/default/consul
-  notify: restart consul
-
 # redirect DNS to consul
 - name: Add consul forwarding to dnsmasq
   template:
