@@ -50,7 +50,7 @@ check_local_service() {
 		exit 1
 	fi
 
-	if ! STATE=$(docker inspect -f "{{ .State.Status }}" "$SERVICE") ; then
+	if ! STATE=$(docker inspect -f "{{ .State.Status }}" "$SERVICE" 2> /dev/null) ; then
 		return 1
 	fi
 
@@ -92,6 +92,7 @@ setup_redis() {
 	chgrp 101 /local/redis/redis.conf
 	chmod 660 /local/redis/redis.conf
 
+	echo -n "Starting redis: "
 	${DOCKER_BASE_CMD} \
 		--log-opt tag="redis" \
 		-p ${REDIS_PORT}:${REDIS_PORT} \
@@ -135,6 +136,7 @@ setup_sentinel() {
 	local SENTINEL_CMDLINE="redis-sentinel /data/sentinel.conf"
 
 	sudo touch "${REDIS_DIR}/redis.conf"
+	echo -n "Starting redis-sentinel: "
 	${DOCKER_BASE_CMD} \
 		--log-opt tag="redis-sentinel" \
 		-p 2${REDIS_PORT}:2${REDIS_PORT} \
