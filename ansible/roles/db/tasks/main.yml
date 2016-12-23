@@ -54,6 +54,13 @@
     replace: "max_allowed_packet=64M"
   notify: restart MariaDB
 
+- name: Increase maximum allowed connections
+  lineinfile:
+    dest: /etc/mysql/my.cnf
+    regexp: ^max_connections
+    line: "max_connections = 512"
+  notify: restart MariaDB
+
 - name: Set UTF8 as default character set
   copy: src=utf8.cnf dest=/etc/mysql/conf.d/utf8.cnf
   notify: restart MariaDB
