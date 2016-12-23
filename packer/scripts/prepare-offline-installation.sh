@@ -46,8 +46,8 @@ DOCKER_IMAGES="
 teamwire/backend:${BACKEND_RELEASE}
 teamwire/web-screenshot-server:${BACKEND_RELEASE}
 teamwire/notification-server:${BACKEND_RELEASE}
-redis:3.2.3-alpine
 $(awk '{ gsub("\"",""); print $2; }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+$(awk '/^redis_container:/  print $2; }' ~teamwire/platform/ansible/roles/redis/vars/main.yml)
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
