@@ -13,6 +13,13 @@
     state: present
     reload: yes
 
+- name: Increase number of socket connection backlog
+  sysctl:
+    name: net.core.somaxconn
+    value: 1024
+    state: present
+    reload: yes
+
 - include: single.yml
   when: "'redis_servers' not in groups"
 
