@@ -50,10 +50,11 @@ redis:3.2.3-alpine
 $(awk '{ gsub("\"",""); print $2; }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 "
 
+CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
-https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_linux_amd64.zip;5dbfc555352bded8a39c7a8bf28b5d7cf47dec493bc0496e21603c84dfe41b4b
-https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_web_ui.zip;1b793c60e1af24cc470421d0411e13748f451b51d8a6ed5fcabc8d00bfb84264
+https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
+https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_web_ui.zip;$(awk '/^consul_ui_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip;b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
 "
 
