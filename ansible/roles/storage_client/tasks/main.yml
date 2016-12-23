@@ -16,7 +16,11 @@
   when: external_storage_path is defined
 
 - name: "Mount NFS share (cluster)"
-  mount: name=/data fstype=nfs src="{{ groups['nfs_servers'] | first }}:/data" state=mounted
+  mount:
+    name: /data
+    fstype: nfs
+    src: "{{ groups['nfs_servers'] | first }}:/data"
+    state: mounted
   when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length == 1
 
 - name: Mount GlusterFS share (cluster)

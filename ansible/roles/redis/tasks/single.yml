@@ -3,13 +3,24 @@
   apt: name=redis-server state=present
 
 - name: Configure Redis to listen on all interfaces
-  action: lineinfile dest=/etc/redis/redis.conf regexp="^bind\s+127.0.0.1" backrefs=yes line="bind 0.0.0.0"
+  lineinfile:
+    dest: /etc/redis/redis.conf
+    regexp: ^bind\s+127.0.0.1
+    line: "bind 0.0.0.0"
+    backrefs: yes
   notify: restart redis
 
 - name: Configure password for Redis
-  action: lineinfile dest=/etc/redis/redis.conf regexp="^(# )+requirepass" backrefs=yes line="requirepass {{ redis_pass }}"
+  lineinfile:
+    dest: /etc/redis/redis.conf
+    regex: ="^(# )+requirepass"
+    line: "requirepass {{ redis_pass }}"
+    backrefs: yes
   when: redis_pass is defined
   notify: restart redis
 
 - name: Start and enable Redis server
-  service: name=redis-server state=started enabled=yes
+  service:
+    name: redis-server
+    state: started
+    enabled: yes

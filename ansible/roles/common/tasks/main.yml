@@ -8,7 +8,9 @@
   file: dest=/etc/apt/apt.conf.d/01proxy state=absent
 
 - name: Ensure backports are enabled (Debian)
-  apt_repository: repo='deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian/ jessie-backports main' state=present
+  apt_repository:
+    repo: 'deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian/ jessie-backports main'
+    state: present
   when: ansible_distribution == "Debian"
 
 - name: Check if installing offline
@@ -25,18 +27,30 @@
 
 # Debian comes with sane defaults
 - name: Make sure unattended-upgrades only installs from $ubuntu_release-security
-  lineinfile: dest=/etc/apt/apt.conf.d/50unattended-upgrades regexp="$ubuntu_release-updates" state=absent
+  lineinfile:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    regexp: "$ubuntu_release-updates"
+    state: absent
   when: ansible_distribution == "Ubuntu"
 
 - name: Mail root on unattended-upgrades
-  lineinfile: dest=/etc/apt/apt.conf.d/50unattended-upgrades regexp='^//Unattended-Upgrade::Mail "root";' line='Unattended-Upgrade::Mail "root";' backrefs=yes
+  lineinfile:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    regexp: '^//Unattended-Upgrade::Mail "root";'
+    line: 'Unattended-Upgrade::Mail "root";'
+    backrefs: yes
 
 - name: Configure unattended-upgrade
-  copy: src=02periodic dest=/etc/apt/apt.conf.d/02periodic
+  copy:
+    src: 02periodic
+    dest: /etc/apt/apt.conf.d/02periodic
   when: config_done is defined and not offline_mode.stat.exists
 
 - name: Automatically remove obsolete packages
-  copy: src=apt-autoremove dest=/etc/cron.daily/apt-autoremove mode=0755
+  copy:
+    src: apt-autoremove
+    dest: /etc/cron.daily/apt-autoremove
+    mode: 0755
 
 - name: Install useful tools
   apt: name={{item}} state=present
@@ -63,17 +77,26 @@
 - name: Enable system-wide proxy (HTTP)
   lineinfile: dest=/etc/environment line="http_proxy={{http_proxy}}"
   when: http_proxy is defined
+
 - name: Disable system-wide proxy when no proxy is configured (HTTP)
   lineinfile: dest=/etc/environment regexp="^http_proxy=" state=absent
   when: http_proxy is not defined
+
 - name: Enable system-wide proxy (HTTPS)
   lineinfile: dest=/etc/environment line="https_proxy={{http_proxy}}"
   when: http_proxy is defined
+
 - name: Disable system-wide proxy when no proxy is configured (HTTPS)
-  lineinfile: dest=/etc/environment regexp="^https_proxy=" state=absent
+  lineinfile:
+    dest: /etc/environment
+    regexp: ^https_proxy=
+    state: absent
   when: http_proxy is not defined
+
 - name: Don't access localhost and local services via proxy
-  lineinfile: dest=/etc/environment line="no_proxy=localhost,127.0.0.1,{{ inventory_hostname }},.consul"
+  lineinfile:
+    dest: /etc/environment
+    line: "no_proxy=localhost,127.0.0.1,{{ inventory_hostname }},.consul"
   when: http_proxy is defined
 
 - name: Set hostname
@@ -82,7 +105,10 @@
 
 - name: Add hostname to localhost
   when: config_done is defined
-  lineinfile: dest=/etc/hosts regexp="^127\.0\.0\.1\s+localhost" line="127.0.0.1 localhost {{ external_hostname }}"
+  lineinfile:
+    dest: /etc/hosts
+    regexp: ^127\.0\.0\.1\s+localhost
+    line: "127.0.0.1 localhost {{ external_hostname }}"
 
 - name: Configure DNS servers
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
@@ -98,7 +124,10 @@
   notify: restart postfix
 
 - name: Write the Postfix password file
-  template: src=postfix-passwd.j2 dest=/etc/postfix/sasl/passwd mode=0600
+  template:
+    src: postfix-passwd.j2
+    dest: /etc/postfix/sasl/passwd
+    mode: 0600
   when: config_done is defined
   notify: rebuild postfix passwd map
 
@@ -110,10 +139,13 @@
 - name: Set timezone to UTC
   copy: content="Etc/UTC\n" dest=/etc/timezone
   notify: update timezone
+
 - name: Install the NTP daemon
   apt: pkg=ntp
+
 - name: Enable and start the NTP daemon
   service: name=ntp state=started enabled=true
+
 - name: Write NTP configuration file
   template: src=ntp.conf.j2 dest=/etc/ntp.conf
   notify: restart NTP
@@ -121,24 +153,34 @@
 # general firewall rules
 - name: Install the UFW firewall
   apt: pkg=ufw state=present
+
 - name: Allow incoming SSH access
   ufw: rule=allow name=OpenSSH
+
 - name: Configure default firewall policy
   ufw: state=enabled policy=reject
 
 # SSH
 - name: Disable SSH password logins
   when: ssh_disable_passwords is defined and ssh_disable_passwords
-  action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: ^#?PasswordAuthentication
+    line: "PasswordAuthentication no"
   notify: reload sshd
 
 - name: Enable SSH password logins
   when: ssh_disable_passwords is not defined or not ssh_disable_passwords
-  action: lineinfile dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication yes"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: ^#?PasswordAuthentication
+    line: "PasswordAuthentication yes"
   notify: reload sshd
 
 - name: Disable DNS lookup on SSH login
-  lineinfile: dest=/etc/ssh/sshd_config line="UseDNS no"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    line: "UseDNS no"
   notify: reload sshd
 
 # Keep track of the plattform repository
@@ -147,7 +189,11 @@
   when: groups['all'] | length() == 1
 
 - name: Check out the teamwire/platform git repository
-  git: repo=https://github.com/teamwire/platform.git depth=1 dest=/home/teamwire/platform update=no
+  git:
+    repo: https://github.com/teamwire/platform.git
+    depth: 1
+    dest: /home/teamwire/platform
+    update: no
   notify: fix ownership of git checkout
   when: groups['all'] | length() == 1
 
@@ -155,7 +201,12 @@
   register: config_file
 
 - name: Secure permissions of Ansible configuration file
-  file: path=/home/teamwire/platform/ansible/group_vars/all state=file mode=0600 owner=teamwire group=teamwire
+  file:
+    path: /home/teamwire/platform/ansible/group_vars/all
+    state: file
+    mode: 0600
+    owner: teamwire
+    group: teamwire
   when: config_file.stat.exists
 
 # Prepare tmate usage

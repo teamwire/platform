@@ -12,11 +12,15 @@
   when: private_ip | ipaddr('prefix') == 32
 
 - name: Configure private network interface
-  template: src=eth1.j2 dest=/etc/network/interfaces.d/eth1
+  template:
+    src: eth1.j2
+    dest: /etc/network/interfaces.d/eth1
   notify: start eth1
 
 - name: Add other cluster nodes to /etc/hosts
-  lineinfile: dest=/etc/hosts line="{{ hostvars[item]['private_ip'] | ipaddr('address') }}\t{{ item }} "
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ hostvars[item]['private_ip'] | ipaddr('address') }}\t{{ item }} "
   with_items: "{{ groups['all'] | default([]) }}"
 
 - name: Allow all access from internal network
@@ -27,6 +31,8 @@
 
 - name: Send all logs to loghost
   when: "'loghost' in groups"
-  template: src=30-remote-logging.conf.j2 dest=/etc/rsyslog.d/30-remote-logging.conf
+  template:
+    src: 30-remote-logging.conf.j2
+    dest: /etc/rsyslog.d/30-remote-logging.conf
   notify:
     - restart rsyslog

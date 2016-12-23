@@ -10,7 +10,12 @@
     - beat
 
 - name: Create the backend certificate storage directories
-  file: path=/data/{{ item }} owner=daemon group=ssl-cert mode=0750 state=directory
+  file:
+    path: /data/{{ item }}
+    owner: daemon
+    group: ssl-cert
+    mode: 0750
+    state: directory
   when: config_done is defined
   run_once: true
   with_items:
@@ -23,7 +28,12 @@
   run_once: true
 
 - name: Install the APNS certificate
-  copy: src="{{ apns_certificate }}" dest=/data/certs/apns/aps-production.pem mode=0440 owner=daemon group=ssl-cert
+  copy:
+    src: "{{ apns_certificate }}"
+    dest: /data/certs/apns/aps-production.pem
+    mode: 0440
+    owner: daemon
+    group: ssl-cert
   when: config_done is defined
   run_once: true
 

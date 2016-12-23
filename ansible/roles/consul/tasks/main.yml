@@ -5,29 +5,40 @@
 
 - name: Install dnsmasq
   apt: pkg=dnsmasq
-- service: name=dnsmasq state=started enabled=true
+
+- service:
+    name: dnsmasq
+    state: started
+    enabled: true
 
 - name: Configure dnsmasq upstream DNS servers
-  template: src=20-upstream.j2 dest=/etc/dnsmasq.d/20-upstream
+  template:
+    src: 20-upstream.j2
+    dest: /etc/dnsmasq.d/20-upstream
   when: dns_servers is defined
   notify: restart dnsmasq
 
 - name: Resolve DNS using dnsmasq
-  copy: content="nameserver 127.0.0.1\n" dest=/etc/resolv.conf
+  copy:
+    content: "nameserver 127.0.0.1\n"
+    dest: /etc/resolv.conf
 
 - name: Configure DHCP client to use local DNS server
   lineinfile:
-    regexp="^#+prepend domain-name-servers"
-    backrefs=yes
-    line="prepend domain-name-servers 127.0.0.1;"
-    dest=/etc/dhcp/dhclient.conf
+    regexp: "^#+prepend domain-name-servers"
+    backrefs: yes
+    line: "prepend domain-name-servers 127.0.0.1;"
+    dest: /etc/dhcp/dhclient.conf
 
 # Ensure we have a valid DNS configuragtion
 - meta: flush_handlers
 
 # Consul
 - name: Create 3rd party download directory
-  file: dest=/var/cache/downloads state=directory mode=0755
+  file:
+    dest: /var/cache/downloads
+    state: directory
+    mode: 0755
 
 - name: Check if Consul is already installed
   stat: path=/usr/local/bin/consul
@@ -41,7 +52,11 @@
   register: consul_downloaded
 
 - name: Install the Consul binary
-  unarchive: src=/var/cache/downloads/consul_0.7.1_linux_amd64.zip dest=/usr/local/bin mode=0755 copy=no
+  unarchive:
+    src: /var/cache/downloads/consul_0.7.1_linux_amd64.zip
+    dest: /usr/local/bin
+    mode: 0755
+    copy: no
   notify: restart consul
   when: consul_downloaded.changed or not consul_binary.stat.exists
 
@@ -59,45 +74,67 @@
   when: inventory_hostname in groups['consul_servers']
 
 - name: Create the Consul web UI directory
-  file: name=/usr/local/share/consul-ui state=directory
+  file:
+    name: /usr/local/share/consul-ui
+    state: directory
   when: inventory_hostname in groups['consul_servers']
 
 - name: Install the Consul web UI
-  unarchive: src=/var/cache/downloads/consul_0.7.1_web_ui.zip dest=/usr/local/share/consul-ui copy=no
+  unarchive:
+    src: /var/cache/downloads/consul_0.7.1_web_ui.zip
+    dest: /usr/local/share/consul-ui
+    copy: no
   when: inventory_hostname in groups['consul_servers'] and (consul_ui_downloaded.changed or not consul_web_ui.stat.exists)
 
 - name: Create Consul config directory
-  file: name=/etc/consul.d state=directory
+  file:
+    name: /etc/consul.d
+    state: directory
 
 - name: Write Consul server configuration file
-  template: src=10-server.json.j2 dest=/etc/consul.d/10-server.json
+  template:
+    src: 10-server.json.j2
+    dest: /etc/consul.d/10-server.json
   when: '"consul_servers" in group_names'
   notify: restart consul
 
 - name: Write Consul agent configuration file
-  template: src=20-agent.json.j2 dest=/etc/consul.d/20-agent.json
+  template:
+    src: 20-agent.json.j2
+    dest: /etc/consul.d/20-agent.json
   notify: restart consul
 
 - name: Install Consul upstart job
-  copy: src=consul.conf dest=/etc/init/consul.conf
+  copy:
+    src: consul.conf
+    dest: /etc/init/consul.conf
   notify: restart consul
   when: ansible_distribution == "Ubuntu"
 
 - name: Install Consul systemd config
-  copy: src=consul.service dest=/etc/systemd/system/consul.service
+  copy:
+    src: consul.service
+    dest: /etc/systemd/system/consul.service
   notify:
     - reload systemd
     - restart consul
   when: ansible_distribution == "Debian"
 
 - name: Install Consul default
-  template: src=default.j2 dest=/etc/default/consul
+  template:
+    src: default.j2
+    dest: /etc/default/consul
   notify: restart consul
 
 # redirect DNS to consul
 - name: Add consul forwarding to dnsmasq
-  template: src=10-consul.j2 dest=/etc/dnsmasq.d/10-consul
+  template:
+    src: 10-consul.j2
+    dest: /etc/dnsmasq.d/10-consul
   notify: restart dnsmasq
 
-- service: name=consul state=started enabled=yes
+- service:
+    name: consul
+    state: started
+    enabled: yes
 - meta: flush_handlers

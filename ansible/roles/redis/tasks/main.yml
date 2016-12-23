@@ -7,7 +7,11 @@
 
 # See http://redis.io/topics/faq for details
 - name: Enable vm.overcommit_memory for Redis
-  sysctl: name=vm.overcommit_memory value=1 state=present reload=yes
+  sysctl:
+    name: vm.overcommit_memory
+    value: 1
+    state: present
+    reload: yes
 
 - include: single.yml
   when: "'redis_servers' not in groups"

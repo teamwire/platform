@@ -5,7 +5,10 @@
   register: docker_repo_key
 
 - name: Add the Docker repository signing key (direct connection)
-  apt_key: id=58118E89F3A912897C070ADBF76221572C52609D keyserver=hkp://p80.pool.sks-keyservers.net:80 state=present
+  apt_key:
+    id: 58118E89F3A912897C070ADBF76221572C52609D
+    keyserver: hkp://p80.pool.sks-keyservers.net:80
+    state: present
   when: docker_repo_key.stdout == "absent" and http_proxy is not defined
 
 - name: Add the Docker repository signing key (via proxy server)
@@ -16,7 +19,9 @@
   apt: pkg=apt-transport-https state=present
 
 - name: Add the Docker repository
-  apt_repository: repo='deb https://apt.dockerproject.org/repo {{ansible_distribution|lower}}-{{ansible_distribution_release}} main' state=present
+  apt_repository:
+    repo: 'deb https://apt.dockerproject.org/repo {{ansible_distribution|lower}}-{{ansible_distribution_release}} main'
+    state: present
 
 - name: Install aufs-tools
   apt: pkg=aufs-tools state=present
@@ -45,38 +50,52 @@
 
 - name: Configure proxy for docker (Ubuntu)
   when: http_proxy is defined and ansible_distribution == "Ubuntu"
-  lineinfile: dest=/etc/default/docker regexp=http_proxy line='export http_proxy="{{http_proxy}}"'
+  lineinfile:
+    dest: /etc/default/docker
+    regexp: http_proxy
+    line: 'export http_proxy="{{http_proxy}}"'
   notify: restart docker
 
 - name: Disable proxy for docker when no proxy is configured (Ubuntu)
   when: http_proxy is not defined and ansible_distribution == "Ubuntu"
-  lineinfile: dest=/etc/default/docker regexp=http_proxy line='# export http_proxy=""'
+  lineinfile:
+    dest: /etc/default/docker
+    regexp: http_proxy
+    line: '# export http_proxy=""'
   notify: restart docker
 
 - name: Configure proxy for docker (Debian)
   when: http_proxy is defined and ansible_distribution == "Debian" and (not 'docker_registry' in groups or inventory_hostname in groups.docker_registry)
-  template: src=http-proxy.conf.j2 dest=/etc/systemd/system/docker.service.d/http-proxy.conf
+  template:
+    src: http-proxy.conf.j2
+    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
   notify:
     - reload systemd
     - restart docker
 
 - name: Disable proxy for docker when no proxy is configured (Debian)
   when: http_proxy is not defined and ansible_distribution == "Debian"
-  file: name=/etc/systemd/system/docker.service.d/http-proxy.conf state=absent
+  file:
+    name: /etc/systemd/system/docker.service.d/http-proxy.conf
+    state: absent
   notify:
     - reload systemd
     - restart docker
 
 - name: Configure Docker daemon parameters (Debian)
   when: ansible_distribution == "Debian"
-  template: src=docker.conf.j2 dest=/etc/systemd/system/docker.service.d/docker.conf
+  template:
+    src: docker.conf.j2
+    dest: /etc/systemd/system/docker.service.d/docker.conf
   notify:
     - reload systemd
     - restart docker
 
 - name: Start Docker after mounting NFS shares (Debian)
   when: ansible_distribution == "Debian"
-  copy: src=wait_for_nfs.conf dest=/etc/systemd/system/docker.service.d/wait_for_nfs.conf
+  copy:
+    src: wait_for_nfs.conf
+    dest: /etc/systemd/system/docker.service.d/wait_for_nfs.conf
   notify: reload systemd
 
 # Make sure docker is restarted before the containers are set up, otherwise
