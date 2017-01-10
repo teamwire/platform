@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # Remove Docker key to ensure each VM gets an unique ID
 sudo rm -f /etc/docker/key.json

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 if [ -z "$OFFLINE_INSTALLATION" ] ; then
 	echo "Deleting apt cache"
