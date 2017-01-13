@@ -23,8 +23,10 @@
     line: "{{ hostvars[item]['private_ip'] | ipaddr('address') }}\t{{ item }} "
   with_items: "{{ groups['all'] | default([]) }}"
 
-- name: Allow all access from internal network
-  ufw: rule=allow src={{ private_ip | ipaddr('subnet') }}
+- name: Allow all access from other cluster nodes
+  ufw: rule=allow src="{{ hostvars[item]['private_ip'] | ipaddr('address') }}"
+  with_items: "{{ groups['all'] | default([]) }}"
+  when: item != inventory_hostname
 
 - name: Ensure rsyslog is installed
   apt: pkg=rsyslog
