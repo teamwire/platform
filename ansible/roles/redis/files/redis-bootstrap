@@ -98,6 +98,7 @@ setup_redis() {
 		-p ${REDIS_PORT}:${REDIS_PORT} \
 		--name redis \
 		--env SERVICE_CHECK_SCRIPT="${REDIS_CHECK_SCRIPT}" \
+		--env SERVICE_CHECK_INTERVAL="5s" \
 		--env SERVICE_TAGS=${SERVICE_NAME} \
 		${DOCKER_IMAGE} \
 		${REDIS_CMDLINE}
