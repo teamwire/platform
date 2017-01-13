@@ -3,7 +3,7 @@
 action(
     name="remote_logging_on_{{ host }}"
     type="omfwd"
-    target="{{ hostvars[host].private_ip | ipaddr('address') }}"
+    target="{{ hostvars[host].private_ip }}"
     protocol="tcp"
     port="514"
 )

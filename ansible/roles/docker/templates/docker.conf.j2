@@ -2,7 +2,7 @@
 ExecStart=
 ExecStart=/usr/bin/dockerd -H fd://
 {%- if 'backend_servers' in group_names  %}
- -H tcp://{{ private_ip | ipaddr('address') }}:2375
+ -H tcp://{{ private_ip }}:2375
 {%- endif %}
 {%- if 'docker_registry' in groups %}
 {%- for host in groups.docker_registry %}
@@ -11,5 +11,5 @@ ExecStart=/usr/bin/dockerd -H fd://
 {%- endif %}
 {%- if 'consul_servers' in groups %}
 {%- for host in groups['consul_servers'] %}
- --dns {{ hostvars[host].private_ip | ipaddr('address') }}{% endfor %}
+ --dns {{ hostvars[host].private_ip }}{% endfor %}
 {%- endif %}

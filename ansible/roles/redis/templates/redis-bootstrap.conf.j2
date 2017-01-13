@@ -1,6 +1,6 @@
 CLUSTER_NODES=({% for host in groups['redis_servers'] -%}{{ host }} {% endfor %})
 REDIS_PASS="{{ redis_pass | default() }}"
 REDIS_PORT=6379
-REDIS_BINDIP="{{ private_ip | ipaddr('address') }}"
+REDIS_BINDIP="{{ private_ip }}"
 DOCKER_IMAGE="{{ redis_container }}"
 SERVICE_NAME="teamwire"

@@ -1,30 +1,20 @@
 ---
-- name: Ensure secondary network interface exists
-  fail: msg="No private network interface eth1 exists. Please check your virtual machine config"
-  when: "'eth1' not in ansible_interfaces"
-
 - name: Ensure private IP address in configured
   fail: msg="private_ip is not configured. Please check your hosts file"
   when: private_ip is not defined
 
-- name: Ensure private IP address contains a network prefix
-  fail: msg="private_ip lacks a network prefix (provide IP address in form n.n.n.n/n)"
-  when: private_ip | ipaddr('prefix') == 32
-
-- name: Configure private network interface
-  template:
-    src: eth1.j2
-    dest: /etc/network/interfaces.d/eth1
-  notify: start eth1
+- name: Ensure private IP address is valid
+  fail: msg="Defined private_ip is not configured on the system. Please check your config."
+  when: private_ip not in ansible_all_ipv4_addresses
 
 - name: Add other cluster nodes to /etc/hosts
   lineinfile:
     dest: /etc/hosts
-    line: "{{ hostvars[item]['private_ip'] | ipaddr('address') }}\t{{ item }} "
+    line: "{{ hostvars[item]['private_ip'] }}\t{{ item }} "
   with_items: "{{ groups['all'] | default([]) }}"
 
 - name: Allow all access from other cluster nodes
-  ufw: rule=allow src="{{ hostvars[item]['private_ip'] | ipaddr('address') }}"
+  ufw: rule=allow src="{{ hostvars[item]['private_ip'] }}"
   with_items: "{{ groups['all'] | default([]) }}"
   when: item != inventory_hostname
 

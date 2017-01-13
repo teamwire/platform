@@ -1,14 +1,14 @@
 [all]
 # When the host names cannot be resolved, add "ansible_host=<IP ADDRESS>" with
 # the respective IP address of the individual machine to the host definitions.
-lb1 private_ip=10.0.1.3/24
-lb2 private_ip=10.0.1.4/24
-tw1 private_ip=10.0.1.5/24
-tw2 private_ip=10.0.1.6/24
-tw3 private_ip=10.0.1.7/24
-db1 private_ip=10.0.1.21/24
-db2 private_ip=10.0.1.22/24
-db3 private_ip=10.0.1.23/24
+lb1 private_ip=10.0.1.3
+lb2 private_ip=10.0.1.4
+tw1 private_ip=10.0.1.5
+tw2 private_ip=10.0.1.6
+tw3 private_ip=10.0.1.7
+db1 private_ip=10.0.1.21
+db2 private_ip=10.0.1.22
+db3 private_ip=10.0.1.23
 
 [all:vars]
 # Optional parameters for the ssh client

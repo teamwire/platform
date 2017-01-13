@@ -28,7 +28,7 @@
       syslog-facility: local6
     net: host
     volumes: "/var/run/docker.sock:/tmp/docker.sock"
-    command: "-ip {{ private_ip | ipaddr('address') }} consul://localhost:8500"
+    command: "-ip {{ private_ip }} consul://localhost:8500"
 
 - name: Run Swarm manager
   when: "'consul_servers' in group_names"
@@ -43,7 +43,7 @@
       syslog-facility: local6
     net: host
     ports: "4000:4000"
-    command: "manage -H :4000 --replication --advertise {{ private_ip | ipaddr('address') }}:4000 consul://localhost:8500"
+    command: "manage -H :4000 --replication --advertise {{ private_ip }}:4000 consul://localhost:8500"
 
 - name: Ensure pip and Docker Compose requirements are installed on manager nodes
   apt: pkg={{ item }} state=present default_release=jessie-backports install_recommends=no
@@ -106,4 +106,4 @@
       tag: swarm-agent
       syslog-facility: local6
     net: host
-    command: "join --advertise={{ private_ip | ipaddr('address') }}:2375 consul://localhost:8500"
+    command: "join --advertise={{ private_ip }}:2375 consul://localhost:8500"

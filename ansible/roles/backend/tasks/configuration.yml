@@ -10,7 +10,7 @@
 
 - name: Determine MariaDB host (Single MariaDB server)
   set_fact:
-    mysql_host: "{{hostvars[groups['database_servers'][0]].private_ip | ipaddr('address')}}"
+    mysql_host: "{{hostvars[groups['database_servers'][0]].private_ip}}"
   when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length == 1
 
 - name: Determine MariaDB host (Galera cluster)
@@ -37,4 +37,3 @@
   set_fact:
     redis_port: 6379
   when: redis_port is not defined or 'redis_servers' in groups
-
