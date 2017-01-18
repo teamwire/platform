@@ -1,6 +1,6 @@
 ---
 - name: Ensure private IP address in configured
-  fail: msg="private_ip is not configured. Please check your hosts file"
+  fail: msg="private_ip is not configured. Please check your inventory file"
   when: private_ip is not defined
 
 - name: Ensure private IP address is valid
