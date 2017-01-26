@@ -13,7 +13,7 @@
 - name: Configure password for Redis
   lineinfile:
     dest: /etc/redis/redis.conf
-    regex: ="^(# )+requirepass"
+    regexp: ^(# )+requirepass
     line: "requirepass {{ redis_pass }}"
     backrefs: yes
   when: redis_pass is defined
