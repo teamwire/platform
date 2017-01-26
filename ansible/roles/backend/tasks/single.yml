@@ -16,7 +16,7 @@
     state: reloaded
     restart_policy: always
     net: bridge
-    ports: "8080:8080"
+    ports: "127.0.0.1:8080:8080"
     volumes: "/data/archiving:/archiving,/data/assets:/assets"
     env:
       AESKEY: "{{aes_key}}"
@@ -57,7 +57,7 @@
     state: reloaded
     restart_policy: always
     net: bridge
-    ports: "8082:8080"
+    ports: "127.0.0.1:8082:8080"
     volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
     env:
       MODE: worker
@@ -124,7 +124,7 @@
     state: reloaded
     restart_policy: always
     net: bridge
-    ports: "9080:9080,9081:9081"
+    ports: "127.0.0.1:9080:9080,127.0.0.1:9081:9081"
     env:
       REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
@@ -141,7 +141,7 @@
     state: reloaded
     restart_policy: always
     net: bridge
-    ports: "8081:8080"
+    ports: "127.0.0.1:8081:8080"
     volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
     env:
       CACHE_DIR: /website-screenshot-cache
