@@ -9,11 +9,13 @@
   template:
     src: teamwire-backend-http.j2
     dest: /etc/nginx/sites-available/teamwire-backend-http
+  notify: reload nginx
 
 - name: Teamwire backend configuration (HTTPS)
   template:
     src: teamwire-backend-https.j2
     dest: /etc/nginx/sites-available/teamwire-backend-https
+  notify: reload nginx
 
 - name: Enable HTTP
   when: ssl_certfile is not defined and ssl_keyfile is not defined
