@@ -104,13 +104,6 @@
     dest: /etc/consul.d/20-agent.json
   notify: restart consul
 
-- name: Install Consul upstart job
-  copy:
-    src: consul.conf
-    dest: /etc/init/consul.conf
-  notify: restart consul
-  when: ansible_distribution == "Ubuntu"
-
 - name: Install Consul systemd config
   copy:
     src: consul.service
@@ -118,7 +111,6 @@
   notify:
     - reload systemd
     - restart consul
-  when: ansible_distribution == "Debian"
 
 # redirect DNS to consul
 - name: Add consul forwarding to dnsmasq
