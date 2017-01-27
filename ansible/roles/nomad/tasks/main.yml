@@ -1,13 +1,13 @@
 - name: Download Nomad
   get_url:
-    url: https://releases.hashicorp.com/nomad/0.5.0/nomad_0.5.0_linux_amd64.zip
-    dest: /var/cache/downloads/nomad_0.5.0_linux_amd64.zip
-    checksum: sha256:7f7b9af2b1ff3e2c6b837b6e95968415237bb304e1e82802bc42abf6f8645a43
+    url: https://releases.hashicorp.com/nomad/{{nomad_version}}/nomad_{{nomad_version}}_linux_amd64.zip
+    dest: /var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip
+    checksum: sha256:{{nomad_checksum}}
     mode: 0440
   register: nomad_downloaded
 
 - name: Unzip Nomad
-  unarchive: src=/var/cache/downloads/nomad_0.5.0_linux_amd64.zip dest=/usr/local/sbin copy=no
+  unarchive: src=/var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip dest=/usr/local/sbin copy=no
   when: nomad_downloaded.changed
   notify: Restart Nomad agent
 

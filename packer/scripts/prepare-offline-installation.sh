@@ -49,11 +49,13 @@ $(awk '/^redis_container:/ { print $2 }' ~teamwire/platform/ansible/roles/redis/
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
+NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
 https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_web_ui.zip;$(awk '/^consul_ui_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip;b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
+https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 "
 
 PYTHON_MODULES="
