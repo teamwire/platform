@@ -3,7 +3,7 @@
   - name: Stop MySQL on all cluster nodes
     service: name=mysql state=stopped
 
-  - name: fetch debian.conf from first master
+  - name: fetch debian.cnf from first master
     fetch: src=/etc/mysql/debian.cnf dest=debian.cnf flat=yes
     when: inventory_hostname == groups['database_servers'] | first
 
@@ -23,7 +23,6 @@
       login_user: root
       login_password: "{{ mysql_root_password }}"
     when: inventory_hostname == groups['database_servers'] | first
-
 
   - name: start service normally on other masters
     service: name=mysql state=started

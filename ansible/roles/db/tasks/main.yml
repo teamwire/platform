@@ -80,7 +80,7 @@
 - name: Start and enable MariaDB server
   service: name=mysql state=started enabled=yes
 
-# Make sure MariaDB is restarted before the databse is created, otherwise
+# Make sure MariaDB is restarted before the database is created, otherwise
 # the configured defaults are not used.
 - meta: flush_handlers
 
