@@ -38,6 +38,15 @@
   - python-mysqldb
   register: mysql_initial_installation
 
+- name: Create MariaDB binlog directory
+  file:
+    dest: /var/lib/mysql-binlog
+    owner: mysql
+    group: mysql
+    mode: 0770
+    state: directory
+  when: '"database_servers" not in groups'
+
 # Unfortunately MariaDB cannot be configure to listen on multiple interfaces
 - name: Configure MariaDB to listen on all interfaces
   lineinfile:
@@ -76,6 +85,11 @@
 - name: Disable unsecure functionality
   copy: src=security.cnf dest=/etc/mysql/conf.d/security.cnf
   notify: restart MariaDB
+
+- name: Enable binary logs
+  template: src=binlog.cnf.j2 dest=/etc/mysql/conf.d/binlog.cnf
+  notify: restart MariaDB
+  when: '"database_servers" not in groups'
 
 - name: Start and enable MariaDB server
   service: name=mysql state=started enabled=yes

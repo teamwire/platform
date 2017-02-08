@@ -1,0 +1,5 @@
+[mysqld]
+log_bin           = /var/lib/mysql-binlog/{{ inventory_hostname }}-bin
+max_binlog_size   = 100M
+expire_logs_days  = 14
+binlog_format     = ROW
