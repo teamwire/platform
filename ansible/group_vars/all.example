@@ -195,6 +195,22 @@ smtp_port: 587
 smtp_use_tls: yes
 
 ##############################################################################
+## REPLICATION
+##############################################################################
+
+# This section configures replication between two Teamwire Servers running in
+# active / passive setup with manual switching.
+
+# The internal ID of the server. This should be either 1 or 2.
+# server_id: 1
+
+# The IP address of the other server.
+# partner_node:
+
+# The password for the MySQL replication database user.
+# replication_password:
+
+##############################################################################
 ## DEBUGGING
 ##############################################################################
 

@@ -1,0 +1,8 @@
+[mysqld]
+server-id = {{ server_id }}
+report_host = server{{ server_id }}
+auto_increment_increment = 2
+auto_increment_offset = {{ server_id }}
+
+log_slave_updates = 1
+read_only = 1
