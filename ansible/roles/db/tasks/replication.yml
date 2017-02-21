@@ -14,7 +14,7 @@
     name: repl
     host: "{{ partner_node }}"
     password: "{{replication_password}}"
-    priv: "*.*:REPLICATION SLAVE"
+    priv: "*.*:REPLICATION SLAVE,REPLICATION CLIENT"
     state: present
     login_user: root
     login_password: "{{mysql_root_password}}"

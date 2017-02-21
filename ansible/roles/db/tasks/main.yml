@@ -116,7 +116,6 @@
     - 127.0.0.1
     - ::1
     - "{{external_hostname|default()}}"
-    - "{{partner_node|default()}}"
 
 - name: Create Teamwire database
   mysql_db:
