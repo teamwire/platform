@@ -33,6 +33,17 @@ fi
 
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 
+# Temporary user credentials storage for functions accessing MySQL
+MYSQL_CONFIG_FILE=""
+
+cleanup() {
+	if [ -n "$MYSQL_CONFIG_FILE" ] ; then
+		rm -d "$MYSQL_CONFIG_FILE"
+	fi
+}
+
+trap cleanup EXIT
+
 check_tag() {
 	local TAG=$1
 	for IMAGE in $IMAGES ; do
@@ -80,6 +91,14 @@ get_database_configuration() {
 	fi
 }
 
+write_temporary_database_access_config() {
+	if [ -z "$MYSQL_CONFIG_FILE" ] ; then
+		MYSQL_CONFIG_FILE=$(mktemp ~/.twctl_XXXXXXXXXXXX)
+		chmod 0600 "$MYSQL_CONFIG_FILE"
+		echo -e "[mysqldump]\nuser=teamwire\npassword=$MYSQL_PASS" > "$MYSQL_CONFIG_FILE"
+	fi
+}
+
 save_container_logs() {
 	local LOGDIR=/var/log/teamwire
 	local CONTAINER
@@ -122,23 +141,17 @@ help() {
 }
 
 backupdb_single() {
-	get_database_configuration
-	local MYSQLDUMP_CONFIG_FILE
-
 	if [ -f "$FILENAME" ] ; then
 		echo "$FILENAME exists, please specify a name that doesn't exists!"
 		exit 1
 	fi
 
-	MYSQLDUMP_CONFIG_FILE=$(mktemp)
-	chmod 0600 "$MYSQLDUMP_CONFIG_FILE"
-	echo -e "[mysqldump]\nuser=teamwire\npassword=$MYSQL_PASS" > "$MYSQLDUMP_CONFIG_FILE"
+	get_database_configuration
+	write_temporary_database_access_config
 
-	mysqldump --defaults-file="$MYSQLDUMP_CONFIG_FILE" \
+	mysqldump --defaults-file="${MYSQL_CONFIG_FILE}" \
 		-h "$MYSQL_HOST" -P "$MYSQL_PORT" \
 		-u teamwire teamwire > "$FILENAME"
-
-	rm -f "$MYSQLDUMP_CONFIG_FILE"
 }
 
 backupdb_cluster() {
