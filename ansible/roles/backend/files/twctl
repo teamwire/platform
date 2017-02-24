@@ -281,7 +281,7 @@ status_single() {
 		echo
 	fi
 
-	docker ps
+	docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}"
 }
 
 status_cluster() {
