@@ -54,17 +54,6 @@ fi
 
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
 
-# Temporary user credentials storage for functions accessing MySQL
-MYSQL_CONFIG_FILE=""
-
-cleanup() {
-	if [ -n "$MYSQL_CONFIG_FILE" ] ; then
-		rm -d "$MYSQL_CONFIG_FILE"
-	fi
-}
-
-trap cleanup EXIT
-
 check_tag() {
 	local TAG=$1
 	for IMAGE in $IMAGES ; do
@@ -103,12 +92,51 @@ get_database_configuration() {
 	fi
 }
 
+
+# Temporary user credentials storage for functions accessing MySQL
+MYSQL_CONFIG_FILE=""
+
 write_temporary_database_access_config() {
 	if [ -z "$MYSQL_CONFIG_FILE" ] ; then
+		get_database_configuration
+
 		MYSQL_CONFIG_FILE=$(mktemp ~/.twctl_XXXXXXXXXXXX)
 		chmod 0600 "$MYSQL_CONFIG_FILE"
 		echo -e "[mysqldump]\nuser=teamwire\npassword=$MYSQL_PASS" > "$MYSQL_CONFIG_FILE"
+
+		if [ "$REPLICATED" == "true" ] ; then
+			echo -e "[clientlocal]\nuser=teamwire\npassword=$MYSQL_PASS" >> "$MYSQL_CONFIG_FILE"
+			echo -e "[clientremote]\nuser=repl\npassword=$REPLICATION_PASSWORD" >> "$MYSQL_CONFIG_FILE"
+		fi
+
+		trap "rm -f ${MYSQL_CONFIG_FILE}" exit
 	fi
+}
+
+get_replicated_status() {
+	local WHICH="$1"
+
+	if [ -z "$WHICH" ] ; then
+		echo "Missing part!"
+		exit 1
+	fi
+
+	local HOST_PART=""
+	if [ "$WHICH" == "remote" ] ; then
+		HOST_PART="-h ${PARTNER_NODE}"
+	fi
+
+	local RO="$(mysql \
+		--defaults-file="${MYSQL_CONFIG_FILE}" \
+		--defaults-group-suffix=${WHICH} \
+		--connect-timeout=2 \
+		 -sN ${HOST_PART} \
+		-e 'SELECT @@GLOBAL.read_only' \
+		2> /dev/null)"
+
+	[ "$RO" == ""  ] && echo UNKNOWN
+	[ "$RO" == "0" ] && echo ACTIVE
+	[ "$RO" == "1" ] && echo PASSIVE
 }
 
 save_container_logs() {
@@ -158,7 +186,6 @@ backupdb_single() {
 		exit 1
 	fi
 
-	get_database_configuration
 	write_temporary_database_access_config
 
 	mysqldump --defaults-file="${MYSQL_CONFIG_FILE}" \
@@ -246,6 +273,14 @@ scale_cluster() {
 }
 
 status_single() {
+	if [ "$REPLICATED" == "true" ] ; then
+		write_temporary_database_access_config
+
+		echo "Local node:  $(get_replicated_status local)"
+		echo "Remote node: $(get_replicated_status remote)"
+		echo
+	fi
+
 	docker ps
 }
 
