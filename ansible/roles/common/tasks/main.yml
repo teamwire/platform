@@ -222,5 +222,8 @@
 - name: Install tmate
   apt: pkg=tmate
 
+- include: replication.yml
+  when: server_id is defined and partner_node is defined and replication_password is defined
+
 - include: cluster.yml
   when: groups['all'] | length() > 1
