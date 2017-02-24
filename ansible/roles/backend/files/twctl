@@ -43,9 +43,10 @@ else
 	# Check for active/passive server setup
 	SERVER_ID="$(_get_config_value server_id)"
 	PARTNER_NODE="$(_get_config_value partner_node)"
-	REPLICATION_PASSWORD="$(_get_config_value replication_password)"
+	MYSQL_REPL_PASSWORD="$(_get_config_value replication_password)"
+	MYSQL_ROOT_PASSWORD="$(_get_config_value mysql_root_password)"
 
-	if [ -n "$SERVER_ID" ] && [ -n "$PARTNER_NODE" ] && [ -n "$REPLICATION_PASSWORD" ] ; then
+	if [ -n "$SERVER_ID" ] && [ -n "$PARTNER_NODE" ] && [ -n "$MYSQL_REPL_PASSWORD" ] ; then
 		REPLICATED=true
 	else
 		REPLICATED=false
@@ -74,7 +75,7 @@ get_database_configuration() {
 
 	MYSQL_HOST="$(_get_config_value mysql_host)"
 	MYSQL_PORT="$(_get_config_value mysql_port)"
-	MYSQL_PASS="$(_get_config_value teamwire_db_password)"
+	MYSQL_TEAMWIRE_PASS="$(_get_config_value teamwire_db_password)"
 	AESKEY="$(_get_config_value aes_key)"
 
 	if [ -z "$MYSQL_HOST" ]; then
@@ -85,7 +86,7 @@ get_database_configuration() {
 		MYSQL_PORT=3306
 	fi
 
-	if [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
+	if [ -z "$MYSQL_TEAMWIRE_PASS" ] || [ -z "$AESKEY" ] ; then
 		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
 		echo "       Please ensure the file exists and the database is configured."
 		exit 1
@@ -102,11 +103,12 @@ write_temporary_database_access_config() {
 
 		MYSQL_CONFIG_FILE=$(mktemp ~/.twctl_XXXXXXXXXXXX)
 		chmod 0600 "$MYSQL_CONFIG_FILE"
-		echo -e "[mysqldump]\nuser=teamwire\npassword=$MYSQL_PASS" > "$MYSQL_CONFIG_FILE"
+		echo -e "[mysqldump]\nuser=teamwire\npassword=$MYSQL_TEAMWIRE_PASS" > "$MYSQL_CONFIG_FILE"
 
 		if [ "$REPLICATED" == "true" ] ; then
-			echo -e "[clientlocal]\nuser=teamwire\npassword=$MYSQL_PASS" >> "$MYSQL_CONFIG_FILE"
-			echo -e "[clientremote]\nuser=repl\npassword=$REPLICATION_PASSWORD" >> "$MYSQL_CONFIG_FILE"
+			echo -e "[clientlocal]\nuser=teamwire\npassword=$MYSQL_TEAMWIRE_PASS" >> "$MYSQL_CONFIG_FILE"
+			echo -e "[clientlocalroot]\nuser=root\npassword=$MYSQL_ROOT_PASSWORD" >> "$MYSQL_CONFIG_FILE"
+			echo -e "[clientremote]\nuser=repl\npassword=$MYSQL_REPL_PASSWORD" >> "$MYSQL_CONFIG_FILE"
 		fi
 
 		trap "rm -f ${MYSQL_CONFIG_FILE}" exit
@@ -130,13 +132,23 @@ get_replicated_status() {
 		--defaults-file="${MYSQL_CONFIG_FILE}" \
 		--defaults-group-suffix=${WHICH} \
 		--connect-timeout=2 \
-		 -sN ${HOST_PART} \
+		-sN ${HOST_PART} \
 		-e 'SELECT @@GLOBAL.read_only' \
 		2> /dev/null)"
 
 	[ "$RO" == ""  ] && echo UNKNOWN
 	[ "$RO" == "0" ] && echo ACTIVE
 	[ "$RO" == "1" ] && echo PASSIVE
+}
+
+print_replicated_status() {
+	write_temporary_database_access_config
+
+	echo "ACTIVE/PASSIVE Status"
+	echo
+	echo -e "\tLocal:  $(get_replicated_status local)"
+	echo -e "\tRemote: $(get_replicated_status remote)"
+	echo
 }
 
 save_container_logs() {
@@ -178,6 +190,53 @@ help() {
 	echo "stop        Stop all running Teamwire containers"
 	echo "rm          Remove all stopped Teamwire containers"
 	echo "backupdb    Create a backup of the database (requires file name)"
+	if [ "$REPLICATED" == "true" ] ; then
+		echo
+		echo "activate    Turn the local node into the active node"
+		echo "passivate   Turn the local node into the passive node"
+	fi
+}
+
+activate_single() {
+	if [ "$REPLICATED" == "false" ] ; then
+		echo "Switching active/passive server is only supported in active/passive environments."
+		exit 1
+	fi
+
+	write_temporary_database_access_config
+
+	local LOCAL_STATUS=$(get_replicated_status local)
+	local REMOTE_STATUS=$(get_replicated_status remote)
+
+	if [ "$LOCAL_STATUS" == "ACTIVE" ] ; then
+		echo "Local node is already active."
+		exit 1
+	fi
+
+	if [ "$REMOTE_STATUS" != "PASSIVE" ] && [ "$FORCE" == "false" ] ; then
+		echo "Not activating local node: remote node status is ${REMOTE_STATUS}."
+		echo
+		echo "To activate this node nevertheless, run this command with the '--force' flag."
+		exit 1
+	fi
+
+	if mysql --defaults-file="${MYSQL_CONFIG_FILE}" \
+		--defaults-group-suffix=localroot \
+		--connect-timeout=2 \
+		-e 'SET GLOBAL read_only=FALSE' \
+		> /dev/null 2> /dev/null
+	then
+		echo -n "New "
+		print_replicated_status
+	else
+		echo "Failed to activate local node."
+		exit 1
+	fi
+}
+
+activate_cluster() {
+	echo "Switching active/passive server is only supported in active/passive environments."
+	exit 1
 }
 
 backupdb_single() {
@@ -196,6 +255,48 @@ backupdb_single() {
 backupdb_cluster() {
 	echo "Database backup is not supported on clustered setups!"
 	echo "Please use the tool appropriate for your database to perform a manual backup."
+	exit 1
+}
+
+passivate_single() {
+	if [ "$REPLICATED" == "false" ] ; then
+		echo "Switching active/passive server is only supported in active/passive environments."
+		exit 1
+	fi
+
+	write_temporary_database_access_config
+
+	local LOCAL_STATUS=$(get_replicated_status local)
+	local REMOTE_STATUS=$(get_replicated_status remote)
+
+	if [ "$LOCAL_STATUS" == "PASSIVE" ] ; then
+		echo "Local node is already ${LOCAL_STATUS}."
+		exit 1
+	fi
+
+	if [ "$REMOTE_STATUS" == "UNKNOWN" ] && [ "$FORCE" == "false" ] ; then
+		echo "Not passivating local node: remote node status is ${REMOTE_STATUS}."
+		echo
+		echo "To passivate this node nevertheless, run this command with the '--force' flag."
+		exit 1
+	fi
+
+	if mysql --defaults-file="${MYSQL_CONFIG_FILE}" \
+		--defaults-group-suffix=localroot \
+		--connect-timeout=2 \
+		-e 'SET GLOBAL read_only=TRUE' \
+		> /dev/null 2> /dev/null
+	then
+		echo -n "New "
+		print_replicated_status
+	else
+		echo "Failed to passivate local node."
+		exit 1
+	fi
+}
+
+passivate_cluster() {
+	echo "Switching active/passive server is only supported in active/passive environments."
 	exit 1
 }
 
@@ -244,7 +345,7 @@ run_migrations_base() {
 	echo "Running database migrations"
 	echo
 	docker run --rm -e MODE=migration --name teamwire-migrations \
-		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_PASSWORD="$MYSQL_PASS" \
+		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_TEAMWIRE_PASSWORD="$MYSQL_TEAMWIRE_PASS" \
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
 		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
 		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2> "$ERROR_LOG" | egrep -v '^(.+)='
@@ -273,13 +374,7 @@ scale_cluster() {
 }
 
 status_single() {
-	if [ "$REPLICATED" == "true" ] ; then
-		write_temporary_database_access_config
-
-		echo "Local node:  $(get_replicated_status local)"
-		echo "Remote node: $(get_replicated_status remote)"
-		echo
-	fi
+	[ "$REPLICATED" == "true" ] && print_replicated_status
 
 	docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}"
 }
@@ -344,6 +439,7 @@ setup_containers_cluster() {
 	$DOCKER_COMPOSE up -d
 }
 
+FORCE="false"
 OPTIONS=""
 TAG=""
 TASK=""
@@ -359,6 +455,10 @@ while [ $# -gt 0 ] ; do
 			;;
 		-f|--file)
 			FILENAME=$2
+			shift
+			;;
+		--force)
+			FORCE=true
 			shift
 			;;
 		pull)
@@ -396,6 +496,13 @@ while [ $# -gt 0 ] ; do
 			;;
 		exportlogs)
 			TASK="save_container_logs"
+			;;
+		activate)
+			TASK="activate"
+			;;
+		passivate)
+			TASK="passivate"
+			;;
 	esac
 	shift
 done
