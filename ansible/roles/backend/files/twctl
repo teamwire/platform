@@ -1,6 +1,28 @@
 #!/bin/bash
 
+# Find Ansible configuration
+if [ -d ~/platform/ansible ] ; then
+	ANSIBLE_DIR=~/platform/ansible
+elif [ -d ~teamwire/platform/ansible ] ; then
+	ANSIBLE_DIR=~teamwire/platform/ansible
+else
+	echo "Cannot find platform directory."
+	exit 1
+fi
+
+CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 CLUSTER_CONFIG_DIR=/data/cluster_config
+
+_get_config_value() {
+	if [ ! -f "$CONFIG_FILE" ]; then
+		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
+		echo "       Please configure the server before using this tool."
+		exit 1
+	fi
+
+	local ENTRY="$1"
+	awk '/^'${ENTRY}'\y/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE" 2> /dev/null
+}
 
 if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	# Clustered setup
@@ -17,21 +39,20 @@ else
 	# Single server installation
 	INSTALLATION=single
 	CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
+
+	# Check for active/passive server setup
+	SERVER_ID="$(_get_config_value server_id)"
+	PARTNER_NODE="$(_get_config_value partner_node)"
+	REPLICATION_PASSWORD="$(_get_config_value replication_password)"
+
+	if [ -n "$SERVER_ID" ] && [ -n "$PARTNER_NODE" ] && [ -n "$REPLICATION_PASSWORD" ] ; then
+		REPLICATED=true
+	else
+		REPLICATED=false
+	fi
 fi
 
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
-
-# Find Ansible configuration
-if [ -d ~/platform/ansible ] ; then
-	ANSIBLE_DIR=~/platform/ansible
-elif [ -d ~teamwire/platform/ansible ] ; then
-	ANSIBLE_DIR=~teamwire/platform/ansible
-else
-	echo "Cannot find platform directory."
-	exit 1
-fi
-
-CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 
 # Temporary user credentials storage for functions accessing MySQL
 MYSQL_CONFIG_FILE=""
@@ -56,25 +77,16 @@ check_tag() {
 	done
 }
 
-check_config_file() {
-	if [ ! -f "$CONFIG_FILE" ]; then
-		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
-		echo "       Please configure the server before using this tool."
-		exit 1
-	fi
-}
-
 get_database_configuration() {
 	if [ "$INSTALLATION" == "cluster" ] ; then
 		. "${CLUSTER_CONFIG_DIR}/cluster.conf"
 		return
 	fi
 
-	check_config_file
-	MYSQL_HOST="$(awk '/^mysql_host/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")"           2> /dev/null
-	MYSQL_PORT="$(awk '/^mysql_port/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")"           2> /dev/null
-	MYSQL_PASS="$(awk '/^teamwire_db_password/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")" 2> /dev/null
-	AESKEY="$(awk '/aes_key:/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE")"                  2> /dev/null
+	MYSQL_HOST="$(_get_config_value mysql_host)"
+	MYSQL_PORT="$(_get_config_value mysql_port)"
+	MYSQL_PASS="$(_get_config_value teamwire_db_password)"
+	AESKEY="$(_get_config_value aes_key)"
 
 	if [ -z "$MYSQL_HOST" ]; then
 		MYSQL_HOST=$(/sbin/ifconfig docker0 | awk -F'[ :]+' '/inet addr/{print $4}')
@@ -270,9 +282,7 @@ setup_containers_base() {
 setup_containers_single() {
 	setup_containers_base
 
-	check_config_file
-
-	if ! grep -q '^version' "$CONFIG_FILE" ; then
+	if [ -z "$(_get_config_value version)" ] ; then
 		echo "ERROR: Please update the configuration file ${CONFIG_FILE}"
 		echo "       from the provided example before using this action. "
 		exit 1
