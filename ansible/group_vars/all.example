@@ -207,7 +207,8 @@ smtp_use_tls: yes
 # The IP address of the other server.
 # partner_node:
 
-# The password for the MySQL replication database user.
+# The password for the MySQL replication database user. This password needs
+# to be identical on both nodes.
 # replication_password:
 
 ##############################################################################
