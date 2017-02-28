@@ -1,3 +1,3 @@
 registrator_version: "gliderlabs/registrator:v7"
 registry_version: "registry:2.5.0"
-swarm_version: "swarm:1.2.5"
+swarm_version: "swarm:1.2.6"
