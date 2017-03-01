@@ -32,7 +32,7 @@ services:
       - ORA_PASSWORD={{ teamwire_db_password if oracle_host is defined else '' }}
       - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
       - REDIS_PASSWORD={{ redis_pass|default() }}
-      - EMAIL_HOST={{ '172.17.0.1' if fake_email_confirmation is not defined else '' }}
+      - EMAIL_HOST={{ ansible_docker0['ipv4']['address'] if fake_email_confirmation is not defined else '' }}
       - BLOB_DIR=/assets
       - DEFAULT_FROM_EMAIL={{ sender_address }}
       - http_proxy={{ http_proxy|default() }}

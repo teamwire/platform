@@ -5,7 +5,7 @@
 
 - name: Determine MariaDB host (local)
   set_fact:
-    mysql_host: 172.17.0.1
+    mysql_host: "{{ ansible_docker0['ipv4']['address'] }}"
   when: mysql_host is not defined and 'database_servers' not in groups and oracle_host is not defined
 
 - name: Determine MariaDB host (Single MariaDB server)
@@ -25,7 +25,7 @@
 
 - name: Determine Redis host (local)
   set_fact:
-    redis_host: 172.17.0.1
+    redis_host: "{{ ansible_docker0['ipv4']['address'] }}"
   when: redis_host is not defined and 'redis_servers' not in groups
 
 - name: Determine Redis host (Redis cluster)
