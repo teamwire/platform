@@ -2,47 +2,21 @@
 # vi: set ft=ruby :
 
 HOSTS = {
-  'lb1' => { :private_ip => '10.0.1.3/24' },
-  'lb2' => { :private_ip => '10.0.1.4/24' },
-  'tw1' => { :private_ip => '10.0.1.5/24' },
-  'tw2' => { :private_ip => '10.0.1.6/24' },
-  'tw3' => { :private_ip => '10.0.1.7/24' },
-  'db1' => { :private_ip => '10.0.1.21/24' },
-  'db2' => { :private_ip => '10.0.1.22/24' },
-  'db3' => { :private_ip => '10.0.1.23/24' },
-}
-
-GROUPS = {
-  'backend_servers'  => [ 'tw1', 'tw2', 'tw3' ],
-  'consul_servers'   => [ 'db1', 'db2', 'db3' ],
-  'database_servers' => [ 'db1', 'db2', 'db3' ],
-  'database_servers:vars' => { 'database_cluster_ip' => '10.0.1.20' },
-  'redis_servers'    => [ 'db1', 'db2', 'db3' ],
-  'docker_registry'  => [ 'db1' ],
-  'nfs_servers'      => [ 'db1', 'db2', 'db3' ],
-  'frontend_servers' => [ 'lb1', 'lb2' ],
-  'load_balancers'   => [ 'lb1', 'lb2' ],
-  'load_balancers:vars' => { 'loadbalancer_password' => 'foobar99', 'loadbalancer_external_ip' => '10.0.1.2' },
+  'lb1' => { :private_ip => '10.0.1.3' },
+  'lb2' => { :private_ip => '10.0.1.4' },
+  'tw1' => { :private_ip => '10.0.1.5' },
+  'tw2' => { :private_ip => '10.0.1.6' },
+  'tw3' => { :private_ip => '10.0.1.7' },
+  'db1' => { :private_ip => '10.0.1.21' },
+  'db2' => { :private_ip => '10.0.1.22' },
+  'db3' => { :private_ip => '10.0.1.23' },
 }
 
 Vagrant.configure(2) do |config|
   HOSTS.each do |name, conf|
     config.vm.define name do |node|
       node.vm.hostname = name
-      node.vm.network "private_network", ip: conf[:private_ip].split('/').first
-
-      # Provision the machines with Ansible when the last one is provisioned
-      if name == HOSTS.keys[HOSTS.length - 1]
-        # Default provisioning
-        node.vm.provision "ansible" do |ansible|
-          ansible.playbook = "../ansible/playbooks/cluster.yml"
-          ansible.groups = GROUPS
-          ansible.host_vars = HOSTS
-          ansible.limit = 'all'
-          ansible.sudo = true
-          # ansible.verbose = 'vvv'
-        end
-      end
+      node.vm.network "private_network", ip: conf[:private_ip]
     end
   end
 
