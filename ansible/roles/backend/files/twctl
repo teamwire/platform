@@ -281,6 +281,10 @@ passivate_single() {
 		exit 1
 	fi
 
+	echo "Syncing files to $(_get_config_value partner_node)..."
+	sudo /etc/cron.hourly/sync_files
+	echo
+
 	if mysql --defaults-file="${MYSQL_CONFIG_FILE}" \
 		--defaults-group-suffix=localroot \
 		--connect-timeout=2 \

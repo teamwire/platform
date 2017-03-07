@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec rsync -rpogtvuz /data/{assets,website-screenshot-cache} root@{{ partner_node }}:/data

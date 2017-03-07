@@ -3,8 +3,8 @@
   user: name=root generate_ssh_key=yes
 
 - name: Create rsync cron job
-  copy:
-    content: "rsync -rpogtvuz /data/{assets,website-screenshot-cache} root@{{ partner_node }}:/data\n"
+  template:
+    src: sync_files.j2
     dest: /etc/cron.hourly/sync_files
     owner: root
     group: root
