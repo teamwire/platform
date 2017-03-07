@@ -20,8 +20,5 @@
 - name: fix ownership of git checkout
   file: path=/home/teamwire/platform owner=teamwire group=teamwire recurse=yes
 
-- name: start eth1
-  shell: ifdown eth1; ifup -a
-
 - name: restart rsyslog
   service: name=rsyslog state=restarted
