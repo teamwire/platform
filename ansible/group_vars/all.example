@@ -114,6 +114,9 @@ apns_certificate:
 # and must squash access by the user root (0) to daemon (1).
 # external_storage_path:
 
+# Set the NFSv4 ID mapping domain, if it differs from FQDN minus hostname
+# idmap_domain:
+
 ##############################################################################
 ## DATABASE
 ##############################################################################

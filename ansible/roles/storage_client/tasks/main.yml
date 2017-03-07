@@ -15,6 +15,22 @@
   mount: name=/data fstype=nfs src="{{ external_storage_path }}" state=mounted
   when: external_storage_path is defined
 
+- name: Configure NFSv4 ID mapping domain
+  lineinfile:
+    dest: /etc/idmapd.conf
+    regexp: '(# )?Domain = '
+    line: 'Domain = {{ idmap_domain }}'
+    backrefs: yes
+  when: external_storage_path is defined and idmap_domain is defined
+
+- name: Comment NFSv4 ID mapping domain
+  lineinfile:
+    dest: /etc/idmapd.conf
+    regexp: '(# )?Domain = '
+    line: '# Domain = localdomain'
+    backrefs: yes
+  when: external_storage_path is defined and idmap_domain is not defined
+
 - name: "Mount NFS share (cluster)"
   mount:
     name: /data
