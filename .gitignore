@@ -9,3 +9,4 @@ ansible/group_vars/*
 !ansible/group_vars/*.example
 **/*.retry
 ansible/playbooks/procedures/debian.cnf
+*.pyc

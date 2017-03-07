@@ -5,7 +5,7 @@ vrrp_script chk_pxc {
 
 vrrp_instance PXC {
     state MASTER
-    interface eth1
+    interface {{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}
     virtual_router_id 52
     priority 100
     nopreempt
