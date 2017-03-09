@@ -21,7 +21,7 @@ _get_config_value() {
 	fi
 
 	local ENTRY="$1"
-	awk '/^'${ENTRY}'\y/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE" 2> /dev/null
+	awk '/^'${ENTRY}':/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE" 2> /dev/null
 }
 
 if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
