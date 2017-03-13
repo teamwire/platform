@@ -169,6 +169,10 @@ class TWImg():
         return self.importImagesFromTarfile(args.archive)
 
     def actionPush(self, args):
+        if not self.registry:
+            eprint("Please specify the registry to push to.")
+            return 1
+
         untaggedImages = self.getUntaggedImages()
         return self.pushImagesToRegistry(untaggedImages)
 
