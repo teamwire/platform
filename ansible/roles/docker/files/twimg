@@ -154,11 +154,7 @@ class TWImg():
             print("%s:%s" % (attributes['repository'], attributes['tag']))
             imageFile = archive.extractfile(image)
 
-            self.cli.import_image_from_data(
-                imageFile.read(),
-                attributes['repository'],
-                attributes['tag']
-            )
+            self.cli.load_image(imageFile.read())
 
             imageFile.close()
 
