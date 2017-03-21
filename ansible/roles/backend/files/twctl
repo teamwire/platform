@@ -30,8 +30,8 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 		sudo chgrp -R teamwire "$CLUSTER_CONFIG_DIR"
 	fi
 
-	COMPOSE_FILE="${CLUSTER_CONFIG_DIR}/docker-compose.yml"
-	DOCKER_COMPOSE="/usr/local/bin/docker-compose -p teamwire -f "$COMPOSE_FILE" -H tcp://localhost:4000"
+	NOMAD_JOB="${CLUSTER_CONFIG_DIR}/teamwire.nomad"
+	NOMAD="/usr/local/sbin/nomad"
 else
 	# Single server installation
 	INSTALLATION=single
@@ -153,7 +153,6 @@ help() {
 	echo
 	echo "pull        Pull containers for a given tag (requires tag)"
 	echo "migrate     Run database migrations (requires tag)"
-	echo "scale       Scale services (cluster only)"
 	echo "setup       Configure and run Teamwire containers (requires tag)"
 	echo "start       Start all stopped Teamwire containers"
 	echo "status      Show status of Teamwire containers"
@@ -214,7 +213,8 @@ remove_containers_single() {
 }
 
 remove_containers_cluster() {
-	$DOCKER_COMPOSE rm
+	echo "On clustered setups containers are deleted when stopped."
+	exit 1
 }
 
 run_migrations_base() {
@@ -246,21 +246,12 @@ run_migrations_cluster() {
 	run_migrations_base
 }
 
-scale_single() {
-	echo "Service scaling is only supported on clustered setups."
-	exit 1
-}
-
-scale_cluster() {
-	$DOCKER_COMPOSE scale $OPTIONS
-}
-
 status_single() {
 	docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}"
 }
 
 status_cluster() {
-	$DOCKER_COMPOSE ps
+	$NOMAD status teamwire
 }
 
 stop_containers_single() {
@@ -272,7 +263,7 @@ stop_containers_single() {
 }
 
 stop_containers_cluster() {
-	$DOCKER_COMPOSE stop
+	$NOMAD stop teamwire
 }
 
 start_containers_single() {
@@ -282,7 +273,7 @@ start_containers_single() {
 }
 
 start_containers_cluster() {
-	$DOCKER_COMPOSE start
+	$NOMAD run "$NOMAD_JOB"
 }
 
 setup_containers_base() {
@@ -310,13 +301,13 @@ setup_containers_single() {
 setup_containers_cluster() {
 	setup_containers_base
 
-	# Patch the compose file
+	# Patch the Nomad job
 	for IMAGE in $IMAGES ; do
-		sed -i -e 's|\('"$IMAGE"':\)[[:alnum:]-]*|\1'"$TAG"'|' "$COMPOSE_FILE"
+		sed -i -e 's|\('"$IMAGE"':\)[[:alnum:]-]*|\1'"$TAG"'|' "$NOMAD_JOB"
 	done
-	sed -i -e 's|\(VERSION=\)[[:alnum:]-]*|\1'"$TAG"'|' "$COMPOSE_FILE"
+	sed -i -e 's|\(VERSION=\)[[:alnum:]-]*|\1'"$TAG"'|' "$NOMAD_JOB"
 
-	$DOCKER_COMPOSE up -d
+	$NOMAD run "$NOMAD_JOB"
 }
 
 OPTIONS=""
@@ -343,11 +334,6 @@ while [ $# -gt 0 ] ; do
 		migrate)
 			TASK="run_migrations"
 			TAG_REQUIRED=yes
-			;;
-		scale)
-			TASK="scale"
-			shift
-			OPTIONS=$@
 			;;
 		setup)
 			TASK="setup_containers"

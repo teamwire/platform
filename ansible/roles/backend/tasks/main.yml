@@ -54,4 +54,4 @@
 - include: "single_{{ ansible_distribution }}.yml"
   when: "'backend_servers' not in groups"
 
-# The cluster backend deployment is delegated to the swarm managers
+# The cluster backend deployment is delegated to the nomad servers
