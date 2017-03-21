@@ -15,7 +15,7 @@ vrrp_instance VI_1 {
         auth_pass {{ loadbalancer_password }}
     }
     virtual_ipaddress {
-        {{ loadbalancer_external_ip }} dev {{ loadbalancer_external_ip | addr_to_if(hostvars[inventory_hostname]) }}
+        {{ loadbalancer_external_ip }}
     }
     track_script {
         chk_nginx
