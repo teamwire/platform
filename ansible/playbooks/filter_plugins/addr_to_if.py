@@ -1,9 +1,10 @@
 def addr_to_if(addr, facts):
     for interface in facts['ansible_interfaces']:
-        if not 'ipv4' in interface:
+        ifkey = 'ansible_{}'.format(interface)
+        if 'ipv4' not in facts[ifkey]:
             continue
 
-        if facts['ansible_{}'.format(interface)]['ipv4']['address'] == addr:
+        if facts[ifkey]['ipv4']['address'] == addr:
             return interface
 
     return None
