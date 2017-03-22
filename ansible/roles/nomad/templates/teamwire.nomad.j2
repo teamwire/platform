@@ -11,6 +11,12 @@ job "teamwire" {
 		value = "linux"
 	}
 
+	constraint {
+		attribute = "${meta.groups}"
+		operator = "regexp"
+		value = "backend_servers"
+	}
+
 	# Configure the job to do rolling updates
 	update {
 		# Stagger updates every 10 seconds

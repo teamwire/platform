@@ -46,4 +46,7 @@ client {
 	options = {
 		"docker.cleanup.image" = {{ "true" if "docker_registry" in groups else "false" }}
 	}
+	meta = {
+		"groups" = "{{ group_names | join(',') }}"
+	}
 }
