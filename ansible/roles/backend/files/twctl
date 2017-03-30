@@ -14,12 +14,6 @@ CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 CLUSTER_CONFIG_DIR=/data/cluster_config
 
 _get_config_value() {
-	if [ ! -f "$CONFIG_FILE" ]; then
-		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
-		echo "       Please configure the server before using this tool."
-		exit 1
-	fi
-
 	local ENTRY="$1"
 	awk '/^'${ENTRY}':/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE" 2> /dev/null
 }
@@ -38,6 +32,13 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 else
 	# Single server installation
 	INSTALLATION=single
+
+	if [ ! -f "$CONFIG_FILE" ]; then
+		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
+		echo "       Please configure the server before using this tool."
+		exit 1
+	fi
+
 	CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
 
 	# Check for active/passive server setup
