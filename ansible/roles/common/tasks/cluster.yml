@@ -17,14 +17,3 @@
   ufw: rule=allow src="{{ hostvars[item]['private_ip'] }}"
   with_items: "{{ groups['all'] | default([]) }}"
   when: item != inventory_hostname
-
-- name: Ensure rsyslog is installed
-  apt: pkg=rsyslog
-
-- name: Send all logs to loghost
-  when: "'loghost' in groups"
-  template:
-    src: 30-remote-logging.conf.j2
-    dest: /etc/rsyslog.d/30-remote-logging.conf
-  notify:
-    - restart rsyslog

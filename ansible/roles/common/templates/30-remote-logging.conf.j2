@@ -1,9 +1,11 @@
 # Remote log hosts
-{% for host in groups.loghost %}
+{% for log_target in syslog_servers|default([]) | union(groups.loghost|default([])) %}
 action(
-    name="remote_logging_on_{{ host }}"
+    name="remote_logging_on_{{ log_target | replace('.', '_') }}"
     type="omfwd"
-    target="{{ hostvars[host].private_ip }}"
+{# We'll look up the IP addres of servers in the loghost group,
+   otherwise we use the address supplied in the syslog_servers array #}
+    target="{{ hostvars[log_target].private_ip if log_target in hostvars else log_target }}"
     protocol="tcp"
     port="514"
 )

@@ -222,6 +222,17 @@
 - name: Install tmate
   apt: pkg=tmate
 
+- name: Ensure rsyslog is installed
+  apt: pkg=rsyslog
+
+- name: Send all logs to loghost or remote syslog servers
+  when: "'loghost' in groups or syslog_servers is defined"
+  template:
+    src: 30-remote-logging.conf.j2
+    dest: /etc/rsyslog.d/30-remote-logging.conf
+  notify:
+    - restart rsyslog
+
 - include: replication.yml
   when: server_id is defined and partner_node is defined and replication_password is defined
 

@@ -60,6 +60,13 @@ external_hostname:
 #   - 8.8.8.8
 #   - 8.8.4.4
 
+# External syslog servers
+# When one ore more syslog_servers are configured, all nodes will seld their
+# syslogs to these servers.
+# syslog_servers:
+#   - 10.0.11.10
+#   - 10.0.11.11
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################
