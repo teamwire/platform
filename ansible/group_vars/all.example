@@ -121,8 +121,10 @@ apns_certificate:
 ## DATABASE
 ##############################################################################
 
+# Define the database user name. Defaults to 'teamwire'.
+# teamwire_db_user: teamwire
+
 # Define the database user password
-# For MySQL, the application expects the user name "teamwire"
 teamwire_db_password: teamwire
 
 # Define the database encryption key.
@@ -132,8 +134,9 @@ aes_key:
 
 # If you don't want to run the MySQL server on this machine, you can set these
 # values to the settings that point to your external MySQL server.
-# In this case you'll need to create the "teamwire" user on that DB with the
-# password given above and enable access from this host.
+# In this case you'll need to create the  user defined with teamwire_db_user on
+# that DB with the password given above and enable access from this host.
+#
 # You can safely ignore this setting when you've configured a clustered database.
 # mysql_host:
 # mysql_port:
@@ -156,7 +159,6 @@ mysql_root_password:
 # oracle_host:
 # oracle_port: 1521
 # oracle_database:
-# oracle_user:
 
 # Redis connection information.
 # If you don't configure this values, a local Redis server will be installed

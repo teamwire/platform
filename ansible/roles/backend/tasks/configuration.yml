@@ -3,6 +3,19 @@
   fail: msg="AES key is not defined. Please check the configuration file"
   when: config_done is defined and aes_key is defined and aes_key == None
 
+- name: Set Teamwire DB user from deprecated oracle_user config setting
+  set_fact:
+    teamwire_db_user: "{{ oracle_user }}"
+  when: oracle_user is defined
+
+- debug: msg="Usage of oracle_user is deprecated, please set teamwire_db_user"
+  when: oracle_user is defined
+
+- name: Configure default Teamwire DB user name
+  set_fact:
+    teamwire_db_user: teamwire
+  when: teamwire_db_user is not defined
+
 - name: Determine MariaDB host (local)
   set_fact:
     mysql_host: "{{ ansible_docker0['ipv4']['address'] }}"

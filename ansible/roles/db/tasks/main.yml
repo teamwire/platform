@@ -127,7 +127,7 @@
 
 - name: Create Teamwire database user
   mysql_user:
-    name: teamwire
+    name: "{{ teamwire_db_user | default('teamwire') }}"
     host: "%"
     password: "{{teamwire_db_password}}"
     priv: teamwire.*:ALL
