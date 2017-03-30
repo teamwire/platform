@@ -75,6 +75,7 @@ get_database_configuration() {
 
 	MYSQL_HOST="$(_get_config_value mysql_host)"
 	MYSQL_PORT="$(_get_config_value mysql_port)"
+	MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
 	MYSQL_USER="$(_get_config_value teamwire_db_user)"
 	MYSQL_TEAMWIRE_PASS="$(_get_config_value teamwire_db_password)"
 	AESKEY="$(_get_config_value aes_key)"
@@ -87,9 +88,14 @@ get_database_configuration() {
 		MYSQL_PORT=3306
 	fi
 
+	if [ -z "$MYSQL_DATABASE" ]; then
+		MYSQL_DATABASE=teamwire
+	fi
+
 	if [ -z "$MYSQL_USER" ]; then
 		MYSQL_USER=teamwire
 	fi
+
 	if [ -z "$MYSQL_TEAMWIRE_PASS" ] || [ -z "$AESKEY" ] ; then
 		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
 		echo "       Please ensure the file exists and the database is configured."
@@ -253,7 +259,7 @@ backupdb_single() {
 
 	mysqldump --defaults-file="${MYSQL_CONFIG_FILE}" \
 		-h "$MYSQL_HOST" -P "$MYSQL_PORT" \
-		-u "$MYSQL_USER" teamwire > "$FILENAME"
+		-u "$MYSQL_USER" "$MYSQL_DATABASE" > "$FILENAME"
 }
 
 backupdb_cluster() {
@@ -353,7 +359,7 @@ run_migrations_base() {
 	echo "Running database migrations"
 	echo
 	docker run --rm -e MODE=migration --name teamwire-migrations \
-		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" \
+		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_DATABASE="$MYSQL_DATABASE" \
 		-e MYSQL_USER="$MYSQL_USER" -e MYSQL_TEAMWIRE_PASSWORD="$MYSQL_TEAMWIRE_PASS" \
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
 		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \

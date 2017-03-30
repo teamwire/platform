@@ -16,6 +16,19 @@
     teamwire_db_user: teamwire
   when: teamwire_db_user is not defined
 
+- name: Set Teamwire DB name from deprecated oracle_database config setting
+  set_fact:
+    teamwire_db_name: "{{ oracle_database }}"
+  when: oracle_database is defined
+
+- debug: msg="Usage of oracle_database is deprecated, please set teamwire_db_name"
+  when: oracle_database is defined
+
+- name: Configure default Teamwire DB name
+  set_fact:
+    teamwire_db_name: teamwire
+  when: teamwire_db_name is not defined
+
 - name: Determine MariaDB host (local)
   set_fact:
     mysql_host: "{{ ansible_docker0['ipv4']['address'] }}"

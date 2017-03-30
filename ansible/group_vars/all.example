@@ -127,6 +127,9 @@ apns_certificate:
 # Define the database user password
 teamwire_db_password: teamwire
 
+# Define the database name. Defaults to 'teamwire'.
+# teamwire_db_name: teamwire
+
 # Define the database encryption key.
 # This key must be 32 byte (i.e. 256 bit) long and must only contain ASCII
 # characters (i.e. unicode characters are not allowed).
@@ -158,7 +161,6 @@ mysql_root_password:
 # values matching your setup.
 # oracle_host:
 # oracle_port: 1521
-# oracle_database:
 
 # Redis connection information.
 # If you don't configure this values, a local Redis server will be installed

@@ -119,7 +119,7 @@
 
 - name: Create Teamwire database
   mysql_db:
-    name: teamwire
+    name: "{{ teamwire_db_name | default('teamwire') }}"
     state: present
     login_user: root
     login_password: "{{mysql_root_password}}"
@@ -130,7 +130,7 @@
     name: "{{ teamwire_db_user | default('teamwire') }}"
     host: "%"
     password: "{{teamwire_db_password}}"
-    priv: teamwire.*:ALL
+    priv: "{{ teamwire_db_name | default('teamwire') }}.*:ALL"
     state: present
     login_user: root
     login_password: "{{mysql_root_password}}"
