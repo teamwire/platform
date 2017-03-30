@@ -7,7 +7,7 @@
 - name: Deploy and configure MySQL database
   hosts: all
   roles:
-    - { role: db, when: config_done is defined and mysql_host is not defined }
+    - { role: db, when: config_done is defined and mysql_host is not defined and oracle_host is not defined }
 
 - name: Deploy and configure Redis database
   hosts: all
