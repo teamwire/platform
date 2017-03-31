@@ -95,6 +95,12 @@ apns_certificate:
 # new app id below and uncomment the line.
 # apns_appid:
 
+# To run the stock Teamwire App from AppStore along a resigned app, you can
+# configure the APNS certificate and the coresponding App ID with the following
+# setting.
+# apns_certificate_2:
+# apns_appid_2:
+
 # When you have received credentials for the Microsoft WNS service, please
 # uncomment the following lines and insert the supplied values.
 # wns_client_id:

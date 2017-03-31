@@ -37,6 +37,20 @@
   when: config_done is defined
   run_once: true
 
+- name: Ensure the secondary APNS certificate is configured correctly
+  fail: msg="The secondary APNS certificate is not configured correctly."
+  when: apns_certificate_2 is defined and apns_appid_2 is not defined or apns_appid_2 is defined and apns_certificate_2 is not defined
+
+- name: Install the secondary APNS certificate
+  copy:
+    src: "{{ apns_certificate_2 }}"
+    dest: "/data/certs/apns/{{ apns_certificate_2 | basename }}"
+    mode: 0440
+    owner: daemon
+    group: ssl-cert
+  when: apns_certificate_2 is defined
+  run_once: true
+
 - include: single.yml
   when: "'backend_servers' not in groups"
 
