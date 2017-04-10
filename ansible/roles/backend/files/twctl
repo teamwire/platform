@@ -423,10 +423,6 @@ start_containers_cluster() {
 
 setup_containers_base() {
 	check_tag "$TAG"
-}
-
-setup_containers_single() {
-	setup_containers_base
 
 	if [ -z "$(_get_config_value version)" ] ; then
 		echo "ERROR: Please update the configuration file ${CONFIG_FILE}"
@@ -436,6 +432,10 @@ setup_containers_single() {
 
 	# Write given tag into config file
 	sed -i -e 's/^\(version: \).*$/\1'"$TAG"'/' $CONFIG_FILE
+}
+
+setup_containers_single() {
+	setup_containers_base
 
 	# Save the logs of the running containers
 	save_container_logs
