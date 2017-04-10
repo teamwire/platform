@@ -11,6 +11,7 @@
     src=rsyslog.conf.patch
     dest=/etc/rsyslog.conf
   notify: restart rsyslog
+  when: ansible_distribution == "Debian"
 
 - name: Install logrotate job for cluster logs
   copy: src=container-log dest=/etc/logrotate.d/container-log
