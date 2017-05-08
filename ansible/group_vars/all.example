@@ -81,6 +81,11 @@ version: prod
 # organisations; the default configuration can be changed by an administrator.
 allow_unknown_users: no
 
+# Allow users to be found with the user search by users of other organisations.
+# Please note that this only configures the default setting for newly created
+# organisations; the default configuration can be changed by an administrator.
+allow_user_query: no
+
 # You'll receive this key with your other credentials.
 gcm_api_key:
 

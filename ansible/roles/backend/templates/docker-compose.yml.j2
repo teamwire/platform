@@ -23,6 +23,7 @@ services:
       - ARCHIVING_CONFIG=/archiving/archiving.conf
       - ARCHIVING_GPGHOME=/archiving/gpg
       - ORG_DEFAULT_ALLOW_USER_REG={{ allow_unknown_users|default('true') }}
+      - ORG_DEFAULT_ALLOW_USER_QUERY={{ allow_user_query|default('false') }}
       - MYSQL_HOST={{ mysql_host | default() }}
       - MYSQL_PORT={{ mysql_port | default() }}
       - MYSQL_DATABASE={{ teamwire_db_name if mysql_host is defined else '' }}
