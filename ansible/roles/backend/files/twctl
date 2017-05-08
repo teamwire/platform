@@ -40,18 +40,6 @@ else
 	fi
 
 	CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
-
-	# Check for active/passive server setup
-	SERVER_ID="$(_get_config_value server_id)"
-	PARTNER_NODE="$(_get_config_value partner_node)"
-	MYSQL_REPL_PASSWORD="$(_get_config_value replication_password)"
-	MYSQL_ROOT_PASSWORD="$(_get_config_value mysql_root_password)"
-
-	if [ -n "$SERVER_ID" ] && [ -n "$PARTNER_NODE" ] && [ -n "$MYSQL_REPL_PASSWORD" ] ; then
-		REPLICATED=true
-	else
-		REPLICATED=false
-	fi
 fi
 
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
@@ -115,51 +103,8 @@ write_temporary_database_access_config() {
 		MYSQL_CONFIG_FILE=$(mktemp ~/.twctl_XXXXXXXXXXXX)
 		chmod 0600 "$MYSQL_CONFIG_FILE"
 		echo -e "[mysqldump]\nuser=$MYSQL_USER\npassword=$MYSQL_TEAMWIRE_PASS" > "$MYSQL_CONFIG_FILE"
-
-		if [ "$REPLICATED" == "true" ] ; then
-			echo -e "[clientlocal]\nuser=$MYSQL_USER\npassword=$MYSQL_TEAMWIRE_PASS" >> "$MYSQL_CONFIG_FILE"
-			echo -e "[clientlocalroot]\nuser=root\npassword=$MYSQL_ROOT_PASSWORD" >> "$MYSQL_CONFIG_FILE"
-			echo -e "[clientremote]\nuser=repl\npassword=$MYSQL_REPL_PASSWORD" >> "$MYSQL_CONFIG_FILE"
-		fi
-
 		trap "rm -f ${MYSQL_CONFIG_FILE}" exit
 	fi
-}
-
-get_replicated_status() {
-	local WHICH="$1"
-
-	if [ -z "$WHICH" ] ; then
-		echo "Missing part!"
-		exit 1
-	fi
-
-	local HOST_PART=""
-	if [ "$WHICH" == "remote" ] ; then
-		HOST_PART="-h ${PARTNER_NODE}"
-	fi
-
-	local RO="$(mysql \
-		--defaults-file="${MYSQL_CONFIG_FILE}" \
-		--defaults-group-suffix=${WHICH} \
-		--connect-timeout=2 \
-		-sN ${HOST_PART} \
-		-e 'SELECT @@GLOBAL.read_only' \
-		2> /dev/null)"
-
-	[ "$RO" == ""  ] && echo UNKNOWN
-	[ "$RO" == "0" ] && echo ACTIVE
-	[ "$RO" == "1" ] && echo PASSIVE
-}
-
-print_replicated_status() {
-	write_temporary_database_access_config
-
-	echo "ACTIVE/PASSIVE Status"
-	echo
-	echo -e "\tLocal:  $(get_replicated_status local)"
-	echo -e "\tRemote: $(get_replicated_status remote)"
-	echo
 }
 
 save_container_logs() {
@@ -201,53 +146,6 @@ help() {
 	echo "stop        Stop all running Teamwire containers"
 	echo "rm          Remove all stopped Teamwire containers"
 	echo "backupdb    Create a backup of the database (requires file name)"
-	if [ "$REPLICATED" == "true" ] ; then
-		echo
-		echo "activate    Turn the local node into the active node"
-		echo "passivate   Turn the local node into the passive node"
-	fi
-}
-
-activate_single() {
-	if [ "$REPLICATED" == "false" ] ; then
-		echo "Switching active/passive server is only supported in active/passive environments."
-		exit 1
-	fi
-
-	write_temporary_database_access_config
-
-	local LOCAL_STATUS=$(get_replicated_status local)
-	local REMOTE_STATUS=$(get_replicated_status remote)
-
-	if [ "$LOCAL_STATUS" == "ACTIVE" ] ; then
-		echo "Local node is already active."
-		exit 1
-	fi
-
-	if [ "$REMOTE_STATUS" != "PASSIVE" ] && [ "$FORCE" == "false" ] ; then
-		echo "Not activating local node: remote node status is ${REMOTE_STATUS}."
-		echo
-		echo "To activate this node nevertheless, run this command with the '--force' flag."
-		exit 1
-	fi
-
-	if mysql --defaults-file="${MYSQL_CONFIG_FILE}" \
-		--defaults-group-suffix=localroot \
-		--connect-timeout=2 \
-		-e 'SET GLOBAL read_only=FALSE' \
-		> /dev/null 2> /dev/null
-	then
-		echo -n "New "
-		print_replicated_status
-	else
-		echo "Failed to activate local node."
-		exit 1
-	fi
-}
-
-activate_cluster() {
-	echo "Switching active/passive server is only supported in active/passive environments."
-	exit 1
 }
 
 backupdb_single() {
@@ -266,52 +164,6 @@ backupdb_single() {
 backupdb_cluster() {
 	echo "Database backup is not supported on clustered setups!"
 	echo "Please use the tool appropriate for your database to perform a manual backup."
-	exit 1
-}
-
-passivate_single() {
-	if [ "$REPLICATED" == "false" ] ; then
-		echo "Switching active/passive server is only supported in active/passive environments."
-		exit 1
-	fi
-
-	write_temporary_database_access_config
-
-	local LOCAL_STATUS=$(get_replicated_status local)
-	local REMOTE_STATUS=$(get_replicated_status remote)
-
-	if [ "$LOCAL_STATUS" == "PASSIVE" ] ; then
-		echo "Local node is already ${LOCAL_STATUS}."
-		exit 1
-	fi
-
-	if [ "$REMOTE_STATUS" == "UNKNOWN" ] && [ "$FORCE" == "false" ] ; then
-		echo "Not passivating local node: remote node status is ${REMOTE_STATUS}."
-		echo
-		echo "To passivate this node nevertheless, run this command with the '--force' flag."
-		exit 1
-	fi
-
-	echo "Syncing files to $(_get_config_value partner_node)..."
-	sudo /etc/cron.hourly/sync_files
-	echo
-
-	if mysql --defaults-file="${MYSQL_CONFIG_FILE}" \
-		--defaults-group-suffix=localroot \
-		--connect-timeout=2 \
-		-e 'SET GLOBAL read_only=TRUE' \
-		> /dev/null 2> /dev/null
-	then
-		echo -n "New "
-		print_replicated_status
-	else
-		echo "Failed to passivate local node."
-		exit 1
-	fi
-}
-
-passivate_cluster() {
-	echo "Switching active/passive server is only supported in active/passive environments."
 	exit 1
 }
 
@@ -390,8 +242,6 @@ scale_cluster() {
 }
 
 status_single() {
-	[ "$REPLICATED" == "true" ] && print_replicated_status
-
 	docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}"
 }
 
@@ -455,7 +305,6 @@ setup_containers_cluster() {
 	$DOCKER_COMPOSE up -d
 }
 
-FORCE="false"
 OPTIONS=""
 TAG=""
 TASK=""
@@ -471,10 +320,6 @@ while [ $# -gt 0 ] ; do
 			;;
 		-f|--file)
 			FILENAME=$2
-			shift
-			;;
-		--force)
-			FORCE=true
 			shift
 			;;
 		pull)
@@ -512,12 +357,6 @@ while [ $# -gt 0 ] ; do
 			;;
 		exportlogs)
 			TASK="save_container_logs"
-			;;
-		activate)
-			TASK="activate"
-			;;
-		passivate)
-			TASK="passivate"
 			;;
 	esac
 	shift
