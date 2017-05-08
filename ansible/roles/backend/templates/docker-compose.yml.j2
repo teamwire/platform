@@ -138,6 +138,7 @@ services:
     environment:
       - REDIS_URI={{ redis_host }}:{{ redis_port }}:1
       - REDIS_PASSWORD={{ redis_pass|default() }}
+      - LOGLEVEL={{ notification_loglevel|default() }}
 
   screenshot-server:
     image: teamwire/web-screenshot-server:{{ version | default('prod') }}

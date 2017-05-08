@@ -135,6 +135,7 @@
     env:
       REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
+      LOGLEVEL: "{{ notification_loglevel|default() }}"
 
 - name: Retrieve and run the Teamwire backend web screenshot container
   when: config_done is defined

@@ -248,3 +248,6 @@ smtp_use_tls: yes
 
 # do not encrypt the database
 # fake_db_encryption: true
+
+# Notification service log level
+# notification_loglevel: debug
