@@ -6,22 +6,21 @@
 
 - name: Retrieve and run the Teamwire backend main container
   when: config_done is defined
-  docker:
-    username: "{{ dockerhub_username }}"
-    password: "{{ dockerhub_password }}"
-    email: "{{ dockerhub_email }}"
-
+  docker_container:
     name: teamwire_backend
     image: "teamwire/backend:{{version|default('prod')}}"
-    state: reloaded
+    state: started
     restart_policy: always
-    net: bridge
-    ports: "127.0.0.1:8080:8080"
-    volumes: "/data/archiving:/archiving,/data/assets:/assets"
-    log_driver: "syslog"
+    network_mode: bridge
+    ports:
+      - 127.0.0.1:8080:8080
+    volumes:
+      - /data/archiving:/archiving
+      - /data/assets:/assets
+    log_driver: syslog
     log_opt:
       tag: teamwire-backend
-      syslog-facility: "local6"
+      syslog-facility: local6
     env:
       AESKEY: "{{aes_key}}"
       ARCHIVING_CONFIG: "/archiving/archiving.conf"
@@ -54,22 +53,21 @@
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
-  docker:
-    username: "{{ dockerhub_username }}"
-    password: "{{ dockerhub_password }}"
-    email: "{{ dockerhub_email }}"
-
+  docker_container:
     name: teamwire_worker
     image: "teamwire/backend:{{version|default('prod')}}"
-    state: reloaded
+    state: started
     restart_policy: always
-    net: bridge
-    ports: "127.0.0.1:8082:8080"
-    volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
-    log_driver: "syslog"
+    network_mode: bridge
+    ports:
+      - 127.0.0.1:8082:8080
+    volumes:
+      - /data/assets:/assets
+      - /data/certs/apns/:/app/certs/apns/
+    log_driver: syslog
     log_opt:
       tag: teamwire-worker
-      syslog-facility: "local6"
+      syslog-facility: local6
     env:
       MODE: worker
       AESKEY: "{{aes_key}}"
@@ -99,21 +97,18 @@
 
 - name: Run the Teamwire beat container
   when: config_done is defined
-  docker:
-    username: "{{ dockerhub_username }}"
-    password: "{{ dockerhub_password }}"
-    email: "{{ dockerhub_email }}"
-
+  docker_container:
     name: teamwire_beat
     image: "teamwire/backend:{{version|default('prod')}}"
-    state: reloaded
+    state: started
     restart_policy: always
-    net: bridge
-    volumes: "/data/beat:/beat"
-    log_driver: "syslog"
+    network_mode: bridge
+    volumes:
+      - /data/beat:/beat
+    log_driver: syslog
     log_opt:
       tag: teamwire-beat
-      syslog-facility: "local6"
+      syslog-facility: local6
     env:
       MODE: beat
       AESKEY: "{{aes_key}}"
@@ -134,21 +129,19 @@
 
 - name: Retrieve and run the Teamwire notification server container
   when: config_done is defined
-  docker:
-    username: "{{ dockerhub_username }}"
-    password: "{{ dockerhub_password }}"
-    email: "{{ dockerhub_email }}"
-
+  docker_container:
     name: teamwire_notification_server
     image: "teamwire/notification-server:{{version|default('prod')}}"
-    state: reloaded
+    state: started
     restart_policy: always
-    net: bridge
-    ports: "127.0.0.1:9080:9080,{{ ansible_docker0['ipv4']['address'] }}:9081:9081"
-    log_driver: "syslog"
+    network_mode: bridge
+    ports:
+      - 127.0.0.1:9080:9080
+      - "{{ ansible_docker0['ipv4']['address'] }}:9081:9081"
+    log_driver: syslog
     log_opt:
       tag: teamwire-notifications
-      syslog-facility: "local6"
+      syslog-facility: local6
     env:
       REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
@@ -156,22 +149,20 @@
 
 - name: Retrieve and run the Teamwire backend web screenshot container
   when: config_done is defined
-  docker:
-    username: "{{ dockerhub_username }}"
-    password: "{{ dockerhub_password }}"
-    email: "{{ dockerhub_email }}"
-
+  docker_container:
     name: teamwire_screenshot_server
     image: "teamwire/web-screenshot-server:{{version|default('prod')}}"
-    state: reloaded
+    state: started
     restart_policy: always
-    net: bridge
-    ports: "127.0.0.1:8081:8080"
-    volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
-    log_driver: "syslog"
+    network_mode: bridge
+    ports:
+      - 127.0.0.1:8081:8080
+    volumes:
+      - /data/website-screenshot-cache:/website-screenshot-cache
+    log_driver: syslog
     log_opt:
       tag: teamwire-screenshot-server
-      syslog-facility: "local6"
+      syslog-facility: local6
     env:
       CACHE_DIR: /website-screenshot-cache
       HTTP_PROXY: "{{ http_proxy|default() }}"
