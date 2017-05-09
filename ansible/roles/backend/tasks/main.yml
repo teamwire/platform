@@ -51,7 +51,7 @@
   when: apns_certificate_2 is defined
   run_once: true
 
-- include: single.yml
+- include: "single_{{ ansible_distribution }}.yml"
   when: "'backend_servers' not in groups"
 
 # The cluster backend deployment is delegated to the swarm managers

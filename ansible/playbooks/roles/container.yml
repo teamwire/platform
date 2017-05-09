@@ -1,7 +1,7 @@
 # This play only applies to the single server installation
 - hosts: local
   tasks:
-  - include: ../../roles/backend/tasks/single.yml
+  - include: "../../roles/backend/tasks/single_{{ ansible_distribution }}.yml"
 
 # This play only applies to cluster installation
 # It needs to run on the Swarm manager nodes.
