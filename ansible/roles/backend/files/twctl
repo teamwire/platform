@@ -111,6 +111,10 @@ save_container_logs() {
 	local LOGDIR=/var/log/teamwire
 	local CONTAINER
 
+	if [ $(awk -F= '/^ID=/ { print $2 }' /etc/os-release) != "ubuntu" ] ; then
+		return
+	fi
+
 	if [ ! -d "$LOGDIR" ] ; then
 		sudo mkdir "$LOGDIR"
 	fi
