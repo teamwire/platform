@@ -28,4 +28,4 @@
   copy: src=../../roles/backend/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
 
 - name: Install the database charset correction tool
-  copy: src=../../roles/backend/files/dbconvert dest=/usr/local/bin/dbconvert mode=0755 owner=root group=root
+  copy: src=../../roles/backend/files/dbcharset dest=/usr/local/bin/dbcharset mode=0755 owner=root group=root
