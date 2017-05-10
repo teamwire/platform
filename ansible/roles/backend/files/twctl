@@ -102,7 +102,9 @@ write_temporary_database_access_config() {
 
 		MYSQL_CONFIG_FILE=$(mktemp ~/.twctl_XXXXXXXXXXXX)
 		chmod 0600 "$MYSQL_CONFIG_FILE"
-		echo -e "[mysqldump]\nuser=$MYSQL_USER\npassword=$MYSQL_TEAMWIRE_PASS" > "$MYSQL_CONFIG_FILE"
+
+		local SECTION=$1
+		echo -e "[${SECTION:-mysqldump}]\nuser=$MYSQL_USER\npassword=$MYSQL_TEAMWIRE_PASS" > "$MYSQL_CONFIG_FILE"
 		trap "rm -f ${MYSQL_CONFIG_FILE}" exit
 	fi
 }
@@ -130,6 +132,11 @@ save_container_logs() {
 		sudo chgrp docker "$OUT_FILE"
 		sudo gzip -f "$OUT_FILE" &
 	done
+}
+
+fix_database_charset() {
+	write_temporary_database_access_config "client"
+	/usr/local/bin/dbcharset --defaults-file "$MYSQL_CONFIG_FILE" --charset utf8mb4 --collation utf8mb4_unicode_ci teamwire
 }
 
 help() {
@@ -358,6 +365,9 @@ while [ $# -gt 0 ] ; do
 		backupdb)
 			TASK="backupdb"
 			FILENAME_REQUIRED=yes
+			;;
+		fixdb)
+			TASK="fix_database_charset"
 			;;
 		exportlogs)
 			TASK="save_container_logs"
