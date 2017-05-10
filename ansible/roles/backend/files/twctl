@@ -115,7 +115,7 @@ save_container_logs() {
 		local DATE_CREATED
 		local LOG_FILE
 
-		if [ "$(docker inspect -f '{{.HostConfig.LogConfig.Type}}' ${CONTAINER})" != "json-file" ] ; then
+		if [ "$(docker inspect -f '{{.HostConfig.LogConfig.Type}}' ${CONTAINER} 2> /dev/null)" != "json-file" ] ; then
 			continue
 		fi
 
@@ -387,4 +387,8 @@ if [ "$FILENAME_REQUIRED" = "yes" ] && [ -z "$FILENAME" ] ; then
 	exit 1
 fi
 
-"${TASK}_${INSTALLATION}"
+if type -t "$TASK" | grep -q "function$" ; then
+	"$TASK"
+else
+	"${TASK}_${INSTALLATION}"
+fi
