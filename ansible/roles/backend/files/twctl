@@ -111,17 +111,17 @@ save_container_logs() {
 	local LOGDIR=/var/log/teamwire
 	local CONTAINER
 
-	if [ $(awk -F= '/^ID=/ { print $2 }' /etc/os-release) != "ubuntu" ] ; then
-		return
-	fi
-
-	if [ ! -d "$LOGDIR" ] ; then
-		sudo mkdir "$LOGDIR"
-	fi
-
 	for CONTAINER in $CONTAINERS ; do
 		local DATE_CREATED
 		local LOG_FILE
+
+		if [ "$(docker inspect -f '{{.HostConfig.LogConfig.Type}}' ${CONTAINER})" != "json-file" ] ; then
+			continue
+		fi
+
+		if [ ! -d "$LOGDIR" ] ; then
+			sudo mkdir "$LOGDIR"
+		fi
 
 		DATE_CREATED=$(docker inspect -f "{{ .Created }}" "$CONTAINER")
 		LOG_FILE=$(docker inspect -f "{{ .LogPath }}" "$CONTAINER")
