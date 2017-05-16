@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Emsure we can parse all command output
+export LANG=C
+
 # Find Ansible configuration
 if [ -d ~/platform/ansible ] ; then
 	ANSIBLE_DIR=~/platform/ansible
