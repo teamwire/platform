@@ -27,7 +27,7 @@ services:
       - MYSQL_HOST={{ mysql_host | default() }}
       - MYSQL_PORT={{ mysql_port | default() }}
       - MYSQL_DATABASE={{ teamwire_db_name if mysql_host is defined else '' }}
-      - MYSQL_USER="{{ teamwire_db_user if mysql_host is defined else '' }}"
+      - MYSQL_USER={{ teamwire_db_user if mysql_host is defined else '' }}
       - MYSQL_PASSWORD={{ teamwire_db_password if mysql_host is defined else '' }}
       - ORA_HOST={{ oracle_host | default() }}
       - ORA_PORT={{ oracle_port | default() }}
@@ -70,7 +70,7 @@ services:
       - MYSQL_HOST={{ mysql_host | default() }}
       - MYSQL_PORT={{ mysql_port | default() }}
       - MYSQL_DATABASE={{ teamwire_db_name if mysql_host is defined else '' }}
-      - MYSQL_USER="{{ teamwire_db_user if mysql_host is defined else '' }}"
+      - MYSQL_USER={{ teamwire_db_user if mysql_host is defined else '' }}
       - MYSQL_PASSWORD={{ teamwire_db_password if mysql_host is defined else '' }}
       - ORA_HOST={{ oracle_host | default() }}
       - ORA_PORT={{ oracle_port | default() }}
@@ -110,7 +110,7 @@ services:
       - MYSQL_HOST={{ mysql_host | default() }}
       - MYSQL_PORT={{ mysql_port | default() }}
       - MYSQL_DATABASE={{ teamwire_db_name if mysql_host is defined else '' }}
-      - MYSQL_USER="{{ teamwire_db_user if mysql_host is defined else '' }}"
+      - MYSQL_USER={{ teamwire_db_user if mysql_host is defined else '' }}
       - MYSQL_PASSWORD={{ teamwire_db_password if mysql_host is defined else '' }}
       - ORA_HOST={{ oracle_host | default() }}
       - ORA_PORT={{ oracle_port | default() }}
