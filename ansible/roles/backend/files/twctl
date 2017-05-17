@@ -69,7 +69,7 @@ get_database_configuration() {
 	MYSQL_PORT="$(_get_config_value mysql_port)"
 	MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
 	MYSQL_USER="$(_get_config_value teamwire_db_user)"
-	MYSQL_TEAMWIRE_PASS="$(_get_config_value teamwire_db_password)"
+	MYSQL_PASS="$(_get_config_value teamwire_db_password)"
 	AESKEY="$(_get_config_value aes_key)"
 
 	if [ -z "$MYSQL_HOST" ]; then
@@ -88,7 +88,7 @@ get_database_configuration() {
 		MYSQL_USER=teamwire
 	fi
 
-	if [ -z "$MYSQL_TEAMWIRE_PASS" ] || [ -z "$AESKEY" ] ; then
+	if [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
 		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
 		echo "       Please ensure the file exists and the database is configured."
 		exit 1
@@ -107,7 +107,7 @@ write_temporary_database_access_config() {
 		chmod 0600 "$MYSQL_CONFIG_FILE"
 
 		local SECTION=$1
-		echo -e "[${SECTION:-mysqldump}]\nuser=$MYSQL_USER\npassword=$MYSQL_TEAMWIRE_PASS" > "$MYSQL_CONFIG_FILE"
+		echo -e "[${SECTION:-mysqldump}]\nuser=$MYSQL_USER\npassword=$MYSQL_PASS" > "$MYSQL_CONFIG_FILE"
 		trap "rm -f ${MYSQL_CONFIG_FILE}" exit
 	fi
 }
@@ -227,7 +227,7 @@ run_migrations_base() {
 	echo
 	docker run --rm -e MODE=migration --name teamwire-migrations \
 		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_DATABASE="$MYSQL_DATABASE" \
-		-e MYSQL_USER="$MYSQL_USER" -e MYSQL_PASSWORD="$MYSQL_TEAMWIRE_PASS" \
+		-e MYSQL_USER="$MYSQL_USER" -e MYSQL_PASSWORD="$MYSQL_PASS" \
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
 		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
 		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2> "$ERROR_LOG" | egrep -v '^(.+)='
