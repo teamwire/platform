@@ -73,7 +73,7 @@ echo "Step 1: Import additional repo signing keys"
 echo "==========================================="
 sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D # Docker
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys cbcb082a1bb943db # MariaDB
-sudo apt-key adv --keyserver keys.gnupg.net --recv-keys 9334A25F8507EFA5 # Percona
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8507EFA5 # Percona
 
 if [ -z "$OFFLINE_INSTALLATION" ] ; then
 	echo "Not preparing for offline installation."
