@@ -71,7 +71,7 @@ websocket_client==0.32.0
 # Always perform this step, even if not preparing for offline installation - this spares us some firewall rules
 echo "Step 1: Import additional repo signing keys"
 echo "==========================================="
-sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D # Docker
+sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys cbcb082a1bb943db # MariaDB
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8507EFA5 # Percona
 
