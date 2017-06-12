@@ -45,7 +45,7 @@
   apt: pkg=aufs-tools state=present
 
 - name: Install Docker
-  apt: pkg=docker-engine state=present
+  apt: pkg=docker-ce state=present
 
 - name: Install pip (Ubuntu)
   apt: pkg=python-pip state=present
