@@ -4,7 +4,7 @@
 		"dockerhub_password": "",
 		"dockerhub_username": "",
 		"http_directory": "",
-		"iso_url": "http://cdimage.debian.org/debian-cd/8.8.0/amd64/iso-cd/debian-8.8.0-amd64-netinst.iso",
+		"iso_url": "http://cdimage.debian.org/cdimage/archive/8.8.0/amd64/iso-cd/debian-8.8.0-amd64-netinst.iso",
 		"iso_checksum": "2c07ff8cc766767610566297b8729740f923735e790c8e78b718fb93923b448e",
 		"iso_checksum_type": "sha256",
 		"vm_name": "localhost",
