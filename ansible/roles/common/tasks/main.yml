@@ -67,6 +67,7 @@
   - ldap-utils
   - heirloom-mailx
   - unzip
+  - patch
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent purge=yes

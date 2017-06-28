@@ -28,6 +28,7 @@ mytop
 galera
 percona-xtrabackup-24
 socat
+patch
 python-backports.ssl-match-hostname
 python-docker
 python-docopt
