@@ -7,11 +7,11 @@
   when: http_proxy is not defined
   file: dest=/etc/apt/apt.conf.d/01proxy state=absent
 
-- name: Ensure backports are enabled (Debian)
+- name: Ensure backports are enabled (Debian 8)
   apt_repository:
     repo: 'deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian/ jessie-backports main'
     state: present
-  when: ansible_distribution == "Debian"
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
 
 - name: Check if installing offline
   stat: path=/etc/offline_installation

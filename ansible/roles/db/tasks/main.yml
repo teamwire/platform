@@ -23,12 +23,12 @@
   command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
   when: ansible_distribution == "Debian" and mariadb_repo_key.stdout == "absent" and http_proxy is defined
 
-- name: Configure MariaDB repository (cluster setups)
+- name: Configure MariaDB repository (Debian 8 cluster setups)
   apt_repository:
     repo: "deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main"
     state: present
     update_cache: yes
-  when: ansible_distribution == "Debian"
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
 
 - name: Install MariaDB
   apt: name={{item}} state=present

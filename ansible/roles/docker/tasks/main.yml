@@ -55,9 +55,13 @@
   pip: name=docker-py version=1.0.0
   when: ansible_distribution == "Ubuntu"
 
-- name: Install python-docker (Debian)
+- name: Install python-docker (Debian 8)
   apt: pkg=python-docker default_release=jessie-backports state=present
-  when: ansible_distribution == "Debian"
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+
+- name: Install python-docker (Debian 9)
+  apt: pkg=python-docker state=present
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
 
 - name: Add user 'teamwire' to the docker group
   user: name=teamwire groups=docker append=yes
