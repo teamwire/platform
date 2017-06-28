@@ -155,8 +155,7 @@
 		{
 			"type": "shell",
 			"scripts": [
-				"scripts/vm-guest-tools.sh",
-				"scripts/install_ansible.sh"
+				"scripts/vm-guest-tools.sh"
 			]
 		},
 		{
