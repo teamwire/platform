@@ -13,6 +13,14 @@
     state: present
   when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
 
+- name: Create rc.local for Debian 9
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
+  template:
+    src: rc.local.j2
+    dest: /etc/rc.local
+    owner: root
+    mode: 700
+
 - name: Check if installing offline
   stat: path=/etc/offline_installation
   register: offline_mode
