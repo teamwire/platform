@@ -169,6 +169,7 @@
 			"scripts": [
 				"scripts/make-unique.sh",
 				"scripts/prepare-offline-installation.sh",
+				"scripts/fix-network.sh",
 				"scripts/shrink-image.sh"
 			],
 			"environment_vars": [
