@@ -8,16 +8,19 @@
   when: xtrabackup_password is not defined or xtrabackup_password == None
 
 - name: Check if the Percona repository signing key needs to be installed
-  shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 8507EFA5 > /dev/null 2>&1 && echo present || echo absent"
+  shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 9334A25F8507EFA5 > /dev/null 2>&1 && echo present || echo absent"
   when: ansible_distribution == "Debian"
   register: percona_repo_key
 
 - name: Add Percona repo signing key (direct)
-  apt_key: keyserver="keys.gnupg.net" id="9334A25F8507EFA5"
+  apt_key:
+    id: 9334A25F8507EFA5
+    keyserver: hkp://keyserver.ubuntu.com:80
+    state: present
   when: percona_repo_key.stdout == "absent" and http_proxy is not defined
 
 - name: Add Percona repo signing key (via proxy)
-  command: apt-key adv --keyserver keys.gnupg.net --keyserver-options http-proxy="{{http_proxy}}" --recv-keys 9334A25F8507EFA5
+  command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys 9334A25F8507EFA5
   when: percona_repo_key.stdout == "absent" and http_proxy is defined
 
 - name: Configure Percona repository (cluster setups)
