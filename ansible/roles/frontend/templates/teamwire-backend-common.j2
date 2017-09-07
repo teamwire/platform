@@ -38,7 +38,7 @@
 	}
 
 {% if admin_ip_ranges is defined %}
-	location ~ ^/(dashboard|admin)/ {
+	location ~ ^/(dashboard|admin)/? {
 {% for range in admin_ip_ranges %}
 		allow {{ range }};
 {% endfor %}
