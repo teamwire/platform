@@ -29,6 +29,7 @@ galera
 percona-xtrabackup-24
 socat
 patch
+net-tools
 python-backports.ssl-match-hostname
 python-docker
 python-docopt
