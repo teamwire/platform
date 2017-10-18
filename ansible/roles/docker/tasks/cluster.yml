@@ -29,9 +29,23 @@
     ports: "4000:4000"
     command: "manage -H :4000 --replication --advertise {{ private_ip }}:4000 consul://localhost:8500"
 
-- name: Ensure pip and Docker Compose requirements are installed on manager nodes
+- name: Ensure pip and Docker Compose requirements are installed on manager nodes (Debian 8)
   apt: pkg={{ item }} state=present default_release=jessie-backports install_recommends=no
-  when: "'consul_servers' in group_names"
+  when: "'consul_servers' in group_names and ansible_distribution_release == 'jessie'"
+  with_items:
+    - python-pip
+    - python-backports.ssl-match-hostname
+    - python-docopt
+    - python-enum34
+    - python-functools32
+    - python-ipaddress
+    - python-jsonschema
+    - python-requests
+    - python-texttable
+
+- name: Ensure pip and Docker Compose requirements are installed on manager nodes (Debian 9)
+  apt: pkg={{ item }} state=present default_release=stretch install_recommends=no
+  when: "'consul_servers' in group_names and ansible_distribution_release == 'stretch'"
   with_items:
     - python-pip
     - python-backports.ssl-match-hostname

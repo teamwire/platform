@@ -24,7 +24,7 @@
   when: percona_repo_key.stdout == "absent" and http_proxy is defined
 
 - name: Configure Percona repository (cluster setups)
-  apt_repository: repo="deb http://repo.percona.com/apt jessie main" state=present update_cache=yes
+  apt_repository: repo="deb http://repo.percona.com/apt {{ ansible_distribution_release }} main" state=present update_cache=yes
 
 - name: Install Galera and requirements
   apt: name={{ item }} state=present
