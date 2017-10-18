@@ -26,13 +26,26 @@
 - name: Configure Percona repository (cluster setups)
   apt_repository: repo="deb http://repo.percona.com/apt {{ ansible_distribution_release }} main" state=present update_cache=yes
 
-- name: Install Galera and requirements
+- name: Install Galera and requirements (Debian 8)
   apt: name={{ item }} state=present
   with_items:
   - galera
   - mytop
   - percona-xtrabackup-24
   - socat
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+
+# Debian 9 includes mytop in the mariadb package, but has some broken dependencies
+# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=863596
+- name: Install Galera and requirements (Debian 9)
+  apt: name={{ item }} state=present
+  with_items:
+  - galera
+  - libconfig-inifiles-perl
+  - libterm-readkey-perl
+  - percona-xtrabackup-24
+  - socat
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
 
 - name: Create database replication user
   mysql_user:
