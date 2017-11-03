@@ -119,7 +119,6 @@
 			],
 			"format": "qcow2",
 			"accelerator": "kvm",
-			"guest_os_type": "debian",
 			"headless": "true"
 		},
 		{
@@ -145,7 +144,6 @@
 			],
 			"format": "qcow2",
 			"accelerator": "kvm",
-			"guest_os_type": "debian",
 			"headless": "true"
 		}
 	],
