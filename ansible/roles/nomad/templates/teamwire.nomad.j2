@@ -106,6 +106,8 @@ job "teamwire" {
 			}
 
 			resources {
+                          cpu = {{ (total_cpu_power|int*backend_cpu_alloc)|int }} #Allocated CPU in MHz
+                          memory = {{ (total_ram|int*backend_ram_alloc)|int }} #Allocated RAM in MB
 				network {
 					mbits = 100
 					port "http" {}
@@ -157,6 +159,8 @@ job "teamwire" {
 			}
 
 			resources {
+                          cpu = {{ (total_cpu_power|int*screenshot_cpu_alloc)|int }} #Allocated CPU in MHz
+                          memory = {{ (total_ram|int*screenshot_ram_alloc)|int }} #Allocated RAM in MB
 				network {
 					mbits = 100
 					port "http" {}
@@ -233,6 +237,8 @@ job "teamwire" {
 			}
 
 			resources {
+                          cpu = {{ (total_cpu_power|int*worker_cpu_alloc)|int }} #Allocated CPU in MHz
+                          memory = {{ (total_ram|int*worker_ram_alloc)|int }} #Allocated RAM in MB
 				network {
 					mbits = 100
 					port "health" {}
@@ -292,6 +298,8 @@ job "teamwire" {
 			}
 
 			resources {
+                          cpu = 150 #Allocated CPU in MHz
+                          memory = 150 #Allocated RAM in MB
 				network {
 					mbits = 100
 				}
@@ -349,6 +357,8 @@ job "teamwire" {
 			}
 
 			resources {
+                          cpu = {{ (total_cpu_power|int*notification_cpu_alloc)|int }} #Allocated CPU in MHz
+                          memory = {{ (total_ram|int*notification_ram_alloc)|int }} #Allocated RAM in MB
 				network {
 					mbits = 100
 					port "http" {}
