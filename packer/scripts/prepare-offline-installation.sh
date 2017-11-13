@@ -28,9 +28,8 @@ mytop
 galera
 percona-xtrabackup-24
 socat
-"
-
-BACKPORTS_PACKAGES="
+patch
+net-tools
 python-backports.ssl-match-hostname
 python-docker
 python-docopt
@@ -72,7 +71,6 @@ websocket_client==0.32.0
 echo "Step 1: Import additional repo signing keys"
 echo "==========================================="
 sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys cbcb082a1bb943db # MariaDB
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9334A25F8507EFA5 # Percona
 
 if [ -z "$OFFLINE_INSTALLATION" ] ; then
@@ -89,12 +87,10 @@ sudo touch /etc/offline_installation
 echo "Step 2: Caching packages"
 echo "========================"
 
-# Add MariaDB and Percona repo
-echo 'deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main' | sudo tee -a /etc/apt/sources.list > /dev/null
-echo 'deb http://repo.percona.com/apt jessie main' | sudo tee -a /etc/apt/sources.list > /dev/null
+# Add Percona repo
+echo 'deb http://repo.percona.com/apt stretch main' | sudo tee -a /etc/apt/sources.list > /dev/null
 sudo apt-get update -q
 sudo apt-get install -qyd $REGULAR_PACKAGES
-sudo apt-get install -t jessie-backports -qyd $BACKPORTS_PACKAGES
 
 echo "Step 3: Getting Docker containers"
 echo "================================="
