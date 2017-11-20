@@ -13,3 +13,22 @@
     net: host
     volumes: "/var/run/docker.sock:/tmp/docker.sock"
     command: "-ip {{ private_ip }} consul://localhost:8500"
+
+- name: Run hashi-ui in clustered setups
+  when: (private_ip is defined and 'consul_servers' in groups) 
+  docker:
+    name: hashi-ui
+    image: "{{ hashui_container }}"
+    state: reloaded
+    restart_policy: always
+    log_driver: syslog
+    log_opt:
+      tag: hashi-ui
+      syslog-facility: local6
+    net: host
+    ports: "8000:3000"
+    volumes: "/var/run/docker.sock:/tmp/docker.sock"
+    env: 
+      CONSUL_ENABLE: "{{ '1' if 'consul_servers' in groups else '0' }}"
+      NOMAD_ENABLE: "{{ '1' if 'backend_servers' in groups else '0' }}"
+
