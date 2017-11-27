@@ -73,7 +73,7 @@ get_database_configuration() {
 	AESKEY="$(_get_config_value aes_key)"
 
 	if [ -z "$MYSQL_HOST" ]; then
-		MYSQL_HOST=$(/sbin/ifconfig docker0 | awk -F'[ :]+' '/inet addr/{print $4}')
+		MYSQL_HOST=$(/bin/ip addr show docker0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
 	fi
 
 	if [ -z "$MYSQL_PORT" ]; then
