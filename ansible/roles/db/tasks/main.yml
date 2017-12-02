@@ -103,6 +103,14 @@
   copy: src=utf8.cnf dest=/etc/mysql/conf.d/utf8.cnf
   notify: restart MariaDB
 
+- name: Set collation-server (Debian 9)
+  lineinfile:
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    regexp: ^collation-server
+    line: "collation-server = utf8mb4_unicode_ci"
+  notify: restart MariaDB
+  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
+
 - name: Set UTC as default time zone
   copy: src=timezone.cnf dest=/etc/mysql/conf.d/timezone.cnf
   notify: restart MariaDB
