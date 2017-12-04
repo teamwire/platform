@@ -13,17 +13,17 @@
   when: ansible_distribution == "Debian"
   register: mariadb_repo_key
 
-- name: Add MariaDB repo signing key (direct, cluster setups)
+- name: Add MariaDB repo signing key (direct)
   apt_key:
     keyserver: "hkp://keyserver.ubuntu.com:80"
     id: "cbcb082a1bb943db"
   when: ansible_distribution == "Debian" and mariadb_repo_key.stdout == "absent" and http_proxy is not defined
 
-- name: Add MariaDB repo signing key (via proxy, cluster setups)
+- name: Add MariaDB repo signing key (via proxy)
   command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
   when: ansible_distribution == "Debian" and mariadb_repo_key.stdout == "absent" and http_proxy is defined
 
-- name: Configure MariaDB repository (Debian 8 cluster setups)
+- name: Configure MariaDB repository (Debian 8)
   apt_repository:
     repo: "deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main"
     state: present
