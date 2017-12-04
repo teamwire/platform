@@ -59,57 +59,31 @@
     state: directory
   when: '"database_servers" not in groups'
 
-# Allow incoming connections to MySQL on all interfaces, including Docker0. (Debian 8)
-- name: Configure MariaDB to listen on all interfaces (Debian 8)
+# Allow incoming connections to MySQL on all interfaces, including docker0. (Debian)
+- name: Configure MariaDB to listen on all interfaces (Debian)
   lineinfile:
-    dest: /etc/mysql/my.cnf
+    dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
     regexp: ^bind-address\s*=\s*127.0.0.1
     backrefs: yes
     line: "bind-address=0.0.0.0"
   notify: restart MariaDB
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+  when: ansible_distribution == "Debian"
 
-# Allow incoming connections to MySQL on all interfaces, including Docker0. (Debian 9)
-- name: Configure MariaDB to listen on all interfaces (Debian 9)
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: ^bind-address\s*=\s*127.0.0.1
-    backrefs: yes
-    line: "bind-address=0.0.0.0"
-  notify: restart MariaDB
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
-
-- name: Increase max_allowed_packet size (Debian 8)
+- name: Increase max_allowed_packet size (Debian)
   replace:
-    dest: /etc/mysql/my.cnf
+    dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
     regexp: ^max_allowed_packet\s*=\s*\d+M
     replace: "max_allowed_packet=64M"
   notify: restart MariaDB
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+  when: ansible_distribution == "Debian"
 
-- name: Increase max_allowed_packet size (Debian 9)
-  replace:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: ^max_allowed_packet\s*=\s*\d+M
-    replace: "max_allowed_packet=64M"
-  notify: restart MariaDB
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
-
-- name: Increase maximum allowed connections (Debian 8)
+- name: Increase maximum allowed connections (Debian)
   lineinfile:
-    dest: /etc/mysql/my.cnf
+    dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
     regexp: ^max_connections
     line: "max_connections = 512"
   notify: restart MariaDB
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
-
-- name: Increase maximum allowed connections (Debian 9)
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: ^max_connections
-    line: "max_connections = 512"
-  notify: restart MariaDB
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
+  when: ansible_distribution == "Debian"
 
 - name: Set UTF8 as default character set
   copy: src=utf8.cnf dest=/etc/mysql/conf.d/utf8.cnf
