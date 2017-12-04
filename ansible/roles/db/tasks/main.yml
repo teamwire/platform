@@ -8,27 +8,39 @@
     galera_cluster: True
   when: '"database_servers" in groups and groups["database_servers"] | length > 1'
 
-- name: Check if the MariaDB repository signing key needs to be installed
+- name: Check if the MariaDB repository signing key needs to be installed (Debian 8)
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 1BB943DB > /dev/null 2>&1 && echo present || echo absent"
-  when: ansible_distribution == "Debian"
   register: mariadb_repo_key
+  when:
+    - ansible_distribution == "Debian"
+    - ansible_distribution_release == "jessie"
 
-- name: Add MariaDB repo signing key (direct)
+- name: Add MariaDB repo signing key (Debian 8, direct)
   apt_key:
     keyserver: "hkp://keyserver.ubuntu.com:80"
     id: "cbcb082a1bb943db"
-  when: ansible_distribution == "Debian" and mariadb_repo_key.stdout == "absent" and http_proxy is not defined
+  when:
+    - ansible_distribution == "Debian"
+    - ansible_distribution_release == "jessie"
+    - mariadb_repo_key.stdout == "absent"
+    - http_proxy is not defined
 
-- name: Add MariaDB repo signing key (via proxy)
+- name: Add MariaDB repo signing key (Debian 8, via proxy)
   command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
-  when: ansible_distribution == "Debian" and mariadb_repo_key.stdout == "absent" and http_proxy is defined
+  when:
+    - ansible_distribution == "Debian"
+    - ansible_distribution_release == "jessie"
+    - mariadb_repo_key.stdout == "absent"
+    - http_proxy is defined
 
 - name: Configure MariaDB repository (Debian 8)
   apt_repository:
     repo: "deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main"
     state: present
     update_cache: yes
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+  when:
+    - ansible_distribution == "Debian"
+    - ansible_distribution_release == "jessie"
 
 - name: Install MariaDB
   apt: name={{item}} state=present
