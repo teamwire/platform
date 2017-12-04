@@ -76,7 +76,6 @@
   - heirloom-mailx
   - unzip
   - patch
-  - net-tools
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent purge=yes
