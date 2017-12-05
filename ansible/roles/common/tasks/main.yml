@@ -73,7 +73,6 @@
   - nano
   - haveged
   - ldap-utils
-  - heirloom-mailx
   - unzip
   - patch
 
