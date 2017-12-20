@@ -31,13 +31,6 @@ socat
 patch
 python-backports.ssl-match-hostname
 python-docker
-python-docopt
-python-enum34
-python-functools32
-python-ipaddress
-python-jsonschema
-python-requests
-python-texttable
 "
 
 DOCKER_IMAGES="
@@ -46,23 +39,17 @@ teamwire/web-screenshot-server:${BACKEND_RELEASE}
 teamwire/notification-server:${BACKEND_RELEASE}
 $(awk '{ gsub("\"",""); print $2; }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 $(awk '/^redis_container:/ { print $2 }' ~teamwire/platform/ansible/roles/redis/vars/main.yml)
+$(awk '/^hashui_container:/ { print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
+NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
 https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_web_ui.zip;$(awk '/^consul_ui_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 https://releases.hashicorp.com/consul-template/0.15.0/consul-template_0.15.0_linux_amd64.zip;b7561158d2074c3c68ff62ae6fc1eafe8db250894043382fb31f0c78150c513a
-"
-
-PYTHON_MODULES="
-cached_property==1.2.0
-docker_compose==1.8.1
-docker-py==1.10.3
-docker-pycreds==0.2.1
-dockerpty==0.4.1
-websocket_client==0.32.0
+https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 "
 
 # Add additional repo signing keys
@@ -121,14 +108,3 @@ for DOWNLOAD in $DOWNLOADS ; do
 	fi
 	sudo mv "$FILENAME" /var/cache/downloads
 done
-
-echo "Step 5: Building Python modules"
-echo "======================================"
-WHEEL_DIR="$(mktemp -d)"
-sudo apt-get -y install python-pip python-wheel
-for PYTHON_MODULE in $PYTHON_MODULES ; do
-	pip wheel --wheel-dir "$WHEEL_DIR" --no-deps "$PYTHON_MODULE"
-done
-sudo apt-get -y remove python-pip python-wheel
-sudo apt-get -y autoremove
-sudo mv "$WHEEL_DIR" /var/cache/wheelhouse

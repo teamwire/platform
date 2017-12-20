@@ -1,0 +1,19 @@
+nomad_version: 0.7.1
+nomad_checksum: 72b32799c2128ed9d2bb6cbf00c7600644a8d06c521a320e42d5493a5d8a789a
+
+
+# The below variables define the % of the total CPU or RAM available on each backend server, which a container can utilise
+# The variables are put into a mathemtical equation against the total available resources, in the nomad job file
+# Example: backend_cpu_alloc of 0.2 against a total availability of 1GHz, would set the limit to 200Mhz in the job file
+
+# Nomad CPU allocations
+backend_cpu_alloc: 0.2 # Default:20%
+screenshot_cpu_alloc: 0.15
+worker_cpu_alloc: 0.2
+notification_cpu_alloc: 0.2
+
+# Nomad RAM allocactions - the original value is in bytes, hence the extended decimal place
+backend_ram_alloc: 0.0000002 # Default:20%
+screenshot_ram_alloc: 0.00000015
+worker_ram_alloc: 0.0000002
+notification_ram_alloc: 0.0000002

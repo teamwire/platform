@@ -1,0 +1,52 @@
+# Log to syslog
+enable_syslog = true
+
+# Increase log verbosity
+log_level = "DEBUG"
+
+# Setup data dir
+data_dir = "/var/lib/nomad"
+
+name = "{{ inventory_hostname }}"
+bind_addr = "0.0.0.0"
+
+# Don't call home
+disable_update_check = true
+
+advertise {
+	# We need to specify our host's IP because we can't
+	# advertise 0.0.0.0 to other nodes in our cluster.
+	http = "{{ private_ip }}"
+	rpc = "{{ private_ip }}"
+	serf = "{{ private_ip }}"
+}
+
+consul {
+	# Consul's HTTP Address
+	address = "127.0.0.1:8500"
+	auto_advertise = true
+	server_service_name = "nomad"
+	server_auto_join = true
+	client_service_name = "nomad-client"
+	client_auto_join = true
+}
+
+# Enable the server
+server {
+	enabled = {{ "true" if inventory_hostname in groups['consul_servers'] else "false" }}
+{% if inventory_hostname in groups['consul_servers'] %}
+	bootstrap_expect = {{ groups['consul_servers'] | length }}
+{% endif %}
+}
+
+# Enable the client
+client {
+	enabled = {{ "true" if inventory_hostname in groups['backend_servers'] else "false" }}
+	network_interface =  "{{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}"
+	options = {
+		"docker.cleanup.image" = {{ "true" if "docker_registry" in groups else "false" }}
+	}
+	meta = {
+		"groups" = "{{ group_names | join(',') }}"
+	}
+}

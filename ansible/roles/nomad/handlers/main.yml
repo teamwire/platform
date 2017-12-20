@@ -1,0 +1,6 @@
+---
+- name: reload systemd
+  command: systemctl daemon-reload
+
+- name: Restart Nomad agent
+  service: name=nomad state=restarted

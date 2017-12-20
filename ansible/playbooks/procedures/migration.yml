@@ -1,0 +1,40 @@
+- hosts: all
+  tasks:
+  - name: Remove swarm manager container
+    when: "'consul_servers' in group_names"
+    docker:
+      name: swarm-manager
+      image: swarm:1.2.6
+      state: absent
+
+  - name: Remove swarm agent container
+    when: "'backend_servers' in group_names"
+    docker:
+      name: swarm-agent
+      image: swarm:1.2.6
+      state: absent 
+
+  - name: Check if Docker Compose is installed
+    stat: path=/usr/local/bin/docker-compose
+    register: compose
+
+  - name: Check if a wheelhouse exists
+    stat: path=/var/cache/wheelhouse
+    register: wheelhouse
+
+  - name: Remove Docker Compose
+    when: compose.stat.exists
+    command: pip uninstall -y docker-compose
+
+  - name: Remove wheelhouse directory
+    when: wheelhouse.stat.exists
+    file:
+      path: /var/cache/wheelhouse
+      state: absent
+
+  - name: Remove docker-composer config
+    when: compose.stat.exists
+    file:
+      path: /data/cluster_config/docker-compose.yml
+      state: absent
+

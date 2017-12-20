@@ -1,18 +1,9 @@
 ---
 - include: configuration.yml
 
-- name: Create compose config directory
+- name: Create cluster config directory
   file: dest=/data/cluster_config state=directory mode=0770 owner=root group=teamwire
   run_once: true
-
-- name: Write compose file
-  run_once: true
-  template:
-    src: ../../roles/backend/templates/docker-compose.yml.j2
-    dest: /data/cluster_config/docker-compose.yml
-    mode: 0660
-    owner: root
-    group: teamwire
 
 - name: write cluster configuration file
   run_once: true

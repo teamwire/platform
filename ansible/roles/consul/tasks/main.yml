@@ -60,32 +60,6 @@
   notify: restart consul
   when: consul_downloaded.changed or not consul_binary.stat.exists
 
-- name: Check if Consul web UI is already installed
-  stat: path=/usr/local/share/consul-ui/index.html
-  register: consul_web_ui
-  when: inventory_hostname in groups['consul_servers']
-
-- name: download consul-ui
-  get_url:
-    url: https://releases.hashicorp.com/consul/{{consul_version}}/consul_{{consul_version}}_web_ui.zip
-    dest: /var/cache/downloads/consul_{{consul_version}}_web_ui.zip
-    checksum: "sha256:{{consul_ui_checksum}}"
-  register: consul_ui_downloaded
-  when: inventory_hostname in groups['consul_servers']
-
-- name: Create the Consul web UI directory
-  file:
-    name: /usr/local/share/consul-ui
-    state: directory
-  when: inventory_hostname in groups['consul_servers']
-
-- name: Install the Consul web UI
-  unarchive:
-    src: /var/cache/downloads/consul_{{consul_version}}_web_ui.zip
-    dest: /usr/local/share/consul-ui
-    copy: no
-  when: inventory_hostname in groups['consul_servers'] and (consul_ui_downloaded.changed or not consul_web_ui.stat.exists)
-
 - name: Create Consul config directory
   file:
     name: /etc/consul.d
@@ -118,6 +92,17 @@
     src: 10-consul.j2
     dest: /etc/dnsmasq.d/10-consul
   notify: restart dnsmasq
+
+ # Remove old consul-ui, hash-ui is used instead
+- name: Check if consul-ui is installed
+  stat: path=/usr/local/share/consul-ui
+  register: consului
+  
+- name: Remove old consul-ui
+  when: consului.stat.exists
+  file:
+    path: /usr/local/share/consul-ui
+    state: absent 
 
 - service:
     name: consul

@@ -1,4 +1,4 @@
 registrator_version: "gliderlabs/registrator:v7"
 registry_version: "registry:2.5.0"
-swarm_version: "swarm:1.2.6"
 docker_channel: "stable"
+hashui_container: "jippi/hashi-ui:v0.22.0"
