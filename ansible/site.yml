@@ -9,6 +9,20 @@
           - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
           - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
 
+    - name: Check if Vault has been bootstrapped
+      stat: path=/etc/vault-bootstrapped
+      register: vault_bootstrapped
+
+    - pause:
+        prompt: "Enter Unseal key 1"
+      when: vault_bootstrapped.stat.exists
+      register: unseal_key1
+
+    - pause:
+        prompt: "Enter Unseal key 2"
+      when: vault_bootstrapped.stat.exists
+      register: unseal_key2
+
 - name: Apply common configuration to all nodes
   hosts: all
   roles:
@@ -18,6 +32,11 @@
   hosts: all
   roles:
     - { role: storage_client, when external_storage_path is defined }
+
+- name: Deploy Vault secret system
+  hosts: all
+  roles:
+    - { role: vault, when config_done is defined }
 
 - name: Deploy and configure MySQL database
   hosts: all

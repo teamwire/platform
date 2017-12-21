@@ -1,0 +1,23 @@
+{% if ansible_play_hosts | length() == 1 %}  
+storage "file" {
+  path = "/usr/lib/vault/store"
+}
+{%endif %}
+{% if ansible_play_hosts | length() != 1 %}  
+storage "consul" {
+  address = "127.0.0.1:8500"
+  path = "vault"
+}
+cluster_name = "Vault Cluster"
+{%endif %}
+
+ui = true
+
+listener "tcp" {
+ address = "0.0.0.0:8200"
+ tls_disable = {{ "0" if vault_bootstrapped.stat.exists == true else "1" }}
+{% if vault_bootstrapped.stat.exists == true %}
+ tls_cert_file = "/var/lib/vault/ssl/vault.crt"
+ tls_key_file = "/var/lib/vault/ssl/vault.pem"
+{%endif %}
+}
