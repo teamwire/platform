@@ -24,7 +24,6 @@ rpcbind
 glusterfs-server
 glusterfs-client
 nfs-common
-mytop
 galera
 percona-xtrabackup-24
 socat
