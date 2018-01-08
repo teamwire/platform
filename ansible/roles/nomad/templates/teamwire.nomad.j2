@@ -267,7 +267,6 @@ job "teamwire" {
 	}
 
 	group "beat" {
-		count = 1
 
 		task "beat" {
 			driver = "docker"
@@ -327,7 +326,6 @@ job "teamwire" {
 	}	
 
 	group "notification-server" {
-		count = 1
 
 		task "notification-server" {
 			driver = "docker"
