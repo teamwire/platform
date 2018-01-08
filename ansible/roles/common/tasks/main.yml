@@ -73,6 +73,7 @@
   - nano
   - haveged
   - ldap-utils
+  - bsd-mailx
   - unzip
   - patch
 
