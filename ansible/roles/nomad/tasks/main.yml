@@ -1,3 +1,7 @@
+- name: Check if Nomad is already installed
+  stat: path=/usr/local/bin/nomad
+  register: nomad_binary
+
 - name: Download Nomad
   get_url:
     url: https://releases.hashicorp.com/nomad/{{nomad_version}}/nomad_{{nomad_version}}_linux_amd64.zip
@@ -6,10 +10,14 @@
     mode: 0440
   register: nomad_downloaded
 
-- name: Unzip Nomad
-  unarchive: src=/var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip dest=/usr/local/bin copy=no
-  when: nomad_downloaded.changed
+- name: Install the Nomad binary
+  unarchive: 
+    src: /var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip
+    dest: /usr/local/bin
+    mode: 0755
+    copy: no
   notify: Restart Nomad agent
+  when: nomad_downloaded.changed or not nomad_binary.stat.exists
 
 - name: Create Nomad config firectory
   file: dest=/etc/nomad state=directory mode=0755
