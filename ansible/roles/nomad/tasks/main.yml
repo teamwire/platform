@@ -43,12 +43,14 @@
   delegate_to: "{{ groups['backend_servers'][0] }}"
   register: cpu_calculation
   run_once: true
+  changed_when: False
 
 - name: Obtain total RAM
   shell: nomad node-status -self -json | awk -F'[^0-9]*' '/memory.totalbytes/{print $2}'
   delegate_to: "{{ groups['backend_servers'][0] }}"
   register: ram_calculation
   run_once: true
+  changed_when: False
 
 #Setting facts for total CPU power (cores*frequency) and total RAM on backend nomad hosts
 - set_fact:

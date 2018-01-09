@@ -9,8 +9,9 @@
 
 - name: Check if the Percona repository signing key needs to be installed
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 9334A25F8507EFA5 > /dev/null 2>&1 && echo present || echo absent"
-  when: ansible_distribution == "Debian"
   register: percona_repo_key
+  changed_when: False
+  when: ansible_distribution == "Debian"
 
 - name: Add Percona repo signing key (direct)
   apt_key:

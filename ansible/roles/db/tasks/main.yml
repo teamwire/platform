@@ -11,6 +11,7 @@
 - name: Check if the MariaDB repository signing key needs to be installed (Debian 8)
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 1BB943DB > /dev/null 2>&1 && echo present || echo absent"
   register: mariadb_repo_key
+  changed_when: False
   when:
     - ansible_distribution == "Debian"
     - ansible_distribution_release == "jessie"

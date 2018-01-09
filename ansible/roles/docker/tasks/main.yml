@@ -20,6 +20,7 @@
 - name: Check if the Docker repository signing key needs to be installed
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 0EBFCD88 > /dev/null 2>&1 && echo present || echo absent"
   register: docker_repo_key
+  changed_when: False
 
 - name: Add the Docker repository signing key (direct connection)
   apt_key:
