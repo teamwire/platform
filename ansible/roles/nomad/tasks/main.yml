@@ -7,7 +7,7 @@
   register: nomad_downloaded
 
 - name: Unzip Nomad
-  unarchive: src=/var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip dest=/usr/local/sbin copy=no
+  unarchive: src=/var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip dest=/usr/local/bin copy=no
   when: nomad_downloaded.changed
   notify: Restart Nomad agent
 

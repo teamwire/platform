@@ -31,7 +31,7 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	fi
 
 	NOMAD_JOB="${CLUSTER_CONFIG_DIR}/teamwire.nomad"
-	NOMAD="/usr/local/sbin/nomad"
+	NOMAD="/usr/local/bin/nomad"
 else
 	# Single server installation
 	INSTALLATION=single
