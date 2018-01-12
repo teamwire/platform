@@ -122,7 +122,7 @@ apns_certificate:
 ## FILE STORAGE
 ##############################################################################
 
-# If you use more that one backend server or you want to store the persisten
+# If you use more that one backend server or you want to store the persistent
 # files externally, please specify the path of the NFS export where the files
 # shared between the backends shall be stored.
 #
