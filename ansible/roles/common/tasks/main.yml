@@ -109,7 +109,7 @@
   when: http_proxy is defined
 
 - name: Set hostname
-  when: config_done is defined or inventory_hostname not in ignore_hostname
+  when: config_done is defined or inventory_hostname not in ignore_hostnames
   hostname: name="{{ inventory_hostname if inventory_hostname not in ignore_hostnames else external_hostname }}"
 
 - name: Add hostname to localhost
