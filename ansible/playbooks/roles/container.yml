@@ -3,8 +3,8 @@
   tasks:
   - include: "../../roles/backend/tasks/single_{{ ansible_distribution }}.yml"
 
-# This play only applies to cluster installation
-# It needs to run on the Swarm manager nodes.
+# This play only applies to cluster installations
+# It needs to run on the Nomad client agent nodes
 - name: Deploy the backend containers
   hosts: consul_servers
   tasks:
