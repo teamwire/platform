@@ -1,9 +1,26 @@
+consul {
+  retry {
+    # This specifies the number of attempts to make before giving up. Each
+    # attempt adds the exponential backoff sleep time. Setting this to
+    # zero will implement an unlimited number of retries.
+    attempts = 10
+
+    # This is the base amount of time to sleep between retry attempts. Each
+    # retry sleeps for an exponent of 2 longer than this base. For 5 retries,
+    # the sleep times would be: 250ms, 500ms, 1s, 2s, then 4s.
+    backoff = "10s"
+
+    # This is the maximum amount of time to sleep between retry attempts.
+    # When max_backoff is set to zero, there is no upper limit to the
+    # exponential sleep between retry attempts.
+    # If max_backoff is set to 10s and backoff is set to 1s, sleep times
+    # would be: 1s, 2s, 4s, 8s, 10s, 10s, ...
+    max_backoff = "1m"
+  }
+
 # This is the address of the Consul agent.
-consul = "127.0.0.1:8500"
-
-# This is the amount of time to wait before retrying a connection to Consul.
-retry = "10s"
-
+  address = "127.0.0.1:8500"
+}
 # This is the maximum interval to allow "stale" data.
 max_stale = "10m"
 
