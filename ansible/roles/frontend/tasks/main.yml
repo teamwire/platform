@@ -32,6 +32,24 @@
   args:
     creates: /etc/ssl/private/dhparams.pem
 
+- name: Check SSL pair is valid (hasn't expired, modern algorithm and key matches certificate)
+  openssl_certificate:
+    path: /etc/ssl/private/teamwire-backend.crt
+    privatekey_path: /etc/ssl/private/teamwire-backend.key
+    provider: assertonly
+    signature_algorithms:
+      - sha224WithRSAEncryption
+      - sha256WithRSAEncryption
+      - sha384WithRSAEncryption
+      - sha512WithRSAEncryption
+      - sha224WithECDSAEncryption
+      - sha256WithECDSAEncryption
+      - sha384WithECDSAEncryption
+      - sha512WithECDSAEncryption
+    has_expired: False
+  when: ssl_certfile is defined
+  run_once: true
+
 # open firewall ports for the web server
 - ufw: rule=allow port=80 proto=tcp
   when: config_done is defined and ssl_certfile is not defined and ssl_keyfile is not defined
