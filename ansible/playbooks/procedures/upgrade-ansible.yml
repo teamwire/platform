@@ -11,35 +11,32 @@
   - name: apt-get update
     apt: update_cache=yes
 
-  - name: Install Ansible requirements
+  - name: Install Pip requirements
     apt: name={{item}} state=present
     with_items:
-    - python-setuptools
     - python-pip
     - python-wheel
+    - python-setuptools
 
-  - name: Install latest stable Ansible
+  - name: Enforce pip version 9.0.1
+    pip:
+      name=pip
+      version=9.0.1
+      extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
+
+  - debug:
+      msg:
+        - "About to install Ansible version {{ required_ansible_version }}"
+        - "After this procedure has executed, you will need to refresh your session sources"
+        - "You can do this by either executing source ~/.bashrc or exiting and rejoining the SSH session"
+        - "After performing this, you you will need to run the post-ansible-upgrade procedure."
+        - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/post-ansible-upgrade.yml"
+        - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/post-ansible-upgrade.yml"
+        - "If you encounter any issues, please email support@teamwire.eu"
+
+  - name: Install Ansible version {{ required_ansible_version }}
     pip:
       name=ansible
       version={{ required_ansible_version }}
       extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
     when: ansible_version['full'] != required_ansible_version
-
-  - name: Check pip Ansible version
-    shell: pip show ansible | awk '$1 ~ /Version/ {print $2}'
-    register: pip_ansible_version
-
-  - debug:
-      msg:
-        - "About to remove the old Ansible package"
-        - "After this procedure has executed, you will need to refresh your session sources"
-        - "You can do this by either executing source ~/.bashrc or exiting and rejoining the SSH session"
-        - "After performing this, you can run the usual playbook process"
-        - "If you encounter any issues, please email support@teamwire.eu"
-    when: pip_ansible_version.stdout == required_ansible_version
-    
-  - name: Remove old Ansible package
-    apt: 
-      name: ansible
-      state: absent
-    when: pip_ansible_version.stdout == required_ansible_version
