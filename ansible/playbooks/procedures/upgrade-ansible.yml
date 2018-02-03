@@ -18,10 +18,10 @@
     - python-wheel
     - python-setuptools
 
-  - name: Enforce pip version 9.0.1
+  - name: Enforce pip version {{ required_pip_version }}
     pip:
       name=pip
-      version=9.0.1
+      version={{ required_pip_version }}
       extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
 
   - debug:
