@@ -84,16 +84,6 @@
   - bsd-mailx
   - unzip
   - patch
-  - python-setuptools
-  - python-pip
-  - python-wheel
-
-- name: Install latest stable Ansible
-  pip:
-    name=ansible
-    version={{ required_ansible_version }}
-    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
-  when: ansible_version['full'] != required_ansible_version
 
 - name: Remove useless packages
   apt: pkg={{item}} state=absent purge=yes
