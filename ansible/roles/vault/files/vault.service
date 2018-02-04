@@ -8,6 +8,7 @@ After=network-online.target consul.service
 ExecStart=/usr/local/bin/vault server $OPTIONS -config=/etc/vault
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
+LimitMEMLOCK=infinity
 
 [Install]
 WantedBy=multi-user.target

@@ -33,6 +33,8 @@ socat
 patch
 python-backports.ssl-match-hostname
 python-docker
+mlock
+libcap2-bin
 "
 
 DOCKER_IMAGES="

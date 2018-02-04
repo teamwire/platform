@@ -90,6 +90,8 @@
   - bsd-mailx
   - unzip
   - patch
+  - mlock
+  - libcap2-bin
 
 - name: Install pip
   apt: name={{item}} state=present
