@@ -47,6 +47,7 @@
     group: ssl-cert
   when: config_done is defined
   run_once: true
+  register: apns_source
   
 - name: Ensure the secondary APNS certificate is configured correctly
   fail: msg="The secondary APNS certificate is not configured correctly."
@@ -72,6 +73,12 @@
     group: ssl-cert
   when: apns_certificate_2 is defined
   run_once: true
+  register: apns2_source
+
+- name: Restart teamwire worker if APNS certificates have been updated and on single-setup
+  command: docker restart teamwire_worker
+  ignore_errors: yes
+  when: (apns_source.changed or apns2_source.changed) and ansible_play_hosts | length() == 1
 
 - include: "single_{{ ansible_distribution }}.yml"
   when: "'backend_servers' not in groups"
