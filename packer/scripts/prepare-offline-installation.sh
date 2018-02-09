@@ -45,7 +45,7 @@ NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
 https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
-https://releases.hashicorp.com/consul-template/$CONSUL_TEMPLATE_VERSION/consul-template_$CONSUL_TEMPLATE_VERSION_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
+https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 "
 
