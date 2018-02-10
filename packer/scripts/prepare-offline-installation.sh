@@ -41,6 +41,7 @@ $(awk '/^redis_container:/ { print $2 }' ~teamwire/platform/ansible/roles/redis/
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
+CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
