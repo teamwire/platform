@@ -75,10 +75,14 @@
   run_once: true
   register: apns2_source
 
+- name: Check if teamwire worker is running
+  command: docker ps
+  register: docker_procs
+  when: (apns_source.changed or apns2_source.changed) and ansible_play_hosts | length() == 1
+
 - name: Restart teamwire worker if APNS certificates have been updated and on single-setup
   command: docker restart teamwire_worker
-  ignore_errors: yes
-  when: (apns_source.changed or apns2_source.changed) and ansible_play_hosts | length() == 1
+  when: (apns_source.changed or apns2_source.changed) and ansible_play_hosts | length() == 1 and 'teamwire_worker' in docker_procs.stdout
 
 - include: "single_{{ ansible_distribution }}.yml"
   when: "'backend_servers' not in groups"
