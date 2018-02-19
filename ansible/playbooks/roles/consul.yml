@@ -7,6 +7,6 @@
   - role: ../../roles/consul
 
 - name: Configure Consul on Consul member nodes
-  hosts: all:!consul_servers:!local
+  hosts: all:!consul_servers
   roles:
   - role: ../../roles/consul
