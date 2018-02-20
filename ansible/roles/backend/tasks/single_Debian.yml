@@ -18,8 +18,8 @@
     image: "teamwire/backend:{{version|default('prod')}}"
     state: reloaded
     restart_policy: always
-    net: bridge
-    ports: "127.0.0.1:8080:8080"
+    net: host
+    ports: "8080"
     volumes: "/data/archiving:/archiving,/data/assets:/assets"
     log_driver: "syslog"
     log_opt:
@@ -43,7 +43,7 @@
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
       REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
-      EMAIL_HOST: "{{ ansible_docker0['ipv4']['address'] if fake_email_confirmation is not defined else '' }}"
+      EMAIL_HOST: "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
       BLOB_DIR: /assets
       DEFAULT_FROM_EMAIL: "{{sender_address}}"
       http_proxy: "{{http_proxy|default()}}"
@@ -111,7 +111,7 @@
     image: "teamwire/backend:{{version|default('prod')}}"
     state: reloaded
     restart_policy: always
-    net: bridge
+    net: host
     volumes: "/data/beat:/beat"
     log_driver: "syslog"
     log_opt:
@@ -146,8 +146,8 @@
     image: "teamwire/notification-server:{{version|default('prod')}}"
     state: reloaded
     restart_policy: always
-    net: bridge
-    ports: "127.0.0.1:9080:9080,{{ ansible_docker0['ipv4']['address'] }}:9081:9081"
+    net: host
+    ports: "9080,9081"
     log_driver: "syslog"
     log_opt:
       tag: teamwire-notifications
