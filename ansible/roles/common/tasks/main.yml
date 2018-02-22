@@ -92,6 +92,7 @@
   - patch
   - mlock
   - libcap2-bin
+  - curl
 
 - name: Install pip
   apt: name={{item}} state=present
