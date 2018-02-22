@@ -10,7 +10,8 @@
 - name: Add other cluster nodes to /etc/hosts
   lineinfile:
     dest: /etc/hosts
-    line: "{{ hostvars[item]['private_ip'] }}\t{{ item }} "
+    line: "{{ hostvars[item]['private_ip'] }}\t{{ item }}{% if item == inventory_hostname %} host{% endif %}"
+    state: present
   with_items: "{{ groups['all'] | default([]) }}"
 
 - name: Allow all access from other cluster nodes
