@@ -87,4 +87,7 @@
 - include: "single_{{ ansible_distribution }}.yml"
   when: "'backend_servers' not in groups"
 
+- include: "haproxy.yml"
+  when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
+
 # The cluster backend deployment is delegated to the nomad servers

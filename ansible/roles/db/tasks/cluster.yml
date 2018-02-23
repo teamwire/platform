@@ -1,8 +1,4 @@
 ---
-- name: Ensure database_cluster_ip is configured before installing the Database
-  fail: msg="Virtual DB server IP address is not defined. Please check the inventory file"
-  when: database_cluster_ip is not defined or database_cluster_ip == None
-
 - name: Ensure xtrabackup_password is configured before installing the Database
   fail: msg="Database replication user password is not defined. Please check the configuration file"
   when: xtrabackup_password is not defined or xtrabackup_password == None
@@ -79,12 +75,23 @@
 - name: Install Galera cluster check script
   copy: src=clustercheck dest=/usr/local/bin/clustercheck mode=0755
 
-- name: Install keepalived
-  apt: pkg=keepalived
+- name: Copy systemd clustercheck socket configuration
+  copy:
+    src: clustercheck.socket
+    dest: /etc/systemd/system/clustercheck.socket
+    mode: 0644
+  notify:
+    - reload systemd
 
-- name: Allow incoming keepalived multicast traffic
-  ufw: rule=allow src=224.0.0.18
+- name: Write systemd clustercheck service
+  template:
+    src: clustercheck@.service.j2
+    dest: /etc/systemd/system/clustercheck@.service
+    mode: 0600
+  notify:
+    - reload systemd
 
-- name: Write keepalived configuration file
-  template: src=keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf mode=0640
-  notify: restart keepalived
+- meta: flush_handlers
+
+- name: Enable the clustercheck service
+  service: name=clustercheck.socket state=started enabled=true

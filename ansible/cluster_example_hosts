@@ -47,13 +47,6 @@ db1
 db2
 db3
 
-# When running a clustered database, these servers need one virtual IP
-# address they share. Only one of the active servers will be used by
-# the application to guarantee no write access on identical rows occurs
-# on different servers, as these would lead to deadlocks.
-[database_servers:vars]
-database_cluster_ip=10.0.1.20
-
 # Optional. You can use an external NFS storage.
 [nfs_servers]
 db1

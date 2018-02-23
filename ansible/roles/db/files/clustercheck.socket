@@ -1,0 +1,9 @@
+[Unit]
+Description=Galera cluster check
+
+[Socket]
+ListenStream=9200
+Accept=yes
+
+[Install]
+WantedBy=sockets.target

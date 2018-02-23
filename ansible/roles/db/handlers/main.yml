@@ -1,6 +1,6 @@
 ---
+- name: reload systemd
+  command: systemctl daemon-reload
+
 - name: restart MariaDB
   service: name=mysql state=restarted
-
-- name: restart keepalived
-  service: name=keepalived state=restarted
