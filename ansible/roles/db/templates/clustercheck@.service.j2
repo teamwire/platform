@@ -1,0 +1,6 @@
+[Unit]
+Description=Cliustercheck
+
+[Service]
+ExecStart=-/usr/local/bin/clustercheck clustercheck "{{ clustercheck_password }}"
+StandardInput=socket

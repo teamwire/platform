@@ -88,3 +88,24 @@
 - name: Write keepalived configuration file
   template: src=keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf mode=0640
   notify: restart keepalived
+
+- name: Copy systemd clustercheck socket configuration
+  copy:
+    src: clustercheck.socket
+    dest: /etc/systemd/system/clustercheck.socket
+    mode: 0644
+  notify:
+    - reload systemd
+
+- name: Write systemd clustercheck service
+  template:
+    src: clustercheck@.service.j2
+    dest: /etc/systemd/system/clustercheck@.service
+    mode: 0600
+  notify:
+    - reload systemd
+
+- meta: flush_handlers
+
+- name: Enable the clustercheck service
+  service: name=clustercheck.socket state=started enabled=true
