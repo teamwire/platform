@@ -11,7 +11,7 @@
   register: nomad_downloaded
 
 - name: Install the Nomad binary
-  unarchive: 
+  unarchive:
     src: /var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
@@ -62,6 +62,7 @@
 
 #Setting facts for total CPU power (cores*frequency) and total RAM on backend nomad hosts
 - set_fact:
+     core_count: "{{ hostvars[groups['backend_servers'][0]].ansible_processor_vcpus }}"
      total_cpu_power: "{{ cpu_calculation.stdout }}"
      total_ram: "{{ ram_calculation.stdout }}"
 
