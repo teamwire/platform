@@ -42,9 +42,6 @@
     state: present
     update_cache: yes
 
-- name: Install aufs-tools
-  apt: pkg=aufs-tools state=present
-
 - name: Install Docker
   apt: pkg=docker-ce state=present
 
