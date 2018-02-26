@@ -4,6 +4,11 @@
   roles:
     - common
 
+- name: Deploy and configure external storage client
+  hosts: all
+  roles:
+    - { role: storage_client, when external_storage_path is defined }
+
 - name: Deploy and configure MySQL database
   hosts: all
   roles:
