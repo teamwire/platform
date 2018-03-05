@@ -21,6 +21,7 @@ peers backend-servers
 {% endfor %}
 
 listen galera-cluster
+	bind 127.0.0.1:3307
 	bind {{ private_ip }}:3307
 	bind {{ ansible_docker0['ipv4']['address'] }}:3307
 	mode tcp
