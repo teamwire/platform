@@ -239,3 +239,6 @@ smtp_use_tls: yes
 
 # Notification service log level
 # notification_loglevel: debug
+
+# Use host networking (cluster only)
+# docker_host_networking: true
