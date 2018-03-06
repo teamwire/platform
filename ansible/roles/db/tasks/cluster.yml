@@ -79,7 +79,7 @@
   copy:
     src: clustercheck.socket
     dest: /etc/systemd/system/clustercheck.socket
-    mode: 0644
+    mode: 0640
   notify:
     - reload systemd
 
@@ -87,7 +87,7 @@
   template:
     src: clustercheck@.service.j2
     dest: /etc/systemd/system/clustercheck@.service
-    mode: 0600
+    mode: 0640
   notify:
     - reload systemd
 
