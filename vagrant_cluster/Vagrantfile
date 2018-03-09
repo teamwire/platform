@@ -32,15 +32,15 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provider :vmware_fusion do |v|
-    v.vmx["memsize"] = "1024"
+    v.vmx["memsize"] = "2048"
   end
 
   config.vm.provider "virtualbox" do |vm|
-    vm.customize ["modifyvm", :id, "--memory", "1024"]
+    vm.customize ["modifyvm", :id, "--memory", "2048"]
     vm.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
   end
 
   config.vm.provider "libvirt" do |vm|
-    vm.memory = 1024
+    vm.memory = 2048
   end
 end
