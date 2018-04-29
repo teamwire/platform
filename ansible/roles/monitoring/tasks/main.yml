@@ -1,0 +1,42 @@
+---
+- name: Install Icinga2 and monitoring plugins
+  apt: name={{ item }} state=present
+  with_items:
+    - icinga2
+    - monitoring-plugins
+
+- name: Enable and start the icinga2 daemon
+  service: name=icinga2 state=started enabled=true
+
+- name: Copy Redis monitoring plugins
+  copy:
+    src: checks/check_redis.py
+    dest: /usr/lib/nagios/plugins
+    mode: 0755
+  when: groups['all'] | length() > 1 and inventory_hostname in groups['redis_servers']
+
+- name: Configure Icinga2 commands
+  copy: src=commands.conf dest=/etc/icinga2/conf.d
+  notify: restart icinga2
+
+- name: Configure Icinga NodeName
+  lineinfile:
+    dest: /etc/icinga2/constants.conf
+    regexp: "^//const NodeName = \"localhost\"$"
+    line: "const NodeName = \"{{ inventory_hostname }}\""
+    backrefs: yes
+  notify: restart icinga2
+
+- name: Fix Icinga PKI directory permissions
+  file: dest=/etc/icinga2/pki owner=nagios group=nagios mode=0750
+
+- include: "database-configuration.yml"
+  when: mysql_root_password is defined
+
+- include: "master.yml"
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
+
+- include: "client.yml"
+  when: groups['all'] | length() > 1 and inventory_hostname not in groups['monitoring']
+
+

@@ -1,0 +1,25 @@
+---
+- name: Install Nrpe and Plugins
+  package:
+       name: "{{ item }}"
+       state: latest
+       update_cache: yes
+       install_recommends: no
+  with_items:
+    - nagios-nrpe-server
+    - nagios-nrpe-plugin
+    - nagios-plugins
+
+- name: Copy Nrpe Configuration
+  template:
+    src: nrpe.cfg.j2
+    dest: "{{ nrpe_agent_config }}"
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  notify:
+   - restart nagios-nrpe-server
+
+- name: Open port 5666 for NRPE connections
+  ufw: rule=allow port=5666 proto=tcp

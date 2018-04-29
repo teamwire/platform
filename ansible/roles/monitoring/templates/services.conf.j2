@@ -161,12 +161,14 @@ apply Service "check-redis-{{ instance }}-dns" {
   import "generic-service"
   check_command = "dns-no-defaults"
 
-  vars.dns_lookup = "prod.redis.service.consul"
+  vars.dns_lookup = "{{ instance }}.redis.service.consul"
   vars.dns_server = "127.0.0.1"
 
   command_endpoint = host.vars.client_endpoint
   assign where "backend_servers" in host.vars.roles && host.vars.client_endpoint
 }
+
+{% endfor %}
 
 {% if 'database_servers' in groups %}
 apply Service "check-mysql" {
