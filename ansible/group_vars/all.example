@@ -220,6 +220,49 @@ smtp_port: 587
 smtp_use_tls: yes
 
 ##############################################################################
+## MONITORING
+##############################################################################
+# To enable on-premise monitoring, please uncomment and set enable_monitoring
+# to true. If running a cluster-setup, please specify the monitoring node in the
+# cluster_hosts file, under the monitoring group. The monitoring system requires
+# MySQL and doesn't currently support other database types.
+
+# enable_monitoring: yes
+
+# Please uncomment and enter the email addresses which you'd like to receive
+# monitoring alerts to. At least 1 entry is required.
+# monitoring_email_addresses:
+#   - admin@example.com
+#   - admin2@example.com
+
+# Define the database user name.
+# monitoring_db_user: monitor
+
+# Define the database user password.
+# monitoring_db_password: monitor
+
+# Define the monitoring database name.
+# monitoring_db_name: monitor
+
+# Define the monitoring web interface database username.
+# monitoring_db_web_user: monitor_web
+
+# Define the monitoring web interface database password.
+# monitoring_db_web_password: monitor_web
+
+# Define the monitoring web interface database name.
+# monitoring_db_web_name: monitor_web
+
+# Define the monitoring web interface admin password
+# icinga_admin_password: webpassword
+
+# Define the monitoring salt (Secret key)
+# icinga_salt: s8bamrnjuofds51gyw5xm59zllrn7r77
+
+# Define the monitoring API password
+# icinga_api_password: hwy5c8fuxv3w1pm3urdq0mg1bayrq45f
+
+##############################################################################
 ## DEBUGGING
 ##############################################################################
 

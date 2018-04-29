@@ -86,3 +86,9 @@ lb2
 [load_balancers:vars]
 loadbalancer_external_ip=10.0.1.2
 loadbalancer_password="12secr34"
+
+# Optional. This role allows you to configure on-premise monitoring.
+# Here you should specify the server to install the monitoring master service on.
+# The relevant agent will automatically install on all servers in the cluster.
+[monitoring]
+tw1
