@@ -4,20 +4,32 @@
   with_items:
     - icinga2
     - monitoring-plugins
+    - dnsutils
+
+- Name: Open port for connections to Icinga2 client
+  ufw: rule=allow port=5665 proto=tcp
 
 - name: Enable and start the icinga2 daemon
   service: name=icinga2 state=started enabled=true
 
-- name: Copy Redis monitoring plugins
+- name: Install additional icinga plugins
   copy:
-    src: checks/check_redis.py
+    src: "{{ item }}"
     dest: /usr/lib/nagios/plugins
     mode: 0755
-  when: groups['all'] | length() > 1 and inventory_hostname in groups['redis_servers']
+  with_fileglob:
+    - "files/checks/*"
 
 - name: Configure Icinga2 commands
   copy: src=commands.conf dest=/etc/icinga2/conf.d
   notify: restart icinga2
+
+- name: Set sudo escalation for icinga plugins
+  lineinfile:
+    dest: /etc/sudoers
+    line: "nagios ALL=(root) NOPASSWD: /usr/lib/nagios/plugins/"
+    state: present
+    validate: '/usr/sbin/visudo -cf %s'
 
 - name: Configure Icinga NodeName
   lineinfile:
@@ -37,6 +49,5 @@
   when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
 
 - include: "client.yml"
-  when: groups['all'] | length() > 1 and inventory_hostname not in groups['monitoring']
 
 
