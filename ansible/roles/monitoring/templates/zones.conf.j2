@@ -1,0 +1,50 @@
+/*
+ * Endpoint and Zone configuration for a cluster setup
+ */
+
+object Endpoint NodeName {
+  host = NodeName
+}
+
+object Zone ZoneName {
+  endpoints = [ NodeName ]
+{% if groups['all'] | length() > 1 %}  
+{% if inventory_hostname != groups.monitoring | first %}
+  parent = "{{ groups.monitoring | first }}"
+{% endif %}
+{% endif %}
+}
+
+{% if groups['all'] | length() > 1 %}  
+{% if inventory_hostname == groups.monitoring | first %}
+{% for host in groups.all | difference([inventory_hostname]) %}
+object Endpoint "{{ host }}" {
+  host = "{{ hostvars[host].private_ip }}"
+}
+
+object Zone "{{ host }}" {
+  endpoints = [ "{{ host }}" ]
+  parent = "{{ groups.monitoring | first }}"
+}
+
+{% endfor %}
+{% else %}
+object Zone "{{ groups.monitoring | first }}" {
+  endpoints = [ "{{ groups.monitoring | first }}" ]
+}
+
+object Endpoint "{{ groups.monitoring | first }}" {
+  host = "{{ hostvars[groups.monitoring | first].private_ip }}"
+}
+{% endif %}
+{% endif %}
+/*
+ * Defines a global zone containing templates,
+ * etc. synced to all nodes, if they accept
+ * configuration. All remote nodes need
+ * this zone configured too.
+ */
+
+object Zone "global-templates" {
+  global = true
+}

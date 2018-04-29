@@ -1,0 +1,71 @@
+/**
+ * Host groups.
+ */
+
+object HostGroup "consul-servers" {
+  display_name = "Consul Servers"
+  assign where "consul_servers" in host.vars.roles
+}
+
+object HostGroup "backend-servers" {
+  display_name = "Backend Servers"
+  assign where "backend_servers" in host.vars.roles
+}
+
+object HostGroup "frontend-servers" {
+  display_name = "Frontend Servers"
+  assign where "frontend_servers" in host.vars.roles
+}
+
+object HostGroup "storage-servers" {
+  display_name = "Storage Servers"
+  assign where "storage_servers" in host.vars.roles
+}
+
+object HostGroup "redis-servers" {
+  display_name = "Redis Servers"
+  assign where "redis_servers" in host.vars.roles
+}
+
+object HostGroup "database-servers" {
+  display_name = "Database Servers"
+  assign where "database_servers" in host.vars.roles
+}
+
+object HostGroup "loadbalancers" {
+  display_name = "Load Balancers"
+  assign where "load_balancers" in host.vars.roles
+}
+
+object HostGroup "docker-registry" {
+  display_name = "Docker Registry Servers"
+  assign where "docker_registry" in host.vars.roles
+}
+
+/**
+ * Service groups.
+ */
+
+object ServiceGroup "ping" {
+  display_name = "Ping Checks"
+
+  assign where match("ping*", service.name)
+}
+
+object ServiceGroup "http" {
+  display_name = "HTTP Checks"
+
+  assign where match("http*", service.check_command)
+}
+
+object ServiceGroup "disk" {
+  display_name = "Disk Checks"
+
+  assign where match("disk*", service.check_command)
+}
+
+object ServiceGroup "load" {
+  display_name = "Load Checks"
+
+  assign where match("load", service.name)
+}

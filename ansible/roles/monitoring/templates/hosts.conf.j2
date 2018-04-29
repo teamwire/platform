@@ -1,0 +1,38 @@
+{% for host in groups.all %}
+object Host "{{ host }}" {
+
+  import "generic-host"
+
+  address = "{{ hostvars[host].private_ip if groups['all'] | length() > 1 else '127.0.0.1' }}"
+  vars.client_endpoint = name
+  vars.os = "Linux"
+  vars.roles = [{% for group in hostvars[host].group_names %}"{{ group }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+
+{% if groups['all'] | length() > 1 %}
+{% if host in groups.frontend_servers %}
+{% if ssl_certfile is defined and ssl_keyfile is defined %}
+  vars.http_ssl = true
+{% endif %}
+  vars.http_vhosts["http"] = {
+    http_uri = "/health"
+  }
+{% endif %}
+{% endif %}
+
+  vars.disks["disks"] = {
+{% if groups['all'] | length() > 1 %}
+{% if 'nfs_servers' in hostvars[host].group_names and host in groups.nfs_servers or host in groups.backend_servers %}
+    disk_partitions = ["/", "/data"]
+{% endif %}
+{% else %}
+    disk_partitions = ["/"]
+{% endif %}
+  }
+
+  vars.notification["mail"] = {
+    /* The UserGroup `icingaadmins` is defined in `users.conf`. */
+    groups = [ "icingaadmins" ]
+  }
+}
+
+{% endfor %}

@@ -54,3 +54,8 @@
     - docker
     - { role: backend, when: config_done is defined }
     - { role: frontend, when: config_done is defined }
+
+- name: Deploy monitoring services
+  hosts: all
+  roles:
+    - { role: monitoring, when: config_done is defined and enable_monitoring is defined }

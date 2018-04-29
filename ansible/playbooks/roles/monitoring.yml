@@ -1,0 +1,3 @@
+- hosts: all
+  roles:
+  - { role: ../../roles/monitoring, when: config_done is defined and enable_monitoring is defined }

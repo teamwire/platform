@@ -1,0 +1,9 @@
+library "db_ido_mysql"
+
+object IdoMysqlConnection "ido-mysql" {
+  user = "{{ monitoring_db_user }}",
+  password = "{{ monitoring_db_password }}",
+  host = "{{ monitoring_db_host }}",
+  port = "{{ monitoring_db_port }}",
+  database = "{{ monitoring_db_name }}"
+}

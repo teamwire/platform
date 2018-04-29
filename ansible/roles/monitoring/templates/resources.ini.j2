@@ -1,0 +1,21 @@
+[icinga2]
+type = "db"
+db = "mysql"
+host =  "{{ monitoring_db_host }}"
+port = "{{ monitoring_db_port }}"
+dbname = "{{ monitoring_db_name }}"
+username = "{{ monitoring_db_user }}"
+password = "{{ monitoring_db_password }}"
+charset = ""
+persistent = "0"
+
+[icingaweb2]
+type = "db"
+db = "mysql"
+host = "{{ monitoring_db_host }}"
+port = "{{ monitoring_db_port }}"
+dbname = "{{ monitoring_db_web_name }}"
+username = "{{ monitoring_db_web_user }}"
+password = "{{ monitoring_db_web_password }}"
+charset = ""
+persistent = "0"

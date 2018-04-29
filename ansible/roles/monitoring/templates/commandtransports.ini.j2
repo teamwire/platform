@@ -1,0 +1,11 @@
+[icinga2]
+transport = "api"
+host = "127.0.0.1" ; Icinga 2 host
+port = "5665"
+username = "client-pki-ticket"
+password = "{{icinga_api_password}}"
+
+#local instance
+#[icinga2]
+#transport   = local
+#path        = /var/run/icinga2/cmd/icinga2.cmd
