@@ -18,7 +18,7 @@
   ignore_errors: yes
 
 - name: Create {{gluster_volume}} gluster_volume
-  shell: gluster volume info {{gluster_volume}} || (gluster volume create {{gluster_volume}} replica 3 transport tcp {{ groups[glusterfs_peer_group] | join(':' + gluster_brick_dir + ' ') }}:{{gluster_brick_dir}} force && gluster volume start {{gluster_volume}})
+  shell: gluster volume info {{gluster_volume}} || (gluster volume create {{gluster_volume}} replica {{ groups[glusterfs_peer_group] | count }} transport tcp {{ groups[glusterfs_peer_group] | join(':' + gluster_brick_dir + ' ') }}:{{gluster_brick_dir}} force && gluster volume start {{gluster_volume}})
   when: inventory_hostname == groups[glusterfs_peer_group][0]
 
 - name: Mount GlusterFS from localhost
