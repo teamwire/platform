@@ -71,6 +71,7 @@
 # unattanded-upgrades sometimes lock APT for a long time
 - name: Wait for APT to be available
   shell: while fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 1; done;
+  changed_when: false
 
 - name: Install useful tools
   apt: name={{item}} state=present
