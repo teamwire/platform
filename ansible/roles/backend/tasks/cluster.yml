@@ -5,7 +5,7 @@
   file: dest=/data/cluster_config state=directory mode=0770 owner=root group=teamwire
   run_once: true
 
-- name: write cluster configuration file
+- name: Write cluster configuration file
   run_once: true
   template:
     src: ../../roles/backend/templates/cluster.conf.j2
