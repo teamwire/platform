@@ -60,11 +60,11 @@
   run_once: true
   changed_when: False
 
-#Setting facts for total CPU power (cores*frequency) and total RAM on backend nomad hosts
-- set_fact:
-     core_count: "{{ hostvars[groups['backend_servers'][0]].ansible_processor_vcpus }}"
-     total_cpu_power: "{{ cpu_calculation.stdout }}"
-     total_ram: "{{ ram_calculation.stdout }}"
+- name: Set facts for total CPU power (cores*frequency) and RAM on Nomad clients
+  set_fact:
+    core_count: "{{ hostvars[groups['backend_servers'][0]].ansible_processor_vcpus }}"
+    total_cpu_power: "{{ cpu_calculation.stdout }}"
+    total_ram: "{{ ram_calculation.stdout }}"
 
 - name: Write Teamwire cluster nomad job
   template:
