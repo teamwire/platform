@@ -43,7 +43,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provider "libvirt" do |vm|
     vm.memory = 1024
-    vm.nested = true
+    vm.cpu_mode = "host-passthrough"
   end
 
   # Enable provisioning with Ansible.
