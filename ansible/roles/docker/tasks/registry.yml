@@ -7,14 +7,21 @@
   template: src=registry-config.yml.j2 dest=/data/registry/config.yml
   run_once: true
 
-- name: Retrieve and run the Docker Registry container
+- name: Retrieve the  Docker Registry container
   when: config_done is defined
-  docker:
+  docker_image:
+    name: "{{ registry_version }}"
+    state: present
+
+- name: Run the Docker Registry container
+  when: config_done is defined
+  docker_container:
     name: docker-registry
     image: "{{ registry_version }}"
-    state: reloaded
+    state: started
+    restart: yes
     restart_policy: always
-    net: bridge
+    network_mode: bridge
     ports: "5000:5000"
     volumes: "/data/registry:/var/lib/registry,/data/registry/config.yml:/etc/docker/registry/config.yml"
 
