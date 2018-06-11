@@ -20,5 +20,8 @@
 - name: fix ownership of git checkout
   file: path=/home/teamwire/platform owner=teamwire group=teamwire recurse=yes
 
+- name: restart dnsmasq
+  service: name=dnsmasq state=restarted
+
 - name: restart rsyslog
   service: name=rsyslog state=restarted

@@ -1,39 +1,3 @@
-# Before installing Consul set up DNS with local dnsmasq
-- name: Ensure dns_servers are configured before installing dnsmasq
-  fail: msg="DNS servers are not defined. Please check the configuration file"
-  when: dns_servers is not defined
-
-- name: Install dnsmasq
-  apt: pkg=dnsmasq
-
-- service:
-    name: dnsmasq
-    state: started
-    enabled: true
-
-- name: Configure dnsmasq upstream DNS servers
-  template:
-    src: 20-upstream.j2
-    dest: /etc/dnsmasq.d/20-upstream
-  when: dns_servers is defined
-  notify: restart dnsmasq
-
-- name: Resolve DNS using dnsmasq
-  copy:
-    content: "nameserver 127.0.0.1\n"
-    dest: /etc/resolv.conf
-
-- name: Configure DHCP client to use local DNS server
-  lineinfile:
-    regexp: "^#+prepend domain-name-servers"
-    backrefs: yes
-    line: "prepend domain-name-servers 127.0.0.1;"
-    dest: /etc/dhcp/dhclient.conf
-
-# Ensure we have a valid DNS configuragtion
-- meta: flush_handlers
-
-# Consul
 - name: Create 3rd party download directory
   file:
     dest: /var/cache/downloads
@@ -97,12 +61,12 @@
 - name: Check if consul-ui is installed
   stat: path=/usr/local/share/consul-ui
   register: consului
-  
+
 - name: Remove old consul-ui
   when: consului.stat.exists
   file:
     path: /usr/local/share/consul-ui
-    state: absent 
+    state: absent
 
 - service:
     name: consul
