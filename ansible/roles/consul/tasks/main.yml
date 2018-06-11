@@ -57,17 +57,6 @@
     dest: /etc/dnsmasq.d/10-consul
   notify: restart dnsmasq
 
- # Remove old consul-ui, hash-ui is used instead
-- name: Check if consul-ui is installed
-  stat: path=/usr/local/share/consul-ui
-  register: consului
-
-- name: Remove old consul-ui
-  when: consului.stat.exists
-  file:
-    path: /usr/local/share/consul-ui
-    state: absent
-
 - service:
     name: consul
     state: started
