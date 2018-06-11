@@ -48,7 +48,7 @@
   when: config_done is defined
   run_once: true
   register: apns_source
-  
+
 - name: Ensure the secondary APNS certificate is configured correctly
   fail: msg="The secondary APNS certificate is not configured correctly."
   when: apns_certificate_2 is defined and apns_appid_2 is not defined or apns_appid_2 is defined and apns_certificate_2 is not defined
@@ -84,10 +84,10 @@
   command: docker restart teamwire_worker
   when: (apns_source.changed or apns2_source.changed) and ansible_play_hosts | length() == 1 and 'teamwire_worker' in docker_procs.stdout
 
-- include: "single_{{ ansible_distribution }}.yml"
+- include_tasks: "single_{{ ansible_distribution }}.yml"
   when: "'backend_servers' not in groups"
 
-- include: "haproxy.yml"
+- include_tasks: "haproxy.yml"
   when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
 
 # The cluster backend deployment is delegated to the nomad servers

@@ -79,8 +79,8 @@
     state: present
     reload: yes
 
-- include: single.yml
+- include_tasks: single.yml
   when: "'frontend_servers' not in groups"
 
-- include: cluster.yml
+- include_tasks: cluster.yml
   when: "'frontend_servers' in groups"

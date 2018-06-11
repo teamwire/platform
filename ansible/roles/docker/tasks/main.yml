@@ -124,7 +124,7 @@
   register: offline_mode
 
 - name: Install Docker Registry on configured host
-  include: registry.yml
+  include_tasks: registry.yml
   when: config_done is defined and 'docker_registry' in group_names
 
 - name: Log in on Docker Hub (Ubuntu)
@@ -155,5 +155,5 @@
 - name: Configure firewall to allow Docker containers access to the host
   ufw: rule=allow interface=docker0 direction=in
 
-- include: cluster.yml
+- include_tasks: cluster.yml
   when: groups['all'] | length() > 1

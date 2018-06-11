@@ -20,8 +20,8 @@
     state: present
     reload: yes
 
-- include: single.yml
+- include_tasks: single.yml
   when: "'redis_servers' not in groups"
 
-- include: cluster.yml
+- include_tasks: cluster.yml
   when: "'redis_servers' in groups"

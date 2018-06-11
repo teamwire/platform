@@ -1,5 +1,5 @@
 ---
-- include: configuration.yml
+- include_tasks: configuration.yml
 
 - name: Create cluster config directory
   file: dest=/data/cluster_config state=directory mode=0770 owner=root group=teamwire

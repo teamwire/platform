@@ -4,8 +4,8 @@
     glusterfs_cluster: True
   when: '"nfs_servers" in groups and groups["nfs_servers"] | length > 1'
 
-- include: single.yml
+- include_tasks: single.yml
   when: glusterfs_cluster is not defined
 
-- include: glusterfs.yml
+- include_tasks: glusterfs.yml
   when: glusterfs_cluster is defined

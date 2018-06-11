@@ -266,5 +266,5 @@
   notify:
     - restart rsyslog
 
-- include: cluster.yml
+- include_tasks: cluster.yml
   when: groups['all'] | length() > 1
