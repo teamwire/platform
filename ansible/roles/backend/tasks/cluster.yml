@@ -17,6 +17,3 @@
 # Arcane path sorcery; required as this file is only included from the playbook
 - name: Install the container helper tool
   copy: src=../../roles/backend/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
-
-- name: Install the database charset correction tool
-  copy: src=../../roles/backend/files/dbcharset dest=/usr/local/bin/dbcharset mode=0755 owner=root group=root
