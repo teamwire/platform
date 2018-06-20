@@ -1,12 +1,4 @@
 ---
-- name: Check Ansible version
-  fail:
-    msg:
-      - "Ansible {{ required_ansible_version }} is required, please run the upgrade procedure"
-      - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
-      - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
-  when: ansible_version['full'] != required_ansible_version
-
 - name: Configure proxy for apt
   when: http_proxy is defined
   template: src=apt.proxy.conf.j2 dest=/etc/apt/apt.conf.d/01proxy
