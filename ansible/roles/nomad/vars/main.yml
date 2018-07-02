@@ -12,8 +12,8 @@ screenshot_cpu_alloc: 0.15
 worker_cpu_alloc: 0.2
 notification_cpu_alloc: 0.2
 
-# Nomad RAM allocactions - the original value is in bytes, hence the extended decimal place
-backend_ram_alloc: 0.00000007 # Default:7% per core
-screenshot_ram_alloc: 0.00000015
-worker_ram_alloc: 0.00000005 # 5% per core
-notification_ram_alloc: 0.0000001
+# Nomad RAM allocations in MB per CPU core
+backend_ram_alloc: 256
+screenshot_ram_alloc: 128
+worker_ram_alloc: 256
+notification_ram_alloc: 64
