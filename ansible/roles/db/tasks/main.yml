@@ -162,12 +162,12 @@
 
   # Ensure MariaDB UTC timezone definition is present
 - name: Count MariaDB UTC timezone definition
-  command: "mysql -Bs -e 'SELECT COUNT(*) FROM time_zone_name WHERE name=\"UTC\";' mysql"
+  command: "mysql --defaults-file=/etc/mysql/debian.cnf -Bs -e 'SELECT COUNT(*) FROM time_zone_name WHERE name=\"UTC\";' mysql"
   changed_when: false
   register: mariadb_timezone_count
 
 - name: Import MariaDB UTC timezone definition
-  shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql mysql"
+  shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --defaults-file=/etc/mysql/debian.cnf mysql"
   when: mariadb_timezone_count.stdout == "0"
 
 - include_tasks: cluster.yml
