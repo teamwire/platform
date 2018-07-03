@@ -50,7 +50,7 @@
   when: ansible_distribution == "Ubuntu"
 
 - name: Install python-docker (Debian 8)
-  apt: pkg=python-docker default_release=jessie-backports state=present
+  pip: name=docker-py version=1.9.0 state=present
   when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
 
 - name: Install python-docker (Debian 9)
