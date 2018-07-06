@@ -22,7 +22,6 @@
     name: teamwire_backend
     image: "teamwire/backend:{{version|default('prod')}}"
     state: started
-    restart: yes
     restart_policy: always
     network_mode: host
     ports: "8080"
@@ -69,7 +68,6 @@
     name: teamwire_worker
     image: "teamwire/backend:{{version|default('prod')}}"
     state: started
-    restart: yes
     restart_policy: always
     network_mode: bridge
     ports: "127.0.0.1:8082:8080"
@@ -111,7 +109,6 @@
     name: teamwire_beat
     image: "teamwire/backend:{{version|default('prod')}}"
     state: started
-    restart: yes
     restart_policy: always
     network_mode: host
     volumes: "/data/beat:/beat"
@@ -149,7 +146,6 @@
     name: teamwire_notification_server
     image: "teamwire/notification-server:{{version|default('prod')}}"
     state: started
-    restart: yes
     restart_policy: always
     network_mode: host
     ports: "9080,9081"
@@ -174,7 +170,6 @@
     name: teamwire_screenshot_server
     image: "teamwire/web-screenshot-server:{{version|default('prod')}}"
     state: started
-    restart: yes
     restart_policy: always
     network_mode: bridge
     ports: "127.0.0.1:8081:8080"
