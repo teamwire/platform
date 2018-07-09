@@ -269,4 +269,4 @@
     - restart rsyslog
 
 - include_tasks: cluster.yml
-  when: groups['all'] | length() > 1
+  when: groups['all'] | length() > 1 and skip_private_if is not defined or skip_private_if
