@@ -64,5 +64,3 @@
 - name: Enable the Vault service
   service: name=vault state=started enabled=yes
 
-- include: secrets.yml
-  when: vault_bootstrapped.stat.exists
