@@ -4,6 +4,7 @@
   with_items:
   - redis-tools
   - python-redis
+  - redis-server
 
 # See http://redis.io/topics/faq for details
 - name: Enable vm.overcommit_memory for Redis

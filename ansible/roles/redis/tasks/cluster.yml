@@ -1,36 +1,94 @@
 ---
-- name: Copy Redis cluster bootstrap script
+- name: Install Redis Sentinel
+  apt: name=redis-sentinel state=present
+
+- name: Copy systemd unit files
   copy:
-    src: redis-bootstrap
-    dest: /usr/local/bin
-    mode: 0750
-    owner: root
-    group: root
+    src: "{{ item }}"
+    dest: /etc/systemd/system/
+    mode: 0644
+  with_items:
+    - redis-server@.service
+    - redis-sentinel@.service
+  notify: reload systemd
 
-- name: Write Redis cluster bootstrap script config
+- meta: flush_handlers
+
+- name: Stop and disable the default Redis services
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items:
+    - redis-server
+    - redis-sentinel
+  register: disabled_redis_default_services
+
+- name: Delete log files created by the default Redis services
+  file:
+    name: "/var/log/redis/{{ item }}"
+    state: absent
+  with_items:
+    - redis-server.log
+    - redis-sentinel.log
+  when: disabled_redis_default_services.changed
+
+- name: Create Redis instance configuration files
   template:
-    src: redis-bootstrap.conf.j2
-    dest: /usr/local/etc/redis-bootstrap.conf
-    mode: 0600
-    owner: root
-    group: root
+    src: "{{ item[0] }}.conf.j2"
+    dest: "/etc/redis/{{ item[0] }}-{{ item[1] }}.conf"
+    owner: redis
+    group: redis
+    mode: 0640
+    force: no
+  with_nested:
+    - [ 'redis', 'sentinel' ]
+    - "{{ redis_instances.keys() }}"
+  register: redis_configuration
 
-- name: Create local directory
+- name: Create Redis runtime directory
   file:
-    dest: /local
+    name: /var/run/redis
     state: directory
-    owner: root
-    group: root
-    mode: 0750
+    owner: redis
+    group: redis
 
-# The redis group inside the Redis container uses gid 101
-- name: Create Redis cluster data directory
-  file:
-    dest: /local/redis
-    state: directory
-    owner: root
-    group: 101
-    mode: 0770
+- name: Start and enable Redis services
+  service:
+    name: "redis-{{ item[0] }}@{{ item[1] }}"
+    state: started
+    enabled: yes
+  with_nested:
+    - [ 'server', 'sentinel']
+    - "{{ redis_instances.keys() }}"
 
-- name: Run Redis cluster bootstrap script
-  command: /usr/local/bin/redis-bootstrap
+- name: Register Redis servers with Consul
+  consul:
+    service_name: redis
+    service_port: "{{ redis_instances[item].server_port }}"
+    tags: "{{ item }}"
+    script: "/usr/bin/redis-cli -p {{ redis_instances[item].server_port }} {{ '-a ' +  redis_instances[item].password if redis_instances[item].password else '' }} info | egrep role:master || return 2"
+    interval: 3s
+  with_items:
+    - "{{ redis_instances.keys() }}"
+
+- name: Register Redis sentinels with Consul
+  consul:
+    service_name: sentinel
+    service_port: "{{ redis_instances[item].sentinel_port }}"
+    tags: "{{ item }}"
+    script: "/usr/bin/redis-cli -p {{ redis_instances[item].sentinel_port }} {{ '-a ' + redis_instances[item].password if redis_instances[item].password else '' }} info | grep sentinel_masters:1"
+    interval: 10s
+  with_items:
+    - "{{ redis_instances.keys() }}"
+
+- name: Connect other Redis servers to first Redis server
+  redis:
+    command: slave
+    master_host: "{{ groups['redis_servers'] | first }}"
+    master_port: "{{ redis_instances[item].server_port }}"
+    login_port: "{{ redis_instances[item].server_port }}"
+    login_password: "{{ redis_pass if redis_pass is defined else omit  }}"
+  when: inventory_hostname != groups['redis_servers'] | first and redis_configuration.changed
+  with_items:
+    - "{{ redis_instances.keys() }}"

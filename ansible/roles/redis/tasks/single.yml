@@ -1,7 +1,4 @@
 ---
-- name: Install Redis server
-  apt: name=redis-server state=present
-
 - name: Configure Redis to listen on all interfaces
   lineinfile:
     dest: /etc/redis/redis.conf

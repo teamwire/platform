@@ -1,1 +1,6 @@
-redis_container: redis:3.2.11-alpine
+---
+redis_instances:
+  prod:
+    server_port: 6379
+    sentinel_port: 26379
+    password: "{{ redis_pass if redis_pass is defined else none }}"

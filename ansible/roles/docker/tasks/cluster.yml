@@ -1,26 +1,4 @@
 ---
-- name: Retrieve the registratior container
-  when: private_ip is defined and 'consul_servers' in groups
-  docker_image:
-    name: "{{ registrator_version }}"
-    state: present
-
-- name: Run registrator in clustered setups
-  when: private_ip is defined and 'consul_servers' in groups
-  docker_container:
-    name: registrator
-    image: "{{ registrator_version }}"
-    state: started
-    restart: yes
-    restart_policy: always
-    log_driver: syslog
-    log_opt:
-      tag: registrator
-      syslog-facility: local6
-    network_mode: host
-    volumes: "/var/run/docker.sock:/tmp/docker.sock"
-    command: "-ip {{ private_ip }} consul://localhost:8500"
-
 - name: Retrieve the hashi-ui container
   when: (private_ip is defined and 'consul_servers' in group_names)
   docker_image:

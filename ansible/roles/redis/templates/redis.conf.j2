@@ -1,0 +1,20 @@
+bind {{ private_ip }} 127.0.0.1 ::1
+
+port {{ redis_instances[item[1]].server_port }}
+
+daemonize yes
+pidfile /var/run/redis/redis-server-{{ item[1] }}.pid
+loglevel notice
+logfile /var/log/redis/redis-server-{{ item[1] }}.log
+
+save 900 1
+save 300 10
+save 60 10000
+
+dbfilename {{ item[1] }}.rdb
+dir /var/lib/redis
+
+{% if redis_instances[item[1]].password != "" %}
+requirepass {{ redis_instances[item[1]].password }}
+masterauth {{ redis_instances[item[1]].password }}
+{% endif %}
