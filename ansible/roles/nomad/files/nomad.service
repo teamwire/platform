@@ -1,6 +1,7 @@
 [Unit]
 Description=Nomad
 Documentation=https://nomadproject.io/docs/
+After=consul.service
 
 [Service]
 ExecStart=/usr/local/bin/nomad agent -config /etc/nomad
