@@ -1,0 +1,7 @@
+---
+mysql_databases:
+  prod:
+    dbname: "{{ teamwire_db_name | default('teamwire') }}"
+    username: "{{ teamwire_db_user | default('teamwire') }}"
+    password: "{{ teamwire_db_password }}"
+
