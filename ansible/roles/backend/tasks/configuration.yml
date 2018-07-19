@@ -66,7 +66,7 @@
 
 - name: Determine Redis host (Redis cluster)
   set_fact:
-    redis_host: teamwire.redis.service.consul
+    redis_host: prod.redis.service.consul
   when: redis_host is not defined and 'redis_servers' in groups
 
 - name: Determine Redis port (unless defined)
