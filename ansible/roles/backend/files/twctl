@@ -296,12 +296,7 @@ setup_containers_single() {
 setup_containers_cluster() {
 	setup_containers_base
 
-	# Patch the Nomad job
-	for IMAGE in $IMAGES ; do
-		sed -i -e 's|\('"$IMAGE"':\)[[:alnum:]-]*|\1'"$TAG"'|' "$NOMAD_JOB"
-	done
-	sed -i -e 's|\(VERSION=\)[[:alnum:]-]*|\1'"$TAG"'|' "$NOMAD_JOB"
-
+	ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
 	$NOMAD run "$NOMAD_JOB"
 }
 

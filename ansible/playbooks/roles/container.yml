@@ -1,11 +1,21 @@
 # This play only applies to the single server installation
 - hosts: local
   tasks:
-  - include: "../../roles/backend/tasks/single_{{ ansible_distribution }}.yml"
+  - include_tasks: "../../roles/backend/tasks/single_{{ ansible_distribution }}.yml"
 
 # This play only applies to cluster installations
-# It needs to run on the Nomad client agent nodes
-- name: Deploy the backend containers
+- name: Write cluster configuration
   hosts: consul_servers
+
   tasks:
-  - { include: ../../roles/backend/tasks/cluster.yml, when: "'backend_servers' in groups" }
+  - include_role:
+      name: ../../roles/backend
+      tasks_from: cluster
+
+- name: Write Nomad job
+  hosts: backend_servers
+
+  tasks:
+  - include_role:
+      name: ../../roles/nomad
+      tasks_from: job
