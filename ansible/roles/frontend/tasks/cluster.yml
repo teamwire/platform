@@ -21,7 +21,10 @@
     url: https://releases.hashicorp.com/consul-template/{{consul_template_version}}/consul-template_{{consul_template_version}}_linux_amd64.zip
     dest: /var/cache/downloads/consul-template_{{consul_template_version}}_linux_amd64.zip
     checksum: "sha256:{{consul_template_checksum}}"
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: consul_template_downloaded
+  environment:
+    https_proxy: "{{ http_proxy }}"
 
 - name: Install the Consul Template binary
   unarchive:
