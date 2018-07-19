@@ -113,23 +113,24 @@
   - mlocate # sucks IO heavily
 
 # Configure system-wide proxy
-- name: Enable system-wide proxy (HTTP)
-  lineinfile: dest=/etc/environment line="http_proxy={{http_proxy}}"
-  when: http_proxy is defined
-
-- name: Disable system-wide proxy when no proxy is configured (HTTP)
-  lineinfile: dest=/etc/environment regexp="^http_proxy=" state=absent
-  when: http_proxy is not defined
-
-- name: Enable system-wide proxy (HTTPS)
-  lineinfile: dest=/etc/environment line="https_proxy={{http_proxy}}"
-  when: http_proxy is defined
-
-- name: Disable system-wide proxy when no proxy is configured (HTTPS)
+- name: Enable system-wide proxy
   lineinfile:
     dest: /etc/environment
-    regexp: ^https_proxy=
+    line: "{{ item }}={{ http_proxy }}"
+  with_items:
+  - http_proxy
+  - https_proxy
+  when: http_proxy is defined
+
+- name: Disable system-wide proxy when no proxy is configured
+  lineinfile:
+    dest: /etc/environment
+    regexp: "^{{ item }}="
     state: absent
+  with_items:
+  - http_proxy
+  - https_proxy
+  - no_proxy
   when: http_proxy is not defined
 
 - name: Don't access localhost and local services via proxy
