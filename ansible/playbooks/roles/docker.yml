@@ -4,6 +4,6 @@
   - role: ../../roles/docker
 
 - name: Deploy Docker (non-registry hosts)
-  hosts: redis_servers:backend_servers:local:!docker_registry
+  hosts: backend_servers:local:!docker_registry
   roles:
   - role: ../../roles/docker
