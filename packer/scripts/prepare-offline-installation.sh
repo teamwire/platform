@@ -19,6 +19,7 @@ nginx-light
 python-redis
 redis-tools
 redis-server
+redis-sentinel
 nfs-kernel-server
 rpcbind
 glusterfs-server
