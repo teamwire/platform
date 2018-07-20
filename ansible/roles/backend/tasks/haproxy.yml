@@ -1,6 +1,10 @@
 ---
 - name: Install HAProxy
-  apt: pkg=haproxy
+  apt:
+    pkg: "{{ item }}"
+  with_items:
+    - haproxy
+    - hatop
 
 - name: Start and enable HAProxy service
   service: name=haproxy state=started enabled=true
