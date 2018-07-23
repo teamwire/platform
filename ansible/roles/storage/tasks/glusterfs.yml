@@ -6,20 +6,25 @@
     - glusterfs-client
 
 - name: Create GlusterFS brick
-  file: path={{ gluster_brick_dir }} state=directory
+  file:
+    path: "{{ gluster_brick_dir }}"
+    state: directory
 
 - name: Start GlusterFS server
-  service: name=glusterfs-server state=started enabled=true
+  service:
+    name: glusterfs-server
+    state: started
+    enabled: true
 
-- name: Configure peers from the first host
-  command: gluster peer probe {{ item }}
-  with_items: '{{groups[glusterfs_peer_group]}}'
-  when: inventory_hostname == groups[glusterfs_peer_group][0]
-  ignore_errors: yes
-
-- name: Create {{gluster_volume}} gluster_volume
-  shell: gluster volume info {{gluster_volume}} || (gluster volume create {{gluster_volume}} replica {{ groups[glusterfs_peer_group] | count }} transport tcp {{ groups[glusterfs_peer_group] | join(':' + gluster_brick_dir + ' ') }}:{{gluster_brick_dir}} force && gluster volume start {{gluster_volume}})
-  when: inventory_hostname == groups[glusterfs_peer_group][0]
+- name: Create Gluster volume "{{gluster_volume}}"
+  gluster_volume:
+    name: "{{ gluster_volume }}"
+    bricks: "{{ gluster_brick_dir }}"
+    cluster: "{{ groups[glusterfs_peer_group] }}"
+    replicas: "{{ groups[glusterfs_peer_group] | count }}"
+    force: true
+    state: present
+  run_once: true
 
 - name: Mount GlusterFS from localhost
   mount:
