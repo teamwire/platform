@@ -61,9 +61,8 @@
 - name: Vault systemd config
   copy: src=vault.service dest=/etc/systemd/system/vault.service
   notify:
-    - reload systemd
     - Restart Vault
 
 - name: Enable the Vault service
-  service: name=vault state=started enabled=yes
+  service: name=vault state=started enabled=yes daemon_reload=yes
 

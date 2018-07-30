@@ -35,8 +35,7 @@
 - name: Nomad systemd config
   copy: src=nomad.service dest=/etc/systemd/system/nomad.service
   notify:
-    - reload systemd
     - Restart Nomad agent
 
 - name: Enable the Nomad service
-  service: name=nomad state=started enabled=yes
+  service: name=nomad state=started enabled=yes daemon_reload=yes
