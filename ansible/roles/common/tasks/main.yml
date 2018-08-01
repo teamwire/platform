@@ -12,14 +12,18 @@
   when: http_proxy is not defined
   file: dest=/etc/apt/apt.conf.d/01proxy state=absent
 
+# Installing dnsmasq is a chicken/egg problem: the apt cache must be updated
+# before dnsmasq can be installed, but that is only possible with a working
+# DNS configuration. Hence we write a temporary resolv.conf that gets
+# overwritten as soon as dnsmasq is configured.
+- name: Check if dnsmasq is already installed (cluster only)
+  stat: path=/etc/dnsmasq.d/20-upstream
+  register: dnsmasq_configuration
+  when: '"consul_servers" in groups'
+
 - name: Configure DNS servers
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
-  when: dns_servers is defined and "consul_servers" not in groups
-
-  # Clusters: set up DNS with local dnsmasq
-- name: Install dnsmasq (cluster only)
-  include_tasks: dnsmasq.yml
-  when: config_done is defined and "consul_servers" in groups
+  when: dns_servers is defined and ("consul_servers" not in groups or not dnsmasq_configuration.stat.exists)
 
 - name: Ensure backports are enabled (Debian 8)
   apt_repository:
@@ -42,6 +46,11 @@
 - name: apt-get update
   apt: update_cache=yes
   when: not offline_mode.stat.exists
+
+  # Clusters: set up DNS with local dnsmasq
+- name: Install dnsmasq (cluster only)
+  include_tasks: dnsmasq.yml
+  when: config_done is defined and "consul_servers" in groups
 
 # do security upgrades
 - name: Install unattended-upgrades
