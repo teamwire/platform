@@ -24,13 +24,14 @@
     - redis-sentinel
   register: disabled_redis_default_services
 
-- name: Delete log files created by the default Redis services
+- name: Delete files created by the default Redis services
   file:
-    name: "/var/log/redis/{{ item }}"
+    name: "{{ item }}"
     state: absent
   with_items:
-    - redis-server.log
-    - redis-sentinel.log
+    - /var/log/redis/redis-server.log
+    - /var/log/redis/redis-sentinel.log
+    - /var/lib/redis/dump.rdb
   when: disabled_redis_default_services.changed
 
 - name: Create Redis instance configuration files
