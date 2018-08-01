@@ -6,7 +6,7 @@ pidfile /var/run/redis/redis-sentinel-{{ item[1] }}.pid
 loglevel notice
 logfile /var/log/redis/redis-sentinel-{{ item[1] }}.log
 
-sentinel monitor {{ item[1] }} {{ groups['redis_servers'] | first }} {{ redis_instances[item[1]].server_port }} {{ (groups['redis_servers'] | length) - 1 }}
+sentinel monitor {{ item[1] }} {{ hostvars[groups['redis_servers'] | first].private_ip }} {{ redis_instances[item[1]].server_port }} {{ (groups['redis_servers'] | length) - 1 }}
 sentinel down-after-milliseconds {{ item[1] }} 5000
 sentinel failover-timeout {{ item[1] }} 30000
 
