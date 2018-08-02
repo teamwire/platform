@@ -89,7 +89,7 @@
     master_host: "{{ groups['redis_servers'] | first }}"
     master_port: "{{ redis_instances[item].server_port }}"
     login_port: "{{ redis_instances[item].server_port }}"
-    login_password: "{{ redis_pass if redis_pass is defined else omit  }}"
+    login_password: "{{ redis_instances[item].password if redis_instances[item].password else omit }}"
   when: inventory_hostname != groups['redis_servers'] | first and redis_configuration.changed
   with_items:
     - "{{ redis_instances.keys() }}"
