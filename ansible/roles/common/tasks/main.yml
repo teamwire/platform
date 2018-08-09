@@ -102,6 +102,7 @@
   - mlock
   - libcap2-bin
   - curl
+  - pwgen
 
 - name: Install pip
   apt: name={{item}} state=present
