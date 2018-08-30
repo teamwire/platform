@@ -37,3 +37,4 @@
 - include: roles/redis_servers.yml
 - include: roles/frontend.yml
 - include: roles/load_balancers.yml
+- include: roles/monitoring.yml

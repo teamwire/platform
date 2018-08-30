@@ -1,0 +1,30 @@
+---
+- name: Determine MariaDB host (local)
+  set_fact:
+    monitoring_db_host: localhost
+  when: groups['all'] | length() == 1
+  
+- name: Determine MariaDB host (Single MariaDB server)
+  set_fact:
+    monitoring_db_host: "{{hostvars[groups['database_servers'][0]].private_ip}}"
+  when: "'database_servers' in groups and groups['database_servers'] | length == 1"
+
+- name: Determine MariaDB host (Galera cluster)
+  set_fact:
+    monitoring_db_host: "{{hostvars[groups['database_servers'][0]].private_ip}}"
+  when: "'database_servers' in groups and groups['database_servers'] | length > 1"
+
+- name: Determine MariaDB port (local)
+  set_fact:
+    monitoring_db_port: 3306
+  when: groups['all'] | length() == 1
+
+- name: Determine MariaDB port (Single MariaDB server)
+  set_fact:
+    monitoring_db_port: 3306
+  when: "'database_servers' in groups and groups['database_servers'] | length == 1"
+
+- name: Determine MariaDB port (Galera cluster)
+  set_fact:
+    monitoring_db_port: 3306
+  when: "'database_servers' in groups and groups['database_servers'] | length > 1"

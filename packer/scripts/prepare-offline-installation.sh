@@ -38,6 +38,22 @@ python-docker
 mlock
 libcap2-bin
 curl
+icinga2
+icinga2-ido-mysql
+icingacli
+icingaweb2
+icingaweb2-module-monitoring
+monitoring-plugins
+dnsutils
+apache2
+libapache2-mod-php
+php${PHP_VERSION}
+php${PHP_VERSION}-mysql
+php${PHP_VERSION}-curl
+php${PHP_VERSION}-imagick
+php${PHP_VERSION}-intl
+php${PHP_VERSION}-gd
+php${PHP_VERSION}-xml
 "
 
 DOCKER_IMAGES="
@@ -51,6 +67,7 @@ CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansibl
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
+PHP_VERSION=$(awk '/^php_version:/ { print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="

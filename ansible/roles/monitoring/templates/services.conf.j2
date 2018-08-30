@@ -1,0 +1,395 @@
+/*
+ * Service apply rules.
+ *
+ * Tip: Use `icinga2 object list --type Service` to
+ * list all service objects after running
+ * configuration validation (`icinga2 daemon -C`).
+ */
+
+apply Service "check-ping" {
+  import "generic-service"
+  check_command = "ping4"
+  assign where host.address
+}
+
+apply Service "check-ssh" {
+  import "generic-service"
+  check_command = "ssh"
+  assign where (host.address || host.address6) && host.vars.os == "Linux"
+}
+
+apply Service for (disk => config in host.vars.disks) {
+  import "generic-service"
+  check_command = "disk"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.client_endpoint
+  vars += config
+}
+
+apply Service "check-load" {
+  import "generic-service"
+  check_command = "load"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux" && host.vars.client_endpoint
+}
+
+apply Service "check-memory" {
+  import "generic-service"
+  check_command = "memory"
+
+  vars.mem_used = true
+  vars.mem_cache = true
+  vars.mem_warning = 85
+  vars.mem_critical = 90
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux" && host.vars.client_endpoint
+}
+
+apply Service "check-procs" {
+  import "generic-service"
+  check_command = "procs"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux" && host.vars.client_endpoint
+}
+
+apply Service "check-swap" {
+  import "generic-service"
+  check_command = "swap"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux" && host.vars.client_endpoint
+}
+
+apply Service "check-ntp" {
+  import "generic-service"
+  check_command = "ntp_time"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux" && host.vars.client_endpoint
+}
+
+apply Service "check-mail-queue" {
+  import "generic-service"
+  check_command = "mailq"
+
+  vars.mailq_warning = 50
+  vars.mailq_critical = 100
+  vars.mailq_servertype = "postfix"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux" && host.vars.client_endpoint
+}
+
+apply Service for (http_vhost => config in host.vars.http_vhosts) {
+  import "generic-service"
+  check_command = "http"
+  vars += config
+}
+
+apply Service "check-icinga" {
+  import "generic-service"
+  check_command = "icinga"
+
+  assign where host.name == NodeName
+}
+
+apply Service "check-consul-health" {
+  import "generic-service"
+  check_command = "http"
+
+  vars.http_port = 8500
+  vars.http_uri = "/v1/status/leader"
+  // a healthy Consul returns the address of the leader, including the port number
+  vars.http_string = "8300"
+  vars.address = "127.0.0.1"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "consul_servers" in host.vars.roles
+}
+
+apply Service "check-nomad-health" {
+  import "generic-service"
+  check_command = "http"
+
+  vars.http_port = 4646
+  vars.http_uri = "/v1/status/leader"
+  // a healthy Nomad returns the address of the leader, including the port number
+  vars.http_string = "4647"
+  vars.address = "127.0.0.1"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "consul_servers" in host.vars.roles
+}
+
+apply Service "check-vault-seal-status" {
+  import "generic-service"
+  check_command = "http"
+
+  vars.http_port = 8200
+  vars.http_uri = "/v1/status/health"
+  // Check that Vault is running and is sealed
+  vars.http_expect = "503"
+  vars.address = "127.0.0.1"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "consul_servers" in host.vars.roles
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
+
+
+{% for key, value in redis_instances.iteritems() %}
+apply Service "check-redis-{{ key }}" {
+  import "generic-service"
+  check_command = "redis-simple"
+
+{% if redis_pass is defined %}
+  vars.redis_password = "{{ value.password }}"
+{% endif %}
+  vars.redis_wmem = 200
+  vars.redis_cmem = 250
+  vars.redis_port = {{ value.server_port }}
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "redis_servers" in host.vars.roles
+}
+{% endfor %}
+
+{% for instance in redis_instances %}
+apply Service "check-redis-{{ instance }}-dns" {
+  import "generic-service"
+  check_command = "dns-no-defaults"
+
+  vars.dns_lookup = "{{ instance }}.redis.service.consul"
+  vars.dns_server = "127.0.0.1"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "backend_servers" in host.vars.roles && host.vars.client_endpoint
+}
+
+{% endfor %}
+
+{% if 'database_servers' in groups %}
+apply Service "check-mysql" {
+  import "generic-service"
+  check_command = "mysql"
+  command_endpoint = host.vars.client_endpoint
+
+  vars.mysql_username = "clustercheck"
+  vars.mysql_password = "{{ clustercheck_password }}"
+  vars.mysql_hostname = "localhost"
+
+  assign where "database_servers" in host.vars.roles && host.vars.client_endpoint
+}
+{% endif %}
+
+{% if 'frontend_servers' in groups or groups['all'] | length() == 1 and ssl_certfile is defined and ssl_keyfile is defined %}
+apply Service "check-ssl-cert" {
+  import "generic-service"
+  check_command = "ssl"
+
+  vars.ssl_port = 443
+  vars.ssl_cert_valid_days_warn = 30
+  vars.ssl_cert_valid_days_critical = 10
+
+  assign where "frontend_servers" in host.vars.roles
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
+{% endif %}
+
+{% if 'frontend_servers' in groups %}
+apply Service "check-process-consul-template" {
+ import "generic-service"
+  check_command = "procs"
+
+  vars.procs_command = "consul-template"
+  vars.procs_critical = "1:"
+  command_endpoint = host.vars.client_endpoint
+  assign where "frontend_servers" in host.vars.roles
+}
+{% endif %}
+
+{% if groups['all'] | length() > 1 %}
+apply Service "check-process-dnsmasq" {
+ import "generic-service"
+  check_command = "procs"
+
+  vars.procs_command = "dnsmasq"
+  vars.procs_critical = "1:"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+{% endif %}
+
+{% if 'load_balancers' in groups %}
+apply Service "check-process-keepalived" {
+ import "generic-service"
+  check_command = "procs"
+
+  vars.procs_command = "keepalived"
+  vars.procs_critical = "1:"
+  command_endpoint = host.vars.client_endpoint
+  assign where "load_balancers" in host.vars.roles
+}
+{% endif %}
+
+{% if 'backend_servers' in groups %}
+apply Service "check-haproxy" {
+  import "generic-service"
+  check_command = "haproxy"
+  vars.haproxy_socket = "/var/run/haproxy/admin.sock"
+  vars.haproxy_default = "C<d,1,1,75,90>"
+  command_endpoint = host.vars.client_endpoint
+  assign where "backend_servers" in host.vars.roles
+}
+{% endif %}
+
+
+{% if apns_certificate is defined %}
+apply Service "check-apns" {
+  import "generic-service"
+  check_command = "ssl_cert"
+
+  vars.ssl_cert_file = "/data/certs/apns/aps-production.pem"
+  vars.ssl_cert_address = "localhost"
+  vars.ssl_cert_warn = "30"
+  vars.ssl_cert_critical = "10"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "backend_servers" in host.vars.roles
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
+{% endif %}
+
+{% if apns_certificate_2 is defined %}
+apply Service "check-apns-2" {
+  import "generic-service"
+  check_command = "ssl_cert"
+
+  vars.ssl_cert_file = "/data/certs/apns/{{ apns_certificate_2 | basename }}"
+  vars.ssl_cert_address = "localhost"
+  vars.ssl_cert_warn = "30"
+  vars.ssl_cert_critical = "10"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "backend_servers" in host.vars.roles
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
+{% endif %}
+
+apply Service "check-container-docker-registry" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "docker-registry"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "docker_registry" in host.vars.roles
+}
+
+{% if groups['all'] | length() == 1 %}
+apply Service "check-container-backend" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_backend"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-worker" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_worker"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-beat" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_beat"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-notification-server" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_notification_server"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-screenshot-server" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_screenshot_server"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-nginx-backend" {
+  import "generic-service"
+  check_command = "http"
+  vars.http_uri = "/health"
+  vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-nginx-screenshot-server" {
+  import "generic-service"
+  check_command = "http"
+  vars.http_uri = "/notifications"
+  vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-nginx-notification-server" {
+  import "generic-service"
+  check_command = "http"
+  vars.http_uri = "/web-screenshot/health"
+  vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-mysql" {
+import "generic-service"
+check_command = "mysql"
+
+vars.mysql_username = "{{ monitoring_db_user }}"
+vars.mysql_password = "{{ monitoring_db_password }}"
+
+command_endpoint = host.vars.client_endpoint
+assign where host.vars.os == "Linux"
+}
+
+{% endif %}

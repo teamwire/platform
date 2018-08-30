@@ -1,0 +1,239 @@
+---
+# Redis instance values are required for dynamic redis monitoring
+- include_vars: ../../roles/redis/defaults/main.yml
+
+- name: Install icinga2 Web UI and tools
+  apt: name={{item}} state=present
+  with_items:
+  - icinga2-ido-mysql
+  - icingaweb2
+  - icingacli
+  - icingaweb2-module-monitoring
+  - python-mysqldb
+  - mysql-client
+
+- name: Configure Icinga MySQL adapter
+  template: src=ido-mysql-conf.j2 dest=/etc/icinga2/features-available/ido-mysql.conf
+  notify: restart icinga2
+
+- name: Create Icinga Web 2 log directory
+  file:
+    dest: /var/log/icingaweb2
+    state: directory
+    mode: 0755
+    group: icingaweb2
+
+- name: Activate icinga2 features
+  icinga2_feature:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - ido-mysql
+    - command
+  notify: restart icinga2
+
+- name: Install icinga2 Web UI PHP/Apache requirements
+  apt: name={{item}} state=present
+  with_items:
+  - apache2
+  - libapache2-mod-php
+  - php{{ php_version }}
+  - php{{ php_version }}-mysql
+  - php{{ php_version }}-curl
+  - php{{ php_version }}-imagick
+  - php{{ php_version }}-intl
+  - php{{ php_version }}-gd
+  - php{{ php_version }}-xml
+
+- name: Set Apache listening port
+  lineinfile:
+    path: /etc/apache2/ports.conf
+    regexp: '^Listen 80'
+    line: 'Listen 8000'
+  notify: restart apache
+
+- name: Disable MPM event module
+  apache2_module:
+    name: mpm_event
+    state: absent
+    force: yes
+    ignore_configcheck: true
+  notify: restart apache
+
+- name: Add user www-data to the icingaweb2 group
+  user:
+    name: www-data
+    groups: icingaweb2
+
+- name: Enable PHP module for Apache
+  apache2_module:
+    name: "php{{ php_version }}"
+    state: present
+    force: yes
+    ignore_configcheck: true
+  notify: restart apache
+
+- name: Find out timezone
+  slurp:
+     src: /etc/timezone
+  register: etc_timezone
+
+- name: Set default timezone in php.ini
+  replace:
+    dest: /etc/php/{{ php_version }}/apache2/php.ini
+    regexp: '^;date.timezone ='
+    replace: 'date.timezone = "{{ etc_timezone["content"] | b64decode | regex_replace("\n") }}"'
+
+- name: Ensure apache rewrite module is enabled
+  apache2_module:
+    name: rewrite
+    state: present
+  notify: restart apache
+
+- name: Ensure Apache configuration for Icingaweb2 UI exists
+  file:
+    src: /etc/apache2/conf-available/icingaweb2.conf
+    dest: /etc/apache2/conf-enabled/icingaweb2.conf
+    state: link
+  notify: restart apache
+
+- name: Configure Icinga salt
+  lineinfile:
+    dest: /etc/icinga2/constants.conf
+    regexp: "^const TicketSalt = \"\"$"
+    line: "const TicketSalt = \"{{ icinga_salt }}\""
+    backrefs: yes
+  notify: restart icinga2
+
+- name: Create Icinga PKI
+  command: /usr/sbin/icinga2 pki new-ca
+  register: icingia_pki
+  args:
+    creates: /var/lib/icinga2/ca/ca.*
+
+- name: Create Icinga certificate
+  command: /usr/sbin/icinga2 pki new-cert --cn {{ inventory_hostname }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --csr /etc/icinga2/pki/{{ inventory_hostname }}.csr --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
+  register: icinga_cert
+  args:
+   creates: /etc/icinga2/pki/{{ inventory_hostname }}.*
+
+- name: Sign Icinga CSR
+  when: icinga_cert.changed
+  command: /usr/sbin/icinga2 pki sign-csr --csr /etc/icinga2/pki/{{ inventory_hostname }}.csr --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
+
+- name: Copy Icinga CA certificate
+  command: cp -vR --preserve=all /var/lib/icinga2/ca/ca.crt /etc/icinga2/pki
+  when: icingia_pki.changed
+  args:
+    creates: /etc/icinga2/pki/ca.crt
+
+- name: Create Icinga databases
+  mysql_db:
+    name: "{{ item }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  with_items:
+    - "{{ monitoring_db_name }}"
+    - "{{ monitoring_db_web_name }}"
+  register: database_created
+  when: mysql_root_password is defined
+  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
+
+- name: Create Icinga database users and assign privileges
+  mysql_user:
+    name: "{{ item.user }}"
+    password: "{{ item.password }}"
+    priv: "{{ item.db }}.*:ALL"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    host: "%"
+  with_items:
+    - { user: '{{monitoring_db_user}}', password: '{{monitoring_db_password}}', db: '{{monitoring_db_name}}' }
+    - { user: '{{monitoring_db_web_user}}', password: '{{monitoring_db_web_password}}', db: '{{monitoring_db_web_name}}' }
+  when: mysql_root_password is defined
+  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
+
+- name: Fetch the Icinga DB schemas
+  fetch: src="{{ item.src }}" dest="{{ item.dest }}" flat=yes
+  with_items:
+    - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: 'icinga2.sql'}
+    - { src: '/usr/share/icingaweb2/etc/schema/mysql.schema.sql', dest: 'icingaweb2.sql'}
+  when: database_created.changed
+
+- name: Copy the Icinga DB schemas to the database server
+  copy: src="{{ item.src }}" dest="{{ item.dest }}"
+  with_items:
+    - { src: 'icinga2.sql', dest: '/tmp/icinga2.sql'}
+    - { src: 'icingaweb2.sql', dest: '/tmp/icingaweb2.sql'}
+  when: database_created.changed
+  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
+
+- name: Import Icinga databases
+  mysql_db:
+    name: "{{ item.db }}"
+    state: import
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    target: "{{ item.target }}"
+  with_items:
+    - { db: '{{ monitoring_db_name }}', target: '/tmp/icinga2.sql'}
+    - { db: '{{ monitoring_db_web_name }}', target: '/tmp/icingaweb2.sql'}
+  when: database_created.changed
+  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
+
+- name: Delete the Icinga DB schemas from the database server
+  file: dest="{{ item }}" state=absent
+  with_items:
+    - "/tmp/icinga2.sql"
+    - "/tmp/icingaweb2.sql"
+  when: database_created.changed
+  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
+
+- name: Encrypt Icinga web admin user password
+  command: 'openssl passwd -1 "{{ icinga_admin_password }}"'
+  register: icinga_admin_password
+  when: database_created.changed
+
+- name: Add admin user to Icinga web database
+  command: >
+    mysql --user='{{ monitoring_db_web_user }}' --password='{{ monitoring_db_web_password }}' --host='{{ monitoring_db_host }}' --port='{{ monitoring_db_port }}' '{{ monitoring_db_web_name }}'
+    --execute="INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('admin', 1, '{{ icinga_admin_password.stdout }}');"
+  when: database_created.changed
+
+- name: Generate Icinga configuration files
+  template: src={{ item }}.j2 dest=/etc/icinga2/conf.d/{{ item }}
+  notify: restart icinga2
+  with_items:
+    - api-users.conf
+    - users.conf
+    - groups.conf
+    - services.conf
+    - hosts.conf
+
+- name: Enable monitoring module
+  command: /usr/bin/icingacli module enable monitoring
+
+- name: Ensure monitoring module directory exists
+  file:
+    path: "/etc/icingaweb2/modules/monitoring"
+    owner: www-data
+    group: icingaweb2
+    mode: 0755
+    state: directory
+
+- name: Generate icingaweb2 configuration files
+  template: src={{ item.src }} dest={{ item.dest }} mode=0664
+  with_items:
+    - { src: 'config.ini.j2', dest: '/etc/icingaweb2/config.ini' }
+    - { src: 'resources.ini.j2', dest: '/etc/icingaweb2/resources.ini' }
+    - { src: 'authentication.ini.j2', dest: '/etc/icingaweb2/authentication.ini' }
+    - { src: 'roles.ini.j2', dest: '/etc/icingaweb2/roles.ini' }
+    - { src: 'module-config.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/config.ini' }
+    - { src: 'backends.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/backends.ini' }
+    - { src: 'commandtransports.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/commandtransports.ini' }
+
+- name: Configure Icinga2 zones
+  template: src=zones.conf.j2 dest=/etc/icinga2/zones.conf
+  notify: restart icinga2

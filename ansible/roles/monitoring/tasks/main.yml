@@ -1,0 +1,53 @@
+---
+- name: Install Icinga2 and monitoring plugins
+  apt: name={{ item }} state=present
+  with_items:
+    - icinga2
+    - monitoring-plugins
+    - dnsutils
+
+- Name: Open port for connections to Icinga2 client
+  ufw: rule=allow port=5665 proto=tcp
+
+- name: Enable and start the icinga2 daemon
+  service: name=icinga2 state=started enabled=true
+
+- name: Install additional icinga plugins
+  copy:
+    src: "{{ item }}"
+    dest: /usr/lib/nagios/plugins
+    mode: 0755
+  with_fileglob:
+    - "files/checks/*"
+
+- name: Configure Icinga2 commands
+  copy: src=commands.conf dest=/etc/icinga2/conf.d
+  notify: restart icinga2
+
+- name: Set sudo escalation for icinga plugins
+  lineinfile:
+    dest: /etc/sudoers
+    line: "nagios ALL=(root) NOPASSWD: /usr/lib/nagios/plugins/"
+    state: present
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: Configure Icinga NodeName
+  lineinfile:
+    dest: /etc/icinga2/constants.conf
+    regexp: "^//const NodeName = \"localhost\"$"
+    line: "const NodeName = \"{{ inventory_hostname }}\""
+    backrefs: yes
+  notify: restart icinga2
+
+- name: Fix Icinga PKI directory permissions
+  file: dest=/etc/icinga2/pki owner=nagios group=nagios mode=0750
+
+- include: "database-configuration.yml"
+  when: mysql_root_password is defined
+
+- include: "master.yml"
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
+
+- include: "client.yml"
+
+
