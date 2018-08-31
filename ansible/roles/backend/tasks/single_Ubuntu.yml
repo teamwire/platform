@@ -83,6 +83,7 @@
       BLOBDIR: /assets
       APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid|default('com.teamwire.messenger') }}"
       APNS_CERT_2: "{% if apns_certificate_2 is defined %}/app/certs/apns/{{ apns_certificate_2 | basename }},push_production,{{ apns_appid_2 }}{% endif %}"
+      APNS_CERT_3: "{% if apns_certificate_3 is defined %}/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}{% endif %}"
       GCM_API_KEY: "{{ gcm_api_key }}"
       WNS_CLIENT_ID:  "{{ wns_client_id|default() }}"
       WNS_CLIENT_SECRET:  "{{ wns_client_secret|default() }}"
