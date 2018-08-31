@@ -6,7 +6,7 @@
     - monitoring-plugins
     - dnsutils
 
-- Name: Open port for connections to Icinga2 client
+- name: Open port for connections to Icinga2 client
   ufw: rule=allow port=5665 proto=tcp
 
 - name: Enable and start the icinga2 daemon
