@@ -1,10 +1,10 @@
 {% for host in groups.all %}
-object Host "{{ host }}" {
+object Host "{{ host if host != "localhost" else external_hostname }}" {
 
   import "generic-host"
 
   address = "{{ hostvars[host].private_ip if groups['all'] | length() > 1 else '127.0.0.1' }}"
-  vars.client_endpoint = name
+  vars.client_endpoint = {{ 'name' if host != 'localhost' else '"localhost"' }}
   vars.os = "Linux"
   vars.roles = [{% for group in hostvars[host].group_names %}"{{ group }}"{% if not loop.last %}, {% endif %}{% endfor %}]
 
