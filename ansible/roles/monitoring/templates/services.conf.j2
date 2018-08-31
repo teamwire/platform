@@ -284,6 +284,24 @@ apply Service "check-apns-2" {
 }
 {% endif %}
 
+{% if apns_certificate_3 is defined %}
+apply Service "check-apns-3" {
+  import "generic-service"
+  check_command = "ssl_cert"
+
+  vars.ssl_cert_file = "/data/certs/apns/{{ apns_certificate_3 | basename }}"
+  vars.ssl_cert_address = "localhost"
+  vars.ssl_cert_warn = "30"
+  vars.ssl_cert_critical = "10"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "backend_servers" in host.vars.roles
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
+{% endif %}
+
 apply Service "check-container-docker-registry" {
   import "generic-service"
   check_command = "check_docker"
