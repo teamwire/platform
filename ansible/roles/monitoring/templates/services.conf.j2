@@ -364,7 +364,7 @@ apply Service "check-nginx-backend" {
 apply Service "check-nginx-screenshot-server" {
   import "generic-service"
   check_command = "http"
-  vars.http_uri = "/notifications"
+  vars.http_uri = "/web-screenshot/health"
   vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
 
   command_endpoint = host.vars.client_endpoint
@@ -374,7 +374,7 @@ apply Service "check-nginx-screenshot-server" {
 apply Service "check-nginx-notification-server" {
   import "generic-service"
   check_command = "http"
-  vars.http_uri = "/web-screenshot/health"
+  vars.http_uri = "/notifications"
   vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
 
   command_endpoint = host.vars.client_endpoint
