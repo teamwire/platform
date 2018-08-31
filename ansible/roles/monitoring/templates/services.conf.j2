@@ -184,7 +184,7 @@ apply Service "check-mysql" {
 }
 {% endif %}
 
-{% if 'frontend_servers' in groups or groups['all'] | length() == 1 and ssl_certfile is defined and ssl_keyfile is defined %}
+{% if ('frontend_servers' in groups or groups['all'] | length() == 1) and ssl_certfile is defined and ssl_keyfile is defined %}
 apply Service "check-ssl-cert" {
   import "generic-service"
   check_command = "ssl"
