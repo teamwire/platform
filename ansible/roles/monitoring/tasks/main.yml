@@ -4,6 +4,8 @@
   with_items:
     - icinga2
     - monitoring-plugins
+    - nagios-plugins-contrib
+    - libredis-perl
     - dnsutils
 
 - name: Open port for connections to Icinga2 client

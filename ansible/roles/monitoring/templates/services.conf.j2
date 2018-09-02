@@ -138,17 +138,15 @@ apply Service "check-vault-seal-status" {
 {% endif %}
 }
 
-
 {% for key, value in redis_instances.iteritems() %}
 apply Service "check-redis-{{ key }}" {
   import "generic-service"
-  check_command = "redis-simple"
+  check_command = "check_redis"
 
 {% if redis_pass is defined %}
   vars.redis_password = "{{ value.password }}"
 {% endif %}
-  vars.redis_wmem = 200
-  vars.redis_cmem = 250
+
   vars.redis_port = {{ value.server_port }}
 
   command_endpoint = host.vars.client_endpoint
@@ -167,7 +165,18 @@ apply Service "check-redis-{{ instance }}-dns" {
   command_endpoint = host.vars.client_endpoint
   assign where "backend_servers" in host.vars.roles && host.vars.client_endpoint
 }
+{% endfor %}
 
+{% for key, value in redis_instances.iteritems() %}
+apply Service "check-redis-sentinel-{{ key }}" {
+  import "generic-service"
+  check_command = "check_redis"
+
+  vars.redis_port = {{ value.sentinel_port }}
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "redis_servers" in host.vars.roles
+}
 {% endfor %}
 
 {% if 'database_servers' in groups %}
