@@ -411,3 +411,13 @@ assign where host.vars.os == "Linux"
 }
 
 {% endif %}
+
+apply Service "check-process-rsyslogd" {
+ import "generic-service"
+  check_command = "procs"
+
+  vars.procs_command = "rsyslogd"
+  vars.procs_critical = "1:"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
