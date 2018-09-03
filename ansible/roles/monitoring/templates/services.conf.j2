@@ -261,10 +261,9 @@ apply Service "check-apns" {
   import "generic-service"
   check_command = "ssl_cert"
 
-  vars.ssl_cert_file = "/data/certs/apns/aps-production.pem"
-  vars.ssl_cert_address = "localhost"
-  vars.ssl_cert_warn = "30"
-  vars.ssl_cert_critical = "10"
+  vars.cert = "/data/certs/apns/aps-production.pem"
+  vars.warn = "2592000"
+  vars.crit = "864000"
 
   command_endpoint = host.vars.client_endpoint
   assign where "backend_servers" in host.vars.roles
@@ -279,10 +278,9 @@ apply Service "check-apns-2" {
   import "generic-service"
   check_command = "ssl_cert"
 
-  vars.ssl_cert_file = "/data/certs/apns/{{ apns_certificate_2 | basename }}"
-  vars.ssl_cert_address = "localhost"
-  vars.ssl_cert_warn = "30"
-  vars.ssl_cert_critical = "10"
+  vars.cert = "/data/certs/apns/{{ apns_certificate_2 | basename }}"
+  vars.warn = "2592000"
+  vars.crit = "864000"
 
   command_endpoint = host.vars.client_endpoint
   assign where "backend_servers" in host.vars.roles
@@ -297,10 +295,9 @@ apply Service "check-apns-3" {
   import "generic-service"
   check_command = "ssl_cert"
 
-  vars.ssl_cert_file = "/data/certs/apns/{{ apns_certificate_3 | basename }}"
-  vars.ssl_cert_address = "localhost"
-  vars.ssl_cert_warn = "30"
-  vars.ssl_cert_critical = "10"
+  vars.cert = "/data/certs/apns/{{ apns_certificate_3 | basename }}"
+  vars.warn = "2592000"
+  vars.crit = "864000"
 
   command_endpoint = host.vars.client_endpoint
   assign where "backend_servers" in host.vars.roles
