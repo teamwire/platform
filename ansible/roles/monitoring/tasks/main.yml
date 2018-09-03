@@ -6,6 +6,7 @@
     - monitoring-plugins
     - nagios-plugins-contrib
     - libredis-perl
+    - libmonitoring-plugin-perl
     - dnsutils
 
 - name: Open port for connections to Icinga2 client

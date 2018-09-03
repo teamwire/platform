@@ -46,6 +46,7 @@ icingaweb2-module-monitoring
 monitoring-plugins
 nagios-plugins-contrib
 libredis-perl
+libmonitoring-plugin-perl
 dnsutils
 apache2
 libapache2-mod-php
