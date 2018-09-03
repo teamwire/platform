@@ -248,8 +248,8 @@ apply Service "check-process-keepalived" {
 apply Service "check-haproxy" {
   import "generic-service"
   check_command = "haproxy"
-  vars.haproxy_socket = "/var/run/haproxy/admin.sock"
-  vars.haproxy_default = "C<d,1,1,75,90>"
+
+  vars.socket = "/var/run/haproxy/admin.sock"
   command_endpoint = host.vars.client_endpoint
   assign where "backend_servers" in host.vars.roles
 }
