@@ -1,13 +1,15 @@
 ---
 - name: Create the backend storage directories
-  file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
+  file:
+    path: /data/{{ item.1 + '/' if data_dirs is defined else '' }}{{ item.0 }}
+    owner: daemon
+    mode: "{{ (item.0 == 'archiving/gpg') | ternary('0700', '0750') }}" # sets file mode 0700 if the directory is archiving/gpg, else 0750
+    state: directory
   when: config_done is defined
   run_once: true
-  with_items:
-    - archiving
-    - assets
-    - website-screenshot-cache
-    - beat
+  with_nested:
+    - [ 'archiving', 'archiving/gpg', 'assets', 'website-screenshot-cache', 'beat' ]
+    - "{{ data_dirs if data_dirs is defined else '' }}"
 
 - name: Create the backend certificate storage directories
   file:
@@ -21,11 +23,6 @@
   with_items:
     - certs
     - certs/apns
-
-- name: Create the backend GPG storage directories
-  file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
-  when: config_done is defined
-  run_once: true
 
 - name: Check APNS certificate is valid and doesn't expire within the next month
   openssl_certificate:
