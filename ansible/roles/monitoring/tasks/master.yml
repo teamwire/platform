@@ -91,10 +91,9 @@
   notify: restart apache
 
 - name: Ensure Apache configuration for Icingaweb2 UI exists
-  file:
-    src: /etc/apache2/conf-available/icingaweb2.conf
-    dest: /etc/apache2/conf-enabled/icingaweb2.conf
-    state: link
+  template:
+    src: files/apache.conf
+    dest: /etc/apache2/sites-enabled/000-default.conf
   notify: restart apache
 
 - name: Configure Icinga salt
