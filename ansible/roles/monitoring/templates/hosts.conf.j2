@@ -10,7 +10,7 @@ object Host "{{ host if host != "localhost" else external_hostname }}" {
 
 {% if groups['all'] | length() > 1 %}
 {% if host in groups.frontend_servers %}
-{% if ssl_certfile is defined and ssl_keyfile is defined %}
+{% if ssl_keyfile is defined %}
   vars.http_ssl = true
 {% endif %}
   vars.http_vhosts["http"] = {
