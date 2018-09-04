@@ -92,6 +92,7 @@ apply Service "check-icinga" {
   assign where host.name == NodeName
 }
 
+{% if groups['all'] | length() > 1 %}
 apply Service "check-consul-health" {
   import "generic-service"
   check_command = "http"
@@ -101,10 +102,12 @@ apply Service "check-consul-health" {
   // a healthy Consul returns the address of the leader, including the port number
   vars.http_string = "8300"
   vars.address = "127.0.0.1"
+  vars.http_ssl = "false"
 
   command_endpoint = host.vars.client_endpoint
-  assign where "consul_servers" in host.vars.roles
+  assign where host.vars.os == "Linux"
 }
+{% endif %}
 
 apply Service "check-nomad-health" {
   import "generic-service"
