@@ -195,7 +195,7 @@ apply Service "check-mysql" {
 }
 {% endif %}
 
-{% if ('frontend_servers' in groups or groups['all'] | length() == 1) and ssl_certfile is defined and ssl_keyfile is defined %}
+{% if ('frontend_servers' in groups or groups['all'] | length() == 1) and ssl_keyfile is defined %}
 apply Service "check-ssl-cert" {
   import "generic-service"
   check_command = "ssl"
@@ -381,7 +381,7 @@ apply Service "check-nginx-backend" {
   import "generic-service"
   check_command = "http"
   vars.http_uri = "/health"
-  vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
+  vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
 
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux"
@@ -391,7 +391,7 @@ apply Service "check-nginx-screenshot-server" {
   import "generic-service"
   check_command = "http"
   vars.http_uri = "/web-screenshot/health"
-  vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
+  vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
 
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux"
@@ -401,7 +401,7 @@ apply Service "check-nginx-notification-server" {
   import "generic-service"
   check_command = "http"
   vars.http_uri = "/notifications/"
-  vars.http_ssl = {{ 'true' if ssl_certfile is defined and ssl_keyfile is defined else 'false' }}
+  vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
 
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux"

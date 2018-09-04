@@ -15,9 +15,23 @@
 - name: Copy the SSL certificate
   copy:
     src: "{{ ssl_certfile }}"
-    dest: /etc/ssl/private/teamwire-backend.crt
+    dest: /etc/ssl/private/server_and_intermediate_and_root.crt
     mode: 0640
   when: ssl_certfile is defined
+
+- name: Create the SSL certificate chain
+  template:
+    src:  server_and_intermediate_and_root.crt.j2
+    dest: /etc/ssl/private/server_and_intermediate_and_root.crt
+    mode: 0640
+  when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+
+- name: Create the SSL intermediate and root certificate file
+  template:
+    src:  intermediate_and_root.crt.j2
+    dest: /etc/ssl/private/intermediate_and_root.crt
+    mode: 0640
+  when: ssl_intermediate_certificate is defined and ssl_root_certificate is defined
 
 - name: Copy the SSL key
   copy:
@@ -28,13 +42,13 @@
 
 - name: Generate a new Diffie-Hellman group
   command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
-  when: ssl_certfile is defined and ssl_keyfile is defined
+  when: ssl_keyfile is defined
   args:
     creates: /etc/ssl/private/dhparams.pem
 
-- name: Check SSL pair is valid (hasn't expired, modern algorithm and key matches certificate)
+- name: Check SSL chain is valid (hasn't expired, modern algorithm and key matches certificate)
   openssl_certificate:
-    path: /etc/ssl/private/teamwire-backend.crt
+    path: /etc/ssl/private/server_and_intermediate_and_root.crt
     privatekey_path: /etc/ssl/private/teamwire-backend.key
     provider: assertonly
     signature_algorithms:
@@ -47,18 +61,18 @@
       - sha384WithECDSAEncryption
       - sha512WithECDSAEncryption
     has_expired: False
-  when: ssl_certfile is defined
+  when: ssl_keyfile is defined
   run_once: true
 
 # open firewall ports for the web server
 - ufw: rule=allow port=80 proto=tcp
-  when: config_done is defined and ssl_certfile is not defined and ssl_keyfile is not defined
+  when: config_done is defined and ssl_keyfile is not defined
 
 - ufw: rule=allow port=80 proto=tcp delete=yes
-  when: ssl_certfile is defined and ssl_keyfile is defined
+  when: ssl_keyfile is defined
 
 - ufw: rule=allow port=443 proto=tcp
-  when: ssl_certfile is defined and ssl_keyfile is defined
+  when: ssl_keyfile is defined
 
 - name: Re-use sockets in TIME_WAIT state for new connections
   sysctl:
