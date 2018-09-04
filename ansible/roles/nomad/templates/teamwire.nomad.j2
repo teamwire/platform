@@ -283,8 +283,6 @@ job "teamwire" {
 				APNS_CERT_3 = "/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}"
 {% endif %}
 				GCM_API_KEY = "{{ gcm_api_key }}"
-				WNS_CLIENT_ID = "{{ wns_client_id|default() }}"
-				WNS_CLIENT_SECRET = "{{ wns_client_secret|default() }}"
 				http_proxy = "{{ http_proxy|default() }}"
 				https_proxy = "{{ http_proxy|default() }}"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"

@@ -106,11 +106,6 @@ apns_certificate:
 # apns_certificate_2:
 # apns_appid_2:
 
-# When you have received credentials for the Microsoft WNS service, please
-# uncomment the following lines and insert the supplied values.
-# wns_client_id:
-# wns_client_secret:
-
 # When you want to install your SSL certificate on the backend server, uncomment
 # the following keys and add the full paths to the key file and the certificate
 # files. When you configure these values, unencrypted access to the backend
