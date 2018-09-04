@@ -211,6 +211,8 @@
     - groups.conf
     - services.conf
     - hosts.conf
+    - apt.conf
+    - notifications.conf
 
 - name: Enable monitoring module
   command: /usr/bin/icingacli module enable monitoring
