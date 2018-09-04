@@ -1,11 +1,9 @@
 ---
 - name: Enable the Icinga2 API
   template: src=api.conf.j2 dest=/etc/icinga2/features-enabled/api.conf
+  notify: restart icinga2
 
-- name: Restart the Icinga2 agent
-  service:
-    name: icinga2
-    state: restarted
+- meta: flush_handlers
 
 - name: Wait for Icinga client API port to start listening on master
   wait_for:
