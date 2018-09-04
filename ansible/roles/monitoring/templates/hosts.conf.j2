@@ -13,7 +13,7 @@ object Host "{{ host if host != "localhost" else external_hostname }}" {
 {% if ssl_keyfile is defined %}
   vars.http_ssl = true
 {% endif %}
-  vars.http_vhosts["http"] = {
+  vars.http_vhosts["check-http"] = {
     http_uri = "/health"
   }
 {% endif %}
