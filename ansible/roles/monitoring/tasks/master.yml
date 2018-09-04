@@ -216,6 +216,8 @@
 
 - name: Enable monitoring module
   command: /usr/bin/icingacli module enable monitoring
+  args:
+    creates: /etc/icingaweb2/enabledModules/monitoring
 
 - name: Ensure monitoring module directory exists
   file:
