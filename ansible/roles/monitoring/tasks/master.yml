@@ -190,6 +190,16 @@
   when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
+- name: Delete the Icinga DB schemas from localhost
+  file: dest="{{ playbook_dir }}/{{ item }}" state=absent
+  with_items:
+    - "icinga2.sql"
+    - "icingaweb2.sql"
+  when: database_created.changed
+  delegate_to: localhost
+  vars:
+    ansible_become: no
+
 - name: Encrypt Icinga web admin user password
   command: 'openssl passwd -1 "{{ icinga_admin_password }}"'
   register: icinga_admin_password
