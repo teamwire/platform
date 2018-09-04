@@ -11,11 +11,6 @@
   delegate_to: "{{ groups.monitoring | first if  groups['all'] | length() > 1 else inventory_hostname }}"
   run_once: yes
 
-- name: Generate Icinga API ticket
-  command: /usr/sbin/icinga2 pki ticket --cn {{ inventory_hostname }} --salt "{{ icinga_salt }}"
-  delegate_to: "{{ groups.monitoring | first if  groups['all'] | length() > 1 else inventory_hostname }}"
-  register: pki_ticket
-
 - name: Create client certificate
   command: /usr/sbin/icinga2 pki new-cert --cn {{ inventory_hostname }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
   register: client_cert_created
@@ -27,6 +22,12 @@
   when: client_cert_created.changed
   args:
    creates: /etc/icinga2/pki/trusted-master.crt
+
+- name: Generate Icinga API ticket
+  command: /usr/sbin/icinga2 pki ticket --cn {{ inventory_hostname }} --salt "{{ icinga_salt }}"
+  delegate_to: "{{ groups.monitoring | first if  groups['all'] | length() > 1 else inventory_hostname }}"
+  when: client_cert_created.changed
+  register: pki_ticket
 
 - name: Request the certificate from the Icinga master
   command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.key
