@@ -1,0 +1,8 @@
+apply Service "check-apt" {
+  import "generic-service"
+  check_command = "apt"
+
+  vars.notification_interval = 86400
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
