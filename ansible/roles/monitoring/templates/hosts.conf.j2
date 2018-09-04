@@ -19,7 +19,7 @@ object Host "{{ host if host != "localhost" else external_hostname }}" {
 {% endif %}
 {% endif %}
 
-  vars.disks["disks"] = {
+  vars.disks["check-disk"] = {
 {% if groups['all'] | length() > 1 %}
 {% if 'nfs_servers' in hostvars[host].group_names and host in groups.nfs_servers or host in groups.backend_servers %}
     disk_partitions = ["/", "/data"]
