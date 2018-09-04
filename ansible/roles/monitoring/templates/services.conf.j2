@@ -173,17 +173,42 @@ apply Service "check-redis-{{ instance }}-dns" {
 
 {% endfor %}
 
-{% if 'database_servers' in groups %}
+{% if 'database_servers' in groups or groups['all'] | length() == 1 %}
 apply Service "check-mysql" {
   import "generic-service"
   check_command = "mysql"
   command_endpoint = host.vars.client_endpoint
 
-  vars.mysql_username = "clustercheck"
-  vars.mysql_password = "{{ clustercheck_password }}"
-  vars.mysql_hostname = "localhost"
+  vars.mysql_username = "{{ monitoring_db_user }}"
+  vars.mysql_password = "{{ monitoring_db_password }}"
+  vars.mysql_hostname = "{{ monitoring_db_host }}"
+  vars.mysql_port = "{{ monitoring_db_port }}"
 
   assign where "database_servers" in host.vars.roles && host.vars.client_endpoint
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
+{% endif %}
+
+{% if 'database_servers' in groups or groups['all'] | length() == 1 %}
+apply Service "check-mysql-connections" {
+  import "generic-service"
+  check_command = "check_mysql_health"
+  command_endpoint = host.vars.client_endpoint
+
+  vars.mysql_health_username = "{{ monitoring_db_user }}"
+  vars.mysql_health_password = "{{ monitoring_db_password }}"
+  vars.mysql_health_hostname = "{{ monitoring_db_host }}"
+  vars.mysql_health_port = "{{ monitoring_db_port }}"
+  vars.mysql_health_mode = "threads-connected"
+  vars.mysql_health_warn = "410"
+  vars.mysql_health_crit = "460"
+
+  assign where "database_servers" in host.vars.roles && host.vars.client_endpoint
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
 }
 {% endif %}
 
@@ -400,17 +425,6 @@ apply Service "check-nginx-notification-server" {
 
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux"
-}
-
-apply Service "check-mysql" {
-import "generic-service"
-check_command = "mysql"
-
-vars.mysql_username = "{{ monitoring_db_user }}"
-vars.mysql_password = "{{ monitoring_db_password }}"
-
-command_endpoint = host.vars.client_endpoint
-assign where host.vars.os == "Linux"
 }
 
 {% endif %}
