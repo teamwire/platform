@@ -234,6 +234,16 @@
     - { src: 'backends.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/backends.ini' }
     - { src: 'commandtransports.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/commandtransports.ini' }
 
+- name: Configure sender address for notifications
+  replace:
+    dest: /etc/icinga2/scripts/{{ item }}
+    regexp: '\mail -s'
+    replace: 'mail -r "{{ sender_address}}" -s'
+  with_items:
+    - mail-host-notification.sh
+    - mail-service-notification.sh
+  notify: restart icinga2
+
 - name: Configure Icinga2 zones
   template: src=zones.conf.j2 dest=/etc/icinga2/zones.conf
   notify: restart icinga2
