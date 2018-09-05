@@ -118,6 +118,7 @@ apply Service "check-nomad-health" {
   // a healthy Nomad returns the address of the leader, including the port number
   vars.http_string = "4647"
   vars.address = "127.0.0.1"
+  vars.http_ssl = "false"
 
   command_endpoint = host.vars.client_endpoint
   assign where "consul_servers" in host.vars.roles || "backend_servers" in host.vars.roles
