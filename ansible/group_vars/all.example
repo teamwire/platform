@@ -122,11 +122,6 @@ apns_certificate:
 # If you use more that one backend server or you want to store the persistent
 # files externally, please specify the path of the NFS export where the files
 # shared between the backends shall be stored.
-#
-# This export needs the following permissions:
-#   Owner: daemon (1)
-#   Mode:  750
-# and must squash access by the user root (0) to daemon (1).
 # external_storage_path:
 
 # Set the NFSv4 ID mapping domain, if it differs from FQDN minus hostname
