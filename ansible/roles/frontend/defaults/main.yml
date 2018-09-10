@@ -1,0 +1,3 @@
+---
+nginx_package: nginx-light
+nginx_config: nginx.conf

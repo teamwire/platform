@@ -1,9 +1,13 @@
 ---
 - name: Install nginx
-  apt: name=nginx-light state=present
+  apt:
+    name: "{{ nginx_package }}"
+    state: present
 
 - name: Configure nginx
-  copy: src=nginx.conf dest=/etc/nginx/nginx.conf
+  copy:
+    src: "{{ nginx_config }}"
+    dest: /etc/nginx/nginx.conf
   notify: reload nginx
 
 - name: Disable nginx default site
