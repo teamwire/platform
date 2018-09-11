@@ -44,26 +44,27 @@
 - name: Enable the Consul Template service
   service: name=consul-template enabled=yes
 
-- name: Create Consul Template config directory
+- name: Create Consul Template directories
   file:
-    name: /etc/consul-template
+    name: "{{ item }}"
     state: directory
     mode: 0750
+  with_items:
+    - /etc/consul-template
+    - /etc/consul-template/config
+    - /etc/consul-template/templates
 
-- name: Create Consul Template template directory
-  file:
-    name: /etc/consul-template/templates
-    state: directory
-    mode: 0750
-
-- name: Copy Consul Template configuration file
+- name: Copy Consul Template configuration files
   copy:
-    src: consul-template.hcl
-    dest: /etc/consul-template/consul-template.hcl
+    src: "{{ item }}"
+    dest: /etc/consul-template/config
   notify: restart Consul Template
+  with_items:
+    - 01-base.hcl
+    - 10-backend.hcl
 
 - name: Write Consul Template nginx upstream templates
   template:
-    src: teamwire-backend.tmpl.j2
+    src: "{{ backend_template }}"
     dest: /etc/consul-template/templates/teamwire-backend.tmpl
   notify: restart Consul Template
