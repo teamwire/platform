@@ -6,7 +6,7 @@ After=network-online.target consul.service
 [Service]
 EnvironmentFile=-/etc/default/consul-template
 Restart=on-failure
-ExecStart=/usr/local/sbin/consul-template $OPTIONS -config=/etc/consul-template/consul-template.hcl
+ExecStart=/usr/local/sbin/consul-template $OPTIONS -config=/etc/consul-template/config
 
 [Install]
 WantedBy=multi-user.target
