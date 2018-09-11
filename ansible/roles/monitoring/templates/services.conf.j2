@@ -130,8 +130,8 @@ apply Service "check-vault-seal-status" {
 
   vars.http_port = 8200
   vars.http_uri = "/v1/sys/seal-status"
-  // Check that Vault is running and is sealed
-  vars.http_string = "sealed\":true"
+  // Check that Vault is running and is unsealed
+  vars.http_string = "sealed\":false"
   vars.address = "127.0.0.1"
   vars.http_ssl = "true"
 
