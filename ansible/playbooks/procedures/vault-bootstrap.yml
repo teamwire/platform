@@ -2,7 +2,8 @@
 
   tasks:
 
-  - include_vars: ../../roles/vault/vars/main.yml
+  - include_vars: ../../roles/vault/defaults/main.yml
+  - include_vars: ../../group_vars/all
 
   - name: Check if Vault has been bootstrapped
     stat: path=/etc/vault-bootstrapped
@@ -158,22 +159,55 @@
       - "{{ vault_keys[0] }}"
       - "{{ vault_keys[1] }}"
 
-  - name: Generate secrets
-    command: vault write secret/"{{ item.secret }}" value=
+  - name: Write and migrate secrets
+    command: vault write secret/"{{ item.secret }}" value="{{ item.value }}"
+    no_log: True
     with_items:
-      - { secret: 'dockerhub/username' }
-      - { secret: 'dockerhub/password' }
-      - { secret: 'dockerhub/email' }
-      - { secret: 'keys/gcm' }
-      - { secret: 'database/password' }
-      - { secret: 'database/aes_key' }
-      - { secret: 'dbserver/mysql_root_password' }
-      - { secret: 'dbserver/clustercheck_password' }
-      - { secret: 'dbserver/xtrabackup_password' }
-      - { secret: 'redis/password' }
-      - { secret: 'smtp/username' }
-      - { secret: 'smtp/password' }
+      - { secret: 'dockerhub/password', value: "{{ dockerhub_password | default('') }}" }
+      - { secret: 'keys/gcm', value: "{{ gcm_api_key | default('') }}" }
+      - { secret: 'database/password', value: "{{ teamwire_db_password | default('') }}" }
+      - { secret: 'database/aes_key', value: "{{ aes_key | default('') }}" }
+      - { secret: 'dbserver/mysql_root_password', value: "{{ mysql_root_password | default('') }}" }
+      - { secret: 'dbserver/clustercheck_password', value: "{{ clustercheck_password | default('') }}" }
+      - { secret: 'dbserver/xtrabackup_password', value: "{{ xtrabackup_password | default('') }}" }
+      - { secret: 'redis/password', value: "{{ redis_pass | default('') }}" }
+      - { secret: 'smtp/password', value: "{{ smtp_smartpass | default('') }}" }
+      - { secret: 'monitoring/db_password', value: "{{ monitoring_db_password | default('') }}" }
+      - { secret: 'monitoring/db_web_password', value: "{{ monitoring_db_web_password | default('') }}" }
+      - { secret: 'monitoring/icinga_admin_password', value: "{{ icinga_admin_password | default('') }}" }
+      - { secret: 'monitoring/icinga_salt', value: "{{ icinga_salt | default('') }}" }
+      - { secret: 'monitoring/icinga_api_password', value: "{{ icinga_api_password | default('') }}" }
     run_once: true
 
-  - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored at /home/teamwire/vault-credentials"
+  - name: Backup the all file
+    copy:
+      src: "../../group_vars/all"
+      dest: "../../all.backup.{{ ansible_date_time.date }}"
+    run_once: true
+
+  - name: Update group_vars/all file
+    lineinfile:
+      path: "{{ inventory_dir }}/group_vars/all"
+      regexp: "{{ item + ':.*$' }}"
+      state: absent
+    with_items:
+      - dockerhub_password
+      - gcm_api_key
+      - teamwire_db_password
+      - aes_key
+      - mysql_root_password
+      - clustercheck_password
+      - xtrabackup_password
+      - redis_pass
+      - smtp_smartpass
+      - monitoring_db_password
+      - monitoring_db_web_password
+      - icinga_admin_password
+      - icinga_salt
+      - icinga_api_password
+    delegate_to: localhost
+    vars:
+      ansible_become: no
+
+  - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored at /home/teamwire/vault-credentials. The all file has been updated to use Vault, a backup has been placed in the group_vars directory."
     run_once: true
