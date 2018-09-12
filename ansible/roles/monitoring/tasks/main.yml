@@ -28,6 +28,11 @@
   copy: src=commands.conf dest=/etc/icinga2/conf.d
   notify: restart icinga2
 
+- name: Ensure sudo is installed
+  apt:
+    pkg: sudo
+    state: present
+
 - name: Set sudo escalation for icinga plugins
   lineinfile:
     dest: /etc/sudoers
