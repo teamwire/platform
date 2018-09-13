@@ -48,6 +48,7 @@ nagios-plugins-contrib
 libredis-perl
 libmonitoring-plugin-perl
 liblwp-useragent-determined-perl
+libdbd-mysql-perl
 dnsutils
 apache2
 libapache2-mod-php

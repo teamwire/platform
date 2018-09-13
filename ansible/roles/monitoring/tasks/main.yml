@@ -8,6 +8,7 @@
     - libredis-perl
     - libmonitoring-plugin-perl
     - liblwp-useragent-determined-perl
+    - libdbd-mysql-perl
     - dnsutils
 
 - name: Open port for connections to Icinga2 client
