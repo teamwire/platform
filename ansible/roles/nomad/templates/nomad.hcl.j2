@@ -45,6 +45,7 @@ client {
 	network_interface =  "{{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}"
 	options = {
 		"docker.cleanup.image" = {{ "true" if "docker_registry" in groups else "false" }}
+		"docker.privileged.enabled" = {{ "true" if docker_enable_privileged_containers is defined and docker_enable_privileged_containers == True  else "false" }}
 	}
 	meta = {
 		"groups" = "{{ group_names | join(',') }}"
