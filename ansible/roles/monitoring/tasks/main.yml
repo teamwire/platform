@@ -11,9 +11,6 @@
     - libdbd-mysql-perl
     - dnsutils
 
-- name: Open port for connections to Icinga2 client
-  ufw: rule=allow port=5665 proto=tcp
-
 - name: Enable and start the icinga2 daemon
   service: name=icinga2 state=started enabled=true
 
