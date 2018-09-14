@@ -37,7 +37,6 @@ apply Service "check-memory" {
   import "generic-service"
   check_command = "memory"
 
-  vars.unit = "M"
   vars.warning_threshold= "15%"
   vars.critical_threshold = "10%"
 
