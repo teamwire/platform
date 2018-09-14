@@ -1,5 +1,5 @@
-nomad_version: 0.8.4
-nomad_checksum: 42fc455d09ea0085cc79d7be4fb2089a9ab7db3cc2e8047e8437855a81b090e9
+nomad_version: 0.8.5
+nomad_checksum: e56c0e95e7a724b4fadd8eba32da5a3f2846f67e22e2352b19d1ada2066e063b
 
 
 # The below variables define the % of the total CPU or RAM available on each backend server, which a container can utilise
