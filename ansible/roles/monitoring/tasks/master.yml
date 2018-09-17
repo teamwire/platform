@@ -46,10 +46,9 @@
   - php{{ php_version }}-xml
 
 - name: Set Apache listening port
-  lineinfile:
-    path: /etc/apache2/ports.conf
-    regexp: '^Listen 80'
-    line: 'Listen 8000'
+  copy:
+    src: "{{ apache_ports_config }}"
+    dest: /etc/apache2/ports.conf
   notify: restart apache
 
 - name: Disable MPM event module
@@ -91,9 +90,15 @@
   notify: restart apache
 
 - name: Ensure Apache configuration for Icingaweb2 UI exists
-  template:
-    src: files/apache.conf
-    dest: /etc/apache2/sites-enabled/000-default.conf
+  copy:
+    src: "{{ apache_icinga_vhost_conf }}"
+    dest: /etc/apache2/sites-enabled/icinga.conf
+  notify: restart apache
+
+- name: Disable default Apache configuration
+  file:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    state: absent
   notify: restart apache
 
 - name: Configure Icinga salt
