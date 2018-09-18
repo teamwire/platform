@@ -19,7 +19,6 @@
     name: docker-registry
     image: "{{ registry_version }}"
     state: started
-    restart: yes
     restart_policy: always
     network_mode: bridge
     ports: "5000:5000"
