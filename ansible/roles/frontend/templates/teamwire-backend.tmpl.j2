@@ -24,10 +24,22 @@ upstream teamwire_screenshot_server {
 	{{- end}}
 }
 
-server {
+
 {% endraw %}
 {% if ssl_keyfile is defined %}
+server {
 	listen 443 ssl default_server;
+	server_name _;
+	ssl_certificate /etc/ssl/private/server_and_intermediate_and_root.crt;
+	ssl_certificate_key /etc/ssl/private/teamwire-backend.key;
+{% if ssl_intermediate_certificate is defined and ssl_root_certificate is defined %}
+	ssl_trusted_certificate /etc/ssl/private/intermediate_and_root.crt;
+{% endif %}
+	ssl_dhparam /etc/ssl/private/dhparams.pem;
+	return 404;
+}
+server {
+	listen 443 ssl;
 
 	ssl_certificate /etc/ssl/private/server_and_intermediate_and_root.crt;
 	ssl_certificate_key /etc/ssl/private/teamwire-backend.key;
@@ -36,7 +48,13 @@ server {
 {% endif %}
 	ssl_dhparam /etc/ssl/private/dhparams.pem;
 {% else %}
+server {
 	listen 80 default_server;
+	server_name _;
+	return 404;
+}
+server {
+	listen 80;
 {% endif %}
 {% if frontend_proxy is defined %}
 
@@ -51,6 +69,7 @@ server {
 	real_ip_recursive on;
 {% endif %}
 	client_max_body_size 256M;
+	server_name {{ external_hostname }};
 	keepalive_timeout 10;
 
 	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
