@@ -14,6 +14,7 @@ object Host "{{ host if host != "localhost" else external_hostname }}" {
   vars.http_ssl = true
 {% endif %}
   vars.http_vhosts["check-http"] = {
+    http_vhost = "{{ external_hostname }}"
     http_uri = "/health"
   }
 {% endif %}
