@@ -409,6 +409,7 @@ apply Service "check-container-screenshot-server" {
 apply Service "check-nginx-backend" {
   import "generic-service"
   check_command = "http"
+  vars.http_vhost = "{{ external_hostname }}"
   vars.http_uri = "/health"
   vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
 
@@ -419,6 +420,7 @@ apply Service "check-nginx-backend" {
 apply Service "check-nginx-screenshot-server" {
   import "generic-service"
   check_command = "http"
+  vars.http_vhost = "{{ external_hostname }}"
   vars.http_uri = "/web-screenshot/health"
   vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
 
@@ -429,6 +431,7 @@ apply Service "check-nginx-screenshot-server" {
 apply Service "check-nginx-notification-server" {
   import "generic-service"
   check_command = "http"
+  vars.http_vhost = "{{ external_hostname }}"
   vars.http_uri = "/notifications/"
   vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
 
