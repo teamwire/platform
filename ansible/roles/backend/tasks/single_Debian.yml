@@ -48,7 +48,7 @@
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
-      REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
+      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       EMAIL_HOST: "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
       BLOB_DIR: /assets
@@ -89,7 +89,7 @@
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
-      REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
+      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       NOTIFICATION_SERVER_URL: "http://{{ ansible_docker0['ipv4']['address'] }}:9081"
       BLOBDIR: /assets
@@ -128,7 +128,7 @@
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
-      REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
+      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
@@ -153,7 +153,7 @@
       tag: teamwire-notifications
       syslog-facility: "local6"
     env:
-      REDIS_URI: "{{ redis_host }}:{{ redis_port }}:1"
+      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       LOGLEVEL: "{{ notification_loglevel|default() }}"
 

@@ -46,7 +46,7 @@
 - name: Deploy and configure Redis database
   hosts: all
   roles:
-    - { role: redis, when: config_done is defined and redis_host is not defined }
+    - { role: redis, when: config_done is defined }
 
 - name: Deploy and configure the backend server
   hosts: all

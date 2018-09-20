@@ -173,15 +173,9 @@ mysql_root_password:
 # oracle_port: 1521
 
 # Redis connection information.
-# If you don't configure this values, a local Redis server will be installed
-# and used in single server setups.
-# You can safely ignore this setting when you've configured a clustered redis.
-# redis_host:
-# redis_port:
-#
 # Configure a password for Redis. This is not required when Redis is running
 # as a single instance on the same machine as the backend, but highly
-# recommended when using a remote Redis server or the clustered Redis.
+# recommended when using a clustered Redis.
 # redis_pass:
 
 ##############################################################################
