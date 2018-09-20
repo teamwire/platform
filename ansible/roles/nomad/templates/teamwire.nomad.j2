@@ -98,7 +98,7 @@ job "teamwire" {
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
-				REDIS_URI = "{{ redis_host }}:{{ redis_port }}:1"
+				REDIS_URI = "prod.redis.service.consul:6379:1"
 				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 {% if docker_host_networking is defined %}
 				EMAIL_HOST = "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
@@ -271,7 +271,7 @@ job "teamwire" {
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
-				REDIS_URI = "{{ redis_host }}:{{ redis_port }}:1"
+				REDIS_URI = "prod.redis.service.consul:6379:1"
 				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 				NOTIFICATION_SERVER_URL = "http://notification-server-9081.service.consul:9081"
 				BLOBDIR = "/assets"
@@ -354,7 +354,7 @@ job "teamwire" {
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
-				REDIS_URI = "{{ redis_host }}:{{ redis_port }}:1"
+				REDIS_URI = "prod.redis.service.consul:6379:1"
 				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 				CELERY_BEAT_SCHEDULE = "/beat/celerybeat-schedule"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
@@ -414,7 +414,7 @@ job "teamwire" {
 			}
 
 			env {
-				REDIS_URI = "{{ redis_host }}:{{ redis_port }}:1"
+				REDIS_URI = "prod.redis.service.consul:6379:1"
 				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 				LOGLEVEL = "{{ notification_loglevel|default() }}"
 			}
