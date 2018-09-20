@@ -61,4 +61,4 @@
 
 - name: Ensure Redis servers are defined
   fail: msg="Redis servers aren't defined. Please check the cluster_hosts file"
-  when: config_done is defined and 'redis_servers' not in groups
+  when: groups['all'] | length() > 1 and config_done is defined and 'redis_servers' not in groups
