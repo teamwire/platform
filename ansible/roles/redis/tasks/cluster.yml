@@ -65,6 +65,7 @@
 
 - name: Register Redis servers with Consul
   consul:
+    service_id: "redis-{{ item }}"
     service_name: redis
     service_port: "{{ redis_instances[item].server_port }}"
     tags: "{{ item }}"
@@ -75,6 +76,7 @@
 
 - name: Register Redis sentinels with Consul
   consul:
+    service_id: "sentinel-{{ item }}"
     service_name: sentinel
     service_port: "{{ redis_instances[item].sentinel_port }}"
     tags: "{{ item }}"
