@@ -1,4 +1,8 @@
 - hosts: local:consul_servers
+
+  handlers:
+    - include: ../../roles/nomad/handlers/main.yml
+
   tasks:
 
   - include_vars: ../../roles/vault/vars/main.yml
@@ -175,6 +179,57 @@
       - { secret: 'smtp/username' }
       - { secret: 'smtp/password' }
     run_once: true
+
+# Nomad integration for Vault (clusters only)
+
+  - name: Fetch the Nomad policy and role files
+    copy:
+      src: "{{ inventory_dir }}/roles/vault/files/{{ item }}"
+      dest: /root/
+    with_items:
+      - nomad-server-policy.hcl
+      - nomad-cluster-role.json
+    run_once: true
+    when: groups['all'] | length() > 1
+
+  - name: Write Nomad policy
+    command: vault policy write nomad-server /root/nomad-server-policy.hcl
+    run_once: true
+    when: groups['all'] | length() > 1
+
+  - name: Create Vault token role for Nomad
+    command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
+    run_once: true
+    when: groups['all'] | length() > 1
+
+  - name: Delete the Nomad policy and role files
+    file:
+      dest: "/root/{{ item }}"
+      state: absent
+    with_items:
+      - nomad-server-policy.hcl
+      - nomad-cluster-role.json
+    run_once: true
+    when: groups['all'] | length() > 1
+
+  - name: Create Vault token for Nomad
+    command: vault token create -policy nomad-server -period 72h -orphan -format=json
+    run_once: true
+    when: groups['all'] | length() > 1
+    register: vault_nomad_token
+
+  - name: Set token fact
+    run_once: True
+    set_fact:
+      vault_nomad_token: "{{ vault_nomad_token.stdout | from_json }}"
+    when: groups['all'] | length() > 1
+
+  - name: Write Vault configuration for nomad
+    template:
+      src: ../../roles/vault/templates/nomad-vault.hcl.j2
+      dest: /etc/nomad/vault.hcl
+    notify: Restart Nomad agent
+    when: groups['all'] | length() > 1
 
   - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored at /home/teamwire/vault-credentials"
     run_once: true
