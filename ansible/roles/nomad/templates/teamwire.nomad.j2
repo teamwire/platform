@@ -26,6 +26,11 @@ job "teamwire" {
 		max_parallel = 1
 	}
 
+ vault {
+    policies = ["nomad-job"]
+	change_mode = "noop"
+  }
+
 	group "backends" {
 		count = {{ groups['backend_servers'] | count }}
 
@@ -77,9 +82,20 @@ job "teamwire" {
 					timeout = "2s"
 				}
 			}
-
+{% raw %}
+			template {
+			data = <<EOH
+			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
+			MYSQL_DATABASE = "{{ with secret "secret/database/name"}}{{.Data.value}}{{end}}"
+			MYSQL_USER = "{{ with secret "secret/database/username"}}{{.Data.value}}{{end}}"
+			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
+			EOH
+			destination = "secrets/file.env"
+			env = true
+			}
+{% endraw %}
 			env {
-				AESKEY = "{{ aes_key }}"
 				ARCHIVING_CONFIG = "/archiving/archiving.conf"
 				ARCHIVING_GPGHOME = "/archiving/gpg"
 				ORG_DEFAULT_ALLOW_USER_REG = "{{ allow_unknown_users|default('true') }}"
@@ -90,16 +106,12 @@ job "teamwire" {
 				MYSQL_HOST = "{{ mysql_host | default() }}"
 {%endif %}
 				MYSQL_PORT = "{{ mysql_port | default() }}"
-				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
-				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
-				MYSQL_PASSWORD = "{{ teamwire_db_password if mysql_host is defined else '' }}"
 				ORA_HOST = "{{ oracle_host | default() }}"
 				ORA_PORT = "{{ oracle_port | default() }}"
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
 				REDIS_URI = "prod.redis.service.consul:6379:1"
-				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 {% if docker_host_networking is defined %}
 				EMAIL_HOST = "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
 {% else %}
@@ -253,26 +265,34 @@ job "teamwire" {
 					timeout = "2s"
 				}
 			}
-
+{% raw %}
+			template {
+			data = <<EOH
+			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
+			MYSQL_DATABASE = "{{ with secret "secret/database/name"}}{{.Data.value}}{{end}}"
+			MYSQL_USER = "{{ with secret "secret/database/username"}}{{.Data.value}}{{end}}"
+			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
+			GCM_API_KEY = "{{ with secret "secret/keys/gcm"}}{{.Data.value}}{{end}}"
+			EOH
+			destination = "secrets/file.env"
+			env = true
+			}
+{% endraw %}
 			env {
 				MODE = "worker"
-				AESKEY = "{{ aes_key }}"
 {% if docker_host_networking is defined and mysql_host is defined %}
 				MYSQL_HOST = "127.0.0.1"
 {% else %}
 				MYSQL_HOST = "{{ mysql_host | default() }}"
 {%endif %}
 				MYSQL_PORT = "{{ mysql_port | default() }}"
-				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
-				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
-				MYSQL_PASSWORD = "{{ teamwire_db_password if mysql_host is defined else '' }}"
 				ORA_HOST = "{{ oracle_host | default() }}"
 				ORA_PORT = "{{ oracle_port | default() }}"
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				ORA_PASSWORD = "{{ teamwire_db_password if oracle_host is defined else '' }}"
 				REDIS_URI = "prod.redis.service.consul:6379:1"
-				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 				NOTIFICATION_SERVER_URL = "http://notification-server-9081.service.consul:9081"
 				BLOBDIR = "/assets"
 				APNS_CERT_1 = "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}"
@@ -282,7 +302,6 @@ job "teamwire" {
 {% if apns_certificate_3 is defined %}
 				APNS_CERT_3 = "/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}"
 {% endif %}
-				GCM_API_KEY = "{{ gcm_api_key }}"
 				http_proxy = "{{ http_proxy|default() }}"
 				https_proxy = "{{ http_proxy|default() }}"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
@@ -336,19 +355,26 @@ job "teamwire" {
 				name = "${TASK}"
 				tags = ["teamwire"]
 			}
-
+{% raw %}
+			template {
+			data = <<EOH
+			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
+			MYSQL_DATABASE = "{{ with secret "secret/database/name"}}{{.Data.value}}{{end}}"
+			MYSQL_USER = "{{ with secret "secret/database/username"}}{{.Data.value}}{{end}}"
+			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+			EOH
+			destination = "secrets/file.env"
+			env = true
+			}
+{% endraw %}
 			env {
 				MODE = "beat"
-				AESKEY = "{{ aes_key }}"
 {% if docker_host_networking is defined and mysql_host is defined %}
 				MYSQL_HOST = "127.0.0.1"
 {% else %}
 				MYSQL_HOST = "{{ mysql_host | default() }}"
 {%endif %}
 				MYSQL_PORT = "{{ mysql_port | default() }}"
-				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
-				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
-				MYSQL_PASSWORD = "{{ teamwire_db_password if mysql_host is defined else '' }}"
 				ORA_HOST = "{{ oracle_host | default() }}"
 				ORA_PORT = "{{ oracle_port | default() }}"
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
@@ -412,10 +438,17 @@ job "teamwire" {
 				tags = ["teamwire"]
 				port = "rest"
 			}
-
+{% raw %}
+			template {
+			data = <<EOH
+			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
+			EOH
+			destination = "secrets/file.env"
+			env = true
+			}
+{% endraw %}
 			env {
 				REDIS_URI = "prod.redis.service.consul:6379:1"
-				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 				LOGLEVEL = "{{ notification_loglevel|default() }}"
 			}
 

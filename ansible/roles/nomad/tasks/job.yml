@@ -23,4 +23,3 @@
     dest: /data/cluster_config/teamwire.nomad
     owner: teamwire
   run_once: true
-
