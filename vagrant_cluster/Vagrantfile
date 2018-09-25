@@ -25,9 +25,6 @@ Vagrant.configure(2) do |config|
   # The ssh user name used to connect to the created VM with "vagrant ssh"
   config.ssh.username = "teamwire"
 
-  # Path to the ssh key for that user
-  config.ssh.private_key_path = File.expand_path("~/.ssh/teamwire-server-vm-admin")
-
   # Disable the default shared folder
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
