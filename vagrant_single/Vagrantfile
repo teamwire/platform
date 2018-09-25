@@ -35,6 +35,7 @@ Vagrant.configure(2) do |config|
     # Enable nested virtualisation
     v.vmx["vhv.enable"] = "TRUE"
     v.vmx["memsize"] = "1024"
+    v.vmx["ethernet0.pcislotnumber"] = "33"
   end
 
   config.vm.provider "virtualbox" do |v|
