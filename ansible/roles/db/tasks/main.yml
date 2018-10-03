@@ -12,16 +12,13 @@
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 1BB943DB > /dev/null 2>&1 && echo present || echo absent"
   register: mariadb_repo_key
   changed_when: False
-  when:
-    - ansible_distribution == "Debian"
-    - ansible_distribution_release == "jessie"
+  when: ansible_distribution_release == "jessie"
 
 - name: Add MariaDB repo signing key (Debian 8, direct)
   apt_key:
     keyserver: "hkp://keyserver.ubuntu.com:80"
     id: "cbcb082a1bb943db"
   when:
-    - ansible_distribution == "Debian"
     - ansible_distribution_release == "jessie"
     - mariadb_repo_key.stdout == "absent"
     - http_proxy is not defined
@@ -29,7 +26,6 @@
 - name: Add MariaDB repo signing key (Debian 8, via proxy)
   command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
   when:
-    - ansible_distribution == "Debian"
     - ansible_distribution_release == "jessie"
     - mariadb_repo_key.stdout == "absent"
     - http_proxy is defined
@@ -39,9 +35,7 @@
     repo: "deb http://ftp.hosteurope.de/mirror/mariadb.org/repo/10.1/debian jessie main"
     state: present
     update_cache: yes
-  when:
-    - ansible_distribution == "Debian"
-    - ansible_distribution_release == "jessie"
+  when: ansible_distribution_release == "jessie"
 
 - name: Install MariaDB
   apt: name={{item}} state=present
@@ -60,31 +54,28 @@
     state: directory
   when: '"database_servers" not in groups'
 
-# Allow incoming connections to MySQL on all interfaces, including docker0. (Debian)
-- name: Configure MariaDB to listen on all interfaces (Debian)
+# Allow incoming connections to MySQL on all interfaces, including docker0.
+- name: Configure MariaDB to listen on all interfaces
   lineinfile:
     dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
     regexp: ^bind-address\s*=\s*127.0.0.1
     backrefs: yes
     line: "bind-address=0.0.0.0"
   notify: restart MariaDB
-  when: ansible_distribution == "Debian"
 
-- name: Increase max_allowed_packet size (Debian)
+- name: Increase max_allowed_packet size
   replace:
     dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
     regexp: ^max_allowed_packet\s*=\s*\d+M
     replace: "max_allowed_packet=64M"
   notify: restart MariaDB
-  when: ansible_distribution == "Debian"
 
-- name: Increase maximum allowed connections (Debian)
+- name: Increase maximum allowed connections
   lineinfile:
     dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
     regexp: ^max_connections
     line: "max_connections = 512"
   notify: restart MariaDB
-  when: ansible_distribution == "Debian"
 
 - name: Set UTF8 as default character set
   copy: src=utf8.cnf dest=/etc/mysql/conf.d/utf8.cnf
@@ -96,7 +87,7 @@
     regexp: ^collation-server
     line: "collation-server = utf8mb4_unicode_ci"
   notify: restart MariaDB
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
+  when: ansible_distribution_release == 'stretch'
 
 - name: Set UTC as default time zone
   copy: src=timezone.cnf dest=/etc/mysql/conf.d/timezone.cnf

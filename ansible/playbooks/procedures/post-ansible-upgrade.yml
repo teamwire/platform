@@ -10,7 +10,7 @@
 
   - debug:
       msg:
-        - "About to remove the old Ansible ubuntu package"
+        - "About to remove the old Ansible package"
         - "After this procedure has executed, you will need to refresh your session sources"
         - "You can do this by either executing source ~/.bashrc or exiting and rejoining the SSH session"
         - "After performing this, you can run the usual playbook process"
