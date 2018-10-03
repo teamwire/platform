@@ -1,10 +1,10 @@
 ---
 - name: Create Docker Registry storage directory
-  file: name=/data/registry state=directory mode=0750
+  file: name="{{ registry_dir }}" state=directory mode=0750
   run_once: true
 
 - name: Write Docker registry config file
-  template: src=registry-config.yml.j2 dest=/data/registry/config.yml
+  template: src=registry-config.yml.j2 dest="{{ registry_dir }}/config.yml"
   run_once: true
 
 - name: Retrieve the  Docker Registry container
@@ -22,7 +22,7 @@
     restart_policy: always
     network_mode: bridge
     ports: "5000:5000"
-    volumes: "/data/registry:/var/lib/registry,/data/registry/config.yml:/etc/docker/registry/config.yml"
+    volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
 
 # Push all local images to the local registry
 - name: Copy the registry image helper tool
