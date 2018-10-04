@@ -107,7 +107,7 @@
   command: docker restart teamwire_worker
   when: (apns_source.changed or apns2_source.changed or apns3_source.changed) and ansible_play_hosts | length() == 1 and 'teamwire_worker' in docker_procs.stdout
 
-- include_tasks: "single_{{ ansible_distribution }}.yml"
+- include_tasks: "single.yml"
   when: "'backend_servers' not in groups"
 
 - include_tasks: "haproxy.yml"

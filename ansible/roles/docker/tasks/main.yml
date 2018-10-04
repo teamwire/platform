@@ -11,7 +11,6 @@
     src=rsyslog.conf.patch
     dest=/etc/rsyslog.conf
   notify: restart rsyslog
-  when: ansible_distribution == "Debian"
 
 - name: Install logrotate job for cluster logs
   copy: src=container-log dest=/etc/logrotate.d/container-log
@@ -45,43 +44,22 @@
 - name: Install Docker
   apt: pkg=docker-ce state=present
 
-- name: Install docker-py 1.0 (Ubuntu)
-  pip: name=docker-py version=1.0.0
-  when: ansible_distribution == "Ubuntu"
-
 - name: Install python-docker (Debian 8)
   pip: name=docker-py version=1.9.0 state=present
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+  when: ansible_distribution_release == 'jessie'
 
 - name: Install python-docker (Debian 9)
   apt: pkg=python-docker state=present
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
+  when: ansible_distribution_release == 'stretch'
 
 - name: Add user 'teamwire' to the docker group
   user: name=teamwire groups=docker append=yes
 
-- name: Create systemd drop-in directory for docker (Debian)
+- name: Create systemd drop-in directory for docker
   file: name=/etc/systemd/system/docker.service.d state=directory
-  when: ansible_distribution == "Debian"
 
-- name: Configure proxy for docker (Ubuntu)
-  when: http_proxy is defined and ansible_distribution == "Ubuntu"
-  lineinfile:
-    dest: /etc/default/docker
-    regexp: http_proxy
-    line: 'export http_proxy="{{http_proxy}}"'
-  notify: restart docker
-
-- name: Disable proxy for docker when no proxy is configured (Ubuntu)
-  when: http_proxy is not defined and ansible_distribution == "Ubuntu"
-  lineinfile:
-    dest: /etc/default/docker
-    regexp: http_proxy
-    line: '# export http_proxy=""'
-  notify: restart docker
-
-- name: Configure proxy for docker (Debian)
-  when: http_proxy is defined and ansible_distribution == "Debian" and (not 'docker_registry' in groups or inventory_hostname in groups.docker_registry)
+- name: Configure proxy for docker
+  when: http_proxy is defined and (not 'docker_registry' in groups or inventory_hostname in groups.docker_registry)
   template:
     src: http-proxy.conf.j2
     dest: /etc/systemd/system/docker.service.d/http-proxy.conf
@@ -89,8 +67,8 @@
     - reload systemd
     - restart docker
 
-- name: Disable proxy for docker when no proxy is configured (Debian)
-  when: http_proxy is not defined and ansible_distribution == "Debian"
+- name: Disable proxy for docker when no proxy is configured
+  when: http_proxy is not defined
   file:
     name: /etc/systemd/system/docker.service.d/http-proxy.conf
     state: absent
@@ -98,8 +76,7 @@
     - reload systemd
     - restart docker
 
-- name: Configure Docker daemon parameters (Debian)
-  when: ansible_distribution == "Debian"
+- name: Configure Docker daemon parameters
   template:
     src: docker.conf.j2
     dest: /etc/systemd/system/docker.service.d/docker.conf
@@ -107,8 +84,7 @@
     - reload systemd
     - restart docker
 
-- name: Start Docker after mounting NFS shares (Debian)
-  when: ansible_distribution == "Debian"
+- name: Start Docker after mounting NFS shares
   copy:
     src: wait_for_nfs.conf
     dest: /etc/systemd/system/docker.service.d/wait_for_nfs.conf
@@ -127,22 +103,9 @@
   include_tasks: registry.yml
   when: config_done is defined and 'docker_registry' in group_names
 
-- name: Log in on Docker Hub (Ubuntu)
-  command: docker login -e "{{ dockerhub_email }}" -u "{{ dockerhub_username }}" -p "{{ dockerhub_password }}"
-  become: True
-  become_user: teamwire
+- name: Log in on Docker Hub
   when:
     - config_done is defined
-    - ansible_distribution == "Ubuntu"
-    - not offline_mode.stat.exists
-  args:
-    creates: /home/teamwire/.docker/config.json
-
-# Requires docker-py >= 1.7, hence can only be used on Debian
-- name: Log in on Docker Hub (Debian)
-  when:
-    - config_done is defined
-    - ansible_distribution == "Debian"
     - not "docker_registry" in groups
     - not offline_mode.stat.exists
   become: True

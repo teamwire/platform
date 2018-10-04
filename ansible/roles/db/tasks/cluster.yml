@@ -7,7 +7,6 @@
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 9334A25F8507EFA5 > /dev/null 2>&1 && echo present || echo absent"
   register: percona_repo_key
   changed_when: False
-  when: ansible_distribution == "Debian"
 
 - name: Add Percona repo signing key (direct)
   apt_key:
@@ -30,7 +29,7 @@
   - mytop
   - percona-xtrabackup-24
   - socat
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+  when: ansible_distribution_release == 'jessie'
 
 # Debian 9 includes mytop in the mariadb package, but has some broken dependencies
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=863596
@@ -42,7 +41,7 @@
   - libterm-readkey-perl
   - percona-xtrabackup-24
   - socat
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
+  when: ansible_distribution_release == 'stretch'
 
 - name: Create database replication user
   mysql_user:

@@ -29,10 +29,10 @@
   apt_repository:
     repo: 'deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian/ jessie-backports main'
     state: present
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
+  when: ansible_distribution_release == 'jessie'
 
 - name: Create rc.local for Debian 9
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
+  when: ansible_distribution_release == 'stretch'
   template:
     src: rc.local.j2
     dest: /etc/rc.local
@@ -55,14 +55,6 @@
 # do security upgrades
 - name: Install unattended-upgrades
   apt: pkg=unattended-upgrades state=present
-
-# Debian comes with sane defaults
-- name: Make sure unattended-upgrades only installs from $ubuntu_release-security
-  lineinfile:
-    dest: /etc/apt/apt.conf.d/50unattended-upgrades
-    regexp: "$ubuntu_release-updates"
-    state: absent
-  when: ansible_distribution == "Ubuntu"
 
 - name: Mail root on unattended-upgrades
   lineinfile:
@@ -262,9 +254,6 @@
   when: config_done is defined
 
 # Install tmate
-- name: Configure the tmate repository (Ubuntu)
-  apt_repository: repo=ppa:nviennot/tmate
-  when: ansible_distribution == "Ubuntu"
 - name: Install tmate
   apt: pkg=tmate
 

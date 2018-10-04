@@ -1,7 +1,7 @@
 # This play only applies to the single server installation
 - hosts: local
   tasks:
-  - include_tasks: "../../roles/backend/tasks/single_{{ ansible_distribution }}.yml"
+  - include_tasks: "../../roles/backend/tasks/single.yml"
 
 # This play only applies to cluster installations
 - name: Write cluster configuration
