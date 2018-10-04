@@ -165,9 +165,7 @@
       - { secret: 'dockerhub/password' }
       - { secret: 'dockerhub/email' }
       - { secret: 'keys/gcm' }
-      - { secret: 'database/username' }
       - { secret: 'database/password' }
-      - { secret: 'database/name' }
       - { secret: 'database/aes_key' }
       - { secret: 'dbserver/mysql_root_password' }
       - { secret: 'dbserver/clustercheck_password' }
