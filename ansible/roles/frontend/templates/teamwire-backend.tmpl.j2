@@ -1,5 +1,6 @@
 {% raw -%}
 # Backend
+{{ if service "backend" }}
 upstream teamwire_backend {
 	# fail_timeout=0 means we always retry an upstream even if it failed
 	# to return a good HTTP response.
@@ -7,7 +8,7 @@ upstream teamwire_backend {
 	{{- range service "backend"}}
 	server {{.Address}}:{{.Port}} fail_timeout=0;
 	{{- end}}
-}
+}{{ end }}
 
 # Notification Server
 {{ if service "notification-server-9080" }}
@@ -103,11 +104,11 @@ server {
 {% endfor %}
 		deny all;
 
-		proxy_pass http://teamwire_backend;
+		{% raw %}{{ if service "backend" }}proxy_pass http://teamwire_backend;{{ else }}return 503;{{ end }}{% endraw %}
 	}
 
 {% endif %}
 	location / {
-		proxy_pass http://teamwire_backend;
+		{% raw %}{{ if service "backend" }}proxy_pass http://teamwire_backend;{{ else }}return 503;{{ end }}{% endraw %}
 	}
 }
