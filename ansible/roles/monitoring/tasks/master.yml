@@ -1,6 +1,7 @@
 ---
 # Redis instance values are required for dynamic redis monitoring
 - include_vars: ../../roles/redis/defaults/main.yml
+  when: redis_instances is not defined
 
 - name: Install icinga2 Web UI and tools
   apt: name={{item}} state=present
