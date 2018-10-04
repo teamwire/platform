@@ -1,5 +1,6 @@
 {% raw -%}
 # Backend
+{{ if service "backend" }}
 upstream teamwire_backend {
 	# fail_timeout=0 means we always retry an upstream even if it failed
 	# to return a good HTTP response.
@@ -7,23 +8,24 @@ upstream teamwire_backend {
 	{{- range service "backend"}}
 	server {{.Address}}:{{.Port}} fail_timeout=0;
 	{{- end}}
-}
+}{{ end }}
 
 # Notification Server
+{{ if service "notification-server-9080" }}
 upstream teamwire_notification_server {
 	{{- range service "notification-server-9080"}}
 	server {{.Address}}:{{.Port}};
 	{{- end}}
-}
+}{{ end }}
 
 # Web Screenshot Server
+{{ if service "web-screenshot-server" }}
 upstream teamwire_screenshot_server {
 	least_conn;
 	{{- range service "web-screenshot-server"}}
 	server {{.Address}}:{{.Port}};
 	{{- end}}
-}
-
+}{{ end }}
 
 {% endraw %}
 {% if ssl_keyfile is defined %}
@@ -81,7 +83,8 @@ server {
 
 	# The notification server
 	location /notifications/ {
-		proxy_pass http://teamwire_notification_server;
+		{% raw %}{{ if service "notification-server-9080" }}proxy_pass http://teamwire_notification_server/;{{ else }}return 503;{{ end }}{% endraw %}
+
 		proxy_http_version 1.1;
 		proxy_set_header Upgrade $http_upgrade;
 		proxy_set_header Connection "upgrade";
@@ -90,7 +93,8 @@ server {
 
 	# The web screenshot service
 	location /web-screenshot/ {
-		proxy_pass http://teamwire_screenshot_server/;
+		{% raw %}{{ if service "web-screenshot-server" }}proxy_pass http://teamwire_screenshot_server/;{{ else }}return 503;{{ end }}{% endraw %}
+
 	}
 
 {% if admin_ip_ranges is defined %}
@@ -100,11 +104,11 @@ server {
 {% endfor %}
 		deny all;
 
-		proxy_pass http://teamwire_backend;
+		{% raw %}{{ if service "backend" }}proxy_pass http://teamwire_backend;{{ else }}return 503;{{ end }}{% endraw %}
 	}
 
 {% endif %}
 	location / {
-		proxy_pass http://teamwire_backend;
+		{% raw %}{{ if service "backend" }}proxy_pass http://teamwire_backend;{{ else }}return 503;{{ end }}{% endraw %}
 	}
 }
