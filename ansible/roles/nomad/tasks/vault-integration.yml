@@ -1,0 +1,87 @@
+- name: Fetch the Nomad policy and role files
+  copy:
+    src: "{{ inventory_dir }}/roles/vault/files/{{ item }}"
+    dest: /root/
+  with_items:
+    - nomad-server-policy.hcl
+    - nomad-job-policy.hcl
+    - nomad-cluster-role.json
+  run_once: true
+
+- name: Write Nomad server policy
+  command: vault policy write nomad-server /root/nomad-server-policy.hcl
+  run_once: true
+
+- name: Write Nomad job policy
+  command: vault policy write nomad-job /root/nomad-job-policy.hcl
+  run_once: true
+
+- name: Create Vault token role for Nomad
+  command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
+  run_once: true
+
+- name: Delete the Nomad policy and role files
+  file:
+    dest: "/root/{{ item }}"
+    state: absent
+  with_items:
+    - nomad-server-policy.hcl
+    - nomad-job-policy.hcl
+    - nomad-cluster-role.json
+  run_once: true
+
+- name: Create Vault token for Nomad
+  command: vault token create -policy nomad-server -period 72h -orphan -format=json
+  run_once: true
+  register: vault_nomad_token
+
+- name: Set token fact
+  run_once: True
+  set_fact:
+    vault_nomad_token: "{{ vault_nomad_token.stdout | from_json }}"
+
+- name: Fetch Vault SSL certificate, key & CA from a consul server
+  fetch:
+    src: "{{ item }}"
+    dest: "{{ inventory_dir }}/"
+    flat: yes
+  run_once: true
+  with_items:
+    - /var/lib/vault/ssl/vault.crt
+    - /var/lib/vault/ssl/vault.pem
+    - /usr/local/share/ca-certificates/vault-rootCA.crt
+  when: inventory_hostname in groups['consul_servers']
+
+- name: Copy the Vault SSL certificate, key & CA to the backend servers
+  copy:
+    src: "{{ inventory_dir }}/{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - { src: 'vault.crt', dest: '/var/lib/vault/ssl/'}
+    - { src: 'vault.pem', dest: '/var/lib/vault/ssl/'}
+    - { src: 'vault-rootCA.crt', dest: '/usr/local/share/ca-certificates/'}
+  when: inventory_hostname in groups['backend_servers']
+
+- name: Delete the Vault SSL certificate, key & CA from localhost
+  file: 
+    dest: "{{ inventory_dir }}/{{ item }}"
+    state: absent
+  run_once: true
+  with_items:
+    - vault.crt
+    - vault.pem
+    - vault-rootCA.crt
+  delegate_to: localhost
+  vars:
+    ansible_become: no
+
+- name: Trust the Vault Root CA
+  command: update-ca-certificates
+  when: inventory_hostname in groups['backend_servers']
+
+- name: Write Vault configuration for nomad
+  template:
+    src: ../../roles/vault/templates/nomad-vault.hcl.j2
+    dest: /etc/nomad/vault.hcl
+  notify: Restart Nomad agent
+

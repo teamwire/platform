@@ -65,4 +65,3 @@
 
 - name: Enable the Vault service
   service: name=vault state=started enabled=yes daemon_reload=yes
-

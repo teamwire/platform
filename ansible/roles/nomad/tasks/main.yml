@@ -39,3 +39,21 @@
 
 - name: Enable the Nomad service
   service: name=nomad state=started enabled=yes daemon_reload=yes
+
+# Check if Vault has been bootstrapped & integrate Nomad with it if a policy doesn't exist
+- name: Check if Vault has been bootstrapped
+  stat: path=/etc/vault-bootstrapped
+  register: vault_bootstrapped
+  run_once: True
+  delegate_to: "{{ groups.consul_servers | first }}"
+
+- name: Check if Nomad-server policy exists
+  command: vault policy read nomad-server
+  ignore_errors: True
+  register: policy_check
+  run_once: True
+  delegate_to: "{{ groups.consul_servers | first }}"
+  when: vault_bootstrapped.stat.exists
+
+- include: vault-integration.yml
+  when: vault_bootstrapped.stat.exists and policy_check.stderr is defined and "No policy" in policy_check.stderr
