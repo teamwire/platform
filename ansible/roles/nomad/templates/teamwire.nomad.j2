@@ -86,7 +86,9 @@ job "teamwire" {
 			template {
 			data = <<EOH
 			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
+{% endraw %}{% if mysql_host is defined %}{%raw %}
 			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+{% endraw %}{%endif %}{% raw %}
 {% endraw %}{% if oracle_host is defined %}{%raw %}
 			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
 {% endraw %}{%endif %}{% raw %}
@@ -271,7 +273,9 @@ job "teamwire" {
 			template {
 			data = <<EOH
 			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
+{% endraw %}{% if mysql_host is defined %}{%raw %}
 			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+{% endraw %}{%endif %}{% raw %}
 {% endraw %}{% if oracle_host is defined %}{%raw %}
 			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
 {% endraw %}{%endif %}{% raw %}
@@ -363,7 +367,9 @@ job "teamwire" {
 			template {
 			data = <<EOH
 			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
+{% endraw %}{% if mysql_host is defined %}{%raw %}
 			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+{% endraw %}{%endif %}{% raw %}
 {% endraw %}{% if oracle_host is defined %}{%raw %}
 			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
 {% endraw %}{%endif %}{% raw %}
