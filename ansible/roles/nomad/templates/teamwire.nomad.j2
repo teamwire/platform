@@ -51,13 +51,9 @@ job "teamwire" {
 					password = "{{ dockerhub_password }}"
 				}
 {%endif %}
-{% if docker_host_networking is not defined %}
-				port_map {
-					http = 8080
-				}
-{% else %}
+
 				network_mode = "host"
-{%endif %}
+
 				logging {
 					type = "syslog"
 					config {
@@ -166,13 +162,9 @@ job "teamwire" {
 					password = "{{ dockerhub_password }}"
 				}
 {%endif %}
-{% if docker_host_networking is not defined %}
-				port_map {
-					http = 8080
-				}
-{% else %}
+
 				network_mode = "host"
-{%endif %}
+
 				logging {
 					type = "syslog"
 					config {
@@ -238,13 +230,9 @@ job "teamwire" {
 					password = "{{ dockerhub_password }}"
 				}
 {%endif %}
-{% if docker_host_networking is not defined %}
-				port_map {
-					health = 8080
-				}
-{% else %}
+
 				network_mode = "host"
-{%endif %}
+
 				logging {
 					type = "syslog"
 					config {
@@ -343,9 +331,8 @@ job "teamwire" {
 					password = "{{ dockerhub_password }}"
 				}
 {%endif %}
-{% if docker_host_networking is defined %}
+
 				network_mode = "host"
-{%endif %}
 
 				logging {
 					type = "syslog"

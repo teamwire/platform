@@ -15,9 +15,3 @@
 
 - name: Create systemd drop-in directory for HAProxy
   file: name=/etc/systemd/system/haproxy.service.d state=directory
-
-- name: Start HAProxy after Docker
-  copy:
-    src: wait_for_docker.conf
-    dest: /etc/systemd/system/haproxy.service.d/wait_for_docker.conf
-  notify: reload systemd
