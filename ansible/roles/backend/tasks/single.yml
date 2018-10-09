@@ -69,7 +69,7 @@
     image: "teamwire/backend:{{version|default('prod')}}"
     state: started
     restart_policy: always
-    network_mode: bridge
+    network_mode: host
     ports: "127.0.0.1:8082:8080"
     volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
     log_driver: "syslog"
@@ -170,7 +170,7 @@
     image: "teamwire/web-screenshot-server:{{version|default('prod')}}"
     state: started
     restart_policy: always
-    network_mode: bridge
+    network_mode: host
     ports: "127.0.0.1:8081:8080"
     volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
     log_driver: "syslog"
