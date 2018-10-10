@@ -59,6 +59,7 @@ php${PHP_VERSION}-imagick
 php${PHP_VERSION}-intl
 php${PHP_VERSION}-gd
 php${PHP_VERSION}-xml
+jq
 "
 
 DOCKER_IMAGES="

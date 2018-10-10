@@ -65,3 +65,7 @@
 
 - name: Enable the Vault service
   service: name=vault state=started enabled=yes daemon_reload=yes
+
+# jq is used in twctl to help filter data returned from queries to Vault
+- name: Install jq for API querying
+  apt: name=jq state=present
