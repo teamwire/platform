@@ -13,8 +13,8 @@ else
 	exit 1
 fi
 
-VAULT_INITIALIZED=$(curl -s o /dev/null $VAULT_ADDR/v1/sys/health | jq '.initialized')
-VAULT_SEALED=$(curl -s o /dev/null $VAULT_ADDR/v1/sys/health | jq '.sealed')
+VAULT_INITIALIZED=$(curl -s o /dev/null "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
+VAULT_SEALED=$(curl -s o /dev/null "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 CLUSTER_CONFIG_DIR=/data/cluster_config
 
@@ -230,7 +230,7 @@ run_migrations_base() {
 	check_tag "$TAG"
 	get_database_configuration
 
-	ERROR_LOG="$(tempfile)"
+	ERROR_LOG="$(mktemp)"
 
 	echo "Running database migrations"
 	echo
@@ -265,7 +265,7 @@ status_cluster() {
 
 stop_containers_single() {
 	for CONTAINER in $CONTAINERS; do
-		if docker ps -qf name="$CONTAINER" | egrep -q '^.+$' ; then
+		if docker ps -qf name="$CONTAINER" | grep -Eq '^.+$' ; then
 			docker stop "$CONTAINER"
 		fi
 	done
@@ -314,7 +314,6 @@ setup_containers_cluster() {
 	$NOMAD run "$NOMAD_JOB"
 }
 
-OPTIONS=""
 TAG=""
 TASK=""
 while [ $# -gt 0 ] ; do
