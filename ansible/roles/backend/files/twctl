@@ -178,6 +178,7 @@ backupdb_single() {
 	write_temporary_database_access_config
 
 	mysqldump --defaults-file="${MYSQL_CONFIG_FILE}" \
+		--single-transaction \
 		-h "$MYSQL_HOST" -P "$MYSQL_PORT" \
 		-u "$MYSQL_USER" "$MYSQL_DATABASE" > "$FILENAME"
 }
