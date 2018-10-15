@@ -360,6 +360,7 @@ job "teamwire" {
 {% endraw %}{% if oracle_host is defined %}{%raw %}
 			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
 {% endraw %}{%endif %}{% raw %}
+			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
 			EOH
 			destination = "secrets/file.env"
 			env = true
@@ -380,7 +381,6 @@ job "teamwire" {
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				REDIS_URI = "prod.redis.service.consul:6379:1"
-				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 				CELERY_BEAT_SCHEDULE = "/beat/celerybeat-schedule"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
 			}
