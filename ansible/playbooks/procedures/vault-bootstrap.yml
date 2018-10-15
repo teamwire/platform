@@ -5,14 +5,10 @@
   - include_vars: ../../roles/vault/defaults/main.yml
   - include_vars: ../../group_vars/all
 
-  - name: Check if Vault has been bootstrapped
-    stat: path=/etc/vault-bootstrapped
-    register: vault_bootstrapped
-
   - fail:
       msg: >
         "Vault has already been bootstrapped. Please email support@teamwire.eu if you require support on this."
-    when: vault_bootstrapped.stat.exists
+    when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
 
   - name: Initiate Vault
     command: vault operator init -key-shares=6 -key-threshold=2 -format=json
@@ -137,13 +133,6 @@
       - { property: 'VAULT_ADDR', value: '{{ "https://vault.service.consul:8200" if ansible_play_hosts | length() != 1 else "https://127.0.0.1:8200" }}' }
       - { property: 'VAULT_TOKEN', value: '{{ vault_token }}' }
       - { property: 'VAULT_CACERT', value: '/etc/ssl/certs/ca-certificates.crt' }
-
-  - name: Set bootstrap flag
-    file: path=/etc/vault-bootstrapped state=touch
-
-  - name: Confirm bootstrap flag existence
-    stat: path=/etc/vault-bootstrapped
-    register: vault_bootstrapped
 
   - name: Enable SSL in Vault configuration
     template: src=../../roles/vault/templates/vault.hcl.j2 dest=/etc/vault/vault.hcl

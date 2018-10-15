@@ -268,5 +268,11 @@
   notify:
     - restart rsyslog
 
+- name: Create directory for custom facts
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+    recurse: yes
+
 - include_tasks: cluster.yml
   when: groups['all'] | length() > 1 and (skip_private_if is not defined or skip_private_if)

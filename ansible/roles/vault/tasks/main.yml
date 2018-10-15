@@ -1,6 +1,17 @@
-- name: Check if Vault has been bootstrapped
-  stat: path=/etc/vault-bootstrapped
-  register: vault_bootstrapped
+# jq is used in twctl to help filter data returned from queries to Vault
+- name: Install jq for API querying
+  apt: name=jq state=present
+
+- name: Insert fact file for Vault
+  copy:
+    src: files/vault.fact
+    dest: /etc/ansible/facts.d/vault.fact
+    mode: 0755
+  register: vault_fact
+
+- name: Reload Ansible local facts to register custom fact
+  setup: filter=ansible_local
+  when: vault_fact.changed
 
 - name: Check if Vault is already installed
   stat: path=/usr/local/bin/vault
@@ -52,7 +63,7 @@
   rescue:
     - debug: msg="Generating SSL certificates for Vault"
     - include: ssl-setup.yml
-  when: vault_bootstrapped.stat.exists
+  when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
 
 - name: Write Vault config
   template: src=vault.hcl.j2 dest=/etc/vault/vault.hcl
@@ -65,7 +76,3 @@
 
 - name: Enable the Vault service
   service: name=vault state=started enabled=yes daemon_reload=yes
-
-# jq is used in twctl to help filter data returned from queries to Vault
-- name: Install jq for API querying
-  apt: name=jq state=present

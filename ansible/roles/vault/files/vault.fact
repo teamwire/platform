@@ -1,0 +1,14 @@
+#!/bin/bash
+
+source /etc/environment
+
+VAULT_INITIALIZED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
+VAULT_SEALED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
+
+cat <<EOF
+{
+    "initialized" : "$VAULT_INITIALIZED",
+    "sealed" : "$VAULT_SEALED",
+    "address" : "$VAULT_ADDR"
+}
+EOF
