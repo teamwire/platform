@@ -198,5 +198,82 @@
     vars:
       ansible_become: no
 
+  - name: Reload Ansible local facts to register Vault status
+    setup: filter=ansible_local
+
+  - name: Include secrets var file so the defined secrets can be read
+    include_tasks: ../../roles/vault/tasks/secrets.yml
+
+  - name: Confirm Dockerhub password if empty
+    block:
+      - pause:
+          prompt: "Dockerhub password required. Please enter the password for {{ dockerhub_username }}"
+          echo: no
+        register: pause_entry
+      - command: vault write secret/dockerhub/password value="{{ pause_entry.user_input }}"
+    no_log: true
+    run_once: true
+    when: dockerhub_password == ""
+
+  - name: Confirm Google API key if empty
+    block:
+      - pause:
+          prompt: "Google API key required. Please enter the key you have received from us."
+          echo: no
+        register: pause_entry
+      - command: vault write secret/keys/gcm value="{{ pause_entry.user_input }}"
+    no_log: true
+    run_once: true
+    when: gcm_api_key == ""
+
+  - name: Confirm SMTP password if empty
+    block:
+      - pause:
+          prompt: "SMTP password required. Please confirm the password for {{ smtp_smartuser }}"
+          echo: no
+        register: pause_entry
+      - command: vault write secret/smtp/password value="{{ pause_entry.user_input }}"
+    no_log: true
+    run_once: true
+    when: smtp_smartpass == ""
+
+  - name: Confirm teamwire database password if empty and using external database host
+    block:
+      - pause:
+          prompt: "Database password required. Please confirm the password for {{ teamwire_db_user }}"
+          echo: no
+        register: pause_entry
+      - command: vault write secret/database/password value="{{ pause_entry.user_input }}"
+    no_log: true
+    run_once: true
+    when: (mysql_host is defined and teamwire_db_password == "") or
+          (oracle_host is defined and teamwire_db_password == "")
+
+  - name: Generate and write internal secrets if empty
+    shell: >
+      generated_secret=$(pwgen -s {{ item.parameters }} 1) &&
+      vault write secret/"{{ item.path }}" value=$generated_secret
+    when: item.secret == ""
+    no_log: true
+    run_once: true
+    with_items:
+      - { secret: "{{ teamwire_db_password }}", path: 'database/password', parameters: '32' }
+      - { secret: "{{ aes_key }}", path: 'database/aes_key', parameters: '32' }
+      - { secret: "{{ mysql_root_password }}", path: 'dbserver/mysql_root_password', parameters: '32' }
+      - { secret: "{{ clustercheck_password }}", path: 'dbserver/clustercheck_password', parameters: '32' }
+      - { secret: "{{ xtrabackup_password }}", path: 'dbserver/xtrabackup_password', parameters: '32' }
+      - { secret: "{{ redis_pass }}", path: 'redis/password', parameters: '32' }
+      - { secret: "{{ monitoring_db_password }}", path: 'monitoring/db_password', parameters: '32' }
+      - { secret: "{{ monitoring_db_web_password }}", path: 'monitoring/db_web_password', parameters: '32' }
+      - { secret: "{{ icinga_admin_password }}", path: 'monitoring/icinga_admin_password', parameters: '16' }
+      - { secret: "{{ icinga_salt }}", path: 'monitoring/icinga_salt', parameters: '32' }
+      - { secret: "{{ icinga_api_password }}", path: 'monitoring/icinga_api_password', parameters: '32' }
+
+- name: Run Nomad role to apply Vault integration
+  hosts: consul_servers:backend_servers
+  tasks:
+  - include_role:
+      name: ../../roles/nomad
+
   - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored at /home/teamwire/vault-credentials. The all file has been updated to use Vault, a backup has been placed in the group_vars directory."
     run_once: true

@@ -1,0 +1,30 @@
+---
+secrets:
+  dockerhub_password:
+    path: secret/dockerhub/password
+  gcm_api_key:
+    path: secret/keys/gcm
+  teamwire_db_password:
+    path: secret/database/password
+  aes_key:
+    path: secret/database/aes_key
+  mysql_root_password:
+    path: secret/dbserver/mysql_root_password
+  clustercheck_password:
+    path: secret/dbserver/clustercheck_password
+  xtrabackup_password:
+    path: secret/dbserver/xtrabackup_password
+  redis_pass:
+    path: secret/redis/password
+  smtp_smartpass:
+    path: secret/smtp/password
+  monitoring_db_password:
+    path: secret/monitoring/db_password
+  monitoring_db_web_password:
+    path: secret/monitoring/db_web_password
+  icinga_admin_password:
+    path: secret/monitoring/icinga_admin_password
+  icinga_salt:
+    path: secret/monitoring/icinga_salt
+  icinga_api_password:
+    path: secret/monitoring/icinga_api_password
