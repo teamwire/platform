@@ -138,6 +138,7 @@
     state: present
     login_user: root
     login_password: "{{ mysql_root_password }}"
+  no_log: true
   with_items:
     - "{{ monitoring_db_name }}"
     - "{{ monitoring_db_web_name }}"
@@ -154,6 +155,7 @@
     login_user: root
     login_password: "{{ mysql_root_password }}"
     host: "%"
+  no_log: true
   with_items:
     - { user: '{{monitoring_db_user}}', password: '{{monitoring_db_password}}', db: '{{monitoring_db_name}}' }
     - { user: '{{monitoring_db_web_user}}', password: '{{monitoring_db_web_password}}', db: '{{monitoring_db_web_name}}' }
