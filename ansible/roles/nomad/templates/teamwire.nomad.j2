@@ -34,6 +34,11 @@ job "teamwire" {
 	group "backends" {
 		count = {{ groups['backend_servers'] | count }}
 
+		constraint {
+		  operator = "distinct_hosts"
+		  value = "true"
+		}
+
 		restart {
 			interval = "5m"
 			attempts = 10
@@ -211,6 +216,11 @@ job "teamwire" {
 
 	group "workers" {
 		count = {{ groups['backend_servers'] | count }}
+
+		constraint {
+		  operator = "distinct_hosts"
+		  value = "true"
+		}
 
 		restart {
 			interval = "5m"
