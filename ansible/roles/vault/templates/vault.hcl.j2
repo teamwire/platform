@@ -1,26 +1,29 @@
 {% if ansible_play_hosts | length() == 1 %}  
 storage "file" {
-  path = "/usr/lib/vault/store"
+  path = "/var/lib/vault/store/"
 }
 {%endif %}
 {% if ansible_play_hosts | length() != 1 %}  
 storage "consul" {
   address = "127.0.0.1:8500"
-  path = "vault"
+  path = "vault/"
 }
 cluster_name = "Vault Cluster"
 {%endif %}
 
 ui = true
+{% if ansible_play_hosts | length() != 1 %}
+cluster_address = "https://{{ private_ip }}:8201"
+api_addr = "https://{{ private_ip }}:8200"
+{%endif %}
 
 listener "tcp" {
  address = "0.0.0.0:8200"
- {% if ansible_play_hosts | length() != 1 %}
- cluster_address = "{{ private_ip }}:8201"
- {%endif %}
- tls_disable = {{ "0" if ansible_local.vault is defined and ansible_local.vault.initialized == "true" else "1" }}
 {% if ansible_local.vault is defined and ansible_local.vault.initialized == "true" %}
+ tls_disable = 0
+{% else %}
+ tls_disable = 1
+{% endif %}
  tls_cert_file = "/var/lib/vault/ssl/vault.crt"
  tls_key_file = "/var/lib/vault/ssl/vault.pem"
-{%endif %}
 }

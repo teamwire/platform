@@ -135,7 +135,10 @@
       - { property: 'VAULT_CACERT', value: '/etc/ssl/certs/ca-certificates.crt' }
 
   - name: Enable SSL in Vault configuration
-    template: src=../../roles/vault/templates/vault.hcl.j2 dest=/etc/vault/vault.hcl
+    replace:
+      path: /etc/vault/vault.hcl
+      regexp: 'tls_disable.*'
+      replace: 'tls_disable = 0'
 
   - name: Restart Vault so that it uses TLS
     service:
