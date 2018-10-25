@@ -3,6 +3,10 @@
   fail: msg="MySQL root password is not defined. Please ensure the mysql root password is set and not empty."
   when: config_done is defined and mysql_root_password is defined and mysql_root_password == None
 
+- name: Ensure mysql_root_password is configured before configuring monitoring
+  fail: msg="MySQL root password is not defined. Please ensure the mysql root password is set and not empty."
+  when: config_done is defined and mysql_root_password is defined and mysql_root_password == None
+
 - name: Install Icinga2 and monitoring plugins
   apt: name={{ item }} state=present
   with_items:
