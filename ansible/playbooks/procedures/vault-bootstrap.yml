@@ -26,8 +26,11 @@
   - name: Create Vault credentials file
     template:
       src: ../../roles/vault/templates/credentials.j2
-      dest: /home/teamwire/vault-credentials
+      dest: "{{ inventory_dir }}/vault-credentials"
     run_once: True
+    delegate_to: localhost
+    vars:
+      ansible_become: no
 
   - name: Set temporary VAULT_TOKEN environment variable
     shell: export VAULT_TOKEN="{{ vault_token }}"
@@ -173,9 +176,12 @@
 
   - name: Backup the all file
     copy:
-      src: "../../group_vars/all"
-      dest: "../../all.backup.{{ ansible_date_time.date }}"
+      src: "{{ inventory_dir }}/group_vars/all"
+      dest: "{{ inventory_dir }}/group_vars/all.backup.{{ ansible_date_time.date }}"
     run_once: true
+    delegate_to: localhost
+    vars:
+      ansible_become: no
 
   - name: Update group_vars/all file
     lineinfile:
@@ -278,5 +284,5 @@
   - include_role:
       name: ../../roles/nomad
 
-  - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored at /home/teamwire/vault-credentials. The all file has been updated to use Vault, a backup has been placed in the group_vars directory."
+  - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored in the main local Ansible directory. The all file has been updated to use Vault, a backup has been placed in the group_vars directory."
     run_once: true
