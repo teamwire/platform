@@ -18,8 +18,40 @@ VAULT_SEALED=$(curl -s o /dev/null "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 CLUSTER_CONFIG_DIR=/data/cluster_config
 
-if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ]; then
-	echo "Vault must be unsealed."
+
+get_vault_secret_recursive() {
+        vault_list="vault list -format "yaml" secret"
+        declare -a vault_secr=`eval "$vault_list | sed 's/-//g'"`
+        for toplevel in ${vault_secr[@]}
+        do
+                sublevel=`eval "$vault_list/$toplevel | sed ':a;N;$!ba;s/\n//g'"`
+                key=`echo $sublevel | sed 's|-\s|  |gm'`
+                for k in ${key[@]}
+                do
+                        echo "$toplevel$k"
+                done
+        done
+}
+
+function vault_seal {
+	if [[ $VAULT_SEALED == "false" ]];then
+		vault operator seal
+	else
+		echo "Vault is already sealed"
+	fi
+}
+function vault_unseal {
+	vault status > /dev/null
+	isSealed=$?
+	if [ $isSealed -eq 0 ];then
+		echo "Vault is already unsealed"
+	else
+		vault operator unseal
+	fi
+}
+
+if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [[ $2 -ne "unseal" || $2 -ne "rescue" ]]; then
+	echo "Vault must be unsealed. Please run twctl secrets unseal."
 	exit 1
 fi
 
@@ -150,6 +182,63 @@ save_container_logs() {
 	done
 }
 
+secrets() {
+case $OPTION in
+		read)
+				vault read -field=value "secret/${SECRET}"
+				;;
+		write)
+				if [ -z "$SECRET" ] ; then
+				 echo "ERROR: A secret must be specified, use 'twctl secrets list' for information on current secret paths."
+				 echo
+				 exit 1
+				fi
+
+				echo Setting "${SECRET}"
+				read -s -p "Secret: " ENTRY; echo
+				read -s -p "Confirm Secret: " ENTRYCONFIRM; echo
+
+				if [[ "${ENTRY}" != "${ENTRYCONFIRM}" ]]; then
+				 echo "Entries do not match, exiting"
+				 exit -1
+				else
+				 vault write "secret/${SECRET}" "value=${ENTRY}"
+				fi
+				;;
+		list)
+				get_vault_secret_recursive
+				;;
+		delete)
+				vault delete "secret/${SECRET}"
+				;;
+		unseal)
+				vault_unseal
+				;;
+		seal)
+				vault_seal
+				;;
+		rescue)
+				vault operator unseal -address=https://127.0.0.1:8200	
+				;;
+		info)
+				vault status
+				;;
+		*)
+				echo "Managing Vault secrets"
+				echo "Usage: twctl secrets {read|write|list|delete|unseal|seal|rescue|info}"
+				echo "	read  : Reads the specified secret"
+				echo "	write : Updates the specified secret"
+				echo "	list  : Lists the secret paths"
+				echo "	delete : Deletes the specified secret"
+				echo "	unseal : Unseals the Vault so secrets can be accessed"
+				echo "	seal : Seals the Vault to prevent access to secrets"
+				echo "	rescue : Re-register and unseal a Vault server if the consul cluster address no longer resolves"
+				echo "	info : Displays Vault information such as seal status, cluster mode and version"    ;;
+esac
+}
+
+
+
 help() {
 	echo "Command line options:"
 	echo
@@ -167,6 +256,7 @@ help() {
 	echo "stop        Stop all running Teamwire containers"
 	echo "rm          Remove all stopped Teamwire containers"
 	echo "backupdb    Create a backup of the database (requires file name)"
+	echo "secrets     Manage Vault and its secrets"
 }
 
 backupdb_single() {
@@ -360,6 +450,11 @@ while [ $# -gt 0 ] ; do
 			;;
 		exportlogs)
 			TASK="save_container_logs"
+			;;
+		secrets)
+			OPTION="$2"
+			SECRET="$3"
+			TASK="secrets"
 			;;
 	esac
 	shift
