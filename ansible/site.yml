@@ -30,7 +30,7 @@
 - name: Deploy Vault secret system
   hosts: all
   roles:
-    - { role: vault, when: config_done is defined }
+    - vault
 
 - name: Deploy and configure MySQL database
   hosts: all
