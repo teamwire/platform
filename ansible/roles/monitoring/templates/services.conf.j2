@@ -44,13 +44,6 @@ apply Service "check-memory" {
   assign where host.vars.os == "Linux" && host.vars.client_endpoint
 }
 
-apply Service "check-procs" {
-  import "generic-service"
-  check_command = "procs"
-  command_endpoint = host.vars.client_endpoint
-  assign where host.vars.os == "Linux" && host.vars.client_endpoint
-}
-
 apply Service "check-swap" {
   import "generic-service"
   check_command = "swap"
