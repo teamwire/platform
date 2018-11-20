@@ -29,6 +29,7 @@ apply Service for (disk => config in host.vars.disks) {
 apply Service "check-load" {
   import "generic-service"
   check_command = "load"
+  vars.load_percpu = true
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux" && host.vars.client_endpoint
 }
