@@ -13,7 +13,7 @@
   hosts: local:consul_servers
   tasks:
     - include_role:
-        name: vault
+        name: roles/vault.yml
         tasks_from: secrets
       when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
 
