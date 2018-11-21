@@ -1,5 +1,17 @@
-- hosts: local:consul_servers
+- hosts: all
+  tasks:
+  - fail: msg="Please ensure your group_vars/all file is correctly configured and try again."
+    when: config_done is not defined
 
+- name: Deploy Vault requirements
+  hosts: all
+  roles:
+    - ../../roles/common
+    - { role: ../../roles/consul, when: "groups['all'] | length() > 1" }
+    - { role: ../../roles/vault, when: "groups['all'] | length() == 1 or inventory_hostname in groups['consul_servers']" }
+
+- name: Bootstrap Vault
+  hosts: local:consul_servers
   tasks:
 
   - include_vars: ../../roles/vault/defaults/main.yml
@@ -284,5 +296,7 @@
   - include_role:
       name: ../../roles/nomad
 
+- hosts: all
+  tasks:
   - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored in the main local Ansible directory. The all file has been updated to use Vault, a backup has been placed in the group_vars directory."
-    run_once: true
+  run_once: true
