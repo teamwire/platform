@@ -115,8 +115,5 @@
     password: "{{ dockerhub_password }}"
     email: "{{ dockerhub_email }}"
 
-- name: Configure firewall to allow Docker containers access to the host
-  ufw: rule=allow interface=docker0 direction=in
-
 - include_tasks: cluster.yml
   when: groups['all'] | length() > 1
