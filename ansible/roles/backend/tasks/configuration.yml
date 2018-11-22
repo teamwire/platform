@@ -41,7 +41,7 @@
 
 - name: Determine MariaDB host (Galera cluster)
   set_fact:
-    mysql_host: "{{ ansible_docker0['ipv4']['address'] }}"
+    mysql_host: "127.0.0.1"
   when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
 
 - name: Determine MariaDB port (local)

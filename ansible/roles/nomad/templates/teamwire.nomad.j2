@@ -104,11 +104,7 @@ job "teamwire" {
 				ARCHIVING_GPGHOME = "/archiving/gpg"
 				ORG_DEFAULT_ALLOW_USER_REG = "{{ allow_unknown_users|default('true') }}"
 				ORG_DEFAULT_ALLOW_USER_QUERY = "{{ allow_user_query|default('false') }}"
-{% if docker_host_networking is defined and mysql_host is defined %}
-				MYSQL_HOST = "127.0.0.1"
-{% else %}
 				MYSQL_HOST = "{{ mysql_host | default() }}"
-{%endif %}
 				MYSQL_PORT = "{{ mysql_port | default() }}"
 				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
 				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
@@ -117,11 +113,7 @@ job "teamwire" {
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				REDIS_URI = "prod.redis.service.consul:6379:1"
-{% if docker_host_networking is defined %}
 				EMAIL_HOST = "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
-{% else %}
-				EMAIL_HOST = "{{ '172.17.0.1' if fake_email_confirmation is not defined else '' }}"
-{%endif %}
 				BLOB_DIR = "/assets"
 				DEFAULT_FROM_EMAIL = "{{ sender_address }}"
 				http_proxy = "{{ http_proxy|default() }}"
@@ -131,10 +123,8 @@ job "teamwire" {
 				FAKE_SMS = "{{ fake_sms|default() }}"
 				FAKE_EMAIL_CONFIRMATION = "{{ fake_email_confirmation|default() }}"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
-{% if docker_host_networking is defined %}
 				BIND_HOST = "${NOMAD_IP_http}"
 				BIND_PORT = "${NOMAD_PORT_http}"
-{%endif %}
 			}
 
 			resources {
@@ -197,10 +187,8 @@ job "teamwire" {
 			env {
 				CACHE_DIR = "/website-screenshot-cache"
 				HTTP_PROXY = "{{ http_proxy|default() }}"
-{% if docker_host_networking is defined %}
 				BIND_HOST = "${NOMAD_IP_http}"
 				BIND_PORT = "${NOMAD_PORT_http}"
-{%endif %}
 			}
 
 			resources {
@@ -286,11 +274,7 @@ job "teamwire" {
 {% endraw %}
 			env {
 				MODE = "worker"
-{% if docker_host_networking is defined and mysql_host is defined %}
-				MYSQL_HOST = "127.0.0.1"
-{% else %}
 				MYSQL_HOST = "{{ mysql_host | default() }}"
-{%endif %}
 				MYSQL_PORT = "{{ mysql_port | default() }}"
 				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
 				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
@@ -311,10 +295,8 @@ job "teamwire" {
 				http_proxy = "{{ http_proxy|default() }}"
 				https_proxy = "{{ http_proxy|default() }}"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
-{% if docker_host_networking is defined %}
 				BIND_HOST = "${NOMAD_IP_health}"
 				BIND_PORT = "${NOMAD_PORT_health}"
-{%endif %}
 			}
 
 			resources {
@@ -378,11 +360,7 @@ job "teamwire" {
 {% endraw %}
 			env {
 				MODE = "beat"
-{% if docker_host_networking is defined and mysql_host is defined %}
-				MYSQL_HOST = "127.0.0.1"
-{% else %}
 				MYSQL_HOST = "{{ mysql_host | default() }}"
-{%endif %}
 				MYSQL_PORT = "{{ mysql_port | default() }}"
 				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
 				MYSQL_USER = "{{ teamwire_db_user if mysql_host is defined else '' }}"
