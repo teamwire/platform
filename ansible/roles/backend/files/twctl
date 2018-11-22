@@ -86,7 +86,7 @@ else
 fi
 
 	if [ -z "$MYSQL_HOST" ]; then
-		MYSQL_HOST=$(/bin/ip addr show docker0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
+		MYSQL_HOST=127.0.0.1
 	fi
 
 	if [ -z "$MYSQL_PORT" ]; then
@@ -234,7 +234,7 @@ run_migrations_base() {
 
 	echo "Running database migrations"
 	echo
-	docker run --rm -e MODE=migration --name teamwire-migrations \
+	docker run --rm --network host -e MODE=migration --name teamwire-migrations \
 		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_DATABASE="$MYSQL_DATABASE" \
 		-e MYSQL_USER="$MYSQL_USER" -e MYSQL_PASSWORD="$MYSQL_PASS" \
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
