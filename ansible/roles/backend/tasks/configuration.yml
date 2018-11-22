@@ -31,7 +31,7 @@
 
 - name: Determine MariaDB host (local)
   set_fact:
-    mysql_host: "{{ ansible_docker0['ipv4']['address'] }}"
+    mysql_host: "127.0.0.1"
   when: mysql_host is not defined and 'database_servers' not in groups and oracle_host is not defined
 
 - name: Determine MariaDB host (Single MariaDB server)

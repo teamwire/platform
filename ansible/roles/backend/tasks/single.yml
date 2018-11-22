@@ -24,7 +24,6 @@
     state: started
     restart_policy: always
     network_mode: host
-    ports: "8080"
     volumes: "/data/archiving:/archiving,/data/assets:/assets"
     log_driver: "syslog"
     log_opt:
@@ -48,7 +47,7 @@
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
-      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
+      REDIS_URI: "127.0.0.1:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       EMAIL_HOST: "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
       BLOB_DIR: /assets
@@ -70,7 +69,6 @@
     state: started
     restart_policy: always
     network_mode: host
-    ports: "127.0.0.1:8082:8080"
     volumes: "/data/assets:/assets,/data/certs/apns/:/app/certs/apns/"
     log_driver: "syslog"
     log_opt:
@@ -79,6 +77,8 @@
     env:
       MODE: worker
       AESKEY: "{{aes_key}}"
+      BIND_HOST: "127.0.0.1"
+      BIND_PORT: "8082"
       MYSQL_HOST: "{{ mysql_host | default() }}"
       MYSQL_PORT: "{{ mysql_port  | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
@@ -89,9 +89,9 @@
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
-      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
+      REDIS_URI: "127.0.0.1:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
-      NOTIFICATION_SERVER_URL: "http://{{ ansible_docker0['ipv4']['address'] }}:9081"
+      NOTIFICATION_SERVER_URL: "http://127.0.0.1:9081"
       BLOBDIR: /assets
       APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid|default('com.teamwire.messenger') }}"
       APNS_CERT_2: "{% if apns_certificate_2 is defined %}/app/certs/apns/{{ apns_certificate_2 | basename }},push_production,{{ apns_appid_2 }}{% endif %}"
@@ -128,7 +128,7 @@
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
-      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
+      REDIS_URI: "127.0.0.1:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
@@ -147,13 +147,12 @@
     state: started
     restart_policy: always
     network_mode: host
-    ports: "9080,9081"
     log_driver: "syslog"
     log_opt:
       tag: teamwire-notifications
       syslog-facility: "local6"
     env:
-      REDIS_URI: "{{ ansible_docker0['ipv4']['address'] }}:6379:1"
+      REDIS_URI: "127.0.0.1:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       LOGLEVEL: "{{ notification_loglevel|default() }}"
 
@@ -171,12 +170,13 @@
     state: started
     restart_policy: always
     network_mode: host
-    ports: "127.0.0.1:8081:8080"
     volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
     log_driver: "syslog"
     log_opt:
       tag: teamwire-screenshot-server
       syslog-facility: "local6"
     env:
+      BIND_HOST: "127.0.0.1"
+      BIND_PORT: 8081
       CACHE_DIR: /website-screenshot-cache
       HTTP_PROXY: "{{ http_proxy|default() }}"
