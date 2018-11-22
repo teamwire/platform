@@ -54,7 +54,7 @@
     state: directory
   when: '"database_servers" not in groups'
 
-# Allow incoming connections to MySQL on all interfaces, including docker0.
+# Allow incoming connections to MySQL on all interfaces
 - name: Configure MariaDB to listen on all interfaces
   lineinfile:
     dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
