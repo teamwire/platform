@@ -26,10 +26,10 @@ job "teamwire" {
 		max_parallel = 1
 	}
 
- vault {
-    policies = ["nomad-job"]
-	change_mode = "noop"
-  }
+	vault {
+		policies = ["nomad-job"]
+		change_mode = "noop"
+	}
 
 	group "backends" {
 		count = {{ groups['backend_servers'] | count }}
