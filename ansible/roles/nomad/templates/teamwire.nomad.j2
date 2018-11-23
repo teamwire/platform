@@ -28,7 +28,7 @@ job "teamwire" {
 
 	vault {
 		policies = ["nomad-job"]
-		change_mode = "noop"
+		change_mode = "restart"
 	}
 
 	group "backends" {
