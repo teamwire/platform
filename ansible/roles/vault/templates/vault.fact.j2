@@ -1,0 +1,15 @@
+#!/bin/bash
+
+VAULT_INITIALIZED=$(curl -s "https://{% if ansible_play_hosts | length() == 1 %}127.0.0.1{% else %}vault.service.consul{% endif %}
+:8200/v1/sys/health" | jq '.initialized')
+VAULT_SEALED=$(curl -s "https://{% if ansible_play_hosts | length() == 1 %}127.0.0.1{% else %}vault.service.consul{% endif %}
+:8200/v1/sys/health" | jq '.sealed')
+
+cat <<EOF
+{
+    "initialized" : "$VAULT_INITIALIZED",
+    "sealed" : "$VAULT_SEALED",
+    "address" : "https://{% if ansible_play_hosts | length() == 1 %}127.0.0.1{% else %}vault.service.consul{% endif %}
+:8200"
+}
+EOF

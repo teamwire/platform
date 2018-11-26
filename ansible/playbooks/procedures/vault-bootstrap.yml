@@ -139,16 +139,6 @@
   - name: Trust the Vault Root CA
     command: update-ca-certificates
 
-  - name: Add Vault Environment variables
-    lineinfile:
-      dest: /etc/environment
-      regexp: "^{{ item.property }}="
-      line: "{{ item.property }}={{ item.value }}"
-    with_items:
-      - { property: 'VAULT_ADDR', value: '{{ "https://vault.service.consul:8200" if ansible_play_hosts | length() != 1 else "https://127.0.0.1:8200" }}' }
-      - { property: 'VAULT_TOKEN', value: '{{ vault_token }}' }
-      - { property: 'VAULT_CACERT', value: '/etc/ssl/certs/ca-certificates.crt' }
-
   - name: Enable SSL in Vault configuration
     replace:
       path: /etc/vault/vault.hcl

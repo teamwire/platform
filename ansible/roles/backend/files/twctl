@@ -13,8 +13,6 @@ else
 	exit 1
 fi
 
-VAULT_INITIALIZED=$(curl -s o /dev/null "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
-VAULT_SEALED=$(curl -s o /dev/null "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 CLUSTER_CONFIG_DIR=/data/cluster_config
 
@@ -50,10 +48,6 @@ function vault_unseal {
 	fi
 }
 
-if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [[ $2 -ne "unseal" || $2 -ne "rescue" ]]; then
-	echo "Vault must be unsealed. Please run twctl secrets unseal."
-	exit 1
-fi
 
 _get_config_value() {
 	local ENTRY="$1"
@@ -63,6 +57,7 @@ _get_config_value() {
 if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	# Clustered setup
 	INSTALLATION=cluster
+	VAULT_ADDR="https://vault.service.consul:8200"
 
 	if [ "$UID" != "0" ] && [ ! -r "$CLUSTER_CONFIG_DIR" ] ; then
 		# Try to grant read permissions to the required files
@@ -74,6 +69,7 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 else
 	# Single server installation
 	INSTALLATION=single
+	VAULT_ADDR="https://127.0.0.1:8200"
 
 	if [ ! -f "$CONFIG_FILE" ]; then
 		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
@@ -85,6 +81,14 @@ else
 fi
 
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
+
+VAULT_INITIALIZED=$(curl -s o /dev/null "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
+VAULT_SEALED=$(curl -s o /dev/null "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
+
+if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [[ $2 -ne "unseal" || $2 -ne "rescue" ]]; then
+	echo "Vault must be unsealed. Please run twctl secrets unseal."
+	exit 1
+fi
 
 check_tag() {
 	local TAG=$1
