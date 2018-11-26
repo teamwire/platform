@@ -1,6 +1,6 @@
 [Service]
 ExecStart=
-ExecStart=/usr/bin/dockerd -H fd:// --userland-proxy=false
+ExecStart=/usr/bin/dockerd -H unix:// --userland-proxy=false
 {%- if 'docker_registry' in groups %}
 {%- for host in groups.docker_registry %}
  --registry-mirror http://{{ host }}:5000 --insecure-registry {{ host }}:5000
