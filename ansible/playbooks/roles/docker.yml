@@ -1,3 +1,12 @@
+# This task will check if Vault has been initialized and read the secrets from there if so
+- name: Vault Status check
+  hosts: local:consul_servers
+  tasks:
+    - include_role:
+        name: ../../roles/vault
+        tasks_from: secrets
+      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+
 - name: Deploy Docker (registry host)
   hosts: docker_registry
   roles:

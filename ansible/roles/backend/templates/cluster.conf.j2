@@ -1,5 +1,4 @@
 REGISTRY="{{ groups['docker_registry'] | first if 'docker_registry' in groups else '' }}{{ ':5000' if 'docker_registry' in groups else '' }}"
-AESKEY="{{ aes_key }}"
 {% if 'database_servers' in groups and groups['database_servers'] | length > 1 %}
 MYSQL_HOST="{{ hostvars[groups['database_servers'] | first].private_ip }}"
 MYSQL_PORT="3306"
@@ -9,9 +8,7 @@ MYSQL_PORT="{{ mysql_port | default() }}"
 {% endif %}
 MYSQL_DATABASE="{{ teamwire_db_name if mysql_host is defined else '' }}"
 MYSQL_USER="{{ teamwire_db_user if mysql_host is defined else '' }}"
-MYSQL_PASS="{{ teamwire_db_password if mysql_host is defined else '' }}"
 ORA_HOST="{{ oracle_host | default() }}"
 ORA_PORT="{{ oracle_port | default() }}"
 ORA_DATABASE="{{ teamwire_db_name if oracle_host is defined else '' }}"
 ORA_USER="{{ teamwire_db_user if oracle_host is defined else '' | default() }}"
-ORA_PASSWORD="{{ teamwire_db_password if oracle_host is defined else '' }}"

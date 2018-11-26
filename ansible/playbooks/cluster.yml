@@ -9,19 +9,13 @@
           - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
           - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
 
-    - name: Check if Vault has been bootstrapped
-      stat: path=/etc/vault-bootstrapped
-      register: vault_bootstrapped
-
-    - pause:
-        prompt: "Enter Unseal key 1"
-      when: vault_bootstrapped.stat.exists
-      register: unseal_key1
-
-    - pause:
-        prompt: "Enter Unseal key 2"
-      when: vault_bootstrapped.stat.exists
-      register: unseal_key2
+- name: Vault Status check
+  hosts: local:consul_servers
+  tasks:
+    - include_role:
+        name: roles/vault.yml
+        tasks_from: secrets
+      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
 
 - include: roles/common.yml
 - include: roles/consul.yml

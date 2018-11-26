@@ -158,7 +158,7 @@
 
 - name: Write the Postfix configuration file
   template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
-  when: config_done is defined
+  when: config_done is defined and smtp_smartpass is defined
   notify: restart postfix
 
 - name: Write the Postfix password file
@@ -166,7 +166,7 @@
     src: postfix-passwd.j2
     dest: /etc/postfix/sasl/passwd
     mode: 0600
-  when: config_done is defined
+  when: config_done is defined and smtp_smartpass is defined
   notify: rebuild postfix passwd map
 
 - name: Give root a speaking name
@@ -267,6 +267,12 @@
     dest: /etc/rsyslog.d/30-remote-logging.conf
   notify:
     - restart rsyslog
+
+- name: Create directory for custom facts
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+    recurse: yes
 
 - include_tasks: cluster.yml
   when: groups['all'] | length() > 1 and (skip_private_if is not defined or skip_private_if)

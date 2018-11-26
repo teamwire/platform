@@ -1,8 +1,19 @@
-# This play only applies to the single server installation
-- hosts: local
+# This task will check if Vault has been initialized and read the secrets from there if so
+- name: Vault Status check
+  hosts: local:consul_servers
   tasks:
-  - include_vars: "../../roles/vault/vars/secrets/main.yml"
-  - include_tasks: "../../roles/backend/tasks/single.yml"
+    - include_role:
+        name: ../../roles/vault
+        tasks_from: secrets
+      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+
+# This play only applies to the single server installation
+- name: Configure containers for single installations
+  hosts: local
+  tasks:
+  - include_role:
+      name: ../../roles/backend
+      tasks_from: single
 
 # This play only applies to cluster installations
 - name: Write cluster configuration
