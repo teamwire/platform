@@ -85,18 +85,18 @@ job "teamwire" {
 			}
 {% raw %}
 			template {
-			data = <<EOH
-			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
-{% endraw %}{% if mysql_host is defined %}{%raw %}
-			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{% endraw %}{%endif %}{% raw %}
-{% endraw %}{% if oracle_host is defined %}{%raw %}
-			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{% endraw %}{%endif %}{% raw %}
-			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
-			EOH
-			destination = "secrets/file.env"
-			env = true
+				data = <<EOH
+					AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
+{%- endraw %}{% if mysql_host is defined %}{%raw %}
+					MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+{%- endraw %}{%endif %}
+{% if oracle_host is defined %}{%raw %}
+					ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
+{%- endraw %}{%endif %}{% raw %}
+					REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
+				EOH
+				destination = "secrets/file.env"
+				env = true
 			}
 {% endraw %}
 			env {
