@@ -6,19 +6,19 @@
     - nomad-server-policy.hcl
     - nomad-job-policy.hcl
     - nomad-cluster-role.json
-  run_once: true
+  when: inventory_hostname == groups['consul_servers'] | first
 
 - name: Write Nomad server policy
   command: vault policy write nomad-server /root/nomad-server-policy.hcl
-  run_once: true
+  when: inventory_hostname == groups['consul_servers'] | first
 
 - name: Write Nomad job policy
   command: vault policy write nomad-job /root/nomad-job-policy.hcl
-  run_once: true
+  when: inventory_hostname == groups['consul_servers'] | first
 
 - name: Create Vault token role for Nomad
   command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
-  run_once: true
+  when: inventory_hostname == groups['consul_servers'] | first
 
 - name: Delete the Nomad policy and role files
   file:
@@ -28,11 +28,11 @@
     - nomad-server-policy.hcl
     - nomad-job-policy.hcl
     - nomad-cluster-role.json
-  run_once: true
+  when: inventory_hostname == groups['consul_servers'] | first
 
 - name: Create Vault token for Nomad
   command: vault token create -policy nomad-server -period 72h -orphan -format=json
-  run_once: true
+  when: inventory_hostname == groups['consul_servers'] | first
   register: vault_nomad_token
 
 - name: Set token fact

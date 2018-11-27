@@ -50,8 +50,4 @@
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
 
 - include: vault-integration.yml
-  when:
-    - ansible_local.vault is defined
-    - ansible_local.vault.initialized == "true"
-    - policy_check.stderr is defined
-    - '"No policy" in policy_check.stderr'
+  when: policy_check.stderr is defined and "No policy" in policy_check.stderr
