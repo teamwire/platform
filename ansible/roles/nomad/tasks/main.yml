@@ -40,14 +40,5 @@
 - name: Enable the Nomad service
   service: name=nomad state=started enabled=yes daemon_reload=yes
 
-# Integrate Nomad with it if a policy doesn't exist
-- name: Check if Nomad-server policy exists
-  command: vault policy read nomad-server
-  ignore_errors: True
-  register: policy_check
-  run_once: True
-  delegate_to: "{{ groups.consul_servers | first }}"
-  when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
-
 - include: vault-integration.yml
-  when: policy_check.stderr is defined and "No policy" in policy_check.stderr
+  when: hostvars[groups['consul_servers'][0]].ansible_local.vault.initialized == "true"
