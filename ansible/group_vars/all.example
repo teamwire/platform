@@ -173,6 +173,9 @@ smtp_port: 587
 # Enable TLS. Defaults to yes.
 smtp_use_tls: yes
 
+# Forward system mails to external email address, e.g. "admin@example.com"
+# system_email_recipient:
+
 ##############################################################################
 ## MONITORING
 ##############################################################################
