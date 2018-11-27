@@ -105,6 +105,17 @@ check_tag() {
 get_database_configuration() {
 	if [ "$INSTALLATION" == "cluster" ] ; then
 		. "${CLUSTER_CONFIG_DIR}/cluster.conf"
+		if [ "$VAULT_INITIALIZED" == "true" ]; then
+			AESKEY="$(vault read -field=value secret/database/aes_key)"
+
+			if [ -n "$MYSQL_HOST" ]; then
+				MYSQL_PASS="$(vault read -field=value secret/database/password)"
+			fi
+
+			if [ -n "$ORA_HOST" ]; then
+				ORA_PASSWORD="$(vault read -field=value secret/database/password)"
+			fi
+		fi
 		return
 	fi
 
@@ -222,7 +233,7 @@ case $OPTION in
 				vault_seal
 				;;
 		rescue)
-				vault operator unseal -address=https://127.0.0.1:8200	
+				vault operator unseal -address=https://127.0.0.1:8200
 				;;
 		info)
 				vault status
