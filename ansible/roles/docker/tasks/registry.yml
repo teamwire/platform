@@ -20,8 +20,7 @@
     image: "{{ registry_version }}"
     state: started
     restart_policy: always
-    network_mode: bridge
-    ports: "5000:5000"
+    network_mode: host
     volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
 
 # Push all local images to the local registry
