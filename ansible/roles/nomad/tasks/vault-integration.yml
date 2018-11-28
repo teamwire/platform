@@ -1,44 +1,45 @@
-- name: Fetch the Nomad policy and role files
-  copy:
-    src: "{{ inventory_dir }}/roles/vault/files/{{ item }}"
-    dest: /root/
-  with_items:
-    - nomad-server-policy.hcl
-    - nomad-job-policy.hcl
-    - nomad-cluster-role.json
-  when: inventory_hostname == groups['consul_servers'] | first
+- name: Check if Nomad-server policy exists for Vault
+  command: vault policy read nomad-server
+  ignore_errors: True
+  register: policy_check
+  run_once: True
+  delegate_to: "{{ groups.consul_servers | first }}"
 
-- name: Write Nomad server policy
-  command: vault policy write nomad-server /root/nomad-server-policy.hcl
-  when: inventory_hostname == groups['consul_servers'] | first
+- block:
+    - name: Setup the Nomad policy for Vault if it doesn't exist
+      copy:
+        src: "{{ inventory_dir }}/roles/vault/files/{{ item }}"
+        dest: /root/
+      with_items:
+        - nomad-server-policy.hcl
+        - nomad-job-policy.hcl
+        - nomad-cluster-role.json
+    - command: vault policy write nomad-server /root/nomad-server-policy.hcl
+    - command: vault policy write nomad-job /root/nomad-job-policy.hcl
+    - command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
+    - file:
+        dest: "/root/{{ item }}"
+        state: absent
+      with_items:
+        - nomad-server-policy.hcl
+        - nomad-job-policy.hcl
+        - nomad-cluster-role.json
+  run_once: true
+  when: inventory_hostname == groups['consul_servers'] | first  and (policy_check.stderr is defined and "No policy" in policy_check.stderr)
 
-- name: Write Nomad job policy
-  command: vault policy write nomad-job /root/nomad-job-policy.hcl
-  when: inventory_hostname == groups['consul_servers'] | first
-
-- name: Create Vault token role for Nomad
-  command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
-  when: inventory_hostname == groups['consul_servers'] | first
-
-- name: Delete the Nomad policy and role files
-  file:
-    dest: "/root/{{ item }}"
-    state: absent
-  with_items:
-    - nomad-server-policy.hcl
-    - nomad-job-policy.hcl
-    - nomad-cluster-role.json
-  when: inventory_hostname == groups['consul_servers'] | first
+- name: Check if the Vault config for Nomad exists
+  stat: path=/etc/nomad/vault.hcl
+  register: vault_config
 
 - name: Create Vault token for Nomad
   command: vault token create -policy nomad-server -period 72h -orphan -format=json
-  when: inventory_hostname == groups['consul_servers'] | first
+  when: inventory_hostname in groups['consul_servers'] and not vault_config.stat.exists
   register: vault_nomad_token
 
 - name: Set token fact
-  run_once: True
   set_fact:
     vault_nomad_token: "{{ vault_nomad_token.stdout | from_json }}"
+  when: inventory_hostname in groups['consul_servers'] and not vault_config.stat.exists
 
 - name: Fetch Vault SSL certificate, key & CA from a consul server
   fetch:
@@ -60,6 +61,7 @@
     - { src: 'vault.crt', dest: '/var/lib/vault/ssl/'}
     - { src: 'vault.pem', dest: '/var/lib/vault/ssl/'}
     - { src: 'vault-rootCA.crt', dest: '/usr/local/share/ca-certificates/'}
+  register: vault_certs
   when: inventory_hostname in groups['backend_servers']
 
 - name: Delete the Vault SSL certificate, key & CA from localhost
@@ -77,11 +79,11 @@
 
 - name: Trust the Vault Root CA
   command: update-ca-certificates
-  when: inventory_hostname in groups['backend_servers']
+  when: inventory_hostname in groups['backend_servers'] and vault_certs.changed
 
 - name: Write Vault configuration for nomad
   template:
     src: ../../roles/vault/templates/nomad-vault.hcl.j2
     dest: /etc/nomad/vault.hcl
   notify: Restart Nomad agent
-
+  when: not vault_config.stat.exists

@@ -94,6 +94,7 @@
   - mlock
   - libcap2-bin
   - curl
+  - jq
   - pwgen
 
 - name: Install pip
@@ -273,6 +274,17 @@
     path: /etc/ansible/facts.d
     state: directory
     recurse: yes
+
+- name: Write Vault fact
+  template:
+    src: vault.fact.j2
+    dest: /etc/ansible/facts.d/vault.fact
+    mode: 0755
+  register: vault_fact
+
+- name: Reload Ansible local facts to register custom fact
+  setup: filter=ansible_local
+  when: vault_fact.changed
 
 - include_tasks: cluster.yml
   when: groups['all'] | length() > 1 and (skip_private_if is not defined or skip_private_if)

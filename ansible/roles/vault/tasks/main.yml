@@ -1,18 +1,4 @@
-# jq is used in twctl to help filter data returned from queries to Vault
-- name: Install jq for API querying
-  apt: name=jq state=present
-
-- name: Write Vault config
-  template:
-    src: vault.fact.j2
-    dest: /etc/ansible/facts.d/vault.fact
-    mode: 0755
-  register: vault_fact
-
-- name: Reload Ansible local facts to register custom fact
-  setup: filter=ansible_local
-  when: vault_fact.changed
-
+---
 - name: Check if Vault is already installed
   stat: path=/usr/local/bin/vault
   register: vault_binary
