@@ -48,7 +48,6 @@ function vault_unseal {
 	fi
 }
 
-
 _get_config_value() {
 	local ENTRY="$1"
 	awk '/^'${ENTRY}':/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE" 2> /dev/null
