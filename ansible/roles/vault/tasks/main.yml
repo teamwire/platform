@@ -36,6 +36,11 @@
     state: touch
     mode: 0600
 
+- name: Install logrotate job for vault
+  copy:
+    src: vault-log
+    dest: /etc/logrotate.d/vault-log
+
 - name: Install the Vault binary
   unarchive: 
     src: /var/cache/downloads/vault_{{vault_version}}_linux_amd64.zip
