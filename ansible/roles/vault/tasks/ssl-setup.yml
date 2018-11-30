@@ -1,5 +1,6 @@
 - name: Unseal Vault
   command: vault operator unseal "{{ item }}"
+  no_log: true
   with_items:
     - "{{ unseal_key1 }}"
     - "{{ unseal_key2 }}"

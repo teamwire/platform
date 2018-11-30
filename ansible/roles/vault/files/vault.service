@@ -3,9 +3,13 @@ Description=Vault
 Documentation=https://vaultproject.io/docs/
 Requires=network-online.target
 After=network-online.target consul.service
+ConditionFileNotEmpty=/etc/vault/vault.hcl
 
 [Service]
-ExecStart=/usr/local/bin/vault server $OPTIONS -config=/etc/vault
+User=vault
+Group=vault
+NoNewPrivileges=yes
+ExecStart=/usr/local/bin/vault server $OPTIONS -config=/etc/vault/vault.hcl
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 LimitMEMLOCK=infinity

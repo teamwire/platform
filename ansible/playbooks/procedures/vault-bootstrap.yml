@@ -49,6 +49,7 @@
 
   - name: Unseal Vault
     command: vault operator unseal "{{ item }}"
+    no_log: true
     with_items:
       - "{{ vault_keys[0] }}"
       - "{{ vault_keys[1] }}"
@@ -152,6 +153,7 @@
 
   - name: Unseal Vault
     command: vault operator unseal "{{ item }}"
+    no_log: true
     with_items:
       - "{{ vault_keys[0] }}"
       - "{{ vault_keys[1] }}"
