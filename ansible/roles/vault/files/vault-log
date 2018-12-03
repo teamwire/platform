@@ -1,0 +1,8 @@
+/var/log/vault_audit.log {
+        daily
+        missingok
+        rotate 31
+        compress
+        notifempty
+        create 0600 vault vault
+}
