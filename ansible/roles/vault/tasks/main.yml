@@ -46,11 +46,9 @@
     src: /var/cache/downloads/vault_{{vault_version}}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
-    owner: vault
-    group: vault
     copy: no
   notify: Restart Vault
-  when: vault_downloaded.changed or not vault_binary.stat.exists or vault_binary.stat.pw_name != 'vault' or vault_binary.stat.gr_name != 'vault'
+  when: vault_downloaded.changed or not vault_binary.stat.exists
 
 - name: Create Vault directories
   file:
@@ -59,7 +57,6 @@
     mode: 0750
     owner: vault
     group: vault
-    recurse: yes
   with_items:
     - /etc/vault
     - /var/lib/vault
