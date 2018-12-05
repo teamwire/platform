@@ -60,7 +60,6 @@
     owner: vault
     group: vault
     recurse: yes
-  notify: Restart Vault
   with_items:
     - /etc/vault
     - /var/lib/vault
