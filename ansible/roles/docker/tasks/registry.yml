@@ -21,6 +21,10 @@
     state: started
     restart_policy: always
     network_mode: host
+    log_driver: syslog
+    log_options:
+      tag: docker-registry
+      syslog-facility: local6
     volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
 
 # Push all local images to the local registry
