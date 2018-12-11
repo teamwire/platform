@@ -339,6 +339,7 @@ run_migrations_base() {
 	echo "Running database migrations"
 	echo
 	docker run --rm --network host -e MODE=migration --name teamwire-migrations \
+		--log-driver syslog --log-opt syslog-facility=local6 --log-opt tag=teamwire-migrations \
 		-e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_DATABASE="$MYSQL_DATABASE" \
 		-e MYSQL_USER="$MYSQL_USER" -e MYSQL_PASSWORD="$MYSQL_PASS" \
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
