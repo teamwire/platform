@@ -262,6 +262,9 @@
     when: (mysql_host is defined and teamwire_db_password == "") or
           (oracle_host is defined and teamwire_db_password == "")
 
+  - name: Reload secrets variables to recognise changes
+    include_tasks: ../../roles/vault/tasks/secrets.yml
+
   - name: Generate and write internal secrets if empty
     shell: >
       generated_secret=$(pwgen -s {{ item.parameters }} 1) &&
