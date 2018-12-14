@@ -31,14 +31,14 @@ get_vault_secret_recursive() {
         done
 }
 
-function vault_seal {
+vault_seal() {
 	if [[ $VAULT_SEALED == "false" ]];then
 		vault operator seal
 	else
 		echo "Vault is already sealed"
 	fi
 }
-function vault_unseal {
+vault_unseal() {
 	vault status > /dev/null
 	isSealed=$?
 	if [ $isSealed -eq 0 ];then
@@ -46,6 +46,28 @@ function vault_unseal {
 	else
 		vault operator unseal
 	fi
+}
+vault_backup_cluster() {
+	STAMP=$(date +"%Y%m%d%H%M")
+	consul snapshot save "secrets-backup-${STAMP}"
+	echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}."
+}
+vault_backup_single() {
+	STAMP=$(date +"%Y%m%d%H%M")
+	sudo systemctl stop vault
+	sudo tar -zcf "secrets-backup-${STAMP}" -C /var/lib/vault/ store/
+	sudo systemctl start vault
+	echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}. You must now unseal the secrets system."
+}
+vault_restore_cluster() {
+	consul snapshot restore "${INPUT}"
+	echo "Restore complete."
+}
+vault_restore_single() {
+	sudo systemctl stop vault
+	sudo tar -xzf "${INPUT}" -C /var/lib/vault
+	sudo systemctl start vault
+	echo "Restore complete, you must now unseal the secrets system."
 }
 
 _get_config_value() {
@@ -199,16 +221,16 @@ save_container_logs() {
 secrets() {
 case $OPTION in
 		read)
-				vault read -field=value "secret/${SECRET}"
+				vault read -field=value "secret/${INPUT}"
 				;;
 		write)
-				if [ -z "$SECRET" ] ; then
+				if [ -z "$INPUT" ] ; then
 				 echo "ERROR: A secret must be specified, use 'twctl secrets list' for information on current secret paths."
 				 echo
 				 exit 1
 				fi
 
-				echo Setting "${SECRET}"
+				echo Setting "${INPUT}"
 				read -s -p "Secret: " ENTRY; echo
 				read -s -p "Confirm Secret: " ENTRYCONFIRM; echo
 
@@ -216,7 +238,7 @@ case $OPTION in
 				 echo "Entries do not match, exiting"
 				 exit -1
 				else
-				 vault write "secret/${SECRET}" "value=${ENTRY}"
+				 vault write "secret/${INPUT}" "value=${ENTRY}"
 				fi
 				;;
 		list)
@@ -237,9 +259,15 @@ case $OPTION in
 		info)
 				vault status
 				;;
+		backup)
+				"vault_backup_${INSTALLATION}"
+				;;
+		restore)
+				"vault_restore_${INSTALLATION}"
+				;;
 		*)
 				echo "Managing Vault secrets"
-				echo "Usage: twctl secrets {read|write|list|delete|unseal|seal|rescue|info}"
+				echo "Usage: twctl secrets {read|write|list|delete|unseal|seal|rescue|info|backup|restore}"
 				echo "	read  : Reads the specified secret"
 				echo "	write : Updates the specified secret"
 				echo "	list  : Lists the secret paths"
@@ -247,7 +275,9 @@ case $OPTION in
 				echo "	unseal : Unseals the Vault so secrets can be accessed"
 				echo "	seal : Seals the Vault to prevent access to secrets"
 				echo "	rescue : Re-register and unseal a Vault server if the consul cluster address no longer resolves"
-				echo "	info : Displays Vault information such as seal status, cluster mode and version"    ;;
+				echo "	info : Displays Vault information such as seal status, cluster mode and version"
+				echo "	backup : Generates an encrypted backup of secrets"
+				echo "	restore : Restores a secrets backup file"    ;;
 esac
 }
 
@@ -467,9 +497,9 @@ while [ $# -gt 0 ] ; do
 			TASK="save_container_logs"
 			;;
 		secrets)
-			OPTION="$2"
-			SECRET="$3"
 			TASK="secrets"
+			OPTION="$2"
+			INPUT="$3"
 			;;
 	esac
 	shift
