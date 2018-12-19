@@ -27,8 +27,6 @@ listen galera-cluster
 	option tcpka
 	option httpchk
 	balance leastconn
-	stick-table type ip size 1k expire 30m peers backend-servers
-	stick on src
 	default-server port 9200 inter 2s downinter 5s rise 3 fall 2 slowstart 60s weight 100
 {% for server in groups['database_servers'] %}
 	server {{ server }} {{ hostvars[server]['private_ip'] }}:3306 check
