@@ -170,6 +170,18 @@
   when: config_done is defined and smtp_smartpass is defined
   notify: rebuild postfix passwd map
 
+- name: setup aliases
+  lineinfile:
+      path: "/etc/aliases"
+      regexp: "^teamwire:"
+      line: "teamwire{{':'}} {{ system_email_recipient }}"
+      insertafter: EOF
+      state: present
+  notify:
+      - new aliases
+      - restart postfix
+  when: system_email_recipient is defined
+
 - name: Give root a speaking name
   when: config_done is defined
   user: name=root comment="root@{{ external_hostname }}"
