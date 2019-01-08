@@ -262,6 +262,23 @@
     when: (mysql_host is defined and teamwire_db_password == "") or
           (oracle_host is defined and teamwire_db_password == "")
 
+  - pause:
+      prompt: "Would you like to use an AES key from an existing installation? (yes/no)"
+      echo: yes
+    register: aes_confirm
+    when: aes_key == ""
+
+  - name: Confirm Database AES key
+    block:
+      - pause:
+          prompt: "Database AES key required. Please confirm the AES key."
+          echo: no
+        register: pause_entry
+      - command: vault write secret/database/aes_key value="{{ pause_entry.user_input }}"
+    no_log: true
+    run_once: true
+    when: "'yes' in aes_confirm|lower or 'y' in aes_confirm|lower"
+
   - name: Reload secrets variables to recognise changes
     include_tasks: ../../roles/vault/tasks/secrets.yml
 
