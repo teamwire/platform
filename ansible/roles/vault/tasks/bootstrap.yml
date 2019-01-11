@@ -246,11 +246,6 @@
     - { secret: "{{ icinga_salt }}", path: 'monitoring/icinga_salt', parameters: '32' }
     - { secret: "{{ icinga_api_password }}", path: 'monitoring/icinga_api_password', parameters: '32' }
 
-- name: Run Nomad role to apply Vault integration
-  include_role:
-    name: ../../../roles/nomad
-  when: groups['all'] | length() > 1
-
 - name: Reload secrets variables to recognise final changes
   include_tasks: secrets.yml
 
