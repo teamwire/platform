@@ -1,0 +1,263 @@
+---
+- name: Initiate Vault
+  command: vault operator init -key-shares=6 -key-threshold=2 -format=json
+  register: vault_info
+  run_once: True
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  
+- name: Extract Vault unseal keys and root token
+  run_once: True
+  set_fact:
+    vault_keys: "{{ (vault_info.stdout|from_json)['unseal_keys_b64'] }}"
+    vault_token: "{{ (vault_info.stdout|from_json)['root_token'] }}"
+
+- name: Create Vault credentials file
+  template:
+    src: ../../roles/vault/templates/credentials.j2
+    dest: "{{ inventory_dir }}/vault-credentials"
+  run_once: True
+  delegate_to: localhost
+  vars:
+    ansible_become: no
+
+- name: Set temporary VAULT_TOKEN environment variable
+  shell: export VAULT_TOKEN="{{ vault_token }}"
+
+- name: Unseal Vault
+  command: vault operator unseal "{{ item }}"
+  no_log: true
+  with_items:
+    - "{{ vault_keys[0] }}"
+    - "{{ vault_keys[1] }}"
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+
+- name: Authorise root user for Vault login
+  copy:
+    content: "{{ vault_token }}"
+    dest: /root/.vault-token
+    mode: 0400
+    owner: root
+    group: root
+
+- name: Authorise teamwire user for Vault login
+  copy:
+    content: "{{ vault_token }}"
+    dest: /home/teamwire/.vault-token
+    mode: 0400
+    owner: teamwire
+    group: teamwire
+
+- name: Enable audit logging
+  command: vault audit enable file file_path=/var/log/vault_audit.log
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  run_once: true
+
+- name: Enable Vault autocomplete
+  command: vault -autocomplete-install
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  become: teamwire
+
+  #Enable TLS
+
+- name: Enable PKI backend
+  command: vault secrets enable pki
+  run_once: True
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+
+- name: Set max global SSL lease to 25 years
+  command: vault secrets tune -max-lease-ttl=219000h pki
+  run_once: True
+  environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+
+- name: Generate Root CA certificate
+  command: vault write pki/root/generate/internal common_name="Vault Root CA" ttl=219000h
+  register: root_ca
+  run_once: True
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+
+- name: Create certificate revocation list
+  command: vault write pki/config/urls issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
+  run_once: True
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+
+- name: Create role for issuing certificates
+  command: vault write pki/roles/tls allow_any_name=true allowed_domains=localhost allow_subdomains=true allow_ip_sans="true" max_ttl=26280h
+  run_once: True
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+
+- name: Issue a TLS certificate for Vault to use
+  command: vault write pki/issue/tls common_name="127.0.0.1" alt_names="localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans="127.0.0.1" --format=json
+  run_once: True
+  register: issue_info
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+
+- name: Set certificate fact
+  run_once: True
+  set_fact:
+    vault_certificate: "{{ issue_info.stdout | from_json }}"
+
+- name: Install Vault root CA, tls certificate and private key
+  copy: content={{ item.content }} dest={{ item.dest }}
+  with_items:
+    - { content: '{{ vault_certificate.data.issuing_ca }}', dest: '/usr/local/share/ca-certificates/vault-rootCA.crt' }
+    - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' }
+    - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' }
+  become: yes
+
+- name: Trust the Vault Root CA
+  command: update-ca-certificates
+
+- name: Enable SSL in Vault configuration
+  replace:
+    path: /etc/vault/vault.hcl
+    regexp: 'tls_disable.*'
+    replace: 'tls_disable = 0'
+
+- name: Restart Vault so that it uses TLS
+  service:
+    name: vault
+    state: restarted
+
+- name: Unseal Vault
+  command: vault operator unseal "{{ item }}"
+  no_log: true
+  with_items:
+    - "{{ vault_keys[0] }}"
+    - "{{ vault_keys[1] }}"
+
+- name: Generate secret paths
+  command: vault write secret/"{{ item.secret }}" value=""
+  no_log: True
+  with_items:
+    - { secret: 'dockerhub/password' }
+    - { secret: 'keys/gcm' }
+    - { secret: 'database/password' }
+    - { secret: 'database/aes_key' }
+    - { secret: 'dbserver/mysql_root_password' }
+    - { secret: 'dbserver/clustercheck_password' }
+    - { secret: 'dbserver/xtrabackup_password' }
+    - { secret: 'redis/password' }
+    - { secret: 'smtp/password' }
+    - { secret: 'monitoring/db_password' }
+    - { secret: 'monitoring/db_web_password' }
+    - { secret: 'monitoring/icinga_admin_password' }
+    - { secret: 'monitoring/icinga_salt' }
+    - { secret: 'monitoring/icinga_api_password' }
+  run_once: true
+
+- name: Reload Ansible local facts to register Vault status
+  setup: filter=ansible_local
+
+- name: Include secrets var file so the defined secrets can be read
+  include_tasks: secrets.yml
+
+- name: Confirm Dockerhub password if empty
+  block:
+    - pause:
+        prompt: "Dockerhub password required. Please enter the password for {{ dockerhub_username }}"
+        echo: no
+      register: pause_entry
+    - command: vault write secret/dockerhub/password value="{{ pause_entry.user_input }}"
+  no_log: true
+  run_once: true
+  when: dockerhub_password == ""
+
+- name: Confirm Google API key if empty
+  block:
+    - pause:
+        prompt: "Google API key required. Please enter the key you have received from us."
+        echo: no
+      register: pause_entry
+    - command: vault write secret/keys/gcm value="{{ pause_entry.user_input }}"
+  no_log: true
+  run_once: true
+  when: gcm_api_key == ""
+
+- name: Confirm SMTP password if empty
+  block:
+    - pause:
+        prompt: "SMTP password required. Please confirm the password for {{ smtp_smartuser }}"
+        echo: no
+      register: pause_entry
+    - command: vault write secret/smtp/password value="{{ pause_entry.user_input }}"
+  no_log: true
+  run_once: true
+  when: smtp_smartpass == ""
+
+- name: Confirm teamwire database password if empty and using external database host
+  block:
+    - pause:
+        prompt: "Database password required. Please confirm the password for {{ teamwire_db_user }}"
+        echo: no
+      register: pause_entry
+    - command: vault write secret/database/password value="{{ pause_entry.user_input }}"
+  no_log: true
+  run_once: true
+  when: (mysql_host is defined and teamwire_db_password == "") or
+        (oracle_host is defined and teamwire_db_password == "")
+
+- pause:
+    prompt: "Would you like to use an AES key from an existing installation? (yes/no)"
+    echo: yes
+  register: aes_confirm
+  when: aes_key == ""
+
+- name: Confirm Database AES key
+  block:
+    - pause:
+        prompt: "Database AES key required. Please confirm the AES key."
+        echo: no
+      register: pause_entry
+    - command: vault write secret/database/aes_key value="{{ pause_entry.user_input }}"
+  no_log: true
+  run_once: true
+  when: "'yes' in aes_confirm|lower or 'y' in aes_confirm|lower"
+
+- name: Reload secrets variables to recognise changes
+  include_tasks: secrets.yml
+
+- name: Generate and write internal secrets if empty
+  shell: >
+    generated_secret=$(pwgen -s {{ item.parameters }} 1) &&
+    vault write secret/"{{ item.path }}" value=$generated_secret
+  when: item.secret == ""
+  no_log: true
+  run_once: true
+  with_items:
+    - { secret: "{{ teamwire_db_password }}", path: 'database/password', parameters: '32' }
+    - { secret: "{{ aes_key }}", path: 'database/aes_key', parameters: '32' }
+    - { secret: "{{ mysql_root_password }}", path: 'dbserver/mysql_root_password', parameters: '32' }
+    - { secret: "{{ clustercheck_password }}", path: 'dbserver/clustercheck_password', parameters: '32' }
+    - { secret: "{{ xtrabackup_password }}", path: 'dbserver/xtrabackup_password', parameters: '32' }
+    - { secret: "{{ redis_pass }}", path: 'redis/password', parameters: '32' }
+    - { secret: "{{ monitoring_db_password }}", path: 'monitoring/db_password', parameters: '32' }
+    - { secret: "{{ monitoring_db_web_password }}", path: 'monitoring/db_web_password', parameters: '32' }
+    - { secret: "{{ icinga_admin_password }}", path: 'monitoring/icinga_admin_password', parameters: '16' }
+    - { secret: "{{ icinga_salt }}", path: 'monitoring/icinga_salt', parameters: '32' }
+    - { secret: "{{ icinga_api_password }}", path: 'monitoring/icinga_api_password', parameters: '32' }
+
+- name: Run Nomad role to apply Vault integration
+  include_role:
+    name: nomad
+  when: groups['all'] | length() > 1
+
+- name: Reload secrets variables to recognise final changes
+  include_tasks: secrets.yml
+
+- name: Run postfix task to configure email credentials
+  include_role:
+    name: common
+    tasks_from: postfix
+
+- debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored in the main local Ansible directory. The all file has been updated to use Vault, a backup has been placed in the group_vars directory."
+  run_once: true
