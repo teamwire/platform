@@ -251,7 +251,7 @@
 
 - name: Run postfix task to configure email credentials
   include_role:
-    name: ../../../roles/common
+    name: "{{ inventory_dir }}/roles/common"
     tasks_from: postfix
 
 - debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored in the main local Ansible directory. The all file has been updated to use Vault, a backup has been placed in the group_vars directory."
