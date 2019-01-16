@@ -1,4 +1,9 @@
 ---
+- name: Fail if system_email_recipient is not defined
+  fail:
+    msg: The Variable 'system_email_recipient' must be defined in group_vars/all
+  when: system_email_recipient is not defined
+
 - name: Install Postfix
   apt: pkg=postfix
 
@@ -15,7 +20,16 @@
   when: config_done is defined and smtp_smartpass is defined
   notify: rebuild postfix passwd map
 
-- name: setup aliases
+- name: Create virtual domain template
+  template:
+      src: postfix-virtual.j2
+      dest: /etc/postfix/virtual
+      mode: 0600
+  notify:
+      - rebuild postfix domain map
+      - restart postfix
+
+- name: Setup aliases
   lineinfile:
       path: "/etc/aliases"
       regexp: "^teamwire:"

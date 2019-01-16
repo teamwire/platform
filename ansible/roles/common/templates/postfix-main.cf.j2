@@ -11,7 +11,7 @@ alias_database = hash:/etc/aliases
 
 # restrictions
 smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
-mydestination = {{ domain }}, {{ external_hostname }}, localhost.localdomain, localhost
+mydestination = localhost.localdomain, localhost
 mynetworks = 127.0.0.0/8 172.16.0.0/12 [::ffff:127.0.0.0]/104 [::1]/128
 mailbox_size_limit = 0
 recipient_delimiter = +
@@ -35,3 +35,8 @@ smtp_connection_cache_destinations = $relayhost
 
 default_transport = smtp
 default_destination_concurrency_limit = 5
+
+# ADD VIRTUAL DOMAINS TO FORWARD ROOT MAILS
+# See #82
+virtual_alias_domains = {{ external_hostname }}
+virtual_alias_maps = hash:/etc/postfix/virtual

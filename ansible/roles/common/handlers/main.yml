@@ -28,3 +28,6 @@
 
 - name: new aliases
   command: newaliases
+
+- name: rebuild postfix domain map
+  command: postmap /etc/postfix/virtual
