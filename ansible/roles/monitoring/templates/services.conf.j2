@@ -140,10 +140,7 @@ apply Service "check-redis-{{ key }}" {
   import "generic-service"
   check_command = "check_redis"
 
-{% if redis_pass is defined %}
   vars.redis_password = "{{ value.password }}"
-{% endif %}
-
   vars.redis_port = {{ value.server_port }}
 
   command_endpoint = host.vars.client_endpoint
