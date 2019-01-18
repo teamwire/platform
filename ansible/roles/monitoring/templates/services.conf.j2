@@ -140,7 +140,9 @@ apply Service "check-redis-{{ key }}" {
   import "generic-service"
   check_command = "check_redis"
 
+{% if value.password is not none %}
   vars.redis_password = "{{ value.password }}"
+{% endif %}
   vars.redis_port = {{ value.server_port }}
 
   command_endpoint = host.vars.client_endpoint
