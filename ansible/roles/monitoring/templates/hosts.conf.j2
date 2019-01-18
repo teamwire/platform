@@ -21,6 +21,8 @@ object Host "{{ host if host != "localhost" else external_hostname }}" {
 {% endif %}
 
   vars.disks["check-disk"] = {
+    disk_all = true
+    disk_ignore_eregi_path = [ "/var/lib/docker/overlay2/*", "/run/docker/netns/*" ]
 {% if groups['all'] | length() > 1 %}
 {% if 'nfs_servers' in hostvars[host].group_names and host in groups.nfs_servers or host in groups.backend_servers %}
     disk_partitions = ["/", "/data"]
