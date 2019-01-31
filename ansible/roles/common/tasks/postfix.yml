@@ -2,7 +2,7 @@
 - name: Fail if system_email_recipient is not defined
   fail:
     msg: The Variable 'system_email_recipient' must be defined in group_vars/all
-  when: system_email_recipient is not defined
+  when: config_done is defined and system_email_recipient is not defined
 
 - name: Install Postfix
   apt: pkg=postfix
