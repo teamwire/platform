@@ -178,6 +178,13 @@
       - { secret: 'monitoring/icinga_api_password', value: "{{ icinga_api_password | default('') }}" }
     run_once: true
 
+  - name: Generate secret paths for user secrets
+    command: vault write "{{ item.value.path }}" value=""
+    no_log: True
+    with_dict: "{{ user_secrets }}"
+    run_once: true
+    when: user_secrets is defined
+
   - name: Backup the all file
     copy:
       src: "{{ inventory_dir }}/group_vars/all"
@@ -279,28 +286,22 @@
     run_once: true
     when: "'yes' in aes_confirm|lower or 'y' in aes_confirm|lower"
 
+  - name: Load user-specified secrets
+    set_fact:
+      secrets: "{{ secrets|combine(user_secrets) }}"
+    when: user_secrets is defined
+
   - name: Reload secrets variables to recognise changes
     include_tasks: ../../roles/vault/tasks/secrets.yml
 
   - name: Generate and write internal secrets if empty
     shell: >
-      generated_secret=$(pwgen -s {{ item.parameters }} 1) &&
-      vault write secret/"{{ item.path }}" value=$generated_secret
-    when: item.secret == ""
+      generated_secret=$(pwgen -s 32 1) &&
+      vault write "{{ item.value.path }}" value=$generated_secret
+    when: hostvars[inventory_hostname][item.key] == ""
     no_log: true
     run_once: true
-    with_items:
-      - { secret: "{{ teamwire_db_password }}", path: 'database/password', parameters: '32' }
-      - { secret: "{{ aes_key }}", path: 'database/aes_key', parameters: '32' }
-      - { secret: "{{ mysql_root_password }}", path: 'dbserver/mysql_root_password', parameters: '32' }
-      - { secret: "{{ clustercheck_password }}", path: 'dbserver/clustercheck_password', parameters: '32' }
-      - { secret: "{{ xtrabackup_password }}", path: 'dbserver/xtrabackup_password', parameters: '32' }
-      - { secret: "{{ redis_pass }}", path: 'redis/password', parameters: '32' }
-      - { secret: "{{ monitoring_db_password }}", path: 'monitoring/db_password', parameters: '32' }
-      - { secret: "{{ monitoring_db_web_password }}", path: 'monitoring/db_web_password', parameters: '32' }
-      - { secret: "{{ icinga_admin_password }}", path: 'monitoring/icinga_admin_password', parameters: '16' }
-      - { secret: "{{ icinga_salt }}", path: 'monitoring/icinga_salt', parameters: '32' }
-      - { secret: "{{ icinga_api_password }}", path: 'monitoring/icinga_api_password', parameters: '32' }
+    with_dict: "{{ secrets }}"
 
 - name: Run Nomad role to apply Vault integration
   hosts: consul_servers:backend_servers
