@@ -8,7 +8,7 @@
 - block:
     - name: Setup the Nomad policy for Vault if it doesn't exist
       copy:
-        src: "{{ inventory_dir }}/roles/vault/files/{{ item }}"
+        src: "{{ role_path }}/../vault/files/{{ item }}"
         dest: /root/
       with_items:
         - nomad-server-policy.hcl
@@ -83,7 +83,7 @@
 
 - name: Write Vault configuration for nomad
   template:
-    src: ../../roles/vault/templates/nomad-vault.hcl.j2
+    src: "{{ role_path }}/../vault/templates/nomad-vault.hcl.j2"
     dest: /etc/nomad/vault.hcl
   notify: Restart Nomad agent
   when: not vault_config.stat.exists
