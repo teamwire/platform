@@ -47,6 +47,7 @@
     dest: "{{ inventory_dir }}/"
     flat: yes
   run_once: true
+  register: vault_certs_fetched
   with_items:
     - /var/lib/vault/ssl/vault.crt
     - /var/lib/vault/ssl/vault.pem
@@ -62,7 +63,7 @@
     - { src: 'vault.pem', dest: '/var/lib/vault/ssl/'}
     - { src: 'vault-rootCA.crt', dest: '/usr/local/share/ca-certificates/'}
   register: vault_certs
-  when: inventory_hostname in groups['backend_servers']
+  when: inventory_hostname in groups['backend_servers'] and vault_certs_fetched.changed
 
 - name: Delete the Vault SSL certificate, key & CA from localhost
   file: 
@@ -74,6 +75,7 @@
     - vault.pem
     - vault-rootCA.crt
   delegate_to: localhost
+  when: vault_certs_fetched is defined and vault_certs_fetched.changed
   vars:
     ansible_become: no
 
