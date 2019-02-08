@@ -47,6 +47,10 @@ IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-se
 VAULT_INITIALIZED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
 VAULT_SEALED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 
+if [ "$VAULT_INITIALIZED" != "true" ]; then
+	VAULT_INITIALIZED=false
+fi
+
 if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [[ $2 -ne "unseal" || $2 -ne "rescue" ]]; then
 	echo "Vault must be unsealed. Please run twctl secrets unseal."
 	exit 1
@@ -308,6 +312,7 @@ help() {
 	echo "rm          Remove all stopped Teamwire containers"
 	echo "backupdb    Create a backup of the database (requires file name)"
 	echo "secrets     Manage Vault and its secrets"
+	echo "version     Show version information"
 }
 
 backupdb_single() {
@@ -456,6 +461,14 @@ setup_containers_cluster() {
 	$NOMAD run "$NOMAD_JOB"
 }
 
+version() {
+	echo "#### Version information ####
+Installation type: ${INSTALLATION}
+Platform: $(git --git-dir=${ANSIBLE_DIR}/../.git describe)
+Ansible: $(ansible --version | awk 'NR==1{print $2}')
+Vault enabled: ${VAULT_INITIALIZED}"
+}
+
 TAG=""
 TASK=""
 while [ $# -gt 0 ] ; do
@@ -507,6 +520,9 @@ while [ $# -gt 0 ] ; do
 			TASK="secrets"
 			OPTION="$2"
 			INPUT="$3"
+			;;
+		version)
+			TASK="version"
 			;;
 	esac
 	shift
