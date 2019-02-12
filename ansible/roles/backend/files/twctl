@@ -123,22 +123,30 @@ check_tag() {
 }
 
 get_database_configuration() {
+	# Cluster
 	if [ "$INSTALLATION" == "cluster" ] ; then
+		local DB_PASSWORD
+
 		. "${CLUSTER_CONFIG_DIR}/cluster.conf"
+
 		if [ "$VAULT_INITIALIZED" == "true" ]; then
 			AESKEY="$(vault read -field=value secret/database/aes_key)"
-
-			if [ -n "$MYSQL_HOST" ]; then
-				MYSQL_PASS="$(vault read -field=value secret/database/password)"
-			fi
-
-			if [ -n "$ORA_HOST" ]; then
-				ORA_PASSWORD="$(vault read -field=value secret/database/password)"
-			fi
+			DB_PASSWORD="$(vault read -field=value secret/database/password)"
+		else
+			AESKEY="$(_get_config_value aes_key)"
+			DB_PASSWORD="$(_get_config_value teamwire_db_password)"
 		fi
+
+		if [ -n "$MYSQL_HOST" ]; then
+			MYSQL_PASS="$DB_PASSWORD"
+		elif [ -n "$ORA_HOST" ]; then
+			ORA_PASSWORD="$DB_PASSWORD"
+		fi
+
 		return
 	fi
 
+	# Single server
 	MYSQL_HOST="$(_get_config_value mysql_host)"
 	MYSQL_PORT="$(_get_config_value mysql_port)"
 	MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
