@@ -54,6 +54,12 @@
   - python-mysqldb
   register: mysql_initial_installation
 
+# Mydumper must be installed separatly when mydumper is installed on existing installations
+- name: Install mydumper independent from task install mariadb
+  apt:
+    name: mydumper
+    state: present
+
 - name: Create MariaDB binlog directory
   file:
     dest: /var/lib/mysql-binlog
@@ -175,6 +181,14 @@
 - name: Import MariaDB UTC timezone definition
   shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --defaults-file=/etc/mysql/debian.cnf mysql"
   when: mariadb_timezone_count.stdout == "0"
+
+- name: Implement Backup and Restorescript
+  copy:
+    src: backup_restore_db.sh
+    dest: /usr/local/bin/backup_restore_db.sh
+    owner: root
+    group: root
+    mode: 0755
 
 - include_tasks: cluster.yml
   when: galera_cluster is defined

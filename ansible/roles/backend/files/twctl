@@ -177,23 +177,6 @@ get_database_configuration() {
 	fi
 }
 
-
-# Temporary user credentials storage for functions accessing MySQL
-MYSQL_CONFIG_FILE=""
-
-write_temporary_database_access_config() {
-	if [ -z "$MYSQL_CONFIG_FILE" ] ; then
-		get_database_configuration
-
-		MYSQL_CONFIG_FILE=$(mktemp ~/.twctl_XXXXXXXXXXXX)
-		chmod 0600 "$MYSQL_CONFIG_FILE"
-
-		local SECTION=$1
-		echo -e "[${SECTION:-mysqldump}]\nuser=$MYSQL_USER\npassword=$MYSQL_PASS" > "$MYSQL_CONFIG_FILE"
-		trap "rm -f ${MYSQL_CONFIG_FILE}" exit
-	fi
-}
-
 save_container_logs() {
 	local LOGDIR=/var/log/teamwire
 	local CONTAINER
@@ -301,6 +284,7 @@ help() {
 	echo "stop        Stop all running Teamwire containers"
 	echo "rm          Remove all stopped Teamwire containers"
 	echo "backupdb    Create a backup of the database (requires file name)"
+        echo "restoredb   Restore a backup of the database (requires file name)"
 	echo "secrets     Manage Vault and its secrets"
 	echo "version     Show version information"
 }
@@ -311,12 +295,36 @@ backupdb_single() {
 		exit 1
 	fi
 
-	write_temporary_database_access_config
+	get_database_configuration
 
-	mysqldump --defaults-file="${MYSQL_CONFIG_FILE}" \
-		--single-transaction \
-		-h "$MYSQL_HOST" -P "$MYSQL_PORT" \
-		-u "$MYSQL_USER" "$MYSQL_DATABASE" > "$FILENAME"
+	# Inject PASS environment var
+	PASS=$MYSQL_PASS
+
+        /usr/local/bin/backup_restore_db.sh -t backup \
+		--non-interactive \
+		-o $FILENAME -h $MYSQL_HOST \
+		-u $MYSQL_USER -d $MYSQL_DATABASE
+}
+restoredb_single() {
+	if [ ! -f "$FILENAME" ] ; then
+                echo "$FILENAME does not exists, please specify a name that exists!"
+                exit 1
+        fi
+
+	get_database_configuration
+
+	# Inject PASS environment var
+	PASS=$MYSQL_PASS
+
+	/usr/local/bin/backup_restore_db.sh -t restore \
+		--non-interactive \
+		-u $MYSQL_USER -d $MYSQL_DATABASE \
+		-f -i $FILENAME -h $MYSQL_HOST
+}
+restoredb_cluster() {
+	echo "Database restorefunction is not supported on clustered setups!"
+	echo "Please use the tool appropriate for your database to perform a manual restore."
+	exit 1
 }
 
 backupdb_cluster() {
@@ -501,6 +509,10 @@ while [ $# -gt 0 ] ; do
 			;;
 		backupdb)
 			TASK="backupdb"
+			FILENAME_REQUIRED=yes
+			;;
+		restoredb)
+			TASK="restoredb"
 			FILENAME_REQUIRED=yes
 			;;
 		exportlogs)
