@@ -127,63 +127,53 @@ check_tag() {
 }
 
 get_database_configuration() {
-	# Cluster
-	if [ "$INSTALLATION" == "cluster" ] ; then
-		local DB_PASSWORD
-
-		. "${CLUSTER_CONFIG_DIR}/cluster.conf"
-
-		if [ "$VAULT_INITIALIZED" == "true" ]; then
-			AESKEY="$(vault read -field=value secret/database/aes_key)"
-			DB_PASSWORD="$(vault read -field=value secret/database/password)"
-		else
-			AESKEY="$(_get_config_value aes_key)"
-			DB_PASSWORD="$(_get_config_value teamwire_db_password)"
-		fi
-
-		if [ -n "$MYSQL_HOST" ]; then
-			MYSQL_PASS="$DB_PASSWORD"
-		elif [ -n "$ORA_HOST" ]; then
-			ORA_PASSWORD="$DB_PASSWORD"
-		fi
-
-		return
+	if [ "$VAULT_INITIALIZED" == "true" ]; then
+		AESKEY="$(vault read -field=value secret/database/aes_key)"
+		DB_PASSWORD="$(vault read -field=value secret/database/password)"
+	else
+		AESKEY="$(_get_config_value aes_key)"
+		DB_PASSWORD="$(_get_config_value teamwire_db_password)"
 	fi
 
-	# Single server
-	MYSQL_HOST="$(_get_config_value mysql_host)"
-	MYSQL_PORT="$(_get_config_value mysql_port)"
-	MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
-	MYSQL_USER="$(_get_config_value teamwire_db_user)"
-
-if [ "$VAULT_INITIALIZED" == "true" ]; then
-	MYSQL_PASS="$(vault read -field=value secret/database/password)"
-	AESKEY="$(vault read -field=value secret/database/aes_key)"
-else
-	MYSQL_PASS="$(_get_config_value teamwire_db_password)"
-	AESKEY="$(_get_config_value aes_key)"
-fi
-
-	if [ -z "$MYSQL_HOST" ]; then
-		MYSQL_HOST=127.0.0.1
-	fi
-
-	if [ -z "$MYSQL_PORT" ]; then
-		MYSQL_PORT=3306
-	fi
-
-	if [ -z "$MYSQL_DATABASE" ]; then
-		MYSQL_DATABASE=teamwire
-	fi
-
-	if [ -z "$MYSQL_USER" ]; then
-		MYSQL_USER=teamwire
-	fi
-
-	if [ -z "$MYSQL_PASS" ] || [ -z "$AESKEY" ] ; then
+	if [ -z "$DB_PASSWORD" ] || [ -z "$AESKEY" ] ; then
 		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
 		echo "       Please ensure the file exists and the database is configured."
 		exit 1
+	fi
+
+	if [ "$INSTALLATION" == "cluster" ] ; then
+		. "${CLUSTER_CONFIG_DIR}/cluster.conf"
+	else
+		MYSQL_HOST="$(_get_config_value mysql_host)"
+		MYSQL_PORT="$(_get_config_value mysql_port)"
+		MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
+		MYSQL_USER="$(_get_config_value teamwire_db_user)"
+		ORA_HOST="$(_get_config_value oracle_host)"
+		ORA_PORT="$(_get_config_value oracle_port)"
+		ORA_DATABASE="$(_get_config_value teamwire_db_name)"
+		ORA_USER="$(_get_config_value teamwire_db_user)"
+
+		if [ -z "$MYSQL_HOST" ] && [ -z "$ORA_HOST" ]; then
+			MYSQL_HOST=127.0.0.1
+		fi
+
+		if [ -z "$MYSQL_PORT" ] && [ -z "$ORA_PORT" ]; then
+			MYSQL_PORT=3306
+		fi
+
+		if [ -z "$MYSQL_DATABASE" ] && [ -z "$ORA_DATABASE" ]; then
+			MYSQL_DATABASE=teamwire
+		fi
+
+		if [ -z "$MYSQL_USER" ] && [ -z "$ORA_USER" ]; then
+			MYSQL_USER=teamwire
+		fi
+	fi
+
+	if [ -n "$MYSQL_HOST" ]; then
+		MYSQL_PASS="$DB_PASSWORD"
+	elif [ -n "$ORA_HOST" ]; then
+		ORA_PASSWORD="$DB_PASSWORD"
 	fi
 }
 
