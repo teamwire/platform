@@ -8,15 +8,21 @@
   register: percona_repo_key
   changed_when: False
 
+#### Temporary workaround until solution is implemented by Ansible ###
+#### See Ansible issue: https://github.com/ansible/ansible/pull/49950
+#- name: Add Percona repo signing key (direct)
+#  apt_key:
+#    id: 9334A25F8507EFA5
+#    keyserver: hkp://keyserver.ubuntu.com:80
+#    state: present
+#  when: percona_repo_key.stdout == "absent" and http_proxy is not defined
+
 - name: Add Percona repo signing key (direct)
-  apt_key:
-    id: 9334A25F8507EFA5
-    keyserver: hkp://keyserver.ubuntu.com:80
-    state: present
+  command: apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9334A25F8507EFA5
   when: percona_repo_key.stdout == "absent" and http_proxy is not defined
 
 - name: Add Percona repo signing key (via proxy)
-  command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys 9334A25F8507EFA5
+  command: apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys 9334A25F8507EFA5
   when: percona_repo_key.stdout == "absent" and http_proxy is defined
 
 - name: Configure Percona repository (cluster setups)

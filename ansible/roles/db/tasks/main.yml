@@ -14,17 +14,26 @@
   changed_when: False
   when: ansible_distribution_release == "jessie"
 
+#### Temporary workaround until solution is implemented by Ansible ###
+#### See Ansible issue: https://github.com/ansible/ansible/pull/49950
+#- name: Add MariaDB repo signing key (Debian 8, direct)
+#  apt_key:
+#    keyserver: "hkp://keyserver.ubuntu.com:80"
+#    id: "cbcb082a1bb943db"
+#  when:
+#    - ansible_distribution_release == "jessie"
+#    - mariadb_repo_key.stdout == "absent"
+#    - http_proxy is not defined
+
 - name: Add MariaDB repo signing key (Debian 8, direct)
-  apt_key:
-    keyserver: "hkp://keyserver.ubuntu.com:80"
-    id: "cbcb082a1bb943db"
+  command: apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys cbcb082a1bb943db
   when:
     - ansible_distribution_release == "jessie"
     - mariadb_repo_key.stdout == "absent"
     - http_proxy is not defined
 
 - name: Add MariaDB repo signing key (Debian 8, via proxy)
-  command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
+  command: apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys cbcb082a1bb943db
   when:
     - ansible_distribution_release == "jessie"
     - mariadb_repo_key.stdout == "absent"
