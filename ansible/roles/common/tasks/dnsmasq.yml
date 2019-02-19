@@ -26,7 +26,7 @@
   lineinfile:
     regexp: "^#+prepend domain-name-servers"
     backrefs: yes
-    line: "prepend domain-name-servers 127.0.0.1;"
+    line: "supersede domain-name-servers 127.0.0.1;"
     dest: /etc/dhcp/dhclient.conf
 
 # Ensure we have a valid DNS configuration
