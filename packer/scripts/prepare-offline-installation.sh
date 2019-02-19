@@ -60,6 +60,7 @@ php${PHP_VERSION}-intl
 php${PHP_VERSION}-gd
 php${PHP_VERSION}-xml
 jq
+gnupg1
 "
 
 DOCKER_IMAGES="
