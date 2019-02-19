@@ -31,3 +31,12 @@
 
 - name: rebuild postfix domain map
   command: postmap /etc/postfix/virtual
+
+- name: reload dhclient
+  command: pkill dhclient
+  ignore_errors: yes
+  notify: reload dhclient step 2
+
+- name: reload dhclient step 2
+  command: dhclient
+  ignore_errors: yes
