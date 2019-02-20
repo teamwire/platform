@@ -96,6 +96,7 @@
   - curl
   - jq
   - pwgen
+  - gnupg1
 
 - name: Install pip
   apt: name={{item}} state=present
