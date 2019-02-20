@@ -28,6 +28,7 @@
     backrefs: yes
     line: "supersede domain-name-servers 127.0.0.1;"
     dest: /etc/dhcp/dhclient.conf
+  notify: reload dhclient
 
 # Ensure we have a valid DNS configuration
 - meta: flush_handlers
