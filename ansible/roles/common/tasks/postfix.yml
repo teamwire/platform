@@ -28,6 +28,7 @@
   notify:
       - rebuild postfix domain map
       - restart postfix
+  when: config_done is defined and domain is defined
 
 - name: Setup aliases
   lineinfile:
