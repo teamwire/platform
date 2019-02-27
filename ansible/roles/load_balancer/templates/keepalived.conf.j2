@@ -1,5 +1,5 @@
 vrrp_script chk_nginx {
-        script "killall -0 nginx"
+        script "/usr/bin/killall -0 nginx"
         interval 2
         weight -2
 }
