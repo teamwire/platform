@@ -11,6 +11,7 @@
 REGULAR_PACKAGES="
 git
 dnsmasq
+mydumper
 mariadb-server
 mariadb-client
 python-mysqldb
