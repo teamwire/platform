@@ -284,9 +284,77 @@ help() {
 	echo "stop        Stop all running Teamwire containers"
 	echo "rm          Remove all stopped Teamwire containers"
 	echo "backupdb    Create a backup of the database (requires file name)"
-        echo "restoredb   Restore a backup of the database (requires file name)"
+	echo "restoredb   Restore a backup of the database (requires file name)"
 	echo "secrets     Manage Vault and its secrets"
 	echo "version     Show version information"
+	echo "report      Create a report (about system information and logs)"
+}
+create_report() {
+
+	cd "$ANSIBLE_DIR" || (echo "ERROR: can not cd into $ANSIBLE_DIR" && exit 1)
+
+	PLATFORM_HOME="$HOME/platform"	# Path to platform dir
+	DATE=$(date +%s)				# Variable which holds the current date. Needed to create the temporary directory and tar archive
+	TMPDIR=$(mktemp -d)				# A temporary directory to collect all information that will later be stored in a tar archive.
+
+	FILE="${TMPDIR}/report"			# Path to report file. All collected informations are stored here.
+	REPORT="$HOME/tw_report.$(date +%y_%m_%d_%s).tar.xz" 	# Name/Path of the tar archive
+	RUNTIME_REPORT_OF_SCRIPT="${TMPDIR}/runtime_report" # All outputs from twctl (STDOUT/STDERR) are collected here. See line below
+
+	exec > >(tee -i "$RUNTIME_REPORT_OF_SCRIPT")
+	exec 2>&1
+
+	declare -A report_map			# Array contains all collected informations. This array will be looped and written to report file
+
+	# Gather systeminformation
+
+	if [ "$INSTALLATION" = "cluster" ]; then
+
+		report_map["Show cluster uptime"]=$(ansible all -i cluster_hosts -m command -a uptime) &&
+		report_map["Show nomad status"]="$(nomad status)" &&
+		report_map["Show nomad job status"]="$(nomad job status teamwire)" &&
+		report_map["Show debian version"]=$(ansible all -i cluster_hosts -m command -a 'cat /etc/debian_version') &&
+		report_map["Show nomad node status"]="$(nomad node status)"
+
+	else
+
+		report_map["Show uptime"]=$(uptime)
+		report_map["Show running docker container"]="$(docker ps -a)"
+		report_map["Show debian version"]=$(cat /etc/debian_version)
+
+	fi
+
+	report_map["Show platform version"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe)"
+	report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
+	report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
+	report_map["Show status of vault"]="$(vault status)" &&
+	report_map["Check if APNS cert. is valid"]=$(sudo bash -c "for file in /data/certs/apns/*.pem;do echo \$file && openssl x509 -startdate -enddate  -noout -in \$file 2>&1 ;done")
+	report_map["Test if APNS is reachable"]="$(echo | openssl s_client -connect api.push.apple.com:2197 2>&1 | grep 'depth=1')"
+	report_map["Test if FCM is reachable"]="$(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1')"
+	report_map["Show vault certificate enddate"]="$(sudo openssl x509 -in /var/lib/vault/ssl/vault.crt -noout -enddate)"
+	report_map["Show RAM"]="$(free -h )"
+	report_map["Show HDD free space"]="$(df -h)"
+	report_map["Show docker info"]="$(docker info)"
+	report_map["Show network configuration"]="$(ip a)"
+	report_map["Show current kernel messages(dmesg)"]="$(sudo dmesg)"
+
+	for key in "${!report_map[@]}"; do
+
+		printf "============ $key ============ \n %s\n\n"  "${report_map[$key]}" >> "$FILE"
+
+	done
+
+	find /var/log/cluster/ -name *.log -exec sudo cp {} "$TMPDIR" \;
+	find /var/log/docker/ -name *.log -exec sudo cp {} "$TMPDIR" \;
+
+	cd "$HOME" || (echo "ERROR: can not cd into $HOME" && exit 1)
+
+	sudo tar JcfP "$REPORT" "$TMPDIR"
+	rm -rf "$TMPDIR"
+
+	echo "Report was generated.You can find the report here: $REPORT"
+	echo
+
 }
 
 backupdb_single() {
@@ -522,6 +590,9 @@ while [ $# -gt 0 ] ; do
 			TASK="secrets"
 			OPTION="$2"
 			INPUT="$3"
+			;;
+		report)
+			TASK="create_report"
 			;;
 		version)
 			TASK="version"
