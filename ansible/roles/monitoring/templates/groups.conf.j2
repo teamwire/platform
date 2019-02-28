@@ -42,6 +42,11 @@ object HostGroup "docker-registry" {
   assign where "docker_registry" in host.vars.roles
 }
 
+object HostGroup "external-servers" {
+  display_name = "External Servers"
+  assign where "external_servers" in host.vars.roles
+}
+
 /**
  * Service groups.
  */

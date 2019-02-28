@@ -13,11 +13,12 @@
     line: "{{ hostvars[item]['private_ip'] }}\t{{ item }}{% if item == inventory_hostname %} host{% endif %}"
     state: present
   with_items: "{{ groups['all'] | default([]) }}"
+  when: disable_private_connection is not defined
 
 - name: Allow all access from other cluster nodes
   ufw: rule=allow src="{{ hostvars[item]['private_ip'] }}"
   with_items: "{{ groups['all'] | default([]) }}"
-  when: item != inventory_hostname
+  when: item != inventory_hostname and disable_private_connection is not defined
 
 - name: Install python-consul version {{ required_python_consul_version }}
   pip:

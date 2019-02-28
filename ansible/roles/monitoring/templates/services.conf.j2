@@ -98,7 +98,7 @@ apply Service "check-consul-health" {
   vars.http_ssl = "false"
 
   command_endpoint = host.vars.client_endpoint
-  assign where host.vars.os == "Linux"
+  assign where host.vars.os == "Linux" && "external_servers" !in host.vars.roles
 }
 {% endif %}
 

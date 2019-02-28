@@ -1,12 +1,17 @@
 [Service]
 ExecStart=
 ExecStart=/usr/bin/dockerd -H unix:// --userland-proxy=false
-{%- if 'docker_registry' in groups %}
+{%- if 'docker_registry' in groups and disable_private_connection is not defined %}
 {%- for host in groups.docker_registry %}
  --registry-mirror http://{{ host }}:5000 --insecure-registry {{ host }}:5000
 {%- endfor %}
 {%- endif %}
 {%- if 'consul_servers' in groups %}
+{%- if  disable_private_connection is not defined %}
 {%- for host in groups['consul_servers'] %}
  --dns {{ hostvars[host].private_ip }}{% endfor %}
+ {% else %}
+ {%- for dns_server in dns_servers %}
+ --dns {{ dns_server }}{% endfor %}
+{%- endif %}
 {%- endif %}
