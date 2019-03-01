@@ -13,6 +13,7 @@
       - icinga_admin_password is defined
       - icinga_salt is defined
       - icinga_api_password is defined
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
 
 - name: Install Icinga2 and monitoring plugins
   apt: name={{ item }} state=present
