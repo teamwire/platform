@@ -9,7 +9,7 @@
 
 - name: Write the Postfix configuration file
   template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
-  when: config_done is defined and smtp_smartpass is defined
+  when: config_done is defined
   notify: restart postfix
 
 - name: Write the Postfix password file
