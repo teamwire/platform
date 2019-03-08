@@ -1,3 +1,11 @@
 - hosts: consul_servers:local
   roles:
   - role: ../../roles/vault
+
+- name: Run postfix tasks to configure email credentials after initial bootstrap
+  hosts: all
+  tasks:
+    - include_role:
+        name: ../../roles/common
+        tasks_from: postfix
+      when: new_vault_bootstrap is defined
