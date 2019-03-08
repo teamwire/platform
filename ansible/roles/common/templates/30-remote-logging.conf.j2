@@ -1,3 +1,19 @@
+{# We need to override the default forwarding template that rsyslog
+   uses, as the max tag character size is 32 #}
+# Forwarding template
+template(name="LongTagForwardFormat" type="list") {
+    constant(value="<")
+    property(name="pri")
+    constant(value=">")
+    property(name="timestamp" dateFormat="rfc3339")
+    constant(value=" ")
+    property(name="hostname")
+    constant(value=" ")
+    property(name="syslogtag")
+    property(name="msg" spifno1stsp="on")
+    property(name="msg")
+}
+
 # Remote log hosts
 {% for log_target in syslog_servers|default([]) | union(groups.loghost|default([])) %}
 action(
@@ -8,5 +24,6 @@ action(
     target="{{ hostvars[log_target].private_ip if log_target in hostvars else log_target }}"
     protocol="tcp"
     port="514"
+    template="LongTagForwardFormat"
 )
 {% endfor %}
