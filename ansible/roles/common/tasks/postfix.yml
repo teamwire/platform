@@ -20,27 +20,25 @@
   when: config_done is defined and smtp_smartpass is defined
   notify: rebuild postfix passwd map
 
-- name: Create virtual domain template
-  template:
-      src: postfix-virtual.j2
-      dest: /etc/postfix/virtual
-      mode: 0600
-  notify:
-      - rebuild postfix domain map
-      - restart postfix
-  when: config_done is defined and domain is defined
-
 - name: Setup aliases
   lineinfile:
       path: "/etc/aliases"
-      regexp: "^teamwire:"
-      line: "teamwire{{':'}} {{ system_email_recipient }}"
+      regexp: "^root:"
+      line: "root{{':'}} {{ system_email_recipient }}"
       insertafter: EOF
       state: present
   notify:
       - new aliases
       - restart postfix
   when: system_email_recipient is defined
+
+- name: Ensure postfix virtualmap is absent
+  file:
+     path: "{{ item }}"
+     state: absent
+  with_items:
+     - /etc/postfix/virtual
+     - /etc/postfix/virtual.db
 
 - name: Give root a speaking name
   when: config_done is defined
