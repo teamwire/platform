@@ -35,8 +35,3 @@ smtp_connection_cache_destinations = $relayhost
 
 default_transport = smtp
 default_destination_concurrency_limit = 5
-
-# ADD VIRTUAL DOMAINS TO FORWARD ROOT MAILS
-# See #82
-virtual_alias_domains = {{ external_hostname }}
-virtual_alias_maps = hash:/etc/postfix/virtual
