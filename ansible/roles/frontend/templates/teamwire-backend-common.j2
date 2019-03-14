@@ -48,6 +48,22 @@
 	}
 
 {% endif %}
+
+{% if webclient_ip_ranges is defined %}
+	location ~ ^(/static)?/web-client/? {
+{% if webclient_ip_ranges is not none %}
+{% for range in webclient_ip_ranges %}
+		allow {{ range }};
+{% endfor %}
+{% endif %}
+		deny all;
+
+		proxy_pass http://teamwire_backend;
+	}
+
+{% endif %}
+
+
 	location / {
 		proxy_pass http://teamwire_backend;
 	}
