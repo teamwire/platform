@@ -18,6 +18,7 @@ MAX_BACKUPS=20				# Max. number of backups to keep
 MAX_LOCK=3600				# Max. lock time
 IN_FILE=''				# Dump to recover
 VAULT_SECRET_PATH="database/password" 	# Path in secretstore
+VAULT_ADDR="127.0.0.1"                  # Vault IP
 
 # -----------------------------------------------------------------------------
 # The following script variables should not set
@@ -25,14 +26,11 @@ VAULT_SECRET_PATH="database/password" 	# Path in secretstore
 # -----------------------------------------------------------------------------
 declare -r FALSE=1
 declare -r TRUE=0
-declare -r DATE
-declare -r SCRIPT_NAME
+declare -r DATE=$(date +"%Y-%m-%d_%s")
+declare -r SCRIPT_NAME=$(basename "$0")
 declare -r LOCKFILE="/tmp/$SCRIPT_NAME.lock"
-declare -r MAX_THREADS
+declare -r MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
 
-DATE=$(date +"%Y-%m-%d_%s")
-SCRIPT_NAME=$(basename "$0")
-MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
 TMP_ARCHIVE=""
 NON_INTERACTIVE=$FALSE
 FORCE=$FALSE		# Force to override a database table if true ( on recovery )
@@ -169,7 +167,7 @@ backup_db() {
 	local TAR_ARCHIVE="$OUTDIR/${DATE}_${DB}_${HOST}_$EXTENS"
 	TMP_ARCHIVE=$TAR_ARCHIVE
 
-	tar cfz "$TAR_ARCHIVE" $SRC &&
+	tar Pcfz "$TAR_ARCHIVE" $SRC &&
 
 	check_prev_exitcode $? "Error while archiving"
 
@@ -189,7 +187,7 @@ backup_db() {
 	while (( CURR_BACKUPS > MAX_BACKUPS ));do
 
 		echo "Maximum number of backups reached($CURR_BACKUPS/$MAX_BACKUPS)."
-		OLDEST_BACKUP=$(find $OUTDIR -type f -name "*$EXTENS" -print0 | xargs -0 ls -ltr | head -n 1 | awk '{print $9}')
+		OLDEST_BACKUP=$(find /var/local/backups/db/production/ -type f -printf '%T+ %p\n' | sort | head -n 1 | awk '{print $2}')
 
 		echo "Delete oldest Backup: $OLDEST_BACKUP"
 		rm "$OLDEST_BACKUP"
@@ -306,8 +304,7 @@ ask_pass() {
 		read -r -s -p "Please enter DB pass: " PASS;echo;
 	fi
 
-	if [ $NON_INTERACTIVE = $TRUE ] && [ $VAULT = $TRUE ] &&
-	[ -x "/usr/local/bin/vault" ];then
+	if [ $NON_INTERACTIVE = $TRUE ] && [ $VAULT = $TRUE ];then
 		vault_read_pass
 		check_prev_exitcode $? "Error while reading Vault pass"
 	fi
@@ -388,10 +385,10 @@ vault_read_pass() {
 		echo "No Vault token set! Exit now"
 		exit_on_failure
 	fi
-	PASS=$(curl -s \
+	PASS=$(curl -k -s \
 	     -H "X-Vault-Token: $VAULT_TOKEN" \
 	     -X GET \
-	     https://127.0.0.1:8200/v1/secret/$VAULT_SECRET_PATH | \
+	     https://$VAULT_ADDR:8200/v1/$VAULT_SECRET_PATH | \
 	     jq -r '.data.value')
 }
 
@@ -439,6 +436,9 @@ while [ $# -gt 0 ]; do
 			;;
 		--vault)
 			VAULT=$TRUE
+			;;
+		--vault-addr)
+			VAULT_ADDR="$2"
 			;;
 
 	esac
