@@ -74,20 +74,33 @@ helpme() {
         [-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--non-interactive][--vault]
 
 	where:
-	-d|--database    = Databasename
-	-h|--host        = Hostname
-	-u|--user        = Loginuser
-	-p|--pass        = interactive password input
-	-t|--task        = Task to perform (backup||restore)
-	-o|--outdir      = Path of dump to be (stored||restored)
-	-n|--nfs-path    = Path to nfs mount. Save dumps in addition to this path
-	-m|--max-backups = Max backups to keep -> default 20
-	-i|--in-file     = Path to dumpfile you like to recover
-	-f|--force       = Force override (DROP) DB tables while recovering
-        -s|--secret-path = Vault secret path
-	--help           = shows this text
-	--non-interactive
-	--vault
+
+	GENERAL
+	---------
+	-d|--database     = Databasename
+	-h|--host         = Hostname
+	-u|--user         = Loginuser
+	-p|--pass         = Interactive password input
+	-t|--task         = Task to perform (backup||restore)
+	-s|--secret-path  = Vault secret path. Only used in combination with
+			    option '--vault'
+	--help            = shows this text
+        --non-interactive = Password will not be ask. You have to set it with
+			    option '-p' or '--vault -s...'
+        --vault           = Enables the usage of vault. Secret path is set with
+			    option '-s'
+	--vault-addr	  = Vault address is set to IP 127.0.0.1. Set new
+			    Vault address if needed.
+        BACKUP
+	--------
+	-o|--outdir       = Path where to dump
+	-n|--nfs-path     = Path to nfs mount. Save dumps in addition to this path
+	-m|--max-backups  = Max backups to keep -> default 20
+
+        RESTORE
+	--------
+	-i|--in-file      = Path to file you like to recover
+	-f|--force        = Force override (DROP) DB tables while recovering
 
 	EXAMPLE: (Set always -p option)
 	-------------------------------
@@ -104,8 +117,14 @@ helpme() {
 	Restore (drop existing tables)
 	$SCRIPT_NAME -t restore -p -i /path/to/dump -f -d test_db
 
-        Secretpath is set without a leading slash
+        Secret path is set without a leading slash:
 	--secret-path my/path
+
+	Use secret from vault:
+	$SCRIPT_NAME --vault -s path/to/secret
+
+	Use secret from vault and set ip:
+	$SCRIPT_NAME --vault --vault-addr 10.0.0.10 -s path/to/secret
 	"
 }
 
