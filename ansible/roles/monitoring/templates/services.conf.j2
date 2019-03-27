@@ -443,3 +443,15 @@ apply Service "check-process-rsyslogd" {
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux"
 }
+
+apply Service "check-oom" {
+  import "generic-service"
+  check_command = "check_oom"
+  vars.minutes_threshold = "5"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "backend_servers" in host.vars.roles
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
