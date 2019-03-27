@@ -1,0 +1,31 @@
+#!/bin/bash
+# This Icinga plugin will check for killed docker container processes as a result of being out-of-memory (oom killer)
+# The check will look for OOM kills that happened against specified minutes threshold and announce the relevant container name
+
+# Check for missing parameters
+if [ -z "$1" ]; then
+        echo "There are missing paramters. Syntax: ./check_oom MINUTES"
+        echo "For example: ./check_oom 5 would check against the last 5 minutes "
+        exit 2
+fi
+
+MINUTES_THRESHOLD="$1"
+OOM_CHECK=$(journalctl --dmesg --since "${MINUTES_THRESHOLD} minutes ago" --no-pager -o cat | grep oom_kill)
+
+
+# Check if there has been an OOM kill within the time threshold
+if [[ $OOM_CHECK != *"oom_kill_process"* ]]; then
+        echo "OK - No OOM kills within the last ${MINUTES_THRESHOLD} minutes."
+        exit 0
+fi
+
+# Announce the relevant container name if there has been an OOM kill
+if [[ $OOM_CHECK == *"oom_kill_process"* ]]; then
+
+        TASK_ID=$(journalctl --dmesg --since "${MINUTES_THRESHOLD} minutes ago" --no-pager -o cat | grep "killed" | awk -F'/docker/' '{print $3}')
+        CONTAINER_NAME=$(docker inspect --format="{{.Name}}" "${TASK_ID}" | cut -c2-)
+
+        echo "CRITICAL - A process in the container ${CONTAINER_NAME} was killed due to reaching resource restrictions within the last ${MINUTES_THRESHOLD} minutes."
+        exit 2
+fi
+
