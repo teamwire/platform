@@ -95,7 +95,7 @@
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Issue a TLS certificate for Vault to use
-  command: vault write pki/issue/tls common_name="127.0.0.1" alt_names="localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans="127.0.0.1" --format=json
+  command: vault write pki/issue/tls common_name="127.0.0.1" alt_names="localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans="127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
   run_once: True
   register: issue_info
   environment:

@@ -74,6 +74,13 @@ external_hostname:
 #   - 10.0.11.10
 #   - 10.0.11.11
 
+# Vault SSL certificate lifetime TTL
+# Upon a new installation, a SSL certificate is issued for Vault connections.
+# The default TTL of this is 2 years (17532 hours) and is formatted as 17532h.
+# To override this default value, uncomment the variable below and set your
+# preferred TTL in hours, appended with "h" at the end.
+# vault_certificate_ttl: 17532h
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################
