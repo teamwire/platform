@@ -1,0 +1,43 @@
+# This playbook procedure will renew a Vault certificate, whether it's expired or not and place the certificate and key at the relevant locations
+
+- name: Renew Vault SSL certificate
+  hosts: local:consul_servers:backend_servers
+  tasks:
+
+  - include_vars: ../../roles/vault/defaults/main.yml
+  - include_vars: ../../group_vars/all
+
+  - name: Issue a TLS certificate for Vault to use
+    command: vault write -tls-skip-verify pki/issue/tls common_name="127.0.0.1" alt_names="localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans="127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
+    run_once: True
+    register: issue_info
+    when: groups['all'] | length() == 1 or inventory_hostname in groups['consul_servers']
+
+  - name: Set certificate fact
+    run_once: True
+    set_fact:
+      vault_certificate: "{{ issue_info.stdout | from_json }}"
+
+  - name: Install Vault root CA, tls certificate and private key
+    copy: content={{ item.content }} dest={{ item.dest }}
+    with_items:
+      - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' }
+      - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' }
+    become: yes
+
+  - name: Restart Nomad to recognise SSL renewal
+    service: name=nomad state=restarted
+    when: groups['all'] | length() > 1
+
+  - name: Restart Vault to recognise SSL renewal
+    service: name=vault state=restarted
+    when: groups['all'] | length() > 1 and inventory_hostname in groups['consul_servers']
+
+  - debug:
+       msg:
+         - "The Vault SSL certificate has now been renewed and is valid for 2 years, this procedure may be re-run at any point"
+         - "IMPORTANT: Vault must be unsealed via twctl secrets unseal"
+         - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the consul_servers group"
+         - "If you encounter any issues, please email support@teamwire.eu"
+    run_once: True
+

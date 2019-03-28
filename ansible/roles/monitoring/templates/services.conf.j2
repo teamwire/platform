@@ -117,6 +117,7 @@ apply Service "check-nomad-health" {
   assign where "consul_servers" in host.vars.roles || "backend_servers" in host.vars.roles
 }
 
+{% if ansible_local.vault.initialized == "true" or groups['all'] | length() > 1 and hostvars[groups['consul_servers'][0]].ansible_local.vault.initialized == "true" %}
 apply Service "check-vault-seal-status" {
   import "generic-service"
   check_command = "http"
@@ -134,6 +135,22 @@ apply Service "check-vault-seal-status" {
   assign where host.vars.os == "Linux"
 {% endif %}
 }
+
+apply Service "check-vault-cert" {
+  import "generic-service"
+  check_command = "ssl_cert"
+
+  vars.cert = "/var/lib/vault/ssl/vault.crt"
+  vars.warn = "2592000"
+  vars.crit = "864000"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "consul_servers" in host.vars.roles || "backend_servers" in host.vars.roles
+{% if groups['all'] | length() == 1 %}
+  assign where host.vars.os == "Linux"
+{% endif %}
+}
+{% endif %}
 
 {% for key, value in redis_instances.iteritems() %}
 apply Service "check-redis-{{ key }}" {
