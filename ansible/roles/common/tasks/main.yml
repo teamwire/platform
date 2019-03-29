@@ -25,10 +25,19 @@
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
   when: dns_servers is defined and ("consul_servers" not in groups or not dnsmasq_configuration.stat.exists)
 
-- name: Ensure backports are enabled (Debian 8)
+# As Debian 8 is now dated, the jessie-backports mirror has been moved to the archive
+- name: Remove old official jessie-backports mirror (Debian 8)
   apt_repository:
     repo: 'deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian/ jessie-backports main'
+    state: absent
+  when: ansible_distribution_release == 'jessie'
+
+# Use the archived jessie-backports mirror, we need ignore_errors applied due to the warning of the release being expired
+- name: Ensure backports are enabled (Debian 8)
+  apt_repository:
+    repo: 'deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian-archive/ jessie-backports main'
     state: present
+  ignore_errors: true
   when: ansible_distribution_release == 'jessie'
 
 - name: Create rc.local for Debian 9
@@ -43,9 +52,14 @@
   stat: path=/etc/offline_installation
   register: offline_mode
 
+# We need to ignore the expiry check due to the release being archived
+- name: apt-get update (Debian 8)
+  command: apt-get -o Acquire::Check-Valid-Until=false update warn=False
+  when: not offline_mode.stat.exists and ansible_distribution_release == 'jessie'
+
 - name: apt-get update
   apt: update_cache=yes
-  when: not offline_mode.stat.exists
+  when: not offline_mode.stat.exists and ansible_distribution_release != 'jessie'
 
   # Clusters: set up DNS with local dnsmasq
 - name: Install dnsmasq (cluster only)
