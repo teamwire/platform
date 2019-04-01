@@ -8,8 +8,14 @@
     fail: msg="This server is already running Ansible {{ required_ansible_version }}. Upgrade not required."
     when: ansible_version['full'] == required_ansible_version
 
+  # We need to ignore the expiry check due to the release being archived
+  - name: apt-get update (Debian 8)
+    command: apt-get -o Acquire::Check-Valid-Until=false update warn=False
+    when: ansible_distribution_release == 'jessie'
+
   - name: apt-get update
     apt: update_cache=yes
+    when: ansible_distribution_release != 'jessie'
 
   - name: Install Pip requirements
     apt: name={{item}} state=present
