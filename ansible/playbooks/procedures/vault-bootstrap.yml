@@ -56,6 +56,12 @@
     environment:
       VAULT_ADDR: "http://127.0.0.1:8200"
 
+  - name: Wait for Vault to elect a leader
+    wait_for:
+      host: active.vault.service.consul
+      port: 8200
+    when: groups['all'] | length() > 1
+
   - name: Authorise root user for Vault login
     copy:
       content: "{{ vault_token }}"
@@ -157,6 +163,12 @@
     with_items:
       - "{{ vault_keys[0] }}"
       - "{{ vault_keys[1] }}"
+
+  - name: Wait for Vault to elect a leader
+    wait_for:
+      host: active.vault.service.consul
+      port: 8200
+    when: groups['all'] | length() > 1
 
   - name: Write and migrate secrets
     command: vault write secret/"{{ item.secret }}" value="{{ item.value }}"
