@@ -245,13 +245,12 @@ restore_db() {
 	DUMPFILE=$IN_FILE
 	DIR_DUMP=$(dirname $DUMPFILE)
 	DIR_TMP="/tmp/recv"
-	DIR_RECV="${DIR_TMP}${DIR_DUMP}/tmp/"
 	DIR_CURR=$(pwd)
 
 	mkdir -p $DIR_TMP; cd $DIR_TMP || exit_on_failure
 	check_prev_exitcode $? "Could not create tmp dir!"
 
-	tar xfvz $DUMPFILE
+	tar xfvz $DUMPFILE --transform='s/.*\///'
 	check_prev_exitcode $? "Error while extracting archive"
 
 	echo "DEBUG FORCE: $FORCE"
@@ -261,19 +260,19 @@ restore_db() {
 		--host=$HOST \
 		--user=$USER \
 		--password="$PASS" \
-		--directory="$DIR_RECV" \
+		--directory="$DIR_TMP" \
 		--threads="$MAX_THREADS" \
 		--overwrite-tables \
 		--verbose=3
 	else
-                myloader \
-                --database=$DB \
+		myloader \
+		--database=$DB \
 		--host=$HOST \
 		--user=$USER \
 		--password="$PASS" \
-                --directory="$DIR_RECV" \
-                --threads="$MAX_THREADS" \
-                --verbose=3
+		--directory="$DIR_TMP" \
+		--threads="$MAX_THREADS" \
+		--verbose=3
 	fi
 	check_prev_exitcode $? "Error while recovering (dumps) into database"
 
