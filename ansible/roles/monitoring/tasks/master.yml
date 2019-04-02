@@ -3,6 +3,10 @@
 - include_vars: ../../roles/redis/defaults/main.yml
   when: redis_instances is not defined
 
+# Nomad job list is required for job status monitoring
+- include_vars: ../../roles/nomad/defaults/main.yml
+  when: nomad_jobs is not defined
+
 - name: Install icinga2 Web UI and tools
   apt: name={{item}} state=present
   with_items:
