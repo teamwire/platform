@@ -276,19 +276,87 @@ help() {
 	echo
 	echo "Actions:"
 	echo
-	echo "pull        Pull containers for a given tag (requires tag)"
-	echo "migrate     Run database migrations (requires tag)"
-	echo "setup       Configure and run Teamwire containers (requires tag)"
-	echo "start       Start all stopped Teamwire containers"
-	echo "status      Show status of Teamwire containers"
-	echo "stop        Stop all running Teamwire containers"
-	echo "rm          Remove all stopped Teamwire containers"
-	echo "backupdb    Create a backup of the database (requires file name)"
-	echo "restoredb   Restore a backup of the database (requires file name)"
-	echo "secrets     Manage Vault and its secrets"
-	echo "version     Show version information"
-	echo "report      Create a report (about system information and logs)"
+	echo "pull        	Pull containers for a given tag (requires tag)"
+	echo "migrate     	Run database migrations (requires tag)"
+	echo "setup       	Configure and run Teamwire containers (requires tag)"
+	echo "start       	Start all stopped Teamwire containers"
+	echo "status      	Show status of Teamwire containers"
+	echo "stop        	Stop all running Teamwire containers"
+	echo "rm          	Remove all stopped Teamwire containers"
+	echo "backupdb    	Create a backup of the database (requires file name)"
+	echo "restoredb   	Restore a backup of the database (requires file name)"
+	echo "secrets     	Manage Vault and its secrets"
+	echo "version     	Show version information"
+	echo "report      	Create a report (about system information and logs)"
+	echo "connectivity 	Test external connections"
 }
+
+test_server_condition_for_preflight_check() {
+
+	# This func is only in used for the preflight-check
+        OK='\033[0;32m'
+        WARN='\033[0;31m'
+        INFO='\033[0;34m'
+        ENDMSG='\033[0m'
+
+        local condition_to_test="$(eval $1)"
+        local return_message=$2
+
+        if [ "$condition_to_test" == 0 ]; then
+                echo -e "${OK}[+]......${ENDMSG}  $return_message"
+        elif [ "$condition_to_test" == 1 ]; then
+                echo -e "${WARN}[!]......  $return_message${ENDMSG}"
+        else
+                echo -e "${INFO}[*]......${ENDMSG}  $return_message"
+        fi
+}
+raw_smtp_connect() {
+
+        mail_recipient="$(cat platform/ansible/group_vars/all | grep -Po '(?<=system_email_recipient:\s")[^"]+(?=")')"
+        echo "Debug $mail_recipient"
+        (\
+        echo "helo localhost";\
+        echo "mail from: root";\
+        echo "rcpt to: <$mail_recipient>";\
+        echo "data";\
+        echo "test";\
+        echo ".";\
+        echo "quit" ) \
+        | nc localhost 25
+}
+
+connectivity_test() {
+
+        echo
+        echo "Run preflight server check..."
+        echo "-----------------------------"
+        echo
+
+	mail_test_response="$(raw_smtp_connect | tail -n 2 | head -n 1)"
+        mail_message_id="$(echo $mail_test_response |  awk -v RS='\r\n' '{print $6}')"
+        mail_message_status="$( sleep 2 && sudo grep $mail_message_id /var/log/mail.log | grep -oP 'status=\K.*')"
+
+        test_server_condition_for_preflight_check       "if [ $(wget -qO - https://rest.nexmo.com/sms/json | grep -c 'Missing') == 1 ];then echo 0;else echo 1;fi" \
+                                                        "Check first(Nexmo) SMS service reachability"
+        test_server_condition_for_preflight_check       "if [ $(wget -qO - https://api.twilio.com/2010-04-01 | grep -c 'TwilioResponse') > 0 ];then echo 0;else echo 1;fi" \
+                                                        "Check second(Twilio) SMS service reachability"
+        test_server_condition_for_preflight_check       "" \
+                                                        "Check your outgoing IP: $(wget -qO - http://ipinfo.io/ip)"
+        test_server_condition_for_preflight_check       "" \
+                                                        "Local mail test 1/2: $mail_test_response"
+        test_server_condition_for_preflight_check       "" \
+                                                        "Local mail test 2/2: $mail_message_status"
+        test_server_condition_for_preflight_check       "if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
+                                                        "Check Google FCM connectivity"
+        test_server_condition_for_preflight_check       "if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
+                                                        "Check Apple APNS connectivity"
+	test_server_condition_for_preflight_check	"sudo bash -c \"if [ -e /data/certs/apns/aps-production.pem ];then echo 0;else echo 1;fi\"" \
+							"Check if APNS certificate is installed"
+        test_server_condition_for_preflight_check	"" \
+							"Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
+
+}
+
 create_report() {
 
 	cd "$ANSIBLE_DIR" || (echo "ERROR: can not cd into $ANSIBLE_DIR" && exit 1)
@@ -607,6 +675,9 @@ while [ $# -gt 0 ] ; do
 			;;
 		version)
 			TASK="version"
+			;;
+		connectivity)
+			TASK="connectivity_test"
 			;;
 	esac
 	shift
