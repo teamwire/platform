@@ -117,6 +117,22 @@ apply Service "check-nomad-health" {
   assign where "consul_servers" in host.vars.roles || "backend_servers" in host.vars.roles
 }
 
+{% for job in nomad_jobs %}
+apply Service "check-nomad-job-{{ job }}" {
+  import "generic-service"
+  check_command = "http"
+
+  vars.http_port = 4646
+  vars.http_uri = "/v1/job/{{ job }}"
+  vars.http_string = "running"
+  vars.address = "127.0.0.1"
+  vars.http_ssl = "false"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "consul_servers" in host.vars.roles
+}
+{% endfor %}
+
 {% if ansible_local.vault.initialized == "true" or groups['all'] | length() > 1 and hostvars[groups['consul_servers'][0]].ansible_local.vault.initialized == "true" %}
 apply Service "check-vault-seal-status" {
   import "generic-service"
