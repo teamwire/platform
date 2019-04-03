@@ -100,3 +100,14 @@
 
 - name: Enable the clustercheck service
   service: name=clustercheck.socket state=started enabled=true
+
+- name: Register Galera servers with Consul
+  consul:
+    service_id: "galera"
+    service_name: "galera"
+    service_port: "3306"
+    tags: "{{ item }}"
+    http: http://{{ inventory_hostname }}:9200
+    interval: 3s
+  with_items:
+    - "{{ mysql_databases.keys() }}"
