@@ -609,7 +609,9 @@ setup_containers_cluster() {
 version() {
 	echo "#### Version information ####
 Installation type: ${INSTALLATION}
-Platform: $(git --git-dir=${ANSIBLE_DIR}/../.git describe)
+Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe)
+Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
+Platform (latest)  : $((git --git-dir=${ANSIBLE_DIR}/../.git ls-remote --tags | awk '{print $2}' | tail -n 1 | grep -Po "(?<=refs/tags/).*(?=\^.*)") 2> /dev/null || echo "unknown")
 Ansible: $(ansible --version | awk 'NR==1{print $2}')
 Vault enabled: ${VAULT_INITIALIZED}"
 }
