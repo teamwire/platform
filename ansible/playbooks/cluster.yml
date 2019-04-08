@@ -9,6 +9,25 @@
           - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
           - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
 
+- name: Get current git tag
+  hosts: database_servers
+  tasks:
+  - command: "git describe --always --tags --abbrev=0"
+    args:
+      chdir: "/home/teamwire/platform"
+    register: current_local_tag
+    run_once: true
+
+- name: Set current git tag (incomplete) in /etc/platform_version
+  hosts: database_servers
+  tasks:
+  - copy:
+      dest: /etc/platform_version
+      content: '{{ current_local_tag.stdout }} (incomplete)'
+      owner: root
+      group: root
+      mode: 0644
+
 - name: Vault Status check
   hosts: local:consul_servers
   tasks:
@@ -32,3 +51,13 @@
 - include: roles/frontend.yml
 - include: roles/load_balancers.yml
 - include: roles/monitoring.yml
+
+- name: Set current tag (COMPLETE) in /etc/platform_version
+  hosts: database_servers
+  tasks:
+  - copy:
+      dest: /etc/platform_version
+      content: '{{ current_local_tag.stdout }}'
+      owner: root
+      group: root
+      mode: 0644
