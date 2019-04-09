@@ -69,11 +69,15 @@ date +"%s" > "$LOCKFILE"
 # -----------------------------------------------------------------------------
 helpme() {
 
-	echo "usage: $SCRIPT_NAME [-d |--database <dbname>][-h|--host <hostname>][-u|--user <username>][-p|--pass]
-	[-t|--task <operation>][-o|--outputdir <path>][-n|--nfs-path <path>][-m|--max-backups <number>]
+	echo "usage: $SCRIPT_NAME -t|--task <operation> [-d |--database <dbname>][-h|--host <hostname>][-u|--user <username>]
+	[-p|--pass][-o|--outputdir <path>][-n|--nfs-path <path>][-m|--max-backups <number>]
         [-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--non-interactive][--vault]
 
 	where:
+
+	MODE
+	---------
+	-t|--task         = Task to perform (backup||restore)
 
 	GENERAL
 	---------
@@ -81,7 +85,6 @@ helpme() {
 	-h|--host         = Hostname
 	-u|--user         = Loginuser
 	-p|--pass         = Interactive password input
-	-t|--task         = Task to perform (backup||restore)
 	-s|--secret-path  = Vault secret path. Only used in combination with
 			    option '--vault'
 	--help            = shows this text
@@ -450,7 +453,7 @@ while [ $# -gt 0 ]; do
 			NON_INTERACTIVE=$TRUE
 			;;
 		--help)
-			helpme;
+			TASK="helpme";
 			;;
 		--vault)
 			VAULT=$TRUE
