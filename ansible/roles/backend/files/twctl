@@ -56,12 +56,31 @@ if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [[ $2
 	exit 1
 fi
 
+if [ "$VAULT_INITIALIZED" == "true" ]; then
+	VAULT_TOKEN="$(< ~/.vault-token)"
+fi
+
+vault_read_secrets() {
+	local secret_path=$1
+	local secret="$(curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/$secret_path | jq -r '.data| .[]')"
+	echo $secret
+}
+# `vault_list` is just a wrapper function needed
+# for `get_vault_secret_recursive` function to make
+# the code more readable.
+vault_list() {
+        echo "curl -s --header \"X-Vault-Token: $VAULT_TOKEN\" --request LIST $VAULT_ADDR/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
+}
 get_vault_secret_recursive() {
-        vault_list="vault list -format "yaml" secret"
-        declare -a vault_secr=`eval "$vault_list | sed 's/-//g'"`
+        if [ "$VAULT_SEALED" = "true" ]; then
+			echo "ERROR: Vault is sealed! Unseal first.";
+			exit 1;
+		fi
+        declare -a vault_secr="$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
         for toplevel in ${vault_secr[@]}
         do
-                sublevel=`eval "$vault_list/$toplevel | sed ':a;N;$!ba;s/\n//g'"`
+                sub="$(vault_list $toplevel)"
+                sublevel=`eval "$sub | sed ':a;N;$!ba;s/\n//g'"`
                 key=`echo $sublevel | sed 's|-\s|  |gm'`
                 for k in ${key[@]}
                 do
@@ -69,21 +88,20 @@ get_vault_secret_recursive() {
                 done
         done
 }
-
+vault_status() {
+	curl -s $VAULT_ADDR/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+		| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
+}
 vault_seal() {
-	if [[ $VAULT_SEALED == "false" ]];then
-		vault operator seal
-	else
-		echo "Vault is already sealed"
-	fi
+		curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request PUT \
+			$VAULT_ADDR/v1/sys/seal | jq -r '.errors | .[]'
 }
 vault_unseal() {
-	vault status > /dev/null
-	isSealed=$?
-	if [ $isSealed -eq 0 ];then
+	if [ "$VAULT_SEALED" = "false" ];then
 		echo "Vault is already unsealed"
 	else
-		vault operator unseal
+		read -s -p "Unseal Key (will be hidden):" vault_unseal_key
+		curl --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq
 	fi
 }
 vault_backup_cluster() {
@@ -128,8 +146,8 @@ check_tag() {
 
 get_database_configuration() {
 	if [ "$VAULT_INITIALIZED" == "true" ]; then
-		AESKEY="$(vault read -field=value secret/database/aes_key)"
-		DB_PASSWORD="$(vault read -field=value secret/database/password)"
+		AESKEY="$(vault_read_secrets database/aes_key)"
+		DB_PASSWORD="$(vault_read_secrets database/password)"
 	else
 		AESKEY="$(_get_config_value aes_key)"
 		DB_PASSWORD="$(_get_config_value teamwire_db_password)"
@@ -205,7 +223,7 @@ save_container_logs() {
 secrets() {
 case $OPTION in
 		read)
-				vault read -field=value "secret/${INPUT}"
+				vault_read_secrets "$INPUT"
 				;;
 		write)
 				if [ -z "$INPUT" ] ; then
@@ -222,14 +240,14 @@ case $OPTION in
 				 echo "Entries do not match, exiting"
 				 exit -1
 				else
-				 vault write "secret/${INPUT}" "value=${ENTRY}"
+				 curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request POST --data "{\"value\":\"$ENTRY\"}" $VAULT_ADDR/v1/secret/"$INPUT"
 				fi
 				;;
 		list)
 				get_vault_secret_recursive
 				;;
 		delete)
-				vault delete "secret/${SECRET}"
+				curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request DELETE $VAULT_ADDR/v1/secret/"$INPUT"
 				;;
 		unseal)
 				vault_unseal
@@ -241,7 +259,7 @@ case $OPTION in
 				vault operator unseal -address=https://127.0.0.1:8200
 				;;
 		info)
-				vault status
+				vault_status
 				;;
 		backup)
 				"vault_backup_${INSTALLATION}"
@@ -395,7 +413,7 @@ create_report() {
 	report_map["Show platform version"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe)"
 	report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
 	report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
-	report_map["Show status of vault"]="$(vault status)" &&
+	report_map["Show status of vault"]="$(vault_status)" &&
 	report_map["Check if APNS cert. is valid"]=$(sudo bash -c "for file in /data/certs/apns/*.pem;do echo \$file && openssl x509 -startdate -enddate  -noout -in \$file 2>&1 ;done")
 	report_map["Test if APNS is reachable"]="$(echo | openssl s_client -connect api.push.apple.com:2197 2>&1 | grep 'depth=1')"
 	report_map["Test if FCM is reachable"]="$(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1')"
