@@ -415,7 +415,7 @@ vault_read_pass() {
 		echo "No Vault token set! Exit now"
 		exit_on_failure
 	fi
-	PASS=$(curl -k -s \
+	PASS=$(curl -s \
 	     -H "X-Vault-Token: $VAULT_TOKEN" \
 	     -X GET \
 	     https://$VAULT_ADDR:8200/v1/$VAULT_SECRET_PATH | \
