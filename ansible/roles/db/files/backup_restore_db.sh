@@ -177,7 +177,7 @@ backup_db() {
 	local TAR_ARCHIVE="$OUTDIR/${DATE}_${DB}_${HOST}_$EXTENS"
 	TMP_ARCHIVE=$TAR_ARCHIVE
 
-	tar Pcfz "$TAR_ARCHIVE" $SRC &&
+	tar Pcfz "$TAR_ARCHIVE" -C $SRC .
 
 	check_prev_exitcode $? "Error while archiving"
 
@@ -241,7 +241,7 @@ restore_db() {
 	mkdir -p $DIR_TMP; cd $DIR_TMP || exit_on_failure
 	check_prev_exitcode $? "Could not create tmp dir!"
 
-	tar xfvz $DUMPFILE --transform='s/.*\///'
+	tar xfvz $DUMPFILE
 	check_prev_exitcode $? "Error while extracting archive"
 
 	echo "DEBUG FORCE: $FORCE"
