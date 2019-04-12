@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Emsure we can parse all command output
+# Ensure we can parse all command output
 export LANG=C
 
 # Find Ansible configuration
@@ -65,37 +65,42 @@ vault_read_secrets() {
 	local secret="$(curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/$secret_path | jq -r '.data| .[]')"
 	echo $secret
 }
+
 # `vault_list` is just a wrapper function needed
 # for `get_vault_secret_recursive` function to make
 # the code more readable.
 vault_list() {
-        echo "curl -s --header \"X-Vault-Token: $VAULT_TOKEN\" --request LIST $VAULT_ADDR/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
+	echo "curl -s --header \"X-Vault-Token: $VAULT_TOKEN\" --request LIST $VAULT_ADDR/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
 }
+
 get_vault_secret_recursive() {
-        if [ "$VAULT_SEALED" = "true" ]; then
-			echo "ERROR: Vault is sealed! Unseal first.";
-			exit 1;
-		fi
-        declare -a vault_secr="$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
-        for toplevel in ${vault_secr[@]}
-        do
-                sub="$(vault_list $toplevel)"
-                sublevel=`eval "$sub | sed ':a;N;$!ba;s/\n//g'"`
-                key=`echo $sublevel | sed 's|-\s|  |gm'`
-                for k in ${key[@]}
-                do
-                        echo "$toplevel$k"
-                done
-        done
+	if [ "$VAULT_SEALED" = "true" ]; then
+		echo "ERROR: Vault is sealed! Unseal first.";
+		exit 1;
+	fi
+	declare -a vault_secr="$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
+	for toplevel in ${vault_secr[@]}
+	do
+		sub="$(vault_list $toplevel)"
+		sublevel=`eval "$sub | sed ':a;N;$!ba;s/\n//g'"`
+		key=`echo $sublevel | sed 's|-\s|  |gm'`
+		for k in ${key[@]}
+		do
+			echo "$toplevel$k"
+		done
+	done
 }
+
 vault_status() {
 	curl -s $VAULT_ADDR/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 		| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 }
+
 vault_seal() {
 		curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request PUT \
 			$VAULT_ADDR/v1/sys/seal | jq -r '.errors | .[]'
 }
+
 vault_unseal() {
 	if [ "$VAULT_SEALED" = "false" ];then
 		echo "Vault is already unsealed"
@@ -104,11 +109,13 @@ vault_unseal() {
 		curl --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq
 	fi
 }
+
 vault_backup_cluster() {
 	STAMP=$(date +"%Y%m%d%H%M")
 	consul snapshot save "secrets-backup-${STAMP}"
 	echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}."
 }
+
 vault_backup_single() {
 	STAMP=$(date +"%Y%m%d%H%M")
 	sudo systemctl stop vault
@@ -116,10 +123,12 @@ vault_backup_single() {
 	sudo systemctl start vault
 	echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}. You must now unseal the secrets system."
 }
+
 vault_restore_cluster() {
 	consul snapshot restore "${INPUT}"
 	echo "Restore complete."
 }
+
 vault_restore_single() {
 	sudo systemctl stop vault
 	sudo tar -xzf "${INPUT}" -C /var/lib/vault
@@ -312,65 +321,66 @@ help() {
 test_server_condition_for_preflight_check() {
 
 	# This func is only in used for the preflight-check
-        OK='\033[0;32m'
-        WARN='\033[0;31m'
-        INFO='\033[0;34m'
-        ENDMSG='\033[0m'
+		OK='\033[0;32m'
+		WARN='\033[0;31m'
+		INFO='\033[0;34m'
+		ENDMSG='\033[0m'
 
-        local condition_to_test="$(eval $1)"
-        local return_message=$2
+		local condition_to_test="$(eval $1)"
+		local return_message=$2
 
-        if [ "$condition_to_test" == 0 ]; then
-                echo -e "${OK}[+]......${ENDMSG}  $return_message"
-        elif [ "$condition_to_test" == 1 ]; then
-                echo -e "${WARN}[!]......  $return_message${ENDMSG}"
-        else
-                echo -e "${INFO}[*]......${ENDMSG}  $return_message"
-        fi
+		if [ "$condition_to_test" == 0 ]; then
+			echo -e "${OK}[+]......${ENDMSG}  $return_message"
+		elif [ "$condition_to_test" == 1 ]; then
+			echo -e "${WARN}[!]......  $return_message${ENDMSG}"
+		else
+			echo -e "${INFO}[*]......${ENDMSG}  $return_message"
+		fi
 }
+
 raw_smtp_connect() {
 
-        mail_recipient="$(cat platform/ansible/group_vars/all | grep -Po '(?<=system_email_recipient:\s")[^"]+(?=")')"
-        echo "Debug $mail_recipient"
-        (\
-        echo "helo localhost";\
-        echo "mail from: root";\
-        echo "rcpt to: <$mail_recipient>";\
-        echo "data";\
-        echo "test";\
-        echo ".";\
-        echo "quit" ) \
-        | nc localhost 25
+		mail_recipient="$(cat platform/ansible/group_vars/all | grep -Po '(?<=system_email_recipient:\s")[^"]+(?=")')"
+		echo "Debug $mail_recipient"
+		(\
+		echo "helo localhost";\
+		echo "mail from: root";\
+		echo "rcpt to: <$mail_recipient>";\
+		echo "data";\
+		echo "test";\
+		echo ".";\
+		echo "quit" ) \
+		| nc localhost 25
 }
 
 connectivity_test() {
 
-        echo
-        echo "Run preflight server check..."
-        echo "-----------------------------"
-        echo
+		echo
+		echo "Run preflight server check..."
+		echo "-----------------------------"
+		echo
 
-	mail_test_response="$(raw_smtp_connect | tail -n 2 | head -n 1)"
-        mail_message_id="$(echo $mail_test_response |  awk -v RS='\r\n' '{print $6}')"
-        mail_message_status="$( sleep 2 && sudo grep $mail_message_id /var/log/mail.log | grep -oP 'status=\K.*')"
+		mail_test_response="$(raw_smtp_connect | tail -n 2 | head -n 1)"
+		mail_message_id="$(echo $mail_test_response |  awk -v RS='\r\n' '{print $6}')"
+		mail_message_status="$( sleep 2 && sudo grep $mail_message_id /var/log/mail.log | grep -oP 'status=\K.*')"
 
-        test_server_condition_for_preflight_check       "if [ $(wget -qO - https://rest.nexmo.com/sms/json | grep -c 'Missing') == 1 ];then echo 0;else echo 1;fi" \
-                                                        "Check first(Nexmo) SMS service reachability"
-        test_server_condition_for_preflight_check       "if [ $(wget -qO - https://api.twilio.com/2010-04-01 | grep -c 'TwilioResponse') > 0 ];then echo 0;else echo 1;fi" \
-                                                        "Check second(Twilio) SMS service reachability"
-        test_server_condition_for_preflight_check       "" \
-                                                        "Check your outgoing IP: $(wget -qO - http://ipinfo.io/ip)"
-        test_server_condition_for_preflight_check       "" \
-                                                        "Local mail test 1/2: $mail_test_response"
-        test_server_condition_for_preflight_check       "" \
-                                                        "Local mail test 2/2: $mail_message_status"
-        test_server_condition_for_preflight_check       "if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
-                                                        "Check Google FCM connectivity"
-        test_server_condition_for_preflight_check       "if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
-                                                        "Check Apple APNS connectivity"
-	test_server_condition_for_preflight_check	"sudo bash -c \"if [ -e /data/certs/apns/aps-production.pem ];then echo 0;else echo 1;fi\"" \
+		test_server_condition_for_preflight_check	"if [ $(wget -qO - https://rest.nexmo.com/sms/json | grep -c 'Missing') == 1 ];then echo 0;else echo 1;fi" \
+							"Check first(Nexmo) SMS service reachability"
+		test_server_condition_for_preflight_check	"if [ $(wget -qO - https://api.twilio.com/2010-04-01 | grep -c 'TwilioResponse') > 0 ];then echo 0;else echo 1;fi" \
+							"Check second(Twilio) SMS service reachability"
+		test_server_condition_for_preflight_check	"" \
+							"Check your outgoing IP: $(wget -qO - http://ipinfo.io/ip)"
+		test_server_condition_for_preflight_check	"" \
+							"Local mail test 1/2: $mail_test_response"
+		test_server_condition_for_preflight_check	"" \
+							"Local mail test 2/2: $mail_message_status"
+		test_server_condition_for_preflight_check	"if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
+							"Check Google FCM connectivity"
+		test_server_condition_for_preflight_check	"if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
+							"Check Apple APNS connectivity"
+		test_server_condition_for_preflight_check	"sudo bash -c \"if [ -e /data/certs/apns/aps-production.pem ];then echo 0;else echo 1;fi\"" \
 							"Check if APNS certificate is installed"
-        test_server_condition_for_preflight_check	"" \
+		test_server_condition_for_preflight_check	"" \
 							"Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
 
 }
@@ -455,7 +465,7 @@ backupdb_single() {
 	# Inject PASS environment var
 	export PASS=$MYSQL_PASS
 
-        /usr/local/bin/backup_restore_db.sh -t backup \
+		/usr/local/bin/backup_restore_db.sh -t backup \
 		--non-interactive \
 		-o $FILENAME -h $MYSQL_HOST \
 		-u $MYSQL_USER -d $MYSQL_DATABASE
@@ -486,6 +496,7 @@ restoredb_single() {
 		restoredb_cluster
 	fi
 }
+
 restoredb_cluster() {
 	echo "Database restorefunction is not supported on clustered setups!"
 	echo "Please use the tool appropriate for your database to perform a manual restore."
