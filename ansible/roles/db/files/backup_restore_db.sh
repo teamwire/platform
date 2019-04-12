@@ -148,6 +148,8 @@ backup_db() {
 	if [ -z "$PASS" ] && [ ! -e "$HOME/.my.cnf" ];then
 		echo "Pass not set!"
 		exit_on_failure
+	elif [ ! -z "$PASS" ];then
+		create_temp_conf
 	fi
 
 	# Test that backup directory exists. Otherwise create it.
@@ -158,27 +160,13 @@ backup_db() {
 
 	# Run mydumper with maximum available threads and with user
 	# defined option.
-	if [ ! -z "$PASS" ];then
-
-		create_temp_conf
-
-		mydumper \
+	mydumper \
 		--database=$DB \
 		--host=$HOST \
 		--outputdir="$OUTDIR/tmp" \
 		--threads="$MAX_THREADS"
-
-	elif [ -z "$PASS" ] && [ -e "$HOME/.my.cnf" ];then
-
-		mydumper \
-                --database=$DB \
-                --host=$HOST \
-                --outputdir="$OUTDIR/tmp" \
-                --threads="$MAX_THREADS"
-
-	fi
-
 	check_prev_exitcode $? "Error while backup"
+
 	# Define some local vars to archive the SQL-dump. mydumper seperates
 	# all dumps in one file per table. After archiving the files we got
 	# all dumps in the same place sorted by date.If NFS_PATH is defined
@@ -345,7 +333,10 @@ ask_pass() {
 check_prev_exitcode() {
 	local exitCode=$1
 	local message=$2
-	[ "$exitCode" -ne 0 ] &&  echo "$message" && exit_on_failure
+	if [ "$exitCode" -ne 0 ];then
+		echo "$message"
+		exit_on_failure
+	fi
 }
 
 # -----------------------------------------------------------------------------
@@ -467,7 +458,7 @@ while [ $# -gt 0 ]; do
 done
 
 # Executes password func
-if [ ! -z $isPassEnabled ];then
+if [ -z $isPassEnabled ];then
 	ask_pass
 fi
 
