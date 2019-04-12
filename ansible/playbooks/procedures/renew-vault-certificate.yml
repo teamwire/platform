@@ -1,7 +1,7 @@
 # This playbook procedure will renew a Vault certificate, whether it's expired or not and place the certificate and key at the relevant locations
 
 - name: Renew Vault SSL certificate
-  hosts: local:consul_servers:backend_servers
+  hosts: all
   tasks:
 
   - include_vars: ../../roles/vault/defaults/main.yml
@@ -15,7 +15,7 @@
     command: vault write -tls-skip-verify pki/issue/tls common_name="127.0.0.1" alt_names="localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans="127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
     run_once: True
     register: issue_info
-    when: groups['all'] | length() == 1 or inventory_hostname in groups['consul_servers']
+    when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['consul_servers']
 
   - name: Set certificate fact
     run_once: True
@@ -31,11 +31,11 @@
 
   - name: Restart Nomad to recognise SSL renewal
     service: name=nomad state=restarted
-    when: groups['all'] | length() > 1
+    when: groups['all'] | length() > 1 and inventory_hostname in groups.consul_servers|union(groups.backend_servers)
 
   - name: Restart Vault to recognise SSL renewal
     service: name=vault state=restarted
-    when: groups['all'] | length() == 1 or inventory_hostname in groups['consul_servers']
+    when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['consul_servers']
 
   - debug:
        msg:
