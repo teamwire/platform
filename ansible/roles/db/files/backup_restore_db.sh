@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # -----------------------------------------------------------------------------
 # SCRIPT VARS
@@ -15,11 +15,10 @@ TASK='helpme'				# Default task of this script
 OUTDIR='/tmp/'  			# Path of backup dir
 NFS_PATH=""				# Optional path of NFS mount
 MAX_BACKUPS=20				# Max. number of backups to keep
-MAX_LOCK=3600				# Max. lock time
 IN_FILE=''				# Dump to recover
 VAULT_SECRET_PATH="database/password" 	# Path in secretstore
 VAULT_ADDR="127.0.0.1"                  # Vault IP
-
+PID=$$					# Own PID
 # -----------------------------------------------------------------------------
 # The following script variables should not set
 # by hand.
@@ -50,15 +49,22 @@ if [ ! -x /usr/bin/mydumper ];then
 fi
 
 # -----------------------------------------------------------------------------
-# Run this script only if no lockfile exist or lockfile is older than in MAX_LOCK
-# specified seconds. This will prevent, that this script is executed multiplied
-# time e.g. by cron.
+# Run this script only if no lockfile exist or lockfile exists but the PID
+# which we grep is no longer running.If the PID is running, it needs to match
+# the SCRIPT_NAME var. Otherwise the PID is occupied by a new process. This
+# could happen on systems that are heavily used.
 # -----------------------------------------------------------------------------
-
-if [ -e "$LOCKFILE"  ] && [ $(expr $(date +'%s') - $(cat "$LOCKFILE")) -le $MAX_LOCK ];then echo "LOGFILE ERROR!";exit 1;fi
-
-# Create timestamp in lockfile
-date +"%s" > "$LOCKFILE"
+if [ -e "$LOCKFILE" ]; then
+	old_pid="$(< $LOCKFILE)"
+	if [[ "$(ps -p $old_pid -o comm=)" =~ "backup_restore_" ]]; then
+		echo "An process of this script is already running. Quit now"
+		exit  1
+	else
+		echo "$PID" > "$LOCKFILE"
+	fi
+else
+	echo "$PID" > "$LOCKFILE"
+fi
 
 # -----------------------------------------------------------------------------
 # FUNCTION:     helpme
@@ -278,6 +284,7 @@ restore_db() {
 
 	echo "Recovering process finish."
 }
+
 # -----------------------------------------------------------------------------
 # FUNCTION:     create_temp_conf
 # ARGUMENTS:    none
@@ -381,7 +388,7 @@ exit_on_failure() {
         # by MAX_BACKUPS. If the script would keep
         # broken backup files, the number of backups
         # would grow without having consistent backups.
-	rm -f "$TMP_ARCHIVE"
+	[ ! -z "$TMP_ARCHIVE" ] && rm -f "$TMP_ARCHIVE"
 
 	# Remove temp recover dir
 	rm -rf /tmp/recv/
