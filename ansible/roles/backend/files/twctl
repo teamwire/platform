@@ -51,7 +51,7 @@ if [ "$VAULT_INITIALIZED" != "true" ]; then
 	VAULT_INITIALIZED=false
 fi
 
-if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [[ $2 -ne "unseal" || $2 -ne "rescue" ]]; then
+if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [ $2 -ne "unseal" ]; then
 	echo "Vault must be unsealed. Please run twctl secrets unseal."
 	exit 1
 fi
@@ -264,9 +264,6 @@ case $OPTION in
 		seal)
 				vault_seal
 				;;
-		rescue)
-				vault operator unseal -address=https://127.0.0.1:8200
-				;;
 		info)
 				vault_status
 				;;
@@ -278,14 +275,13 @@ case $OPTION in
 				;;
 		*)
 				echo "Managing Vault secrets"
-				echo "Usage: twctl secrets {read|write|list|delete|unseal|seal|rescue|info|backup|restore}"
+				echo "Usage: twctl secrets {read|write|list|delete|unseal|seal|info|backup|restore}"
 				echo "	read  : Reads the specified secret"
 				echo "	write : Updates the specified secret"
 				echo "	list  : Lists the secret paths"
 				echo "	delete : Deletes the specified secret"
 				echo "	unseal : Unseals the Vault so secrets can be accessed"
 				echo "	seal : Seals the Vault to prevent access to secrets"
-				echo "	rescue : Re-register and unseal a Vault server if the consul cluster address no longer resolves"
 				echo "	info : Displays Vault information such as seal status, cluster mode and version"
 				echo "	backup : Generates an encrypted backup of secrets"
 				echo "	restore : Restores a secrets backup file"    ;;
