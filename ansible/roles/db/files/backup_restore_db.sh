@@ -72,7 +72,7 @@ helpme() {
 
 	echo "usage: $SCRIPT_NAME -t|--task <operation> [-d |--database <dbname>][-h|--host <hostname>][-u|--user <username>]
 	[-p|--pass][-o|--outputdir <path>][-n|--nfs-path <path>][-m|--max-backups <number>]
-        [-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--non-interactive][--vault]
+	[-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--non-interactive][--vault]
 
 	where:
 
@@ -87,48 +87,48 @@ helpme() {
 	-u|--user         = Loginuser
 	-p|--pass         = Interactive password input
 	-s|--secret-path  = Vault secret path. Only used in combination with
-			    option '--vault'
+				  option '--vault'
 	--help            = shows this text
         --non-interactive = Password will not be ask. You have to set it with
-			    option '-p' or '--vault -s...'
+				  option '-p' or '--vault -s...'
         --vault           = Enables the usage of vault. Secret path is set with
-			    option '-s'
+				  option '-s'
 	--vault-addr	  = Vault address is set to IP 127.0.0.1. Set new
-			    Vault address if needed.
-        BACKUP
+				  Vault address if needed.
+	BACKUP
 	--------
 	-o|--outdir       = Path where to dump
 	-n|--nfs-path     = Path to nfs mount. Save dumps in addition to this path
 	-m|--max-backups  = Max backups to keep -> default 20
 
-        RESTORE
+	RESTORE
 	--------
 	-i|--in-file      = Path to file you like to recover
 	-f|--force        = Force override (DROP) DB tables while recovering
 
-	EXAMPLE: (Set always -p option)
+	EXAMPLE: (Set always -t option)
 	-------------------------------
 
 	Backup:
-	$SCRIPT_NAME -t backup -p
+	  $SCRIPT_NAME -t backup -p
 
 	Backup with path:
-	$SCRIPT_NAME -t backup -o /path/to/dest -p
+	  $SCRIPT_NAME -t backup -o /path/to/dest -p
 
 	Restore:
-	$SCRIPT_NAME -t restore -p -i /path/to/dump
+	  $SCRIPT_NAME -t restore -p -i /path/to/dump
 
 	Restore (drop existing tables)
-	$SCRIPT_NAME -t restore -p -i /path/to/dump -f -d test_db
+	  $SCRIPT_NAME -t restore -p -i /path/to/dump -f -d test_db
 
-        Secret path is set without a leading slash:
-	--secret-path my/path
+	Secret path is set without a leading slash:
+	  --secret-path my/path
 
 	Use secret from vault:
-	$SCRIPT_NAME --vault -s path/to/secret
+	  $SCRIPT_NAME -t backup --vault -s path/to/secret
 
 	Use secret from vault and set ip:
-	$SCRIPT_NAME --vault --vault-addr 10.0.0.10 -s path/to/secret
+	  $SCRIPT_NAME -t backup --vault --vault-addr 10.0.0.10 -s path/to/secret
 	"
 }
 
@@ -149,6 +149,8 @@ backup_db() {
 	if [ -z "$PASS" ] && [ ! -e "$HOME/.my.cnf" ];then
 		echo "Pass not set!"
 		exit_on_failure
+	elif [ ! -z "$PASS" ];then
+		create_temp_conf
 	fi
 
 	# Test that backup directory exists. Otherwise create it.
@@ -159,27 +161,13 @@ backup_db() {
 
 	# Run mydumper with maximum available threads and with user
 	# defined option.
-	if [ ! -z "$PASS" ];then
-
-		create_temp_conf
-
-		mydumper \
+	mydumper \
 		--database=$DB \
 		--host=$HOST \
 		--outputdir="$OUTDIR/tmp" \
 		--threads="$MAX_THREADS"
-
-	elif [ -z "$PASS" ] && [ -e "$HOME/.my.cnf" ];then
-
-		mydumper \
-                --database=$DB \
-                --host=$HOST \
-                --outputdir="$OUTDIR/tmp" \
-                --threads="$MAX_THREADS"
-
-	fi
-
 	check_prev_exitcode $? "Error while backup"
+
 	# Define some local vars to archive the SQL-dump. mydumper seperates
 	# all dumps in one file per table. After archiving the files we got
 	# all dumps in the same place sorted by date.If NFS_PATH is defined
@@ -190,7 +178,7 @@ backup_db() {
 	local TAR_ARCHIVE="$OUTDIR/${DATE}_${DB}_${HOST}_$EXTENS"
 	TMP_ARCHIVE=$TAR_ARCHIVE
 
-	tar Pcfz "$TAR_ARCHIVE" $SRC &&
+	tar Pcfz "$TAR_ARCHIVE" -C $SRC .
 
 	check_prev_exitcode $? "Error while archiving"
 
@@ -254,7 +242,7 @@ restore_db() {
 	mkdir -p $DIR_TMP; cd $DIR_TMP || exit_on_failure
 	check_prev_exitcode $? "Could not create tmp dir!"
 
-	tar xfvz $DUMPFILE --transform='s/.*\///'
+	tar xfvz $DUMPFILE
 	check_prev_exitcode $? "Error while extracting archive"
 
 	echo "DEBUG FORCE: $FORCE"
@@ -354,7 +342,10 @@ ask_pass() {
 check_prev_exitcode() {
 	local exitCode=$1
 	local message=$2
-	[ "$exitCode" -ne 0 ] &&  echo "$message" && exit_on_failure
+	if [ "$exitCode" -ne 0 ];then
+		echo "$message"
+		exit_on_failure
+	fi
 }
 
 # -----------------------------------------------------------------------------
