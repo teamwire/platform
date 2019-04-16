@@ -108,9 +108,12 @@
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Set certificate fact
-  run_once: True
   set_fact:
     vault_certificate: "{{ issue_info.stdout | from_json }}"
+  run_once: True
+  delegate_facts: True
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['all'] }}"
 
 - name: Install Vault root CA, tls certificate and private key
   copy: content={{ item.content }} dest={{ item.dest }}
