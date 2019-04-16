@@ -106,7 +106,7 @@ vault_unseal() {
 		echo "Vault is already unsealed"
 	else
 		read -s -p "Unseal Key (will be hidden):" vault_unseal_key
-		curl --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq
+		curl --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq
 	fi
 }
 
