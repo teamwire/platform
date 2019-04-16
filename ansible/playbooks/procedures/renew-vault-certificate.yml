@@ -8,7 +8,7 @@
   - include_vars: ../../group_vars/all
 
   - name: Check Vault seal status
-    fail: msg="Vault is not in an unsealed state, please run 'twctl secrets unseal -tls-skip-verify'."
+    fail: msg="Vault is not in an unsealed state, please run 'twctl secrets unseal'."
     when: ansible_local.vault.sealed != "false"
 
   - name: Issue a TLS certificate for Vault to use
