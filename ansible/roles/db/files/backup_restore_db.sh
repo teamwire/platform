@@ -32,7 +32,8 @@ declare -r LOCKFILE="/tmp/$SCRIPT_NAME.lock"
 declare -r MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
 
 TMP_ARCHIVE=""
-NON_INTERACTIVE=$FALSE
+isVaultUsed=$FALSE
+isPassEnabled=$FALSE
 FORCE=$FALSE		# Force to override a database table if true ( on recovery )
 VAULT=$FALSE
 
@@ -300,23 +301,31 @@ create_temp_conf() {
 # FUNCTION:	ask_pass
 # ARGUMENTS:	none
 # RETURN:	void/nothing
-# EXPLAIN:	When NON_INTERACTICE is TRUE, the
-#		script can be executed within a cron
-#		job by passing the password directly
-#		with commandline options. Otherwise
-#		it asks for the password interactivly
+# EXPLAIN:	This function processes the passwords.
+# 		Here you specify whether the password
+#		is to be queried by Vault, via the
+#		command line or interactively.
 # -----------------------------------------------------------------------------
 ask_pass() {
 
-	if [ $NON_INTERACTIVE = $FALSE ] && [ $VAULT = $FALSE ];then
-		: NON_INTERACTIVE = $NON_INTERACTIVE
+	# If no vault is set to be used and no password is set, then prompt
+	# for a password. This is an interactive-mode
+	if [ "$isVaultUsed" == "$FALSE" ] && [ "$isPassEnabled" == "$FALSE" ];then
 		read -r -s -p "Please enter DB pass: " PASS;echo;
 	fi
-
-	if [ $NON_INTERACTIVE = $TRUE ] && [ $VAULT = $TRUE ];then
+	# If both is set password and vault, then exit with a failure. Only
+	# one method is possible.
+	if [ "$isVaultUsed" == "$TRUE" ] && [ "$isPassEnabled" == "$TRUE" ];then
+		echo "ERROR: You can use Vault option together with password option."
+		exit_on_failure
+	fi
+	# If Vault is set then curl the password from vault secret store.
+	if [ "$isVaultUsed" == "$TRUE" ];then
 		vault_read_pass
 		check_prev_exitcode $? "Error while reading Vault pass"
 	fi
+	# If isPassEnabled = TRUE then pass is already set! So no further
+	# checks needed.
 
 }
 
@@ -397,7 +406,7 @@ vault_read_pass() {
 		echo "No Vault token set! Exit now"
 		exit_on_failure
 	fi
-	PASS=$(curl -k -s \
+	PASS=$(curl -s \
 	     -H "X-Vault-Token: $VAULT_TOKEN" \
 	     -X GET \
 	     https://$VAULT_ADDR:8200/v1/$VAULT_SECRET_PATH | \
@@ -440,14 +449,11 @@ while [ $# -gt 0 ]; do
                 -s|--secret-path)
 			VAULT_SECRET_PATH="$2"
 			;;
-		--non-interactive)
-			NON_INTERACTIVE=$TRUE
-			;;
 		--help)
 			TASK="helpme";
 			;;
 		--vault)
-			VAULT=$TRUE
+			isVaultUsed=$TRUE
 			;;
 		--vault-addr)
 			VAULT_ADDR="$2"
@@ -458,20 +464,22 @@ while [ $# -gt 0 ]; do
 done
 
 # Executes password func
-if [ -z $isPassEnabled ];then
+if [ $TASK != "helpme" ]; then
 	ask_pass
 fi
-
 # Catch task (user input) case insensitive
 if [ "${TASK,,}" = "restore" ]
 then
 	restore_db;
-
 elif [ "${TASK,,}" = "backup" ]
 then
 	backup_db;
-else
+elif [ "${TASK,,}" = "helpme" ]
+then
 	helpme
+else
+	echo "Unknown task \"$TASK\". Use --help for further informations"
+	exit_on_failure
 fi
 
 # When everything runs well, then delete lockfile before script exit
