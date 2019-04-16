@@ -93,6 +93,9 @@ get_vault_secret_recursive() {
 }
 
 vault_status_single() {
+	echo "======================================"
+	echo "Vault Status"
+	echo "--------------------------------------"
 	curl -s $VAULT_ADDR/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 		| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 }
@@ -117,8 +120,12 @@ vault_unseal() {
 	if [ "$VAULT_SEALED" = "false" ];then
 		echo "Vault is already unsealed"
 	else
-		read -s -p "Unseal Key (will be hidden):" vault_unseal_key
-		curl --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq
+		read -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
+		echo "======================================"
+		echo "Vault Seal Status"
+		echo "--------------------------------------"
+		curl --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 	fi
 }
 
