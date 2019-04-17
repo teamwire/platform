@@ -9,3 +9,19 @@
         name: ../../roles/common
         tasks_from: postfix
       when: new_vault_bootstrap is defined
+
+- name: Distribute Vault SSL certificates to all remaining hosts that require them
+  hosts: all:!consul_servers
+  tasks:
+    - block:
+        - name: Create Vault SSL directory
+          file: path=/var/lib/vault/ssl mode=0750 state=directory
+        - name: Install Vault root CA, tls certificate and private key
+          copy: content={{ item.content }} dest={{ item.dest }}
+          with_items:
+            - { content: '{{ vault_certificate.data.issuing_ca }}', dest: '/usr/local/share/ca-certificates/vault-rootCA.crt' }
+            - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' }
+            - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' }
+        - name: Trust the Vault Root CA
+          command: update-ca-certificates
+      when: new_vault_bootstrap is defined and vault_certificate is defined and groups['all'] | length() > 1
