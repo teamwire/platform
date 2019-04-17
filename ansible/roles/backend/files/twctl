@@ -125,15 +125,41 @@ vault_backup_single() {
 }
 
 vault_restore_cluster() {
-	consul snapshot restore "${INPUT}"
-	echo "Restore complete."
+	if [ -z "$INPUT" ] || [ ! -f "$INPUT" ] ; then
+		echo "ERROR: Mission valid backup file path, please specify a backup file to restore from."
+		exit 1
+	else
+		consul snapshot restore "${INPUT}"
+		if [ $? -eq 0 ] ; then
+			echo "Successfully restored $INPUT"
+		else
+			echo "Error: $INPUT is an invalid backup file."
+			exit 1
+		fi
+	fi
 }
 
 vault_restore_single() {
-	sudo systemctl stop vault
-	sudo tar -xzf "${INPUT}" -C /var/lib/vault
-	sudo systemctl start vault
-	echo "Restore complete, you must now unseal the secrets system."
+	STAMP=$(date +"%Y%m%d%H%M")
+	if [ -z "$INPUT" ] || [ ! -f "$INPUT" ] ; then
+		echo "ERROR: Mission valid backup file path, please specify a backup file to restore from."
+		exit 1
+	else
+		sudo systemctl stop vault
+		if ! sudo mv /var/lib/vault/store "/var/lib/vault/store_${STAMP}"; then
+			echo "ERROR: unable to backup Vault store."
+			exit 1
+		fi
+		if ! sudo tar -xzf "${INPUT}" -C /var/lib/vault; then
+			echo "ERROR: unable to restore Vault backup file."
+			exit 1
+		fi
+		if ! sudo systemctl start vault; then
+			echo "ERROR: unable to start the Vault service."
+			exit 1
+		fi
+		echo "Successfully restored $INPUT, you must now unseal the secrets system."
+	fi
 }
 
 _get_config_value() {
