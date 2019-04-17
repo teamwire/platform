@@ -20,6 +20,7 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	# Clustered setup
 	INSTALLATION=cluster
 	VAULT_ADDR="https://vault.service.consul:8200"
+	VAULT_SERVERS=$(curl -s http://127.0.0.1:8500/v1/status/peers | jq .[] -r | sed "s/:8300//")
 
 	if [ "$UID" != "0" ] && [ ! -r "$CLUSTER_CONFIG_DIR" ] ; then
 		# Try to grant read permissions to the required files
@@ -51,7 +52,7 @@ if [ "$VAULT_INITIALIZED" != "true" ]; then
 	VAULT_INITIALIZED=false
 fi
 
-if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [[ $2 -ne "unseal" || $2 -ne "rescue" ]]; then
+if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [ $2 -ne "unseal" ]; then
 	echo "Vault must be unsealed. Please run twctl secrets unseal."
 	exit 1
 fi
@@ -91,9 +92,23 @@ get_vault_secret_recursive() {
 	done
 }
 
-vault_status() {
+vault_status_single() {
+	echo "======================================"
+	echo "Vault Status"
+	echo "--------------------------------------"
 	curl -s $VAULT_ADDR/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 		| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
+}
+
+vault_status_cluster() {
+	for VAULT_SERVER_IP in $VAULT_SERVERS; do
+		VAULT_SERVER_NAME="$(dig -x ${VAULT_SERVER_IP} +short | sed '$s/.$//')"
+		echo "======================================"
+		echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Status"
+		echo "--------------------------------------"
+		curl -s https://$VAULT_SERVER_IP:8200/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+			| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
+	done
 }
 
 vault_seal() {
@@ -101,13 +116,37 @@ vault_seal() {
 			$VAULT_ADDR/v1/sys/seal | jq -r '.errors | .[]'
 }
 
-vault_unseal() {
+vault_unseal_single() {
 	if [ "$VAULT_SEALED" = "false" ];then
 		echo "Vault is already unsealed"
 	else
-		read -s -p "Unseal Key (will be hidden):" vault_unseal_key
-		curl --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq
+		read -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
+		echo "======================================"
+		echo "Vault Seal Status"
+		echo "--------------------------------------"
+		curl --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 	fi
+}
+
+vault_unseal_cluster() {
+	read -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
+	if [ -n "$INPUT" ];then
+		VAULT_SERVERS="$INPUT"
+	fi
+	for VAULT_SERVER_IP in $VAULT_SERVERS; do
+		VAULT_SERVER_NAME="$(dig -x ${VAULT_SERVER_IP} +short | sed '$s/.$//')"
+		VAULT_SERVER_SEAL=$(curl -s "https://$VAULT_SERVER_IP:8200/v1/sys/health" | jq '.sealed')
+		if [ "$VAULT_SERVER_SEAL" = "false" ];then
+			echo "Vault on ${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] is already unsealed"
+		else
+			echo "======================================"
+			echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Seal Status"
+			echo "--------------------------------------"
+			curl -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" https://$VAULT_SERVER_IP:8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
+		fi
+	done
 }
 
 vault_backup_cluster() {
@@ -259,16 +298,13 @@ case $OPTION in
 				curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request DELETE $VAULT_ADDR/v1/secret/"$INPUT"
 				;;
 		unseal)
-				vault_unseal
+				"vault_unseal_${INSTALLATION}"
 				;;
 		seal)
 				vault_seal
 				;;
-		rescue)
-				vault operator unseal -address=https://127.0.0.1:8200
-				;;
 		info)
-				vault_status
+				"vault_status_${INSTALLATION}"
 				;;
 		backup)
 				"vault_backup_${INSTALLATION}"
@@ -278,14 +314,13 @@ case $OPTION in
 				;;
 		*)
 				echo "Managing Vault secrets"
-				echo "Usage: twctl secrets {read|write|list|delete|unseal|seal|rescue|info|backup|restore}"
+				echo "Usage: twctl secrets {read|write|list|delete|unseal|seal|info|backup|restore}"
 				echo "	read  : Reads the specified secret"
 				echo "	write : Updates the specified secret"
 				echo "	list  : Lists the secret paths"
 				echo "	delete : Deletes the specified secret"
 				echo "	unseal : Unseals the Vault so secrets can be accessed"
 				echo "	seal : Seals the Vault to prevent access to secrets"
-				echo "	rescue : Re-register and unseal a Vault server if the consul cluster address no longer resolves"
 				echo "	info : Displays Vault information such as seal status, cluster mode and version"
 				echo "	backup : Generates an encrypted backup of secrets"
 				echo "	restore : Restores a secrets backup file"    ;;
