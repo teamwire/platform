@@ -116,7 +116,7 @@ vault_seal() {
 			$VAULT_ADDR/v1/sys/seal | jq -r '.errors | .[]'
 }
 
-vault_unseal() {
+vault_unseal_single() {
 	if [ "$VAULT_SEALED" = "false" ];then
 		echo "Vault is already unsealed"
 	else
@@ -127,6 +127,26 @@ vault_unseal() {
 		curl --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 	fi
+}
+
+vault_unseal_cluster() {
+	read -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
+	if [ -n "$INPUT" ];then
+		VAULT_SERVERS="$INPUT"
+	fi
+	for VAULT_SERVER_IP in $VAULT_SERVERS; do
+		VAULT_SERVER_NAME="$(dig -x ${VAULT_SERVER_IP} +short | sed '$s/.$//')"
+		VAULT_SERVER_SEAL=$(curl -s "https://$VAULT_SERVER_IP:8200/v1/sys/health" | jq '.sealed')
+		if [ "$VAULT_SERVER_SEAL" = "false" ];then
+			echo "Vault on ${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] is already unsealed"
+		else
+			echo "======================================"
+			echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Seal Status"
+			echo "--------------------------------------"
+			curl -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" https://$VAULT_SERVER_IP:8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
+		fi
+	done
 }
 
 vault_backup_cluster() {
@@ -278,7 +298,7 @@ case $OPTION in
 				curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request DELETE $VAULT_ADDR/v1/secret/"$INPUT"
 				;;
 		unseal)
-				vault_unseal
+				"vault_unseal_${INSTALLATION}"
 				;;
 		seal)
 				vault_seal
