@@ -1,0 +1,22 @@
+#!/bin/bash -e
+
+declare -A ansible_facts
+
+# Add ansible facts here
+ansible_facts["applied_platform_version"]="$(< /etc/platform_version)"
+ansible_facts["checkout_platform_version"]="$(git --git-dir={{ inventory_dir }}/../.git describe --always)"
+
+fact_index=(${!ansible_facts[@]})
+
+{%raw%}
+# Do not edit this loop. If you need to add a fact, add it above in ansible_facts!
+echo "{"
+for fact in "${!ansible_facts[@]}"; do
+        printf "  \"$fact\" : \"${ansible_facts[$fact]}\""
+        if [ "${fact_index[$((${#ansible_facts[@]} -1))]}" != "$fact" ];then
+                printf ","
+        fi
+        echo
+done
+echo "}"
+{%endraw%}
