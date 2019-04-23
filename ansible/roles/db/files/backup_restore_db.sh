@@ -27,7 +27,6 @@ declare -r FALSE=1
 declare -r TRUE=0
 declare -r DATE=$(date +"%Y-%m-%d_%s")
 declare -r SCRIPT_NAME=$(basename "$0")
-declare -r LOCKFILE="/tmp/$SCRIPT_NAME.lock"
 declare -r MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
 
 TMP_ARCHIVE=""
@@ -469,6 +468,9 @@ while [ $# -gt 0 ]; do
 	esac
 	shift
 done
+
+# Extends lock file name with DB name
+LOCKFILE="/tmp/${SCRIPT_NAME}-${DB}.lock"
 
 # Executes password func
 if [ $TASK != "helpme" ]; then
