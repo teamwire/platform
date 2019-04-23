@@ -201,15 +201,20 @@ backup_db() {
 
 	# Count current backups. Rest should be self explained :-)
 	CURR_BACKUPS=$(ls $OUTDIR | wc -l)
+	check_prev_exitcode $? "Cant count backups"
+
 	while (( CURR_BACKUPS > MAX_BACKUPS ));do
 
 		echo "Maximum number of backups reached($CURR_BACKUPS/$MAX_BACKUPS)."
-		OLDEST_BACKUP=$(find /var/local/backups/db/production/ -type f -printf '%T+ %p\n' | sort | head -n 1 | awk '{print $2}')
+		OLDEST_BACKUP=$(find "$OUTDIR" -type f -printf '%T+ %p\n' | sort | head -n 1 | awk '{print $2}')
+		check_prev_exitcode $? "Cant find oldest backup"
 
 		echo "Delete oldest Backup: $OLDEST_BACKUP"
 		rm "$OLDEST_BACKUP"
+		check_prev_exitcode $? "Cant delete oldest backup"
 
 		CURR_BACKUPS=$(ls $OUTDIR | wc -l)
+		check_prev_exitcode $? "Cant count backups"
 
 	done
 	echo "Current number of backups $CURR_BACKUPS/$MAX_BACKUPS"
