@@ -481,7 +481,7 @@ create_report() {
 
 	fi
 
-	report_map["Show platform version"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe)"
+	report_map["Show platform version"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)"
 	report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
 	report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
 	report_map["Show status of vault"]="$(vault_status)" &&
@@ -699,7 +699,7 @@ setup_containers_cluster() {
 version() {
 	echo "#### Version information ####
 Installation type: ${INSTALLATION}
-Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe)
+Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $((git --git-dir=${ANSIBLE_DIR}/../.git ls-remote --tags | awk '{print $2}' | tail -n 1 | grep -Po "(?<=refs/tags/).*(?=\^.*)") 2> /dev/null || echo "unknown")
 Ansible: $(ansible --version | awk 'NR==1{print $2}')
