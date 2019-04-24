@@ -14,7 +14,7 @@ PASS=${PASS:-''}			# Password of user. DO NOT SET THIS IN THE SCRIPT!
 TASK='helpme'				# Default task of this script
 OUTDIR='/tmp/'  			# Path of backup dir
 NFS_PATH=""				# Optional path of NFS mount
-MAX_BACKUPS=20				# Max. number of backups to keep
+MAX_BACKUPS=""				# Max. number of backups to keep
 IN_FILE=''				# Dump to recover
 VAULT_SECRET_PATH="database/password" 	# Path in secretstore
 VAULT_ADDR="127.0.0.1"                  # Vault IP
@@ -201,17 +201,24 @@ backup_db() {
 
 	# Count current backups. Rest should be self explained :-)
 	CURR_BACKUPS=$(ls $OUTDIR | wc -l)
-	while (( CURR_BACKUPS > MAX_BACKUPS ));do
+	check_prev_exitcode $? "Cant count backups"
 
-		echo "Maximum number of backups reached($CURR_BACKUPS/$MAX_BACKUPS)."
-		OLDEST_BACKUP=$(find /var/local/backups/db/production/ -type f -printf '%T+ %p\n' | sort | head -n 1 | awk '{print $2}')
+	if [ "$MAX_BACKUPS" != "" ];then
+		while (( CURR_BACKUPS > MAX_BACKUPS ));do
 
-		echo "Delete oldest Backup: $OLDEST_BACKUP"
-		rm "$OLDEST_BACKUP"
+			echo "Maximum number of backups reached($CURR_BACKUPS/$MAX_BACKUPS)."
+			OLDEST_BACKUP=$(find "$OUTDIR" -type f -printf '%T+ %p\n' | sort | head -n 1 | awk '{print $2}')
+			check_prev_exitcode $? "Cant find oldest backup"
 
-		CURR_BACKUPS=$(ls $OUTDIR | wc -l)
+			echo "Delete oldest Backup: $OLDEST_BACKUP"
+			rm "$OLDEST_BACKUP"
+			check_prev_exitcode $? "Cant delete oldest backup"
 
-	done
+			CURR_BACKUPS=$(ls $OUTDIR | wc -l)
+			check_prev_exitcode $? "Cant count backups"
+
+		done
+	fi
 	echo "Current number of backups $CURR_BACKUPS/$MAX_BACKUPS"
 
 	# CREATE LATEST
