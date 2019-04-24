@@ -25,7 +25,6 @@
     - libmonitoring-plugin-perl
     - liblwp-useragent-determined-perl
     - libdbd-mysql-perl
-    - dnsutils
 
 - name: Enable and start the icinga2 daemon
   service: name=icinga2 state=started enabled=true

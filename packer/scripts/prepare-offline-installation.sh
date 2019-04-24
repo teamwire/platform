@@ -62,6 +62,7 @@ php${PHP_VERSION}-gd
 php${PHP_VERSION}-xml
 jq
 gnupg1
+dnsutils
 "
 
 DOCKER_IMAGES="

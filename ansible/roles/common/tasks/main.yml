@@ -110,6 +110,7 @@
   - curl
   - jq
   - pwgen
+  - dnsutils
 
 - name: Install gpg1
   apt: pkg=gnupg1
