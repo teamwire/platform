@@ -25,7 +25,7 @@ PID=$$					# Own PID
 # -----------------------------------------------------------------------------
 declare -r FALSE=1
 declare -r TRUE=0
-declare -r DATE=$(date +"%Y-%m-%d_%s")
+declare -r DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 declare -r SCRIPT_NAME=$(basename "$0")
 declare -r MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
 
