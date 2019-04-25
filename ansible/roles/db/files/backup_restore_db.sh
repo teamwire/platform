@@ -48,24 +48,6 @@ if [ ! -x /usr/bin/mydumper ];then
 fi
 
 # -----------------------------------------------------------------------------
-# Run this script only if no lockfile exist or lockfile exists but the PID
-# which we grep is no longer running.If the PID is running, it needs to match
-# the SCRIPT_NAME var. Otherwise the PID is occupied by a new process. This
-# could happen on systems that are heavily used.
-# -----------------------------------------------------------------------------
-if [ -e "$LOCKFILE" ]; then
-	old_pid="$(< $LOCKFILE)"
-	if [[ "$(ps -p $old_pid -o comm=)" =~ "backup_restore_" ]]; then
-		echo "An process of this script is already running. Quit now"
-		exit  1
-	else
-		echo "$PID" > "$LOCKFILE"
-	fi
-else
-	echo "$PID" > "$LOCKFILE"
-fi
-
-# -----------------------------------------------------------------------------
 # FUNCTION:     helpme
 # ARGUMENTS:    none
 # RETURN:       void/null
@@ -478,6 +460,24 @@ done
 
 # Extends lock file name with DB name
 LOCKFILE="/tmp/${SCRIPT_NAME}-${DB}.lock"
+
+# -----------------------------------------------------------------------------
+# Run this script only if no lockfile exist or lockfile exists but the PID
+# which we grep is no longer running.If the PID is running, it needs to match
+# the SCRIPT_NAME var. Otherwise the PID is occupied by a new process. This
+# could happen on systems that are heavily used.
+# -----------------------------------------------------------------------------
+if [ -e "$LOCKFILE" ]; then
+	old_pid="$(< $LOCKFILE)"
+	if [[ "$(ps -p $old_pid -o comm=)" =~ "backup_restore_" ]]; then
+		echo "An process of this script is already running. Quit now"
+		exit  1
+	else
+		echo "$PID" > "$LOCKFILE"
+	fi
+else
+	echo "$PID" > "$LOCKFILE"
+fi
 
 # Executes password func
 if [ $TASK != "helpme" ]; then
