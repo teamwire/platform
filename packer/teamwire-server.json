@@ -160,7 +160,7 @@
 		},
 		{
 			"type": "ansible-local",
-			"command": "ansible-playbook",
+			"command": "env TW_DEV_MODE=1 ansible-playbook",
 			"playbook_file": "../ansible/site.yml",
 			"playbook_dir": "../ansible"
 		},
