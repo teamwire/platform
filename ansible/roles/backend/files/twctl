@@ -20,7 +20,12 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	# Clustered setup
 	INSTALLATION=cluster
 	VAULT_ADDR="https://vault.service.consul:8200"
+	# Query Consul to obtain Consul peers (Which are also Vault servers)
 	VAULT_SERVERS=$(curl -s http://127.0.0.1:8500/v1/status/peers | jq .[] -r | sed "s/:8300//")
+	# Obtain the first Vault server's IP address
+	VAULT_1ST_SERVER=$(echo "${VAULT_SERVERS}" | head -1)
+	VAULT_INITIALIZED=$(curl -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.initialized')
+	VAULT_SEALED=$(curl -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.sealed')
 
 	if [ "$UID" != "0" ] && [ ! -r "$CLUSTER_CONFIG_DIR" ] ; then
 		# Try to grant read permissions to the required files
@@ -33,6 +38,8 @@ else
 	# Single server installation
 	INSTALLATION=single
 	VAULT_ADDR="https://127.0.0.1:8200"
+	VAULT_INITIALIZED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
+	VAULT_SEALED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 
 	if [ ! -f "$CONFIG_FILE" ]; then
 		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
@@ -45,20 +52,26 @@ fi
 
 IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
 
-VAULT_INITIALIZED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
-VAULT_SEALED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 
 if [ "$VAULT_INITIALIZED" != "true" ]; then
 	VAULT_INITIALIZED=false
 fi
 
-if [ "$VAULT_INITIALIZED" == "true" ] && [ "$VAULT_SEALED" != "false" ] && [ $2 -ne "unseal" ]; then
+if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" != "false" && "$2" != "unseal" ]]; then
 	echo "Vault must be unsealed. Please run twctl secrets unseal."
 	exit 1
 fi
 
 if [ "$VAULT_INITIALIZED" == "true" ]; then
 	VAULT_TOKEN="$(< ~/.vault-token)"
+fi
+
+if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" == "false" ]]; then
+	VAULT_AUTH_CHECK="$(curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret | jq -r .errors[])"
+	if [ "$VAULT_AUTH_CHECK" == "permission denied" ]; then
+		echo "Invalid Vault token, please check the contents of ~/.vault-token."
+		exit 1
+	fi
 fi
 
 vault_read_secrets() {
@@ -75,10 +88,6 @@ vault_list() {
 }
 
 get_vault_secret_recursive() {
-	if [ "$VAULT_SEALED" = "true" ]; then
-		echo "ERROR: Vault is sealed! Unseal first.";
-		exit 1;
-	fi
 	declare -a vault_secr="$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
 	for toplevel in ${vault_secr[@]}
 	do
