@@ -238,7 +238,8 @@ get_database_configuration() {
 
 	if [ -z "$DB_PASSWORD" ] || [ -z "$AESKEY" ] ; then
 		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
-		echo "       Please ensure the file exists and the database is configured."
+		echo "       Please ensure the file exists and the database is configured or"
+		echo "       Vault is running and unsealed."
 		exit 1
 	fi
 
