@@ -305,7 +305,7 @@ ask_pass() {
 
 	# If no vault is set to be used and no password is set, then prompt
 	# for a password. This is an interactive-mode
-	if [ "$isVaultUsed" == "$FALSE" ] && [ "$isPassEnabled" == "$FALSE" ];then
+	if [ "$isVaultUsed" == "$FALSE" ] && [ "$isPassEnabled" == "$FALSE" ] && [ "$PASS" == "" ];then
 		read -r -s -p "Please enter DB pass: " PASS;echo;
 	fi
 	# If both is set password and vault, then exit with a failure. Only

@@ -77,7 +77,7 @@ fi
 vault_read_secrets() {
 	local secret_path=$1
 	local secret="$(curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/$secret_path | jq -r '.data| .[]')"
-	echo $secret
+	echo "$secret"
 }
 
 # `vault_list` is just a wrapper function needed
@@ -89,12 +89,12 @@ vault_list() {
 
 get_vault_secret_recursive() {
 	declare -a vault_secr="$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
-	for toplevel in ${vault_secr[@]}
+	for toplevel in "${vault_secr[@]}"
 	do
 		sub="$(vault_list $toplevel)"
 		sublevel=`eval "$sub | sed ':a;N;$!ba;s/\n//g'"`
-		key=`echo $sublevel | sed 's|-\s|  |gm'`
-		for k in ${key[@]}
+		key=`echo "$sublevel" | sed 's|-\s|  |gm'`
+		for k in "${key[@]}"
 		do
 			echo "$toplevel$k"
 		done
@@ -115,7 +115,7 @@ vault_status_cluster() {
 		echo "======================================"
 		echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Status"
 		echo "--------------------------------------"
-		curl -s https://$VAULT_SERVER_IP:8200/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+		curl -s https://"$VAULT_SERVER_IP":8200/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 			| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 	done
 }
@@ -152,7 +152,7 @@ vault_unseal_cluster() {
 			echo "======================================"
 			echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Seal Status"
 			echo "--------------------------------------"
-			curl -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" https://$VAULT_SERVER_IP:8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+			curl -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" https://"$VAULT_SERVER_IP":8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 		fi
 	done
@@ -538,8 +538,8 @@ backupdb_single() {
 
 		/usr/local/bin/backup_restore_db.sh -t backup \
 		--non-interactive \
-		-o $FILENAME -h $MYSQL_HOST \
-		-u $MYSQL_USER -d $MYSQL_DATABASE
+		-o "$FILENAME" -h "$MYSQL_HOST" \
+		-u "$MYSQL_USER" -d "$MYSQL_DATABASE"
 
 }
 
@@ -559,8 +559,8 @@ restoredb_single() {
 
 		/usr/local/bin/backup_restore_db.sh -t restore \
 			--non-interactive \
-			-u $MYSQL_USER -d $MYSQL_DATABASE \
-			-f -i $FILENAME -h $MYSQL_HOST
+			-u "$MYSQL_USER" -d "$MYSQL_DATABASE" \
+			-f "-i $FILENAME" -h "$MYSQL_HOST"
 
 	elif [ "$INSTALLATION" == "cluster" ];then
 
@@ -569,15 +569,41 @@ restoredb_single() {
 }
 
 restoredb_cluster() {
-	echo "Database restorefunction is not supported on clustered setups!"
-	echo "Please use the tool appropriate for your database to perform a manual restore."
-	exit 1
+
+	if [ ! -f "$FILENAME" ] ; then
+		echo "$FILENAME does not exists, please specify a name that exists!"
+		exit 1
+	fi
+
+	get_database_configuration
+
+	# Inject PASS environment var
+	export PASS=$MYSQL_PASS
+
+	/usr/local/bin/backup_restore_db.sh -t restore \
+		--non-interactive \
+		-u $MYSQL_USER -d $MYSQL_DATABASE \
+		-f -i $FILENAME -h galera.service.consul
+
 }
 
 backupdb_cluster() {
-	echo "Database backup is not supported on clustered setups!"
-	echo "Please use the tool appropriate for your database to perform a manual backup."
-	exit 1
+
+	if [ -f "$FILENAME" ] ; then
+		echo "$FILENAME exists, please specify a name that doesn't exists!"
+		exit 1
+	fi
+
+	get_database_configuration
+
+	# Inject PASS environment var
+	export PASS=$MYSQL_PASS
+
+	/usr/local/bin/backup_restore_db.sh -t backup \
+	--non-interactive \
+	-o $FILENAME -h galera.service.consul \
+	-u $MYSQL_USER -d $MYSQL_DATABASE
+
 }
 
 pull_images_base() {
