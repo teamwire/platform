@@ -302,18 +302,6 @@ apply Service "check-process-keepalived" {
 }
 {% endif %}
 
-{% if 'backend_servers' in groups %}
-apply Service "check-haproxy" {
-  import "generic-service"
-  check_command = "haproxy"
-
-  vars.socket = "/var/run/haproxy/admin.sock"
-  command_endpoint = host.vars.client_endpoint
-  assign where "backend_servers" in host.vars.roles
-}
-{% endif %}
-
-
 {% if apns_certificate is defined %}
 apply Service "check-apns" {
   import "generic-service"
