@@ -59,7 +59,7 @@ helpme() {
 
 	echo "usage: $SCRIPT_NAME -t|--task <operation> [-d |--database <dbname>][-h|--host <hostname>][-u|--user <username>]
 	[-p|--pass][-o|--outputdir <path>][-n|--nfs-path <path>][-m|--max-backups <number>]
-	[-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--non-interactive][--vault]
+	[-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--vault]
 
 	where:
 
@@ -76,8 +76,6 @@ helpme() {
 	-s|--secret-path  = Vault secret path. Only used in combination with
 				  option '--vault'
 	--help            = shows this text
-        --non-interactive = Password will not be ask. You have to set it with
-				  option '-p' or '--vault -s...'
         --vault           = Enables the usage of vault. Secret path is set with
 				  option '-s'
 	--vault-addr	  = Vault address is set to IP 127.0.0.1. Set new
