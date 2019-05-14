@@ -537,7 +537,6 @@ backupdb_single() {
 	export PASS=$MYSQL_PASS
 
 		/usr/local/bin/backup_restore_db.sh -t backup \
-		--non-interactive \
 		-o "$FILENAME" -h "$MYSQL_HOST" \
 		-u "$MYSQL_USER" -d "$MYSQL_DATABASE"
 
@@ -558,9 +557,8 @@ restoredb_single() {
 		export PASS=$MYSQL_PASS
 
 		/usr/local/bin/backup_restore_db.sh -t restore \
-			--non-interactive \
 			-u "$MYSQL_USER" -d "$MYSQL_DATABASE" \
-			-f "-i $FILENAME" -h "$MYSQL_HOST"
+			-f -i "$FILENAME" -h "$MYSQL_HOST"
 
 	elif [ "$INSTALLATION" == "cluster" ];then
 
@@ -581,9 +579,8 @@ restoredb_cluster() {
 	export PASS=$MYSQL_PASS
 
 	/usr/local/bin/backup_restore_db.sh -t restore \
-		--non-interactive \
-		-u $MYSQL_USER -d $MYSQL_DATABASE \
-		-f -i $FILENAME -h galera.service.consul
+		-u "$MYSQL_USER" -d "$MYSQL_DATABASE" \
+		-f -i "$FILENAME" -h galera.service.consul
 
 }
 
@@ -600,9 +597,8 @@ backupdb_cluster() {
 	export PASS=$MYSQL_PASS
 
 	/usr/local/bin/backup_restore_db.sh -t backup \
-	--non-interactive \
-	-o $FILENAME -h galera.service.consul \
-	-u $MYSQL_USER -d $MYSQL_DATABASE
+	-o "$FILENAME" -h galera.service.consul \
+	-u "$MYSQL_USER" -d "$MYSQL_DATABASE"
 
 }
 
