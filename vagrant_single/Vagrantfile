@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
 
   # The ssh user name used to connect to the created VM with "vagrant ssh"
   config.ssh.username = "teamwire"
-
+  config.ssh.password = ""
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
@@ -25,6 +25,9 @@ Vagrant.configure(2) do |config|
   config.vm.define "teamwire-server" do |server|
     server.vm.hostname = "teamwire-server"
   end
+
+  # Configure a private static IP
+  #config.vm.network "private_network", ip: "192.168.121.188"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.

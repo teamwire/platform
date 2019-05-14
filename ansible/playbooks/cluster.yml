@@ -1,40 +1,6 @@
 ---
-- hosts: all
-  pre_tasks:
-    - name: Check Ansible version
-      assert:
-        that: "ansible_version.full is version_compare('2.5.4', '>=')"
-        msg:
-          - "Ansible 2.5.4 is required, please run the upgrade procedure"
-          - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
-          - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
-
-- name: Get current git tag
-  hosts: database_servers
-  tasks:
-  - command: "git describe --always --tags --abbrev=0"
-    args:
-      chdir: "/home/teamwire/platform"
-    register: current_local_tag
-    run_once: true
-
-- name: Set current git tag (incomplete) in /etc/platform_version
-  hosts: database_servers
-  tasks:
-  - copy:
-      dest: /etc/platform_version
-      content: '{{ current_local_tag.stdout }} (incomplete)'
-      owner: root
-      group: root
-      mode: 0644
-
-- name: Vault Status check
-  hosts: local:consul_servers
-  tasks:
-    - include_role:
-        name: roles/vault.yml
-        tasks_from: secrets
-      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+- name: Import requirements which needs to run first
+  import_playbook: requirements.yml
 
 - include: roles/common.yml
 - include: roles/consul.yml
@@ -57,7 +23,8 @@
   tasks:
   - copy:
       dest: /etc/platform_version
-      content: '{{ current_local_tag.stdout }}'
+      content: "{{ current_local_tag }}"
       owner: root
       group: root
       mode: 0644
+    when: packer_build_name is not defined

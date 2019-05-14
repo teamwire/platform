@@ -1,0 +1,65 @@
+---
+##### THIS HAS TO GO FIRST #####
+- hosts: all
+  pre_tasks:
+    - name: Check Ansible version
+      assert:
+        that: "ansible_version.full is version_compare('2.5.4', '>=')"
+        msg:
+          - "Ansible 2.5.4 is required, please run the upgrade procedure"
+          - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
+          - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
+
+- name: Get current git tag
+  hosts: all
+  tasks:
+  - command: "git describe --always --tags"
+    args:
+      chdir: "{{ inventory_dir if inventory_dir is defined else (ansible_inventory_sources[0] | dirname) }}"
+    register: current_local_tag_var
+    when: packer_build_name is not defined
+    delegate_to: localhost
+  run_once: true
+
+- name: Set fact current_local_tag
+  hosts: all
+  pre_tasks:
+    - set_fact:
+         current_local_tag: "{{ current_local_tag_var.stdout }}"
+      when: packer_build_name is not defined
+
+- name: Set current git tag (incomplete) in /etc/platform_version
+  hosts: all
+  tasks:
+  - copy:
+      dest: /etc/platform_version
+      content: '{{ current_local_tag if current_local_tag is defined else "NONE" }} (incomplete)'
+      owner: root
+      group: root
+      mode: 0644
+    when: packer_build_name is not defined
+##### END ######
+
+- name: Vault Status check
+  hosts: local:consul_servers
+  tasks:
+    - include_role: # Single only
+        name: ../roles/vault
+        tasks_from: secrets
+      when:
+        - ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+        - groups['all'] | length() == 1
+    - include_role: # Cluster only
+        name: roles/vault.yml
+        tasks_from: secrets
+      when:
+        - ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+        - groups['all'] | length() > 1
+
+- name: Perform SSL-Preflight check
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+  - include_tasks: ../roles/frontend/tasks/ssl-check.yml ssl_first_check=yes
+    when: packer_build_name is not defined
+  run_once: true
