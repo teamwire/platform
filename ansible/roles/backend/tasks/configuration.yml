@@ -42,7 +42,7 @@
 - name: Set mysql_port as fact for other roles
   set_fact:
     mysql_port: 3306
-  when: mysql_port is not defined and 'database_servers' not in groups and oracle_host is not defined
+  when: mysql_port is not defined and oracle_host is not defined
 
 - name: Ensure Redis servers are defined
   fail: msg="Redis servers aren't defined. Please check the cluster_hosts file"
