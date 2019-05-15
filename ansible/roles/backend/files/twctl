@@ -231,9 +231,11 @@ get_database_configuration() {
 	if [ "$VAULT_INITIALIZED" == "true" ]; then
 		AESKEY="$(vault_read_secrets database/aes_key)"
 		DB_PASSWORD="$(vault_read_secrets database/password)"
+		REDIS_PASSWORD="$(vault_read_secrets redis/password)"
 	else
 		AESKEY="$(_get_config_value aes_key)"
 		DB_PASSWORD="$(_get_config_value teamwire_db_password)"
+		REDIS_PASSWORD="$(_get_config_value redis_pass)"
 	fi
 
 	if [ -z "$DB_PASSWORD" ] || [ -z "$AESKEY" ] ; then
@@ -653,6 +655,7 @@ run_migrations_base() {
 		-e MYSQL_USER="$MYSQL_USER" -e MYSQL_PASSWORD="$MYSQL_PASS" \
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
 		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
+		-e REDIS_URI="$REDIS_URI" -e REDIS_PASSWORD="$REDIS_PASSWORD"\
 		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2> "$ERROR_LOG" | egrep -v '^(.+)='
 
 	if [ $? -gt 0 ] ; then
@@ -662,10 +665,12 @@ run_migrations_base() {
 }
 
 run_migrations_single() {
+	REDIS_URI='127.0.0.1:6379:1'
 	run_migrations_base
 }
 
 run_migrations_cluster() {
+	REDIS_URI='redis.service.consul:6379:1'
 	run_migrations_base
 }
 
