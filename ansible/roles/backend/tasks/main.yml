@@ -24,17 +24,6 @@
     - certs
     - certs/apns
 
-- name: Check APNS certificate is valid and doesn't expire within the next month
-  openssl_certificate:
-    path: "{{ apns_certificate }}"
-    provider: assertonly
-    valid_in: 2630000
-  when: config_done is defined
-  run_once: true
-  delegate_to: localhost
-  vars:
-    ansible_become: no
-
 - name: Install the APNS certificate
   copy:
     src: "{{ apns_certificate }}"
@@ -46,21 +35,6 @@
   run_once: true
   register: apns_source
 
-- name: Ensure the secondary APNS certificate is configured correctly
-  fail: msg="The secondary APNS certificate is not configured correctly."
-  when: apns_certificate_2 is defined and apns_appid_2 is not defined or apns_appid_2 is defined and apns_certificate_2 is not defined
-
-- name: Check the secondary APNS certificate is valid and doesn't expire within the next month
-  openssl_certificate:
-    path: "{{ apns_certificate_2 }}"
-    provider: assertonly
-    valid_in: 2630000
-  when: apns_certificate_2 is defined
-  run_once: true
-  delegate_to: localhost
-  vars:
-    ansible_become: no
-
 - name: Install the secondary APNS certificate
   copy:
     src: "{{ apns_certificate_2 }}"
@@ -71,21 +45,6 @@
   when: apns_certificate_2 is defined
   run_once: true
   register: apns2_source
-
-- name: Ensure the third APNS certificate is configured correctly
-  fail: msg="The third APNS certificate is not configured correctly."
-  when: apns_certificate_3 is defined and apns_appid_3 is not defined or apns_appid_3 is defined and apns_certificate_3 is not defined
-
-- name: Check the third APNS certificate is valid and doesn't expire within the next month
-  openssl_certificate:
-    path: "{{ apns_certificate_3 }}"
-    provider: assertonly
-    valid_in: 2630000
-  when: apns_certificate_3 is defined
-  run_once: true
-  delegate_to: localhost
-  vars:
-    ansible_become: no
 
 - name: Install the third APNS certificate
   copy:
