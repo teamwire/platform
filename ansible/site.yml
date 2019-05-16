@@ -16,6 +16,7 @@
     args:
       chdir: "/home/teamwire/platform"
     register: current_local_tag
+    when: packer_build_name is not defined
 
 - name: Set current git tag (incomplete) in /etc/platform_version
   hosts: all
@@ -26,6 +27,7 @@
       owner: root
       group: root
       mode: 0644
+    when: current_local_tag.stdout is defined
 
 - name: Vault Status check
   hosts: local:consul_servers
@@ -81,3 +83,4 @@
       owner: root
       group: root
       mode: 0644
+    when: current_local_tag.stdout is defined
