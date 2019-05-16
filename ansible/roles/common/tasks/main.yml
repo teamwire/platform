@@ -32,14 +32,6 @@
     state: absent
   when: ansible_distribution_release == 'jessie'
 
-# Use the archived jessie-backports mirror, we need ignore_errors applied due to the warning of the release being expired
-- name: Ensure backports are enabled (Debian 8)
-  apt_repository:
-    repo: 'deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian-archive/ jessie-backports main'
-    state: present
-  ignore_errors: true
-  when: ansible_distribution_release == 'jessie'
-
 - name: Create rc.local for Debian 9
   when: ansible_distribution_release == 'stretch'
   template:
