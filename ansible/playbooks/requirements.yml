@@ -115,3 +115,8 @@
       vars:
         ansible_become: no
 
+# Check for unattended-upgrades
+- name: Wait for automatic system updates to complete
+  hosts: all
+  tasks:
+    - shell: while pgrep unattended; do sleep 1; done;
