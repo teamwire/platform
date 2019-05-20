@@ -4,7 +4,7 @@
 - name: FIRST - Check SSL certificate
   block:
     - openssl_certificate:
-        path: "{{ ssl_certfile }}"
+        path: "{{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }}"
         privatekey_path: "{{ ssl_keyfile }}"
         provider: assertonly
         signature_algorithms:
