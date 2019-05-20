@@ -5,7 +5,7 @@
   run_once: True
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
-  
+
 - name: Extract Vault unseal keys and root token
   run_once: True
   set_fact:
@@ -18,8 +18,7 @@
     dest: "{{ inventory_dir }}/vault-credentials"
   run_once: True
   delegate_to: localhost
-  vars:
-    ansible_become: no
+  become: no
 
 - name: Set temporary VAULT_TOKEN environment variable
   shell: export VAULT_TOKEN="{{ vault_token }}"
