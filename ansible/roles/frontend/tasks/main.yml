@@ -54,23 +54,8 @@
   args:
     creates: /etc/ssl/private/dhparams.pem
 
-- name: Check SSL chain is valid (hasn't expired, modern algorithm and key matches certificate)
-  openssl_certificate:
-    path: /etc/ssl/private/server_and_intermediate_and_root.crt
-    privatekey_path: /etc/ssl/private/teamwire-backend.key
-    provider: assertonly
-    signature_algorithms:
-      - sha224WithRSAEncryption
-      - sha256WithRSAEncryption
-      - sha384WithRSAEncryption
-      - sha512WithRSAEncryption
-      - sha224WithECDSAEncryption
-      - sha256WithECDSAEncryption
-      - sha384WithECDSAEncryption
-      - sha512WithECDSAEncryption
-    has_expired: False
-  when: ssl_keyfile is defined
-  run_once: true
+- name: Import SSL certificate check
+  import_tasks: ssl-check.yml
 
 # open firewall ports for the web server
 - ufw: rule=allow port=80 proto=tcp
