@@ -209,8 +209,7 @@
     - "icingaweb2.sql"
   when: database_created.changed
   delegate_to: localhost
-  vars:
-    ansible_become: no
+  become: no
 
 - name: Encrypt Icinga web admin user password
   command: 'openssl passwd -1 "{{ icinga_admin_password }}"'
