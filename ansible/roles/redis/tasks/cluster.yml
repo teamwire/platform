@@ -64,24 +64,18 @@
     - "{{ redis_instances.keys() }}"
 
 - name: Register Redis servers with Consul
-  consul:
-    service_id: "redis-{{ item }}"
-    service_name: redis
-    service_port: "{{ redis_instances[item].server_port }}"
-    tags: "{{ item }}"
-    script: "/usr/bin/redis-cli -p {{ redis_instances[item].server_port }} {{ '-a ' +  redis_instances[item].password if redis_instances[item].password else '' }} info | egrep role:master || return 2"
-    interval: 3s
+  template:
+    src: consul-redis.hcl.j2
+    dest: "/etc/consul.d/redis-{{ item }}.hcl"
+  notify: restart consul
   with_items:
     - "{{ redis_instances.keys() }}"
 
 - name: Register Redis sentinels with Consul
-  consul:
-    service_id: "sentinel-{{ item }}"
-    service_name: sentinel
-    service_port: "{{ redis_instances[item].sentinel_port }}"
-    tags: "{{ item }}"
-    script: "/usr/bin/redis-cli -p {{ redis_instances[item].sentinel_port }} {{ '-a ' + redis_instances[item].password if redis_instances[item].password else '' }} info | grep sentinel_masters:1"
-    interval: 10s
+  template:
+    src: consul-redis-sentinel.hcl.j2
+    dest: "/etc/consul.d/redis-sentinel-{{ item }}.hcl"
+  notify: restart consul
   with_items:
     - "{{ redis_instances.keys() }}"
 
