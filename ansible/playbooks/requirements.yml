@@ -10,6 +10,15 @@
           - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
           - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
 
+- name: Ensure config_done is not set during Packer image builds
+  hosts: all
+  tasks:
+  - fail:
+      msg:
+        - "The config_done variable is defined, this cannot be present during packer builds."
+        - "Please ensure there is no group_vars/all configuration file in place."
+    when: packer_build_name is defined and config_done is defined
+
 - name: Get current git tag
   hosts: all
   tasks:
