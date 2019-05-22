@@ -8,5 +8,6 @@
       when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
 
 - hosts: consul_servers:backend_servers
+  serial: 1
   roles:
   - role: ../../roles/nomad
