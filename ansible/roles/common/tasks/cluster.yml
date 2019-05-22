@@ -19,9 +19,3 @@
   ufw: rule=allow src="{{ hostvars[item]['private_ip'] }}"
   with_items: "{{ groups['all'] | default([]) }}"
   when: item != inventory_hostname and disable_private_connection is not defined
-
-- name: Install python-consul version {{ required_python_consul_version }}
-  pip:
-    name=python-consul
-    version={{ required_python_consul_version }}
-    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
