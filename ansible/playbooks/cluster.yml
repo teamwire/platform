@@ -19,7 +19,7 @@
 - include: roles/monitoring.yml
 
 - name: Set current tag (COMPLETE) in /etc/platform_version
-  hosts: database_servers
+  hosts: all
   tasks:
   - copy:
       dest: /etc/platform_version

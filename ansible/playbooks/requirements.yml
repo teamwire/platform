@@ -29,6 +29,7 @@
     when: packer_build_name is not defined
     become: no
     delegate_to: localhost
+    become: no
   run_once: true
 
 - name: Set fact current_local_tag
@@ -84,8 +85,7 @@
       when: config_done is defined
       run_once: true
       delegate_to: localhost
-      vars:
-        ansible_become: no
+      become: no
 
 - name: Ensure the secondary APNS certificate is configured correctly
   hosts: all
@@ -103,8 +103,7 @@
       when: apns_certificate_2 is defined
       run_once: true
       delegate_to: localhost
-      vars:
-      ansible_become: no
+      become: no
 
 - name: Ensure the third APNS certificate is configured correctly
   hosts: all
@@ -122,8 +121,7 @@
       when: apns_certificate_3 is defined
       run_once: true
       delegate_to: localhost
-      vars:
-        ansible_become: no
+      become: no
 
 # Check for unattended-upgrades
 - name: Wait for automatic system updates to complete
