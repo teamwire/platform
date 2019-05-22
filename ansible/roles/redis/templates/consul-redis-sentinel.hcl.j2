@@ -1,0 +1,14 @@
+{
+  "service": {
+    "id": "sentinel-{{ item }}",
+    "name": "sentinel",
+    "tags": ["{{ item }}"],
+    "port": {{ redis_instances[item].sentinel_port }},
+    "checks": [
+      {
+        "args": ["/bin/bash", "-c", "/usr/bin/redis-cli -p {{ redis_instances[item].sentinel_port }} {{ '-a ' + redis_instances[item].password if redis_instances[item].password else '' }} info | grep sentinel_masters:1"],
+        "interval": "10s"
+      }
+    ]
+  }
+}

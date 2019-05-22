@@ -9,6 +9,8 @@
 
 - name: Deploy and configure Redis database cluster
   hosts: redis_servers
+  handlers:
+    - import_tasks: ../../roles/consul/handlers/main.yml
   serial: 1
   roles:
     - ../../roles/redis

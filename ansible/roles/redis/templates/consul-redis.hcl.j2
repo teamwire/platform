@@ -1,0 +1,14 @@
+{
+  "service": {
+    "id": "redis-{{ item }}",
+    "name": "redis",
+    "tags": ["{{ item }}"],
+    "port": {{ redis_instances[item].server_port }},
+    "checks": [
+      {
+        "args": ["/bin/bash", "-c", "/usr/bin/redis-cli -p {{ redis_instances[item].server_port }} {{ '-a ' +  redis_instances[item].password if redis_instances[item].password else '' }} info | egrep role:master || exit 2"],
+        "interval": "3s"
+      }
+    ]
+  }
+}

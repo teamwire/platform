@@ -1,0 +1,13 @@
+{
+  "service": {
+    "id": "galera",
+    "name": "galera",
+    "port": 3306,
+    "checks": [
+      {
+        "http": "http://{{ inventory_hostname }}:9200",
+        "interval": "3s"
+      }
+    ]
+  }
+}
