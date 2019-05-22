@@ -9,8 +9,6 @@
 
 - name: Deploy and configure MySQL database
   hosts: database_servers
-  handlers:
-    - import_tasks: ../../roles/consul/handlers/main.yml
   serial: 1
   roles:
     - { role: ../../roles/db, when: config_done is defined and mysql_host is not defined }

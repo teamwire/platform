@@ -4,3 +4,6 @@
 
 - name: restart MariaDB
   service: name=mysql state=restarted
+
+- name: restart consul
+  service: name=consul state=restarted
