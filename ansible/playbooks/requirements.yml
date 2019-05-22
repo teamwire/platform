@@ -27,7 +27,6 @@
       chdir: "{{ inventory_dir if inventory_dir is defined else (ansible_inventory_sources[0] | dirname) }}"
     register: current_local_tag_var
     when: packer_build_name is not defined
-    become: no
     delegate_to: localhost
     become: no
   run_once: true
