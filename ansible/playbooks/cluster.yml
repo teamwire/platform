@@ -3,6 +3,7 @@
   import_playbook: requirements.yml
 
 - include: roles/common.yml
+- include: roles/management.yml
 - include: roles/consul.yml
 - include: roles/vault.yml
 - include: roles/nfs_servers.yml
