@@ -23,6 +23,11 @@ db3 private_ip=10.0.1.23
 # of the machines defined in the [all] section above. The comments above the
 # blocks explain if the role is optional or mandatory for a clustered setup.
 
+# Required. At least 1 management server required. This is the role which
+# will handle Ansible provisioning and twctl management
+[management_servers]
+tw1
+
 # Mandatory, three or five servers
 [consul_servers]
 db1
