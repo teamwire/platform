@@ -89,12 +89,12 @@ vault_list() {
 
 get_vault_secret_recursive() {
 	declare -a vault_secr="$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
-	for toplevel in "${vault_secr[@]}"
+	for toplevel in ${vault_secr[@]}
 	do
 		sub="$(vault_list $toplevel)"
 		sublevel=`eval "$sub | sed ':a;N;$!ba;s/\n//g'"`
 		key=`echo "$sublevel" | sed 's|-\s|  |gm'`
-		for k in "${key[@]}"
+		for k in ${key[@]}
 		do
 			echo "$toplevel$k"
 		done
