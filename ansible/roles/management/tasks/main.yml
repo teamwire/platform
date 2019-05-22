@@ -22,3 +22,9 @@
     group: teamwire
   when: config_file.stat.exists
 
+# Delete platform on other hosts
+- name: Remove platform from unrequired hosts
+  file:
+    state: absent
+    path: /home/teamwire/platform/
+  when: groups['all'] | length() > 1 and not inventory_hostname in groups['management_servers']
