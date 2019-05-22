@@ -210,32 +210,6 @@
     line: "UseDNS no"
   notify: reload sshd
 
-# Keep track of the plattform repository
-- name: Install git
-  apt: pkg=git state=present
-  when: groups['all'] | length() == 1
-
-- name: Check out the teamwire/platform git repository
-  git:
-    repo: https://github.com/teamwire/platform.git
-    depth: 1
-    dest: /home/teamwire/platform
-    update: no
-  notify: fix ownership of git checkout
-  when: groups['all'] | length() == 1
-
-- stat: path=/home/teamwire/platform/ansible/group_vars/all
-  register: config_file
-
-- name: Secure permissions of Ansible configuration file
-  file:
-    path: /home/teamwire/platform/ansible/group_vars/all
-    state: file
-    mode: 0600
-    owner: teamwire
-    group: teamwire
-  when: config_file.stat.exists
-
 # Prepare tmate usage
 # It needs any ssh key for the calling user to function
 - name: Create SSH keys for the teamwire user
