@@ -19,6 +19,7 @@
     register: current_local_tag_var
     when: packer_build_name is not defined
     delegate_to: localhost
+    become: no
   run_once: true
 
 - name: Set fact current_local_tag
