@@ -17,8 +17,6 @@ db3 private_ip=10.0.1.23
 # ansible_user=teamwire
 # The private key of the user given above
 # ansible_ssh_private_key_file=/path/to/private/key
-# When connecting with a privileged user, comment the following
-# line to skip the use of sudo to gain root privileges.
 
 
 # The following blocks configure which of the roles will be installed on which
