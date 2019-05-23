@@ -241,7 +241,6 @@
     block:
       - pause:
           prompt: "Dockerhub password required. Please enter the password for {{ dockerhub_username }}"
-          echo: no
         register: pause_entry
       - command: vault write secret/dockerhub/password value="{{ pause_entry.user_input }}"
     no_log: true
@@ -252,7 +251,6 @@
     block:
       - pause:
           prompt: "Google API key required. Please enter the key you have received from us."
-          echo: no
         register: pause_entry
       - command: vault write secret/keys/gcm value="{{ pause_entry.user_input }}"
     no_log: true
@@ -263,7 +261,6 @@
     block:
       - pause:
           prompt: "SMTP password required. Please confirm the password for {{ smtp_smartuser }}"
-          echo: no
         register: pause_entry
       - command: vault write secret/smtp/password value="{{ pause_entry.user_input }}"
     no_log: true
@@ -274,7 +271,6 @@
     block:
       - pause:
           prompt: "Database password required. Please confirm the password for {{ teamwire_db_user }}"
-          echo: no
         register: pause_entry
       - command: vault write secret/database/password value="{{ pause_entry.user_input }}"
     no_log: true
@@ -292,7 +288,6 @@
     block:
       - pause:
           prompt: "Database AES key required. Please confirm the AES key."
-          echo: no
         register: pause_entry
       - command: vault write secret/database/aes_key value="{{ pause_entry.user_input }}"
     no_log: true
