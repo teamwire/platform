@@ -11,6 +11,20 @@
         tasks_from: postfix
       when: new_vault_bootstrap is defined
 
+- name: Distribute Vault token to all remaining hosts that require it
+  hosts: all:!consul_servers
+  tasks:
+    - copy:
+        content: "{{ vault_token }}"
+        dest: "/home/{{ item }}/.vault-token"
+        mode: 0400
+        owner: "{{ item }}"
+        group: "{{ item }}"
+      with_items:
+        - root
+        - teamwire
+      when: new_vault_bootstrap is defined and vault_token is defined and groups['all'] | length() > 1
+
 - name: Distribute Vault SSL certificates to all remaining hosts that require them
   hosts: all:!consul_servers
   tasks:
