@@ -4,6 +4,7 @@
 
 - name: Run postfix tasks to configure email credentials after initial bootstrap
   hosts: all
+  gather_facts: true
   tasks:
     - include_role:
         name: ../../roles/common
