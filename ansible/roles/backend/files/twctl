@@ -413,7 +413,7 @@ test_server_condition_for_preflight_check() {
 
 raw_smtp_connect() {
 
-		mail_recipient="$(cat platform/ansible/group_vars/all | grep -Po '(?<=system_email_recipient:\s")[^"]+(?=")')"
+		mail_recipient="$(cat "$CONFIG_FILE" | grep -Po '(?<=system_email_recipient:\s")[^"]+(?=")')"
 		echo "Debug $mail_recipient"
 		(\
 		echo "helo localhost";\
