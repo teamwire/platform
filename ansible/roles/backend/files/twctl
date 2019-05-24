@@ -496,7 +496,7 @@ create_report() {
 	report_map["Show platform version"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)"
 	report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
 	report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
-	report_map["Show status of vault"]="$(vault_status)" &&
+	report_map["Show status of vault"]="$(vault_status_${INSTALLATION})" &&
 	report_map["Check if APNS cert. is valid"]=$(sudo bash -c "for file in /data/certs/apns/*.pem;do echo \$file && openssl x509 -startdate -enddate  -noout -in \$file 2>&1 ;done")
 	report_map["Test if APNS is reachable"]="$(echo | openssl s_client -connect api.push.apple.com:2197 2>&1 | grep 'depth=1')"
 	report_map["Test if FCM is reachable"]="$(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1')"
