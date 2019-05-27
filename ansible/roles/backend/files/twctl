@@ -57,9 +57,15 @@ if [ "$VAULT_INITIALIZED" != "true" ]; then
 	VAULT_INITIALIZED=false
 fi
 
+BLACKLIST=("pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "restoredb" "secrets")
+
 if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" != "false" && "$2" != "unseal" ]]; then
-	echo "Vault must be unsealed. Please run twctl secrets unseal."
-	exit 1
+	for task in "${BLACKLIST[@]}"; do
+		if [[ "$@" == *"$task"* ]]; then
+			echo "Vault must be unsealed. Please run twctl secrets unseal."
+			exit 1
+		fi
+	done
 fi
 
 if [ "$VAULT_INITIALIZED" == "true" ]; then
