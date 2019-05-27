@@ -645,8 +645,6 @@ run_migrations_base() {
 	check_tag "$TAG"
 	get_database_configuration
 
-	ERROR_LOG="$(mktemp)"
-
 	echo "Running database migrations"
 	echo
 	docker run --rm --network host -e MODE=migration --name teamwire-migrations \
@@ -656,12 +654,8 @@ run_migrations_base() {
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
 		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
 		-e REDIS_URI="$REDIS_URI" -e REDIS_PASSWORD="$REDIS_PASSWORD"\
-		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2> "$ERROR_LOG" | egrep -v '^(.+)='
+		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2>&1
 
-	if [ $? -gt 0 ] ; then
-		cat "$ERROR_LOG"
-	fi
-	rm -f "$ERROR_LOG"
 }
 
 run_migrations_single() {
