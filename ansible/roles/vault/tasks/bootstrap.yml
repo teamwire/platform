@@ -15,7 +15,7 @@
 - name: Create Vault credentials file
   template:
     src: ../../roles/vault/templates/credentials.j2
-    dest: "{{ 'inventory_dir/vault-credentials' if vagrant_mode is not defined else '../ansible/vault-credentials' }}"
+    dest: "{{ inventory_dir + '/vault-credentials' if vagrant_mode is not defined else '../ansible/vault-credentials' }}"
   run_once: True
   delegate_to: localhost
   become: no
