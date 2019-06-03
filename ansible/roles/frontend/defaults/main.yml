@@ -1,4 +1,0 @@
----
-nginx_package: nginx-light
-nginx_config: nginx.conf
-backend_template: teamwire-backend.tmpl.j2

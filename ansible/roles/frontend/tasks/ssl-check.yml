@@ -29,7 +29,7 @@
 
 - name: Check SSL chain is valid (hasn't expired, modern algorithm and key matches certificate)
   openssl_certificate:
-    path: /etc/ssl/private/server_and_intermediate_and_root.crt
+    path: /etc/ssl/certs/server_and_intermediate_and_root.crt
     privatekey_path: /etc/ssl/private/teamwire-backend.key
     provider: assertonly
     signature_algorithms:

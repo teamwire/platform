@@ -1,14 +1,4 @@
 ---
-- name: Ensure unzip is present
-  apt: pkg=unzip
-
-- name: Link generated backend config
-  file:
-    src: /etc/nginx/sites-available/teamwire-backend
-    dest: /etc/nginx/sites-enabled/teamwire-backend
-    state: link
-    force: yes
-
 - name: Create 3rd party download directory
   file: dest=/var/cache/downloads state=directory mode=0755
 
@@ -63,8 +53,8 @@
     - 01-base.hcl
     - 10-backend.hcl
 
-- name: Write Consul Template nginx upstream templates
+- name: Write Consul Template haproxy templates
   template:
-    src: "{{ backend_template }}"
+    src: haproxy.cfg.j2
     dest: /etc/consul-template/templates/teamwire-backend.tmpl
   notify: restart Consul Template
