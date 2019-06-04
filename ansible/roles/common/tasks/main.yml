@@ -1,9 +1,4 @@
 ---
-# unattanded-upgrades sometimes lock APT for a long time
-- name: Wait for APT to be available
-  shell: while fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 1; done;
-  changed_when: false
-
 - name: Configure proxy for apt
   when: http_proxy is defined
   template: src=apt.proxy.conf.j2 dest=/etc/apt/apt.conf.d/01proxy
