@@ -1,0 +1,29 @@
+# Keep track of the plattform repository
+- name: Install git
+  apt: pkg=git state=present
+
+- name: Check out the teamwire/platform git repository
+  git:
+    repo: https://github.com/teamwire/platform.git
+    depth: 1
+    dest: /home/teamwire/platform
+    update: no
+  notify: fix ownership of git checkout
+
+- stat: path=/home/teamwire/platform/ansible/group_vars/all
+  register: config_file
+
+- name: Secure permissions of Ansible configuration file
+  file:
+    path: /home/teamwire/platform/ansible/group_vars/all
+    state: file
+    mode: 0600
+    owner: teamwire
+    group: teamwire
+  when: config_file.stat.exists
+
+- name: Install the container helper tool
+  copy: src=../../roles/management/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
+
+- include: backup.yml
+  when: config_done is defined

@@ -465,6 +465,7 @@ connectivity_test() {
 }
 
 create_report() {
+	echo "Generating report. Please wait..."
 
 	cd "$ANSIBLE_DIR" || (echo "ERROR: can not cd into $ANSIBLE_DIR" && exit 1)
 
@@ -490,6 +491,13 @@ create_report() {
 		report_map["Show nomad job status"]="$(nomad job status teamwire)" &&
 		report_map["Show debian version"]=$(ansible all -i cluster_hosts -m command -a 'cat /etc/debian_version') &&
 		report_map["Show nomad node status"]="$(nomad node status)"
+
+		# Retrieve logs from loghost and add them to the report
+		LOG_SERVER=$(ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -m setup -a "filter=ansible_hostname" | grep ansible_hostname | awk '{print $2}' | tr -d '"')
+		LOG_FILES=$(ssh "teamwire@${LOG_SERVER}" "find /var/log/cluster -name \"*.log"\" | awk -F/ '{print $NF}')
+		for LOG_FILE in $LOG_FILES; do
+			ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/$LOG_FILE dest=$TMPDIR/ flat=yes" > /dev/null 2>&1
+		done
 
 	else
 
@@ -519,7 +527,7 @@ create_report() {
 
 	done
 
-	find /var/log/cluster/ -name *.log -exec sudo cp {} "$TMPDIR" \;
+	# Retrieve docker logs on single installations and management servers
 	find /var/log/docker/ -name *.log -exec sudo cp {} "$TMPDIR" \;
 
 	cd "$HOME" || (echo "ERROR: can not cd into $HOME" && exit 1)

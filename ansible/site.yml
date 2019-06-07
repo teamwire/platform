@@ -6,6 +6,7 @@
   hosts: all
   roles:
     - common
+    - management
 
 - name: Deploy and configure external storage client
   hosts: all
