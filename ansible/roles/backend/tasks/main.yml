@@ -72,7 +72,7 @@
      minute: "0"
      hour: "4"
      user: root
-     job: " find /data/website-screenshot-cache/ -type f -mtime +90 -delete"
+     job: "find /data/website-screenshot-cache/ -type f -mtime +90 -delete"
      cron_file: webscreenshots_cleaner
   when:
      - config_done is defined and data_dirs is not defined
@@ -84,9 +84,9 @@
      minute: "0"
      hour: "4"
      user: root
-     job: " find /data/**/website-screenshot-cache/ -type f -mtime +90 -delete"
+     job: "find /data/**/website-screenshot-cache/ -type f -mtime +90 -delete"
      cron_file: webscreenshots_cleaner
-  when: 
+  when:
      - config_done is defined and data_dirs is defined and data_dirs | length() != 0
      - inventory_hostname == groups['backend_servers'] | first
 
