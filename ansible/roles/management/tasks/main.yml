@@ -22,9 +22,8 @@
     group: teamwire
   when: config_file.stat.exists
 
-# Delete platform on other hosts
-- name: Remove platform from unrequired hosts
-  file:
-    state: absent
-    path: /home/teamwire/platform/
-  when: groups['all'] | length() > 1 and not inventory_hostname in groups['management_servers']
+- name: Install the container helper tool
+  copy: src=../../roles/management/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
+
+- include: backup.yml
+  when: config_done is defined
