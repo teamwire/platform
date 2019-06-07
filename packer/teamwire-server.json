@@ -160,7 +160,7 @@
 		},
 		{
 			"type": "ansible-local",
-			"command": "ansible-playbook --sudo",
+			"command": "ansible-playbook",
 			"playbook_file": "../ansible/site.yml",
 			"playbook_dir": "../ansible"
 		},
