@@ -287,31 +287,6 @@ get_database_configuration() {
 	fi
 }
 
-save_container_logs() {
-	local LOGDIR=/var/log/teamwire
-	local CONTAINER
-
-	for CONTAINER in $CONTAINERS ; do
-		local DATE_CREATED
-		local LOG_FILE
-
-		if [ "$(docker inspect -f '{{.HostConfig.LogConfig.Type}}' ${CONTAINER} 2> /dev/null)" != "json-file" ] ; then
-			continue
-		fi
-
-		if [ ! -d "$LOGDIR" ] ; then
-			sudo mkdir "$LOGDIR"
-		fi
-
-		DATE_CREATED=$(docker inspect -f "{{ .Created }}" "$CONTAINER")
-		LOG_FILE=$(docker inspect -f "{{ .LogPath }}" "$CONTAINER")
-		local OUT_FILE="$LOGDIR/$CONTAINER-$DATE_CREATED.log"
-		sudo cp "$LOG_FILE" "$OUT_FILE"
-		sudo chgrp docker "$OUT_FILE"
-		sudo gzip -f "$OUT_FILE" &
-	done
-}
-
 secrets() {
 case $OPTION in
 		read)
@@ -642,9 +617,6 @@ pull_images_cluster() {
 }
 
 remove_containers_single() {
-	# Save the logs of the containers before deleting them
-	save_container_logs
-
 	for CONTAINER in $CONTAINERS; do
 		docker rm "$CONTAINER"
 	done
@@ -728,9 +700,6 @@ setup_containers_base() {
 setup_containers_single() {
 	setup_containers_base
 
-	# Save the logs of the running containers
-	save_container_logs
-
 	ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
 }
 
@@ -798,9 +767,6 @@ while [ $# -gt 0 ] ; do
 		restoredb)
 			TASK="restoredb"
 			FILENAME_REQUIRED=yes
-			;;
-		exportlogs)
-			TASK="save_container_logs"
 			;;
 		secrets)
 			TASK="secrets"
