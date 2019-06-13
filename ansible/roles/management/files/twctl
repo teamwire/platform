@@ -526,6 +526,11 @@ backupdb() {
 
 	get_database_configuration
 
+	if [ -n "$ORA_HOST" ]; then
+		echo "Backup of Oracle database is not supported."
+		exit 1
+	fi
+
 	# Inject PASS environment var
 	export PASS=$MYSQL_PASS
 
@@ -541,6 +546,11 @@ restoredb() {
 	fi
 
 	get_database_configuration
+
+	if [ -n "$ORA_HOST" ]; then
+		echo "Restore of Oracle database is not supported."
+		exit 1
+	fi
 
 	# Inject PASS environment var
 	export PASS=$MYSQL_PASS
