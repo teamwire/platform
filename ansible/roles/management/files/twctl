@@ -308,7 +308,7 @@ case $OPTION in
 
 				if [[ "${ENTRY}" != "${ENTRYCONFIRM}" ]]; then
 				 echo "Entries do not match, exiting"
-				 exit -1
+				 exit 1
 				else
 				 curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request POST --data "{\"value\":\"$ENTRY\"}" $VAULT_ADDR/v1/secret/"$INPUT"
 				fi
