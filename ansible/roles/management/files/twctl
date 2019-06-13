@@ -516,25 +516,6 @@ create_report() {
 }
 
 backupdb_single() {
-
-	if [ -f "$FILENAME" ] ; then
-		echo "$FILENAME exists, please specify a name that doesn't exists!"
-		exit 1
-	fi
-
-	get_database_configuration
-
-	# Inject PASS environment var
-	export PASS=$MYSQL_PASS
-
-		/usr/local/bin/backup_restore_db.sh -t backup \
-		-o "$FILENAME" -h "$MYSQL_HOST" \
-		-u "$MYSQL_USER" -d "$MYSQL_DATABASE"
-
-}
-
-backupdb_cluster() {
-
 	if [ -f "$FILENAME" ] ; then
 		echo "$FILENAME exists, please specify a name that doesn't exists!"
 		exit 1
@@ -546,13 +527,27 @@ backupdb_cluster() {
 	export PASS=$MYSQL_PASS
 
 	/usr/local/bin/backup_restore_db.sh -t backup \
-	-o "$FILENAME" -h galera.service.consul \
-	-u "$MYSQL_USER" -d "$MYSQL_DATABASE"
+		-o "$FILENAME" -h "$MYSQL_HOST" \
+		-u "$MYSQL_USER" -d "$MYSQL_DATABASE"
+}
 
+backupdb_cluster() {
+	if [ -f "$FILENAME" ] ; then
+		echo "$FILENAME exists, please specify a name that doesn't exists!"
+		exit 1
+	fi
+
+	get_database_configuration
+
+	# Inject PASS environment var
+	export PASS=$MYSQL_PASS
+
+	/usr/local/bin/backup_restore_db.sh -t backup \
+		-o "$FILENAME" -h galera.service.consul \
+		-u "$MYSQL_USER" -d "$MYSQL_DATABASE"
 }
 
 restoredb_single() {
-
 	if [ "$INSTALLATION" == "single" ];then
 
 		if [ ! -f "$FILENAME" ] ; then
@@ -570,13 +565,11 @@ restoredb_single() {
 			-f -i "$FILENAME" -h "$MYSQL_HOST"
 
 	elif [ "$INSTALLATION" == "cluster" ];then
-
 		restoredb_cluster
 	fi
 }
 
 restoredb_cluster() {
-
 	if [ ! -f "$FILENAME" ] ; then
 		echo "$FILENAME does not exists, please specify a name that exists!"
 		exit 1
@@ -590,7 +583,6 @@ restoredb_cluster() {
 	/usr/local/bin/backup_restore_db.sh -t restore \
 		-u "$MYSQL_USER" -d "$MYSQL_DATABASE" \
 		-f -i "$FILENAME" -h galera.service.consul
-
 }
 
 pull_images_base() {
