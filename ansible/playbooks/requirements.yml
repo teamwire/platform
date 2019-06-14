@@ -2,11 +2,12 @@
 ##### THIS HAS TO GO FIRST #####
 - hosts: all
   pre_tasks:
+    - include_vars: ../roles/common/vars/main.yml
     - name: Check Ansible version
       assert:
-        that: "ansible_version.full is version_compare('2.5.4', '>=')"
+        that: "ansible_version.full is version_compare('{{ required_ansible_version }}', '>=')"
         msg:
-          - "Ansible 2.5.4 is required, please run the upgrade procedure"
+          - "Ansible {{ required_ansible_version }} is required, please run the upgrade procedure"
           - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
           - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
 
