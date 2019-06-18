@@ -157,7 +157,7 @@
     name: "{{ item.value.username }}"
     host: "%"
     password: "{{ item.value.password }}"
-    priv: "{{ item.value.dbname }}.*:ALL"
+    priv: "{{ item.value.dbname }}.*:ALL/*.*:RELOAD"
     state: present
     login_user: root
     login_password: "{{ mysql_root_password }}"
