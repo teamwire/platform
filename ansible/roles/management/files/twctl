@@ -448,7 +448,6 @@ create_report() {
 	cd "$ANSIBLE_DIR" || (echo "ERROR: can not cd into $ANSIBLE_DIR" && exit 1)
 
 	PLATFORM_HOME="$HOME/platform"	# Path to platform dir
-	DATE=$(date +%s)				# Variable which holds the current date. Needed to create the temporary directory and tar archive
 	TMPDIR=$(mktemp -d)				# A temporary directory to collect all information that will later be stored in a tar archive.
 
 	FILE="${TMPDIR}/report"			# Path to report file. All collected informations are stored here.
