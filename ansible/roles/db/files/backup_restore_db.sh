@@ -41,6 +41,12 @@ VAULT=$FALSE
 trap ctrl_c INT
 
 # -----------------------------------------------------------------------------
+# Execute exit_on_failure on any errors or on exit
+# -----------------------------------------------------------------------------
+trap exit_on_failure ERR
+trap housekeeping EXIT
+
+# -----------------------------------------------------------------------------
 # Test that mydumper is installed. Otherwise exit
 # -----------------------------------------------------------------------------
 if [ ! -x /usr/bin/mydumper ];then
@@ -355,13 +361,12 @@ check_prev_exitcode() {
 ctrl_c() { echo "[ctrl] + c :pressed!Exit";exit_on_failure; }
 
 # -----------------------------------------------------------------------------
-# FUNCTION:     exit_on_failure
+# FUNCTION:     housekeeping
 # ARGUMENTS:    none
 # RETURN:       void/null
-# EXPLAIN:      This func reads the Password of the DB
-#               via API.
+# EXPLAIN:      This func removes temp. files on the system
 # -----------------------------------------------------------------------------
-exit_on_failure() {
+housekeeping() {
 
 	# Remove lockfile, so that the script
 	# can be executed
@@ -381,6 +386,18 @@ exit_on_failure() {
 
 	# Remove temp mysql config file
 	rm -f "$HOME/.my.cnf"
+}
+# -----------------------------------------------------------------------------
+# FUNCTION:     exit_on_failure
+# ARGUMENTS:    none
+# RETURN:       void/null
+# EXPLAIN:      This func reads the Password of the DB
+#               via API.
+# -----------------------------------------------------------------------------
+exit_on_failure() {
+
+	# Execute housekeeping job
+	housekeeping
 
 	# Exit script with failure, so that e.g. a cron-
 	# job could send an email.
@@ -497,5 +514,4 @@ else
 fi
 
 # When everything runs well, then delete lockfile before script exit
-rm "$LOCKFILE"
-
+housekeeping
