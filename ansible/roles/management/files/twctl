@@ -404,6 +404,7 @@ raw_smtp_connect() {
 		echo "mail from: root";\
 		echo "rcpt to: <$mail_recipient>";\
 		echo "data";\
+		echo "Subject: test connectivity";\
 		echo "test";\
 		echo ".";\
 		echo "quit" ) \
