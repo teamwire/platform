@@ -383,7 +383,8 @@ test_server_condition_for_preflight_check() {
 		INFO='\033[0;34m'
 		ENDMSG='\033[0m'
 
-		local condition_to_test="$(eval $1)"
+		eval $1
+		local condition_to_test=$?
 		local return_message=$2
 
 		if [ "$condition_to_test" == 0 ]; then
@@ -396,8 +397,7 @@ test_server_condition_for_preflight_check() {
 }
 
 raw_smtp_connect() {
-
-		mail_recipient="$(cat "$CONFIG_FILE" | grep -Po '(?<=system_email_recipient:\s")[^"]+(?=")')"
+		local mail_recipient=$1
 		echo "Debug $mail_recipient"
 		(\
 		echo "helo localhost";\
@@ -417,25 +417,30 @@ connectivity_test() {
 		echo "-----------------------------"
 		echo
 
-		mail_test_response="$(raw_smtp_connect | tail -n 2 | head -n 1)"
-		mail_message_id="$(echo $mail_test_response |  awk -v RS='\r\n' '{print $6}')"
-		mail_message_status="$( sleep 2 && sudo grep $mail_message_id /var/log/mail.log | grep -oP 'status=\K.*')"
-
-		test_server_condition_for_preflight_check	"if [ $(wget -qO - https://rest.nexmo.com/sms/json | grep -c 'Missing') == 1 ];then echo 0;else echo 1;fi" \
+		test_server_condition_for_preflight_check	"wget -qO - https://rest.nexmo.com/sms/json | grep -q 'Missing'" \
 							"Check first(Nexmo) SMS service reachability"
-		test_server_condition_for_preflight_check	"if [ $(wget -qO - https://api.twilio.com/2010-04-01 | grep -c 'TwilioResponse') > 0 ];then echo 0;else echo 1;fi" \
+		test_server_condition_for_preflight_check	"wget -qO - https://api.twilio.com/2010-04-01 | grep -q 'TwilioResponse'" \
 							"Check second(Twilio) SMS service reachability"
 		test_server_condition_for_preflight_check	"" \
 							"Check your outgoing IP: $(wget -qO - http://ipinfo.io/ip)"
-		test_server_condition_for_preflight_check	"" \
-							"Local mail test 1/2: $mail_test_response"
-		test_server_condition_for_preflight_check	"" \
-							"Local mail test 2/2: $mail_message_status"
-		test_server_condition_for_preflight_check	"if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
+		local mail_recipient="$(_get_config_value system_email_recipient)"
+		if [ -n "$mail_recipient" ] ; then
+			local mail_test_response="$(raw_smtp_connect $mail_recipient | tail -n 2 | head -n 1)"
+			local mail_message_id="$(echo $mail_test_response |  awk -v RS='\r\n' '{print $6}')"
+			local mail_message_status="$(sleep 2 && sudo grep $mail_message_id /var/log/mail.log | grep -oP 'status=\K.*')"
+			test_server_condition_for_preflight_check	"" \
+								"Local mail test 1/2: $mail_test_response"
+			test_server_condition_for_preflight_check	"" \
+								"Local mail test 2/2: $mail_message_status"
+		else
+			test_server_condition_for_preflight_check	"/bin/false" \
+								"Local mail test: Fail. Please define 'system_email_recipient' in $CONFIG_FILE"
+		fi
+		test_server_condition_for_preflight_check	"echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Google'" \
 							"Check Google FCM connectivity"
-		test_server_condition_for_preflight_check	"if [ $(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep "depth=1" | grep -c "CN = Google") > 0 ];then echo 0;else echo 1; fi" \
+		test_server_condition_for_preflight_check	"echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Google'" \
 							"Check Apple APNS connectivity"
-		test_server_condition_for_preflight_check	"sudo bash -c \"if [ -e /data/certs/apns/aps-production.pem ];then echo 0;else echo 1;fi\"" \
+		test_server_condition_for_preflight_check	"sudo bash -c '/usr/bin/test -e /data/certs/apns/aps-production.pem'" \
 							"Check if APNS certificate is installed"
 		test_server_condition_for_preflight_check	"" \
 							"Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
