@@ -1,0 +1,17 @@
+---
+- name: Install HAProxy
+  apt:
+    pkg: "{{ item }}"
+  with_items:
+    - haproxy
+    - hatop
+
+- name: Start and enable HAProxy service
+  service: name=haproxy state=started enabled=true
+
+- name: Write HAProxy configuration
+  template: src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg mode=0600
+  notify: reload HAProxy
+
+- name: Create systemd drop-in directory for HAProxy
+  file: name=/etc/systemd/system/haproxy.service.d state=directory

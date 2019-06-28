@@ -1,0 +1,33 @@
+global
+	log /dev/log	local0
+	log /dev/log	local1 notice
+	chroot /var/lib/haproxy
+	stats socket /run/haproxy/admin.sock mode 660 level admin
+	stats timeout 30s
+	user haproxy
+	group haproxy
+	daemon
+
+defaults
+	log global
+	retries 2
+	timeout connect 5s
+	timeout server 120s
+	timeout client 120s
+
+peers backend-servers
+{% for server in groups['backend_servers'] %}
+	peer {{ server }} {{ hostvars[server]['private_ip'] }}:1024
+{% endfor %}
+
+listen galera-cluster
+	bind 127.0.0.1:3307
+	bind {{ private_ip }}:3307
+	mode tcp
+	option tcpka
+	option httpchk
+	balance leastconn
+	default-server port 9200 inter 2s downinter 5s rise 3 fall 2 slowstart 60s weight 100
+{% for server in groups['database_servers'] %}
+	server {{ server }} {{ hostvars[server]['private_ip'] }}:3306 check
+{% endfor %}
