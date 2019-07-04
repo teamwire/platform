@@ -16,13 +16,13 @@
   tasks:
     - copy:
         content: "{{ vault_token }}"
-        dest: "/home/{{ item }}/.vault-token"
+        dest: "{{ item.dest }}"
         mode: 0400
-        owner: "{{ item }}"
-        group: "{{ item }}"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
       with_items:
-        - root
-        - teamwire
+        - { dest: '/root/.vault-token', owner: 'root', group: 'root' }
+        - { dest: '/home/teamwire/.vault-token', owner: 'teamwire', group: 'teamwire' }
       when: new_vault_bootstrap is defined and vault_token is defined and groups['all'] | length() > 1
 
 - name: Distribute Vault SSL certificates to all remaining hosts that require them
