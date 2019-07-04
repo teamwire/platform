@@ -11,6 +11,9 @@
   set_fact:
     vault_keys: "{{ (vault_info.stdout|from_json)['unseal_keys_b64'] }}"
     vault_token: "{{ (vault_info.stdout|from_json)['root_token'] }}"
+  delegate_facts: True
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['all'] }}"
 
 - name: Create Vault credentials file
   template:
