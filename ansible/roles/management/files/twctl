@@ -451,13 +451,11 @@ connectivity_test() {
 create_report() {
 	echo "Generating report. Please wait..."
 
-	cd "$ANSIBLE_DIR" || (echo "ERROR: can not cd into $ANSIBLE_DIR" && exit 1)
-
 	PLATFORM_HOME="$HOME/platform"	# Path to platform dir
 	TMPDIR=$(mktemp -d)				# A temporary directory to collect all information that will later be stored in a tar archive.
 
 	FILE="${TMPDIR}/report"			# Path to report file. All collected informations are stored here.
-	REPORT="$HOME/tw_report.$(date +%y_%m_%d_%s).tar.xz" 	# Name/Path of the tar archive
+	REPORT="tw_report.$(date +%y_%m_%d_%s).tar.xz" 	# Name/Path of the tar archive
 	RUNTIME_REPORT_OF_SCRIPT="${TMPDIR}/runtime_report" # All outputs from twctl (STDOUT/STDERR) are collected here. See line below
 
 	exec > >(tee -i "$RUNTIME_REPORT_OF_SCRIPT")
@@ -513,12 +511,10 @@ create_report() {
 	# Retrieve docker logs on single installations and management servers
 	find /var/log/docker/ -name *.log -exec sudo cp {} "$TMPDIR" \;
 
-	cd "$HOME" || (echo "ERROR: can not cd into $HOME" && exit 1)
-
 	sudo tar JcfP "$REPORT" "$TMPDIR"
 	rm -rf "$TMPDIR"
 
-	echo "Report was generated.You can find the report here: $REPORT"
+	echo "The report was generated and saved as $REPORT in the current directory."
 	echo
 
 }
