@@ -377,7 +377,7 @@ help() {
 
 test_server_condition_for_preflight_check() {
 
-	# This func is only in used for the preflight-check
+	# This function is only used for the preflight-check
 		OK='\033[0;32m'
 		WARN='\033[0;31m'
 		INFO='\033[0;34m'
@@ -461,7 +461,7 @@ create_report() {
 	exec > >(tee -i "$RUNTIME_REPORT_OF_SCRIPT")
 	exec 2>&1
 
-	declare -A report_map			# Array contains all collected informations. This array will be looped and written to report file
+	declare -A report_map			# Array contains all collected information. This array will be looped and written to a report file
 
 	# Gather systeminformation
 
@@ -492,7 +492,7 @@ create_report() {
 	report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
 	report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
 	report_map["Show status of vault"]="$(vault_status_${INSTALLATION})" &&
-	report_map["Check if APNS cert. is valid"]=$(sudo bash -c "for file in /data/certs/apns/*.pem;do echo \$file && openssl x509 -startdate -enddate  -noout -in \$file 2>&1 ;done")
+	report_map["Check if APNS certificate is valid"]=$(sudo bash -c "for file in /data/certs/apns/*.pem;do echo \$file && openssl x509 -startdate -enddate  -noout -in \$file 2>&1 ;done")
 	report_map["Test if APNS is reachable"]="$(echo | openssl s_client -connect api.push.apple.com:2197 2>&1 | grep 'depth=1')"
 	report_map["Test if FCM is reachable"]="$(echo | openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1')"
 	report_map["Show vault certificate enddate"]="$(sudo openssl x509 -in /var/lib/vault/ssl/vault.crt -noout -enddate)"
@@ -521,14 +521,14 @@ create_report() {
 
 backupdb() {
 	if [ -f "$FILENAME" ] ; then
-		echo "$FILENAME exists, please specify a name that doesn't exists!"
+		echo "$FILENAME exists, please specify a name that doesn't exist!"
 		exit 1
 	fi
 
 	get_database_configuration
 
 	if [ -n "$ORA_HOST" ]; then
-		echo "Backup of Oracle database is not supported."
+		echo "Backing up of Oracle databases is not supported."
 		exit 1
 	fi
 
@@ -542,14 +542,14 @@ backupdb() {
 
 restoredb() {
 	if [ ! -f "$FILENAME" ] ; then
-		echo "$FILENAME does not exists, please specify a name that exists!"
+		echo "$FILENAME does not exist, please specify a name that exists!"
 		exit 1
 	fi
 
 	get_database_configuration
 
 	if [ -n "$ORA_HOST" ]; then
-		echo "Restore of Oracle database is not supported."
+		echo "Restoration of Oracle databases is not supported."
 		exit 1
 	fi
 
