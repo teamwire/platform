@@ -469,10 +469,10 @@ create_report() {
 
 	if [ "$INSTALLATION" = "cluster" ]; then
 
-		report_map["Show cluster uptime"]=$(ansible all -i cluster_hosts -m command -a uptime) &&
+		report_map["Show cluster uptime"]=$(ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -m command -a uptime) &&
 		report_map["Show nomad status"]="$(nomad status)" &&
 		report_map["Show nomad job status"]="$(nomad job status teamwire)" &&
-		report_map["Show debian version"]=$(ansible all -i cluster_hosts -m command -a 'cat /etc/debian_version') &&
+		report_map["Show debian version"]=$(ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -m command -a 'cat /etc/debian_version') &&
 		report_map["Show nomad node status"]="$(nomad node status)"
 
 		# Retrieve logs from loghost and add them to the report
