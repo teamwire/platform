@@ -1,5 +1,5 @@
 - name: Check if Nomad-server policy exists for Vault
-  command: vault policy read nomad-server
+  shell: vault policy read nomad-server || true
   ignore_errors: True
   register: policy_check
   run_once: True
