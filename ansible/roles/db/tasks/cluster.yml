@@ -7,7 +7,7 @@
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 9334A25F8507EFA5 > /dev/null 2>&1 && echo present || echo absent"
   register: percona_repo_key
   changed_when: False
-
+  check_mode: no
 #### Temporary workaround until solution is implemented by Ansible ###
 #### See Ansible issue: https://github.com/ansible/ansible/pull/49950
 #- name: Add Percona repo signing key (direct)

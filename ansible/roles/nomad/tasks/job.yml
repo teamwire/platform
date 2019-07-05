@@ -11,6 +11,7 @@
   register: cpu_calculation
   run_once: true
   changed_when: False
+  check_mode: no
 
 - name: Set facts for total CPU power (cores*frequency) on Nomad clients
   set_fact:
