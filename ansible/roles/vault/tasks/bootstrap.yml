@@ -189,6 +189,11 @@
   run_once: true
   when: gcm_api_key == ""
 
+- pause:
+    prompt: "Does your smtp server require password authentication? (yes/no)"
+  register: smtp_smartpass_required
+  when: smtp_smartpass == ""
+
 - name: Confirm SMTP password if empty
   block:
     - pause:
@@ -197,7 +202,8 @@
     - command: vault write secret/smtp/password value="{{ pause_entry.user_input }}"
   no_log: true
   run_once: true
-  when: smtp_smartpass == ""
+  when: (smtp_smartpass == "" and 'yes' in smtp_smartpass_required|lower) or
+        (smtp_smartpass == "" and 'y' in smtp_smartpass_required|lower)
 
 - name: Confirm teamwire database password if empty and using external database host
   block:
@@ -233,7 +239,7 @@
   shell: >
     generated_secret=$(pwgen -s 32 1) &&
     vault write "{{ item.value.path }}" value=$generated_secret
-  when: hostvars[inventory_hostname][item.key] == ""
+  when: hostvars[inventory_hostname][item.key] == "" and item.key != "smtp_smartpass"
   no_log: true
   run_once: true
   with_dict: "{{ secrets }}"
