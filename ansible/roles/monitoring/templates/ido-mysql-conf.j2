@@ -6,4 +6,22 @@ object IdoMysqlConnection "ido-mysql" {
   host = "{{ monitoring_db_host }}",
   port = "{{ monitoring_db_port }}",
   database = "{{ monitoring_db_name }}"
+
+cleanup = {
+  acknowledgements_age = 90d
+  commenthistory_age = 90d
+  contactnotifications_age = 90d
+  contactnotificationmethods_age = 90d
+  downtimehistory_age = 90d
+  eventhandlers_age = 90d
+  externalcommands_age = 90d
+  flappinghistory_age = 90d
+  hostchecks_age = 90d
+  logentries_age = 90d
+  notifications_age = 90d
+  processevents_age = 90d
+  statehistory_age = 90d
+  servicechecks_age = 90d
+  systemcommands_age = 90d
+}
 }
