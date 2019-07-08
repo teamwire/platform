@@ -1,6 +1,5 @@
 - name: Check if Nomad-server policy exists for Vault
   shell: vault policy read nomad-server || true
-  ignore_errors: True
   register: policy_check
   run_once: True
   delegate_to: "{{ groups.consul_servers | first }}"
