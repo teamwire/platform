@@ -17,7 +17,7 @@
     src: postfix-passwd.j2
     dest: /etc/postfix/sasl/passwd
     mode: 0600
-  when: config_done is defined and smtp_smartpass is defined
+  when: config_done is defined and smtp_smartpass is defined and smtp_smartuser is defined and smtp_smartuser !=""
   notify: rebuild postfix passwd map
 
 - name: Setup aliases
