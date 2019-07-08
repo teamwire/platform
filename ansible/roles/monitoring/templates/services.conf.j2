@@ -114,7 +114,7 @@ apply Service "check-nomad-health" {
   vars.http_ssl = "false"
 
   command_endpoint = host.vars.client_endpoint
-  assign where "consul_servers" in host.vars.roles || "backend_servers" in host.vars.roles
+  assign where "hashi_servers" in host.vars.roles || "backend_servers" in host.vars.roles
 }
 
 {% for job in nomad_jobs %}
@@ -129,11 +129,11 @@ apply Service "check-nomad-job-{{ job }}" {
   vars.http_ssl = "false"
 
   command_endpoint = host.vars.client_endpoint
-  assign where "consul_servers" in host.vars.roles
+  assign where "hashi_servers" in host.vars.roles
 }
 {% endfor %}
 
-{% if ansible_local.vault.initialized == "true" or groups['all'] | length() > 1 and hostvars[groups['consul_servers'][0]].ansible_local.vault.initialized == "true" %}
+{% if ansible_local.vault.initialized == "true" or groups['all'] | length() > 1 and hostvars[groups['hashi_servers'][0]].ansible_local.vault.initialized == "true" %}
 apply Service "check-vault-seal-status" {
   import "generic-service"
   check_command = "http"
@@ -146,7 +146,7 @@ apply Service "check-vault-seal-status" {
   vars.http_ssl = "true"
 
   command_endpoint = host.vars.client_endpoint
-  assign where "consul_servers" in host.vars.roles
+  assign where "hashi_servers" in host.vars.roles
 {% if groups['all'] | length() == 1 %}
   assign where host.vars.os == "Linux"
 {% endif %}
@@ -161,7 +161,7 @@ apply Service "check-vault-cert" {
   vars.crit = "864000"
 
   command_endpoint = host.vars.client_endpoint
-  assign where "consul_servers" in host.vars.roles || "backend_servers" in host.vars.roles
+  assign where "hashi_servers" in host.vars.roles || "backend_servers" in host.vars.roles
 {% if groups['all'] | length() == 1 %}
   assign where host.vars.os == "Linux"
 {% endif %}

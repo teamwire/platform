@@ -1,12 +1,12 @@
 ---
 - name: Retrieve the hashi-ui container
-  when: (private_ip is defined and 'consul_servers' in group_names)
+  when: (private_ip is defined and 'hashi_servers' in group_names)
   docker_image:
     name: "{{ hashui_container }}"
     state: present
 
 - name: Run hashi-ui in clustered setups
-  when: (private_ip is defined and 'consul_servers' in group_names)
+  when: (private_ip is defined and 'hashi_servers' in group_names)
   docker_container:
     name: hashi-ui
     image: "{{ hashui_container }}"
@@ -20,6 +20,6 @@
     ports: "8000:3000"
     volumes: "/var/run/docker.sock:/tmp/docker.sock"
     env:
-      CONSUL_ENABLE: "{{ '1' if 'consul_servers' in groups else '0' }}"
+      CONSUL_ENABLE: "{{ '1' if 'hashi_servers' in groups else '0' }}"
       NOMAD_ENABLE: "{{ '1' if 'backend_servers' in groups else '0' }}"
 

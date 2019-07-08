@@ -12,10 +12,10 @@
     when: ansible_local.vault.sealed != "false"
 
   - name: Issue a TLS certificate for Vault to use
-    command: vault write pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['consul_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['consul_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
+    command: vault write pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['hashi_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['hashi_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
     run_once: True
     register: issue_info
-    when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['consul_servers']
+    when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['hashi_servers']
 
   - name: Set certificate fact
     run_once: True
@@ -31,17 +31,17 @@
 
   - name: Restart Nomad to recognise SSL renewal
     service: name=nomad state=restarted
-    when: groups['all'] | length() > 1 and inventory_hostname in groups.consul_servers|union(groups.backend_servers)
+    when: groups['all'] | length() > 1 and inventory_hostname in groups.hashi_servers|union(groups.backend_servers)
 
   - name: Restart Vault to recognise SSL renewal
     service: name=vault state=restarted
-    when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['consul_servers']
+    when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['hashi_servers']
 
   - debug:
        msg:
          - "The Vault SSL certificate has now been renewed and is valid for 2 years, this procedure may be re-run at any point"
          - "IMPORTANT: Vault must be unsealed via twctl secrets unseal"
-         - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the consul_servers group"
+         - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the hashi_servers group"
          - "If you encounter any issues, please email support@teamwire.eu"
     run_once: True
 

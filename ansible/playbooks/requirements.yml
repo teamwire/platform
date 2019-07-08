@@ -62,7 +62,7 @@
 ##### END ######
 
 - name: Vault Status check
-  hosts: local:consul_servers
+  hosts: local:hashi_servers
   tasks:
     - include_role: # Single only
         name: ../roles/vault
