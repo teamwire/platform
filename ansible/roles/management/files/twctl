@@ -511,7 +511,7 @@ create_report() {
 	# Retrieve docker logs on single installations and management servers
 	find /var/log/docker/ -name *.log -exec sudo cp {} "$TMPDIR" \;
 
-	sudo tar JcfP "$REPORT" "$TMPDIR"
+	sudo tar JcfP "$REPORT" -C "$TMPDIR" .
 	rm -rf "$TMPDIR"
 
 	echo "The report was generated and saved as $REPORT in the current directory."
