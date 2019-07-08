@@ -439,7 +439,7 @@ connectivity_test() {
 		fi
 		test_server_condition_for_preflight_check	"echo | timeout 10s openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Google'" \
 							"Check Google FCM connectivity"
-		test_server_condition_for_preflight_check	"echo | timeout 10s openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Google'" \
+		test_server_condition_for_preflight_check	"echo | timeout 10s openssl s_client -connect api.push.apple.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Apple'" \
 							"Check Apple APNS connectivity"
 		test_server_condition_for_preflight_check	"sudo bash -c '/usr/bin/test -e /data/certs/apns/aps-production.pem'" \
 							"Check if APNS certificate is installed"
