@@ -25,6 +25,7 @@
     - libmonitoring-plugin-perl
     - liblwp-useragent-determined-perl
     - libdbd-mysql-perl
+  check_mode: no
 
 - name: Enable and start the icinga2 daemon
   service: name=icinga2 state=started enabled=true

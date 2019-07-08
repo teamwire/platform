@@ -20,6 +20,7 @@
   shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 0EBFCD88 > /dev/null 2>&1 && echo present || echo absent"
   register: docker_repo_key
   changed_when: False
+  check_mode: no
 
 #### Temporary workaround until solution is implemented by Ansible ###
 #### See Ansible issue: https://github.com/ansible/ansible/pull/49950

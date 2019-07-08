@@ -16,6 +16,7 @@
     mode: 0750
   register: backup_directory
   run_once: true
+  check_mode: no
 
 - name: Backup the configuration files
   copy:
