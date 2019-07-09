@@ -21,6 +21,19 @@
     state: present
     reload: yes
 
+- name: Remove redis-cli history files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/home/teamwire/.rediscli_history"
+    - "/root/.rediscli_history"
+
+- name: Disable redis-cli history
+  lineinfile:
+    dest: /etc/environment
+    line: "REDISCLI_HISTFILE=/dev/null"
+
 - include_tasks: single.yml
   when: "'redis_servers' not in groups"
 
