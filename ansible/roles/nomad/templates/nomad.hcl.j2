@@ -33,9 +33,9 @@ consul {
 
 # Enable the server
 server {
-	enabled = {{ "true" if inventory_hostname in groups['consul_servers'] else "false" }}
-{% if inventory_hostname in groups['consul_servers'] %}
-	bootstrap_expect = {{ groups['consul_servers'] | length }}
+	enabled = {{ "true" if inventory_hostname in groups['hashi_servers'] else "false" }}
+{% if inventory_hostname in groups['hashi_servers'] %}
+	bootstrap_expect = {{ groups['hashi_servers'] | length }}
 {% endif %}
 }
 

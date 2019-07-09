@@ -1,4 +1,4 @@
-- hosts: consul_servers:local
+- hosts: hashi_servers:local
   roles:
   - role: ../../roles/vault
 
@@ -12,7 +12,7 @@
       when: new_vault_bootstrap is defined
 
 - name: Distribute Vault token to all remaining hosts that require it
-  hosts: all:!consul_servers
+  hosts: all:!hashi_servers
   tasks:
     - copy:
         content: "{{ vault_token }}"
@@ -26,7 +26,7 @@
       when: new_vault_bootstrap is defined and vault_token is defined and groups['all'] | length() > 1
 
 - name: Distribute Vault SSL certificates to all remaining hosts that require them
-  hosts: all:!consul_servers
+  hosts: all:!hashi_servers
   tasks:
     - block:
         - name: Create Vault SSL directory

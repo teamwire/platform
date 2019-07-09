@@ -14,11 +14,11 @@
 - name: Check if dnsmasq is already installed (cluster only)
   stat: path=/etc/dnsmasq.d/20-upstream
   register: dnsmasq_configuration
-  when: '"consul_servers" in groups'
+  when: '"hashi_servers" in groups'
 
 - name: Configure DNS servers
   template: src=resolv.conf.j2 dest=/etc/resolv.conf
-  when: dns_servers is defined and ("consul_servers" not in groups or not dnsmasq_configuration.stat.exists)
+  when: dns_servers is defined and ("hashi_servers" not in groups or not dnsmasq_configuration.stat.exists)
 
 # As Debian 8 is now dated, the jessie-backports mirror has been moved to the archive
 - name: Remove old official jessie-backports mirror (Debian 8)
@@ -51,7 +51,7 @@
   # Clusters: set up DNS with local dnsmasq
 - name: Install dnsmasq (cluster only)
   include_tasks: dnsmasq.yml
-  when: config_done is defined and "consul_servers" in groups
+  when: config_done is defined and "hashi_servers" in groups
 
 # do security upgrades
 - name: Install unattended-upgrades

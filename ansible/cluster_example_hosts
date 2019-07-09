@@ -28,8 +28,9 @@ db3 private_ip=10.0.1.23
 [management_servers]
 tw1
 
-# Mandatory, three or five servers
-[consul_servers]
+# Mandatory, three or five servers.
+# This group of servers will host the Hashicorp stack in server-mode (Consul, Nomad and Vault).
+[hashi_servers]
 db1
 db2
 db3

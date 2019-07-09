@@ -1,6 +1,6 @@
 # This task will check if Vault has been initialized and read the secrets from there if so
 - name: Vault Status check
-  hosts: consul_servers
+  hosts: hashi_servers
   tasks:
     - include_role:
         name: ../../roles/vault

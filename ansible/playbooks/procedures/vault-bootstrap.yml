@@ -18,10 +18,10 @@
   roles:
     - ../../roles/common
     - { role: ../../roles/consul, when: "groups['all'] | length() > 1" }
-    - { role: ../../roles/vault, when: "groups['all'] | length() == 1 or inventory_hostname in groups['consul_servers']" }
+    - { role: ../../roles/vault, when: "groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']" }
 
 - name: Bootstrap Vault
-  hosts: local:consul_servers
+  hosts: local:hashi_servers
   tasks:
 
   - include_vars: ../../roles/vault/defaults/main.yml
@@ -136,7 +136,7 @@
       VAULT_ADDR: "http://127.0.0.1:8200"
 
   - name: Issue a TLS certificate for Vault to use
-    command: vault write pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['consul_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['consul_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
+    command: vault write pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['hashi_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['hashi_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
     run_once: True
     register: issue_info
     environment:
@@ -331,13 +331,13 @@
     with_dict: "{{ secrets }}"
 
 - name: Run Nomad role to apply Vault integration
-  hosts: consul_servers:backend_servers
+  hosts: hashi_servers:backend_servers
   tasks:
   - include_role:
       name: ../../roles/nomad
 
 - name: Distribute Vault SSL certificates to all remaining hosts that require them
-  hosts: all:!consul_servers
+  hosts: all:!hashi_servers
   tasks:
     - block:
         - name: Create Vault SSL directory

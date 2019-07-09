@@ -4,7 +4,7 @@ vault {
   cert_file = "/var/lib/vault/ssl/vault.crt"
   key_file = "/var/lib/vault/ssl/vault.pem"
   address  = "https://vault.service.consul:8200"
-{% if inventory_hostname in groups['consul_servers'] %}
+{% if inventory_hostname in groups['hashi_servers'] %}
   token = "{{ vault_nomad_token.auth.client_token }}"
   create_from_role = "nomad-cluster"
 {% endif %}

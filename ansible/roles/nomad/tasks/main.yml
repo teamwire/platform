@@ -41,4 +41,4 @@
   service: name=nomad state=started enabled=yes daemon_reload=yes
 
 - include: vault-integration.yml
-  when: hostvars[groups['consul_servers'][0]].ansible_local.vault.initialized == "true"
+  when: hostvars[groups['hashi_servers'][0]].ansible_local.vault.initialized == "true"

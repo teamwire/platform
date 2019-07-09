@@ -6,9 +6,9 @@ ExecStart=/usr/bin/dockerd -H unix:// --userland-proxy=false
  --registry-mirror http://{{ host }}:5000 --insecure-registry {{ host }}:5000
 {%- endfor %}
 {%- endif %}
-{%- if 'consul_servers' in groups %}
+{%- if 'hashi_servers' in groups %}
 {%- if  disable_private_connection is not defined %}
-{%- for host in groups['consul_servers'] %}
+{%- for host in groups['hashi_servers'] %}
  --dns {{ hostvars[host].private_ip }}{% endfor %}
  {% else %}
  {%- for dns_server in dns_servers %}

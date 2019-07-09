@@ -36,7 +36,7 @@
   template:
     src: 10-server.json.j2
     dest: /etc/consul.d/10-server.json
-  when: '"consul_servers" in group_names'
+  when: '"hashi_servers" in group_names'
   notify: restart consul
 
 - name: Write Consul agent configuration file

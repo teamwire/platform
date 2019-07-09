@@ -2,7 +2,7 @@
   shell: vault policy read nomad-server || true
   register: policy_check
   run_once: True
-  delegate_to: "{{ groups.consul_servers | first }}"
+  delegate_to: "{{ groups.hashi_servers | first }}"
 
 - block:
     - name: Setup the Nomad policy for Vault if it doesn't exist
@@ -24,7 +24,7 @@
         - nomad-job-policy.hcl
         - nomad-cluster-role.json
   run_once: true
-  when: inventory_hostname == groups['consul_servers'] | first  and (policy_check.stderr is defined and "No policy" in policy_check.stderr)
+  when: inventory_hostname == groups['hashi_servers'] | first  and (policy_check.stderr is defined and "No policy" in policy_check.stderr)
 
 - name: Check if the Vault config for Nomad exists
   stat: path=/etc/nomad/vault.hcl
@@ -32,13 +32,13 @@
 
 - name: Create Vault token for Nomad
   command: vault token create -policy nomad-server -period 72h -orphan -format=json
-  when: inventory_hostname in groups['consul_servers'] and not vault_config.stat.exists
+  when: inventory_hostname in groups['hashi_servers'] and not vault_config.stat.exists
   register: vault_nomad_token
 
 - name: Set token fact
   set_fact:
     vault_nomad_token: "{{ vault_nomad_token.stdout | from_json }}"
-  when: inventory_hostname in groups['consul_servers'] and not vault_config.stat.exists
+  when: inventory_hostname in groups['hashi_servers'] and not vault_config.stat.exists
 
 - name: Write Vault configuration for nomad
   template:
