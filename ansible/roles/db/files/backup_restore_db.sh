@@ -375,12 +375,6 @@ housekeeping() {
 	# Remove temporary created files
 	rm -rf "$OUTDIR/tmp"
 
-	# A maximum number of backups are specified
-        # by MAX_BACKUPS. If the script would keep
-        # broken backup files, the number of backups
-        # would grow without having consistent backups.
-	[ ! -z "$TMP_ARCHIVE" ] && rm -f "$TMP_ARCHIVE"
-
 	# Remove temp recover dir
 	rm -rf /tmp/recv/
 
@@ -395,6 +389,12 @@ housekeeping() {
 #               via API.
 # -----------------------------------------------------------------------------
 exit_on_failure() {
+
+    # A maximum number of backups are specified
+    # by MAX_BACKUPS. If the script would keep
+    # broken backup files, the number of backups
+    # would grow without having consistent backups.
+    [ ! -z "$TMP_ARCHIVE" ] && rm -f "$TMP_ARCHIVE"
 
 	# Execute housekeeping job
 	housekeeping
@@ -513,5 +513,3 @@ else
 	exit_on_failure
 fi
 
-# When everything runs well, then delete lockfile before script exit
-housekeeping
