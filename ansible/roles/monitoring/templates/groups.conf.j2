@@ -2,8 +2,8 @@
  * Host groups.
  */
 
-object HostGroup "consul-servers" {
-  display_name = "Consul Servers"
+object HostGroup "hashi-servers" {
+  display_name = "Hashi Servers"
   assign where "hashi_servers" in host.vars.roles
 }
 
