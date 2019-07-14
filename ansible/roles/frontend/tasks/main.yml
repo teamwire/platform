@@ -48,6 +48,53 @@
   when: ssl_keyfile is defined
   notify: reload haproxy
 
+- name: Copy teamwire intermediate
+  copy:
+    src: "{{ ssl_intermediate_certificate }}"
+    dest: "/etc/ssl/certs/teamwire.intermediate.crt"
+    mode: 0640
+  when: ssl_intermediate_certificate is defined
+
+- name: Copy teamwire certificate
+  copy:
+    src: "{{ ssl_server_certificate }}"
+    dest: "/etc/ssl/certs/teamwire.server.crt"
+    mode: 0640
+  when: ssl_server_certificate is defined
+
+- name: Ensure socat is installed
+  apt:
+    name: socat
+    state: present
+
+- name: Copy ocsp.sh to src dir
+  copy:
+     src: ocsp.sh
+     dest: "/usr/local/src/"
+     mode: 0750
+     owner: root
+     group: root
+  when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+
+- name: stat ocsp file and regiter it
+  stat:
+    path: "{{ ocspfile_path }}"
+  register: stat_ocspfile
+
+- name: Create HAP ocsp file if not exists
+  command: /usr/local/src/ocsp.sh DONT UPDATE HAP RUNTIME CONF
+  notify: restart haproxy
+  when:
+    - stat_ocspfile.stat.exists == False
+    - ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+
+- name: Add OCSP daily cron job
+  cron:
+     name: "daily ocsp job to create ocsp file"
+     special_time: daily
+     job: "/usr/local/src/ocsp.sh"
+  when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+
 - name: Generate a new Diffie-Hellman group
   command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
   when: ssl_keyfile is defined
