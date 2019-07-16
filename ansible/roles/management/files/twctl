@@ -652,6 +652,15 @@ start_containers_cluster() {
 	$NOMAD run "$NOMAD_JOB"
 }
 
+restart_containers_single() {
+	stop_containers_single
+	start_containers_single
+}
+restart_containers_cluster() {
+	stop_containers_cluster
+	start_containers_cluster
+}
+
 setup_containers_base() {
 	check_tag "$TAG"
 
@@ -724,6 +733,9 @@ while [ $# -gt 0 ] ; do
 			;;
 		stop)
 			TASK="stop_containers"
+			;;
+		restart)
+			TASK="restart_containers"
 			;;
 		rm)
 			TASK="remove_containers"
