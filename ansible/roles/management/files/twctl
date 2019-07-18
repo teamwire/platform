@@ -488,7 +488,8 @@ create_report() {
 
 	fi
 
-	report_map["Show platform version"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)"
+	report_map["Show platform version(checkout)"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)"
+	report_map["Show platform version(applied)"]="$(cat /etc/platform_version)"
 	report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
 	report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
 	report_map["Show status of vault"]="$(vault_status_${INSTALLATION})" &&
