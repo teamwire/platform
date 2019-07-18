@@ -29,6 +29,16 @@
         - "Please ensure there is a group_vars/all configuration file in place and config_done is set to true."
     when: groups['all'] | length() > 1 and config_done is not defined
 
+- name: Ensure a proper backend version has been set
+  hosts: all
+  tasks:
+  - fail:
+      msg:
+        - "ERROR: group_vars/all => version: '{{version}}'."
+        - "Please set a valid backend version in group_vars/all variable 'version'"
+        - "To display the latest valid backend versions, please run twctl show-tags"
+    when: (version | lower == "prod" or version == None or version | length == 0) and packer_build_name is not defined
+
 - name: Ensure valid Hashi server group configuration
   hosts: all
   tasks:
