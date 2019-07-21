@@ -57,7 +57,7 @@ if [ "$VAULT_INITIALIZED" != "true" ]; then
 	VAULT_INITIALIZED=false
 fi
 
-BLACKLIST=("pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "restoredb" "secrets")
+BLACKLIST=("pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "restoredb" "secrets" "restart")
 
 if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" != "false" && "$2" != "unseal" ]]; then
 	for task in "${BLACKLIST[@]}"; do
@@ -364,8 +364,9 @@ help() {
 	echo "migrate     	Run database migrations (requires tag)"
 	echo "setup       	Configure and run Teamwire containers (requires tag)"
 	echo "start       	Start all stopped Teamwire containers"
-	echo "status      	Show status of Teamwire containers"
+	echo "restart     	Stop and restart all containers"
 	echo "stop        	Stop all running Teamwire containers"
+	echo "status      	Show status of Teamwire containers"
 	echo "rm          	Remove all stopped Teamwire containers"
 	echo "backupdb    	Create a backup of the database (requires file name)"
 	echo "restoredb   	Restore a backup of the database (requires file name)"
