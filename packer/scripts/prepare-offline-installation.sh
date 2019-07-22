@@ -16,7 +16,6 @@ mariadb-server
 mariadb-client
 python-mysqldb
 keepalived
-nginx-light
 python-redis
 redis-tools
 redis-server
