@@ -432,7 +432,7 @@ apply Service "check-container-screenshot-server" {
   assign where host.vars.os == "Linux"
 }
 
-apply Service "check-nginx-backend" {
+apply Service "check-haproxy-backend" {
   import "generic-service"
   check_command = "http"
   vars.http_vhost = "{{ external_hostname }}"
@@ -443,7 +443,7 @@ apply Service "check-nginx-backend" {
   assign where host.vars.os == "Linux"
 }
 
-apply Service "check-nginx-screenshot-server" {
+apply Service "check-haproxy-screenshot-server" {
   import "generic-service"
   check_command = "http"
   vars.http_vhost = "{{ external_hostname }}"
@@ -454,7 +454,7 @@ apply Service "check-nginx-screenshot-server" {
   assign where host.vars.os == "Linux"
 }
 
-apply Service "check-nginx-notification-server" {
+apply Service "check-haproxy-notification-server" {
   import "generic-service"
   check_command = "http"
   vars.http_vhost = "{{ external_hostname }}"

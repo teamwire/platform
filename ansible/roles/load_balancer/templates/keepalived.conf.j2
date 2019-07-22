@@ -1,5 +1,5 @@
-vrrp_script chk_nginx {
-        script "/usr/bin/killall -0 nginx"
+vrrp_script chk_haproxy {
+        script "/usr/bin/killall -0 haproxy"
         interval 2
         weight -2
 }
@@ -18,6 +18,6 @@ vrrp_instance VI_1 {
         {{ loadbalancer_external_ip }} dev {{ ansible_default_ipv4.address | addr_to_if(hostvars[inventory_hostname]) }}
     }
     track_script {
-        chk_nginx
+        chk_haproxy
     }
 }

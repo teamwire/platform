@@ -1,0 +1,164 @@
+#---------------------------------------------------
+# GLOBALS
+# ----------------------------------------------------
+global
+    log /dev/log    local0
+    log /dev/log    local1 notice
+
+    daemon
+    maxconn 4096
+    spread-checks 3
+    chroot /var/lib/haproxy
+    user haproxy
+    group haproxy
+    pidfile /var/run/haproxy.pid
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+
+    {% if ssl_cert is defined or ssl_certfile is defined or ssl_server_certificate is defined %}
+    ca-base /etc/ssl/certs
+    crt-base /etc/ssl/private
+    ssl-dh-param-file /etc/ssl/private/dhparams.pem
+
+    # Ciphers
+    tune.ssl.default-dh-param 2048
+    # Client connection
+    ssl-default-bind-ciphers HIGH:!aNULL:!eNULL:!MEDIUM:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4:!SEED
+    ssl-default-bind-options force-tlsv12
+    # Server/Backend connection
+    # ssl-default-server-ciphers HIGH:!aNULL:!eNULL:!MEDIUM:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4:!SEED
+    # ssl-default-server-options force-tlsv12 # RECOMMEND -> no-sslv3 no-tls-tickets
+    {% endif %}
+
+# ----------------------------------------------------
+# DEFAULTS
+# ----------------------------------------------------
+defaults
+    # General
+    log global
+    mode http
+
+    # General Options
+    option dontlognull
+    option redispatch
+    option log-separate-errors
+    option tcp-smart-accept
+    option tcp-smart-connect
+    option http-server-close
+    option httplog
+
+    # Backends/Frontend Defaults
+    balance roundrobin
+    option http-server-close
+    option forwardfor
+
+    retries 3
+
+    timeout connect 5s
+    timeout client 1m
+    timeout server 1m
+    timeout check 3s
+    timeout queue 3s
+    timeout tunnel 3600s
+
+    timeout http-keep-alive  1s
+    timeout http-request    15s
+    timeout queue           30s
+    timeout tarpit          60s
+
+    # SECURITY: Infomation gathering phase only return 503
+    errorfile 400 /etc/haproxy/errors/503.http
+    errorfile 403 /etc/haproxy/errors/503.http
+    errorfile 408 /etc/haproxy/errors/503.http
+    errorfile 500 /etc/haproxy/errors/503.http
+    errorfile 502 /etc/haproxy/errors/503.http
+    errorfile 503 /etc/haproxy/errors/503.http
+    errorfile 504 /etc/haproxy/errors/503.http
+
+# ----------------------------------------------------
+# FRONTEND: STATS
+# ----------------------------------------------------
+#frontend http-stats
+# Prepare vault integration for HAP
+#    mode http
+#    bind *:3380
+
+#    stats enable
+#    stats auth {{ ha_stat_user }}:{{ ha_stat_pass }}
+#    stats uri /
+
+# ----------------------------------------------------
+# FRONTEND: HTTP + HTTPS
+# ----------------------------------------------------
+frontend https-in
+    bind *:80
+    {% if ssl_cert is defined or ssl_certfile is defined or ssl_server_certificate is defined %}redirect scheme https code 301 if !{ ssl_fc }
+    bind *:443 ssl crt /etc/ssl/certs/server_and_intermediate_and_root.crt
+
+    # HSTS (15768000 seconds = 6 months)
+    http-response set-header Strict-Transport-Security max-age=15768000
+
+    tcp-request inspect-delay 5s
+    tcp-request content reject if { req.ssl_ver 3 }
+    tcp-request content accept if { req.ssl_hello_type 1 }
+    {% endif %}
+
+    timeout http-keep-alive 5m
+
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+
+    log-format %ID\ %ci:%cp\ [%t]\ %ft\ %b/%s\ %Tq/%Tw/%Tc/%Tr/%Tt\ %ST\ %B\ %CC\ %CS\ %tsc\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ %hr\ %hs\ %{+Q}r\ %sslv\ %sslc
+    unique-id-format %{+X}o\ %ci:%cp_%fi:%fp_%Ts_%rt:%pid
+    unique-id-header X-Request-ID
+
+    # Admin/Dashboard restricted by IPs
+    {% if admin_ip_ranges is defined %}{% for range in admin_ip_ranges %}acl adminpage_allowed src {{ range }}
+    {% endfor %}{% raw %}
+    acl admin_page path_beg,url_dec -m beg -i /dashboard /admin
+    http-request deny if admin_page !adminpage_allowed
+    {% endraw %}{% endif %}
+
+    # Webclient restricted by IPs
+    {% if webclient_ip_ranges is defined %}{% if webclient_ip_ranges is not none %}{% for range in webclient_ip_ranges %}acl webclient_allowed src {{ range }}
+    {% endfor %}acl webclient_page path_beg,url_dec -m reg -i  ^(/static)?/web-client/?
+    http-request deny if webclient_page !webclient_allowed
+    {% endif %}{% endif %}
+
+    # Backends redirect
+    use_backend notifications  if { path_beg -i /notifications }
+    use_backend web-screenshot if { path_beg -i /web-screenshot }
+    default_backend teamwire-backend
+
+# ----------------------------------------------------
+# BACKEND: teamwire-backend
+# ----------------------------------------------------
+backend teamwire-backend
+    {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend" }} {{ range $index, $service := service "backend" }}
+    server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{ end }}{% endraw %}
+    {%else%}server teamwire-backend 127.0.0.1:8080 check port 8080
+    {% endif %}
+
+# ----------------------------------------------------
+# BACKEND: notifications
+# ----------------------------------------------------
+backend notifications
+    acl hdr_connection_upgrade hdr(Connection)                 -i upgrade
+    acl hdr_upgrade_websocket  hdr(Upgrade)                    -i websocket
+    http-request del-header   X-Powered-By
+    {% if "frontend_servers" in groups %}{% raw %}{{ if service "notification-server-9080" }}{{ range $index, $service := service "notification-server-9080" }}
+    server notification-server_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{ end }}{% endraw %}
+    {%else%}server notifications 127.0.0.1:9080 check port 9080
+    {% endif %}
+
+# ----------------------------------------------------
+# BACKEND: web-screenshot
+# ----------------------------------------------------
+backend web-screenshot
+    reqrep ^([^\ :]*)\ /web-screenshot/(.*)     \1\ /\2
+    {% if "frontend_servers" in groups %}{% raw %}{{ if service "web-screenshot-server" }}{{ range $index, $service := service "web-screenshot-server" }}
+    server web-screenshot-server_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{ end }}{% endraw %}
+    {%else%}server web-screenshot 127.0.0.1:8081 check port 8081
+    {% endif %}

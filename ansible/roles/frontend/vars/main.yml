@@ -1,2 +1,3 @@
 consul_template_version: 0.20.0
 consul_template_checksum: 500fe023c89517f959175eb79e21c33df0acf7733d3f3681ec8c5238863caf86
+ocspfile_path: /etc/ssl/certs/server_and_intermediate_and_root.crt.ocsp

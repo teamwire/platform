@@ -1,0 +1,29 @@
+---
+- name: Stop service nginx if started
+  service:
+     name: nginx
+     state: stopped
+  failed_when: 1 == 2
+
+- name: Remove package nginx
+  apt:
+     name: nginx
+     state: absent
+
+- name: Remove Files Related to nginx if exists
+  file:
+     path: "{{ item }}"
+     state: absent
+  with_items:
+     - /etc/nginx/sites-available/teamwire-backend
+     - /etc/nginx/sites-enabled/teamwire-backend
+     - /etc/nginx/sites-enabled/default
+     - /etc/nginx/conf.d/teamwire_backend.conf
+     - /etc/nginx/sites-available/teamwire-backend-http
+     - /etc/nginx/sites-available/teamwire-backend-https
+     - /etc/nginx/sites-enabled/teamwire-backend-http
+     - /etc/nginx/sites-enabled/teamwire-backend-https
+     - /etc/nginx/site-enabled
+     - /etc/nginx/site-available
+     - /etc/nginx/nginx.conf
+     - /etc/nginx/
