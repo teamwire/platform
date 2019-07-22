@@ -57,7 +57,7 @@ if [ "$VAULT_INITIALIZED" != "true" ]; then
 	VAULT_INITIALIZED=false
 fi
 
-BLACKLIST=("pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "restoredb" "secrets" "restart")
+BLACKLIST=("show-tags" "pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "restoredb" "secrets" "restart")
 
 if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" != "false" && "$2" != "unseal" ]]; then
 	for task in "${BLACKLIST[@]}"; do
@@ -360,6 +360,7 @@ help() {
 	echo
 	echo "Actions:"
 	echo
+	echo "show-tags   	Show available backend tags"
 	echo "pull        	Pull containers for a given tag (requires tag)"
 	echo "migrate     	Run database migrations (requires tag)"
 	echo "setup       	Configure and run Teamwire containers (requires tag)"
@@ -447,6 +448,20 @@ connectivity_test() {
 		test_server_condition_for_preflight_check	"" \
 							"Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
 
+}
+
+show-tags() {
+	local USER="$(_get_config_value dockerhub_username)"
+	local PASS="$(vault_read_secrets dockerhub/password)"
+
+	local TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+	local PROD="$(curl -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/ | jq -r '.results[].name' | grep -e 'prod-')"
+	PROD="$PROD\n$(curl -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/?page=2 | jq -r '.results[].name' | grep -e 'prod-')\n"
+
+	for version in "${PROD}"
+	do
+		printf "$version"
+	done
 }
 
 create_report() {
@@ -741,6 +756,9 @@ while [ $# -gt 0 ] ; do
 			;;
 		rm)
 			TASK="remove_containers"
+			;;
+		show-tags)
+			TASK="show-tags"
 			;;
 		backupdb)
 			TASK="backupdb"
