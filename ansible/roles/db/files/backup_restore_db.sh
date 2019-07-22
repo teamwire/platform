@@ -19,6 +19,8 @@ IN_FILE=''				# Dump to recover
 VAULT_SECRET_PATH="database/password" 	# Path in secretstore
 VAULT_ADDR="127.0.0.1"                  # Vault IP
 PID=$$					# Own PID
+TMPFILE_PATH="$HOME/.my.cnf"
+
 # -----------------------------------------------------------------------------
 # The following script variables should not set
 # by hand.
@@ -97,6 +99,10 @@ helpme() {
 	-i|--in-file      = Path to file you like to recover
 	-f|--force        = Force override (DROP) DB tables while recovering
 
+	CONFIG
+	--------
+	--config-file     = Path to self named config file
+
 	EXAMPLE: (Set always -t option)
 	-------------------------------
 
@@ -152,11 +158,16 @@ backup_db() {
 
 	# Run mydumper with maximum available threads and with user
 	# defined option.
-	mydumper \
+
+	# This is a compatibility layer or debian 10. Mydumper in version 0.9.1
+	# does not support option `--defaults-file`. So we can only apply that
+	# option, when debian >= 10.
+	mydumper $DEFAULTS_FILE \
 		--database=$DB \
 		--host=$HOST \
 		--outputdir="$OUTDIR/tmp" \
 		--threads="$MAX_THREADS"
+
 	check_prev_exitcode $? "Error while backup"
 
 	# Define some local vars to archive the SQL-dump. mydumper seperates
@@ -245,7 +256,7 @@ restore_db() {
 
 	echo "DEBUG FORCE: $FORCE"
 	if [ $FORCE -eq $TRUE ]; then
-		myloader \
+		myloader $DEFAULTS_FILE \
 		--database=$DB \
 		--host=$HOST \
 		--user=$USER \
@@ -255,7 +266,7 @@ restore_db() {
 		--overwrite-tables \
 		--verbose=3
 	else
-		myloader \
+		myloader $DEFAULTS_FILE \
 		--database=$DB \
 		--host=$HOST \
 		--user=$USER \
@@ -287,7 +298,7 @@ restore_db() {
 # -----------------------------------------------------------------------------
 create_temp_conf() {
 
-	TMPFILE="$HOME/.my.cnf"
+	TMPFILE="$TMPFILE_PATH"
 	touch "$TMPFILE"
 	chmod 0600 "$TMPFILE"
 
@@ -468,6 +479,9 @@ while [ $# -gt 0 ]; do
 		--vault-addr)
 			VAULT_ADDR="$2"
 			;;
+		--config-file)
+			TMPFILE_PATH="$2"
+			;;
 
 	esac
 	shift
@@ -492,6 +506,14 @@ if [ -e "$LOCKFILE" ]; then
 	fi
 else
 	echo "$PID" > "$LOCKFILE"
+fi
+
+# Debian 10 compatibility layer mydumper
+if [ $(perl -e "if( `lsb_release -sr` < 10.0){print 1}") ];then
+	echo "[!] INFO: Mydumper is started in compatibility mode for Debian 10..."
+	DEFAULTS_FILE=""
+else
+	DEFAULTS_FILE="--defaults-file=$TMPFILE_PATH \\"
 fi
 
 # Executes password func
