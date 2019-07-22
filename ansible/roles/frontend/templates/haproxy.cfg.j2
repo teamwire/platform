@@ -67,7 +67,7 @@ defaults
 
     # SECURITY: Infomation gathering phase only return 503
     errorfile 400 /etc/haproxy/errors/503.http
-    errorfile 403 /etc/haproxy/errors/503.http
+    errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/503.http
     errorfile 500 /etc/haproxy/errors/503.http
     errorfile 502 /etc/haproxy/errors/503.http
@@ -83,7 +83,7 @@ defaults
 #    bind *:3380
 
 #    stats enable
-#    stats auth {{ ha_stat_user }}:{{ ha_stat_pass }}
+#    stats auth ha_stat_user:ha_stat_pass
 #    stats uri /
 
 # ----------------------------------------------------
@@ -133,6 +133,8 @@ frontend https-in
 # BACKEND: teamwire-backend
 # ----------------------------------------------------
 backend teamwire-backend
+    acl is_external_hostname hdr(host) -i {{ external_hostname }}
+    http-request deny deny_status 403 if ! is_external_hostname
     {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend" }} {{ range $index, $service := service "backend" }}
     server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
     {{ end }}{% endraw %}
