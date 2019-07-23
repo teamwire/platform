@@ -134,6 +134,7 @@ frontend https-in
 # ----------------------------------------------------
 backend teamwire-backend
     acl is_external_hostname hdr(host) -i {{ external_hostname }}
+    http-response set-header Server "HAProxy"
     http-request deny deny_status 403 if ! is_external_hostname
     {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend" }} {{ range $index, $service := service "backend" }}
     server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
