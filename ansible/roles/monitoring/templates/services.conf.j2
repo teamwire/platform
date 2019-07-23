@@ -488,3 +488,11 @@ apply Service "check-oom" {
   assign where host.vars.os == "Linux"
 {% endif %}
 }
+
+apply Service "check-ufw" {
+  import "generic-service"
+  check_command = "check_ufw"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}

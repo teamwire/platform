@@ -1,0 +1,23 @@
+#!/bin/bash
+# This Icinga plugin will check that the ufw firewall is enabled and running
+
+
+UFW_STATUS=$(ufw status | awk '{print $2}' | head -n1)
+
+# Report as UNKNOWN if the status is neither active or inactive
+if [[ ! "$UFW_STATUS" =~ "active" ]]; then
+        echo "UNKNOWN - UFW status cannot be determined."
+        exit 3
+        fi
+
+# Report as OK if the UFW firewall is enabled
+if [[ "$UFW_STATUS" == "active" ]]; then
+        echo "OK - the UFW firewall is enabled and running."
+        exit 0
+        fi
+
+# Report as CRITICAL if the UFW firewall is in an inactive state
+if [[ "$UFW_STATUS" == "inactive" ]]; then
+        echo "CRITICAL - the UFW firewall is disabled, please enable it with 'sudo ufw enable'."
+        exit 2
+        fi
