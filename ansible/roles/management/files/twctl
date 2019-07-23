@@ -367,7 +367,7 @@ help() {
 	echo "start       	Start all stopped Teamwire containers"
 	echo "restart     	Stop and restart all containers"
 	echo "stop        	Stop all running Teamwire containers"
-	echo "status      	Show status of Teamwire containers"
+	echo "status      	Show status of Teamwire containers (--clean can be specified on clusters to clean container history)"
 	echo "rm          	Remove all stopped Teamwire containers"
 	echo "backupdb    	Create a backup of the database (requires file name)"
 	echo "restoredb   	Restore a backup of the database (requires file name)"
@@ -644,7 +644,12 @@ status_single() {
 }
 
 status_cluster() {
-	$NOMAD status teamwire
+	if [ "$OPTION" = "--clean" ]; then
+		curl -XPUT http://127.0.0.1:4646/v1/system/gc
+		echo "Container history cleaned"
+	else
+		$NOMAD status teamwire
+	fi
 }
 
 stop_containers_single() {
@@ -747,6 +752,7 @@ while [ $# -gt 0 ] ; do
 			;;
 		status)
 			TASK="status"
+			OPTION="$2"
 			;;
 		stop)
 			TASK="stop_containers"
