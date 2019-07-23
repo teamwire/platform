@@ -37,7 +37,7 @@
         - "ERROR: group_vars/all => version: '{{version}}'."
         - "Please set a valid backend version in group_vars/all variable 'version'"
         - "To display the latest valid backend versions, please run twctl show-tags"
-    when: (version | lower == "prod" or version == None or version | length == 0) and packer_build_name is not defined
+    when: vagrant_mode is not defined and ((version | lower == "prod" or version == None or version | length == 0) and packer_build_name is not defined)
 
 - name: Ensure valid management server configuration
   hosts: all
