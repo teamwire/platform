@@ -231,8 +231,13 @@
     - groups.conf
     - services.conf
     - hosts.conf
-    - apt.conf
     - notifications.conf
+
+- name: Remove old apt check config
+  file:
+    path: /etc/icinga2/conf.d/apt.conf
+    state: absent
+  notify: restart icinga2
 
 - name: Enable monitoring module
   command: /usr/bin/icingacli module enable monitoring
