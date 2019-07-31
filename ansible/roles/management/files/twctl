@@ -373,7 +373,7 @@ help() {
 	echo "restoredb   	Restore a backup of the database (requires file name)"
 	echo "secrets     	Manage Vault and its secrets"
 	echo "version     	Show version information"
-	echo "report      	Create a report (about system information and logs)"
+	echo "report      	Create a report (system information & logs. --file can be specified for the file name)"
 	echo "connectivity 	Test external connections"
 }
 
@@ -471,7 +471,16 @@ create_report() {
 	TMPDIR=$(mktemp -d)				# A temporary directory to collect all information that will later be stored in a tar archive.
 
 	FILE="${TMPDIR}/report"			# Path to report file. All collected informations are stored here.
-	REPORT="tw_report.$(date +%y_%m_%d_%s).tar.xz" 	# Name/Path of the tar archive
+	if [ -z "$FILENAME" ]; then
+		REPORT="tw_report.$(date +%y_%m_%d_%s).tar.xz" 	# Name/Path of the tar archive
+	else
+		if [[ "$FILENAME" == *"tar.xz" ]]; then
+			REPORT="$FILENAME"
+		else
+			echo 'ERROR: Filename must end with ".tar.xz" !'
+			exit 1
+		fi
+	fi
 	RUNTIME_REPORT_OF_SCRIPT="${TMPDIR}/runtime_report" # All outputs from twctl (STDOUT/STDERR) are collected here. See line below
 
 	exec > >(tee -i "$RUNTIME_REPORT_OF_SCRIPT")
@@ -531,7 +540,11 @@ create_report() {
 	sudo tar JcfP "$REPORT" -C "$TMPDIR" .
 	rm -rf "$TMPDIR"
 
-	echo "The report was generated and saved as $REPORT in the current directory."
+	if [ -z "$FILENAME" ]; then
+		echo "The report was generated and saved as $REPORT in the current directory."
+	else
+		echo "The report was generated and saved as $REPORT"
+	fi
 	echo
 
 }
