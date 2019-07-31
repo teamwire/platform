@@ -76,7 +76,7 @@
      group: root
   when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
 
-- name: stat ocsp file and regiter it
+- name: stat ocsp file and register it
   stat:
     path: "{{ ocspfile_path }}"
   register: stat_ocspfile
@@ -92,7 +92,7 @@
   cron:
      name: "daily ocsp job to create ocsp file"
      special_time: daily
-     job: "/usr/local/src/ocsp.sh"
+     job: "/usr/local/src/ocsp.sh > /dev/null"
   when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
 
 - name: Generate a new Diffie-Hellman group
