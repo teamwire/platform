@@ -8,7 +8,7 @@
 
 - name: Configure HAproxy Single-Server
   template:
-     src: haproxy.cfg.j2
+     src: "{{ haproxy_template }}"
      dest: "/etc/haproxy/haproxy.cfg"
      mode: 0640
      owner: haproxy
