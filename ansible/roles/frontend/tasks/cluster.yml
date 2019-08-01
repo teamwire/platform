@@ -55,6 +55,6 @@
 
 - name: Write Consul Template haproxy templates
   template:
-    src: haproxy.cfg.j2
+    src: "{{ haproxy_template }}"
     dest: /etc/consul-template/templates/teamwire-backend.tmpl
   notify: restart Consul Template
