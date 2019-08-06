@@ -447,6 +447,8 @@ connectivity_test() {
 							"Check if APNS certificate is installed"
 		test_server_condition_for_preflight_check	"" \
 							"Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
+		../ansible/roles/frontend/tasks/main.yml	"[ -e /usr/local/src/ocsp.sh ] && /usr/local/src/ocsp.sh" \
+							"Check OCSP response"
 
 }
 
