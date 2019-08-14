@@ -6,15 +6,46 @@
      name: haproxy
      state: present
 
-- name: Configure HAproxy Single-Server
-  template:
-     src: "{{ haproxy_template }}"
-     dest: "/etc/haproxy/haproxy.cfg"
-     mode: 0640
-     owner: haproxy
-     group: haproxy
+- name: Install HAproxy systemd config
+  copy:
+    src: "{{ haproxy_service_file }}"
+    dest: /etc/systemd/system/haproxy.service
+  notify: reload systemd
+
+- name: Start and enable HAProxy service
+  service: name=haproxy state=started enabled=true
+
+- name: Remove default HAproxy configs
+  file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/haproxy/haproxy.cfg
+    - /etc/haproxy/haproxy.cfg.bak
   notify: reload haproxy
+
+- name: Write HAProxy globals and frontend configuration files (Single server)
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0664
+    owner: haproxy
+    group: haproxy
+  with_items:
+    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
+    - { src: '{{ frontend_haproxy_template }}', dest: '/etc/haproxy/03-frontend.cfg' }
+  notify: restart haproxy
   when: "'frontend_servers' not in groups and groups['all'] | length() == 1"
+
+- name: Write HAProxy globals configuration file (cluster servers)
+  template:
+    src: "{{ globals_haproxy_template }}"
+    dest: "/etc/haproxy/01-globals.cfg"
+    mode: 0664
+    owner: haproxy
+    group: haproxy
+  notify: restart haproxy
+  when: "'frontend_servers' in groups and groups['all'] | length() > 1"
 
 - name: Generate the SSL certificate
   template:

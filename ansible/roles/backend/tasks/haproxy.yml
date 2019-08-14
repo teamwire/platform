@@ -6,12 +6,32 @@
     - haproxy
     - hatop
 
+- name: Install HAproxy systemd config
+  copy:
+    src: "{{ haproxy_service_file }}"
+    dest: /etc/systemd/system/haproxy.service
+  notify: reload systemd
+
 - name: Start and enable HAProxy service
   service: name=haproxy state=started enabled=true
 
-- name: Write HAProxy configuration
-  template: src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg mode=0600
+- name: Remove default HAproxy configs
+  file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/haproxy/haproxy.cfg
+    - /etc/haproxy/haproxy.cfg.bak
   notify: reload HAProxy
 
-- name: Create systemd drop-in directory for HAProxy
-  file: name=/etc/systemd/system/haproxy.service.d state=directory
+- name: Write HAProxy globals and galera configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0664
+    owner: haproxy
+    group: haproxy
+  with_items:
+    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
+    - { src: '{{ galera_haproxy_template }}', dest: '/etc/haproxy/02-galera.cfg' }
+  notify: restart haproxy
