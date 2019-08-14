@@ -187,6 +187,14 @@
 - name: Configure default firewall policy
   ufw: state=enabled policy=reject
 
+# TCP timestamps can be used to calculate server uptime
+- name: Disable TCP timestamps
+  sysctl:
+    name: net.ipv4.tcp_timestamps
+    value: 0
+    state: present
+    reload: yes
+
 # SSH
 - name: Disable SSH password logins
   when: ssh_disable_passwords is defined and ssh_disable_passwords
