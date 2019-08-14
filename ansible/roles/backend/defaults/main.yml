@@ -1,0 +1,3 @@
+galera_haproxy_template: galera_haproxy.cfg.j2
+globals_haproxy_template: globals_haproxy.cfg.j2
+haproxy_service_file: haproxy.service
