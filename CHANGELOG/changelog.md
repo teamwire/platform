@@ -7,5 +7,8 @@ Teamwire on-premise platform release August 2019
 
 ### Bugfixes:
 - OCSP: Ocsp check during playbook run is not enforced anymore.
+- Make sure release 2019-07 is backwards compatible with older versions.
+- Fix typo in the connectivity function of twctl.
+- Extend the twctl report file with haproxy.log.
 
 ### Notes:
