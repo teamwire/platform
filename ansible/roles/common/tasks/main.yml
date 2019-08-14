@@ -177,6 +177,9 @@
   template: src=ntp.conf.j2 dest=/etc/ntp.conf
   notify: restart NTP
 
+- name: Allow copy and paste in vim
+  copy: src=vimrc dest=/home/teamwire/.vimrc owner=teamwire group=teamwire mode=0644
+
 # general firewall rules
 - name: Install the UFW firewall
   apt: pkg=ufw state=present
