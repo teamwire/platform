@@ -345,7 +345,7 @@ case $OPTION in
 				echo "	unseal : Unseals the Vault so secrets can be accessed"
 				echo "	seal : Seals the Vault to prevent access to secrets"
 				echo "	info : Displays Vault information such as seal status, cluster mode and version"
-				echo "	backup : Generates an encrypted backup of secrets"
+				echo "	backup : Generate encrypted backup of secrets (--file can be specified for the file name)"
 				echo "	restore : Restores a secrets backup file"    ;;
 esac
 }
