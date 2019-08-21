@@ -94,7 +94,7 @@ frontend https-in
     {% endif %}{% endif %}
 
     # ACL
-    acl IS_EXTERNAL_HOSTNAME hdr(host) -i {{ external_hostname }}
+    acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i {{ external_hostname }}(:[0-9]+)?$
     acl IS_ADMIN hdr_beg(host) -i admin
 
     # Backends redirect
