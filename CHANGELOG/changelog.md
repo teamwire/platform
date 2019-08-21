@@ -11,4 +11,7 @@ Teamwire on-premise platform release August 2019
 - [2019-07.2] Fix typo in the connectivity function of twctl.
 - [2019-07.2] Extend the twctl report file with haproxy.log.
 - [2019-07.2] On cluster systems, hosts in both the backend and frontend server groups now have full compatbility with haproxy.
+- [2019-07.3] Security: Disable TCP timestamps
+- [2019-07.3] Allow copy & pasting in the vim editor
+- [2019-07.3] haproxy: improve client proxy support
 ### Notes:
