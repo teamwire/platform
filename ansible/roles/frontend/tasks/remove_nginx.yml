@@ -7,8 +7,12 @@
 
 - name: Remove package nginx
   apt:
-     name: nginx
+     name: "{{ item }}"
      state: absent
+     purge: yes
+  with_items:
+     - nginx-common
+     - nginx-light
 
 - name: Remove Files Related to nginx if exists
   file:

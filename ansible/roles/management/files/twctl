@@ -447,8 +447,8 @@ connectivity_test() {
 							"Check if APNS certificate is installed"
 		test_server_condition_for_preflight_check	"" \
 							"Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
-		../ansible/roles/frontend/tasks/main.yml	"[ -e /usr/local/src/ocsp.sh ] && /usr/local/src/ocsp.sh" \
-							"Check OCSP response"
+		test_server_condition_for_preflight_check       "" \
+                                                        "Check OCSP response: $([ -e /usr/local/src/ocsp.sh ] && sudo /usr/local/src/ocsp.sh DO NOT UPDATE)"
 
 }
 
@@ -506,6 +506,7 @@ create_report() {
 		for LOG_FILE in $LOG_FILES; do
 			ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/$LOG_FILE dest=$TMPDIR/ flat=yes" > /dev/null 2>&1
 		done
+		ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/var/log/haproxy.log dest=$TMPDIR/ flat=yes" > /dev/null 2>&1
 
 	else
 
@@ -538,6 +539,7 @@ create_report() {
 
 	# Retrieve docker logs on single installations and management servers
 	find /var/log/docker/ -name *.log -exec sudo cp {} "$TMPDIR" \;
+	find /var/log/* -maxdepth 0 -type f -name haproxy.log  -exec sudo cp {} "$TMPDIR" \;
 
 	sudo tar JcfP "$REPORT" -C "$TMPDIR" .
 	rm -rf "$TMPDIR"

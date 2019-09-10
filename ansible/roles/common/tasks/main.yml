@@ -177,6 +177,9 @@
   template: src=ntp.conf.j2 dest=/etc/ntp.conf
   notify: restart NTP
 
+- name: Allow copy and paste in vim
+  copy: src=vimrc dest=/home/teamwire/.vimrc owner=teamwire group=teamwire mode=0644
+
 # general firewall rules
 - name: Install the UFW firewall
   apt: pkg=ufw state=present
@@ -186,6 +189,14 @@
 
 - name: Configure default firewall policy
   ufw: state=enabled policy=reject
+
+# TCP timestamps can be used to calculate server uptime
+- name: Disable TCP timestamps
+  sysctl:
+    name: net.ipv4.tcp_timestamps
+    value: 0
+    state: present
+    reload: yes
 
 # SSH
 - name: Disable SSH password logins
