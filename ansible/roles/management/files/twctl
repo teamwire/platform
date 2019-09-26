@@ -439,7 +439,7 @@ connectivity_test() {
 			test_server_condition_for_preflight_check	"/bin/false" \
 								"Local mail test: Fail. Please define 'system_email_recipient' in $CONFIG_FILE"
 		fi
-		test_server_condition_for_preflight_check	"echo | timeout 10s openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Google'" \
+		test_server_condition_for_preflight_check	"echo | timeout 10s openssl s_client -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'Google'" \
 							"Check Google FCM connectivity"
 		test_server_condition_for_preflight_check	"echo | timeout 10s openssl s_client -connect api.push.apple.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Apple'" \
 							"Check Apple APNS connectivity"
