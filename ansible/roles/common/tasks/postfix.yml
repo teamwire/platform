@@ -4,6 +4,15 @@
     msg: The Variable 'system_email_recipient' must be defined in group_vars/all
   when: config_done is defined and system_email_recipient is not defined
 
+- name: Set host mail name
+  template:
+    src: mailname.j2
+    dest: /etc/mailname
+    owner: root
+    group: root
+    mode: 0644
+  when: config_done is defined
+
 - name: Install Postfix
   apt: pkg=postfix
 
