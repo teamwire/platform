@@ -25,5 +25,33 @@
 - name: Install the container helper tool
   copy: src=../../roles/management/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
 
+- name: Install new motd
+  copy:
+    src: motd.sh
+    dest: /etc/motd.sh
+    owner: root
+    group: root
+    mode: 0755
+
+- name: stat original motd
+  stat:
+     path: /etc/motd
+  register: motd_stat
+
+- name: Deactivate old motd
+  command: mv /etc/motd /etc/motd.deactivate
+  when: motd_stat.stat.exists
+
+- name: Test if line motd exists in global profile
+  shell: grep '/etc/motd.sh' /etc/profile
+  register: grep_motd
+  failed_when: grep_motd.rc >= 2
+
+- name: Activate new motd when not exists
+  lineinfile:
+     dest: /etc/profile
+     line: "/etc/motd.sh"
+  when: grep_motd.rc == 1
+
 - include: backup.yml
   when: config_done is defined
