@@ -14,4 +14,5 @@ Teamwire on-premise platform release August 2019
 - [2019-07.3] Security: Disable TCP timestamps
 - [2019-07.3] Allow copy & pasting in the vim editor
 - [2019-07.3] haproxy: improve client proxy support
+- [2019-09] Fix email delivery to root
 ### Notes:

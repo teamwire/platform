@@ -4,14 +4,14 @@ append_dot_mydomain = no
 readme_directory = no
 myhostname = {{ external_hostname }}
 mydomain = {{ domain }}
-myorigin = $mydomain
+myorigin = /etc/mailname
 relay_domains = {{ domain }}
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
 
 # restrictions
 smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
-mydestination = localhost.localdomain, localhost
+mydestination = $myorigin,localhost.localdomain, localhost
 mynetworks = 127.0.0.0/8 172.16.0.0/12 [::ffff:127.0.0.0]/104 [::1]/128
 mailbox_size_limit = 0
 recipient_delimiter = +
