@@ -35,3 +35,9 @@
     - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
     - { src: '{{ galera_haproxy_template }}', dest: '/etc/haproxy/02-galera.cfg' }
   notify: restart haproxy
+
+- name: Generate a new Diffie-Hellman group
+  command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
+  when: ssl_keyfile is defined
+  args:
+    creates: /etc/ssl/private/dhparams.pem
