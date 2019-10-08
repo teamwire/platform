@@ -1,5 +1,19 @@
-## 2019-08
-Teamwire on-premise platform release August 2019
+## 2019-09
+Teamwire on-premise platform release September 2019
+
+### Enhancements:
+- plugin: Add a new ansible plugin that compares the used platform version with the current repository version.
+- MOTD: Upon a SSH login, admins are now greeted with useful information such as platform/backend versions and available updates.
+### Bugfixes 2019-09:
+- [2019-09] Fix email delivery to root.
+- [2019-09] HAProxy: Ensure the SSL Diffie-Hellman group is generated in the backend role.
+- [2019-09] Docker repository signing key can fail due to unreliable connection.
+- [2019-09] twctl: Fix google connection check in the connectivity feature.
+### Notes:
+
+
+## 2019-07
+Teamwire on-premise platform release July 2019
 
 ### Enhancements:
 - Introduce new changelog.
@@ -15,5 +29,4 @@ Teamwire on-premise platform release August 2019
 - [2019-07.3] Security: Disable TCP timestamps
 - [2019-07.3] Allow copy & pasting in the vim editor
 - [2019-07.3] haproxy: improve client proxy support
-- [2019-09] Fix email delivery to root
 ### Notes:
