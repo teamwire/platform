@@ -15,17 +15,18 @@ fi
 
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 CLUSTER_CONFIG_DIR=/data/cluster_config
+DFLT_TMOUT=10
 
 if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
 	# Clustered setup
 	INSTALLATION=cluster
 	VAULT_ADDR="https://vault.service.consul:8200"
 	# Query Consul to obtain Consul peers (Which are also Vault servers)
-	VAULT_SERVERS=$(curl -s http://127.0.0.1:8500/v1/status/peers | jq .[] -r | sed "s/:8300//")
+	VAULT_SERVERS=$(curl -m ${DFLT_TMOUT} -s http://127.0.0.1:8500/v1/status/peers | jq .[] -r | sed "s/:8300//")
 	# Obtain the first Vault server's IP address
 	VAULT_1ST_SERVER=$(echo "${VAULT_SERVERS}" | head -1)
-	VAULT_INITIALIZED=$(curl -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.initialized')
-	VAULT_SEALED=$(curl -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.sealed')
+	VAULT_INITIALIZED=$(curl -m ${DFLT_TMOUT} -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.initialized')
+	VAULT_SEALED=$(curl -m ${DFLT_TMOUT} -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.sealed')
 
 	if [ "$UID" != "0" ] && [ ! -r "$CLUSTER_CONFIG_DIR" ] ; then
 		# Try to grant read permissions to the required files
@@ -38,8 +39,8 @@ else
 	# Single server installation
 	INSTALLATION=single
 	VAULT_ADDR="https://127.0.0.1:8200"
-	VAULT_INITIALIZED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
-	VAULT_SEALED=$(curl -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
+	VAULT_INITIALIZED=$(curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
+	VAULT_SEALED=$(curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 
 	if [ ! -f "$CONFIG_FILE" ]; then
 		echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
@@ -73,7 +74,7 @@ if [ "$VAULT_INITIALIZED" == "true" ]; then
 fi
 
 if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" == "false" ]]; then
-	VAULT_AUTH_CHECK="$(curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret | jq -r .errors[])"
+	VAULT_AUTH_CHECK="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret | jq -r .errors[])"
 	if [ "$VAULT_AUTH_CHECK" == "permission denied" ]; then
 		echo "Invalid Vault token, please check the contents of ~/.vault-token."
 		exit 1
@@ -82,7 +83,7 @@ fi
 
 vault_read_secrets() {
 	local secret_path=$1
-	local secret="$(curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/$secret_path | jq -r '.data| .[]')"
+	local secret="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/$secret_path | jq -r '.data| .[]')"
 	echo "$secret"
 }
 
@@ -90,11 +91,11 @@ vault_read_secrets() {
 # for `get_vault_secret_recursive` function to make
 # the code more readable.
 vault_list() {
-	echo "curl -s --header \"X-Vault-Token: $VAULT_TOKEN\" --request LIST $VAULT_ADDR/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
+	echo "curl -m ${DFLT_TMOUT} -s --header \"X-Vault-Token: $VAULT_TOKEN\" --request LIST $VAULT_ADDR/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
 }
 
 get_vault_secret_recursive() {
-	declare -a vault_secr="$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
+	declare -a vault_secr="$(curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
 	for toplevel in ${vault_secr[@]}
 	do
 		sub="$(vault_list $toplevel)"
@@ -111,7 +112,7 @@ vault_status_single() {
 	echo "======================================"
 	echo "Vault Status"
 	echo "--------------------------------------"
-	curl -s $VAULT_ADDR/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+	curl -m ${DFLT_TMOUT} -s $VAULT_ADDR/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 		| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 }
 
@@ -121,13 +122,13 @@ vault_status_cluster() {
 		echo "======================================"
 		echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Status"
 		echo "--------------------------------------"
-		curl -s https://"$VAULT_SERVER_IP":8200/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+		curl -m ${DFLT_TMOUT} -s https://"$VAULT_SERVER_IP":8200/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 			| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 	done
 }
 
 vault_seal() {
-		curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request PUT \
+		curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: $VAULT_TOKEN" --request PUT \
 			$VAULT_ADDR/v1/sys/seal | jq -r '.errors | .[]'
 }
 
@@ -139,7 +140,7 @@ vault_unseal_single() {
 		echo "======================================"
 		echo "Vault Seal Status"
 		echo "--------------------------------------"
-		curl -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+		curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 	fi
 }
@@ -151,14 +152,14 @@ vault_unseal_cluster() {
 	fi
 	for VAULT_SERVER_IP in $VAULT_SERVERS; do
 		VAULT_SERVER_NAME="$(dig -x ${VAULT_SERVER_IP} +short | sed '$s/.$//')"
-		VAULT_SERVER_SEAL=$(curl -s "https://$VAULT_SERVER_IP:8200/v1/sys/health" | jq '.sealed')
+		VAULT_SERVER_SEAL=$(curl -m ${DFLT_TMOUT} -s "https://$VAULT_SERVER_IP:8200/v1/sys/health" | jq '.sealed')
 		if [ "$VAULT_SERVER_SEAL" = "false" ];then
 			echo "Vault on ${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] is already unsealed"
 		else
 			echo "======================================"
 			echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Seal Status"
 			echo "--------------------------------------"
-			curl -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" https://"$VAULT_SERVER_IP":8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+			curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" https://"$VAULT_SERVER_IP":8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
 				| awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 		fi
 	done
@@ -310,14 +311,14 @@ case $OPTION in
 				 echo "Entries do not match, exiting"
 				 exit 1
 				else
-				 curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request POST --data "{\"value\":\"$ENTRY\"}" $VAULT_ADDR/v1/secret/"$INPUT"
+				 curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request POST --data "{\"value\":\"$ENTRY\"}" $VAULT_ADDR/v1/secret/"$INPUT"
 				fi
 				;;
 		list)
 				get_vault_secret_recursive
 				;;
 		delete)
-				curl -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request DELETE $VAULT_ADDR/v1/secret/"$INPUT"
+				curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request DELETE $VAULT_ADDR/v1/secret/"$INPUT"
 				;;
 		unseal)
 				"vault_unseal_${INSTALLATION}"
@@ -456,9 +457,9 @@ show-tags() {
 	local USER="$(_get_config_value dockerhub_username)"
 	local PASS="$(vault_read_secrets dockerhub/password)"
 
-	local TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
-	local PROD="$(curl -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/ | jq -r '.results[].name' | grep -e 'prod-')"
-	PROD="$PROD\n$(curl -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/?page=2 | jq -r '.results[].name' | grep -e 'prod-')\n"
+	local TOKEN=$(curl -m ${DFLT_TMOUT} -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+	local PROD="$(curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/ | jq -r '.results[].name' | grep -e 'prod-')"
+	PROD="$PROD\n$(curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/?page=2 | jq -r '.results[].name' | grep -e 'prod-')\n"
 
 	for version in "${PROD}"
 	do
@@ -662,7 +663,7 @@ status_single() {
 
 status_cluster() {
 	if [ "$OPTION" = "--clean" ]; then
-		curl -XPUT http://127.0.0.1:4646/v1/system/gc
+		curl -m ${DFLT_TMOUT} -XPUT http://127.0.0.1:4646/v1/system/gc
 		echo "Container history cleaned"
 	else
 		$NOMAD status teamwire
