@@ -530,7 +530,7 @@ create_report() {
 	report_map["Show HDD free space"]="$(df -h)"
 	report_map["Show docker info"]="$(docker info)"
 	report_map["Show network configuration"]="$(ip a)"
-	report_map["Show current kernel messages(dmesg)"]="$(sudo dmesg)"
+	report_map["Show current kernel messages(dmesg)"]="$(sudo dmesg | egrep -v 'apt-daily|UFW BLOCK' | tail -n 50)"
 
 	for key in "${!report_map[@]}"; do
 
