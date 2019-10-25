@@ -118,6 +118,18 @@
         - ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
         - groups['all'] | length() > 1
 
+- name: Check for deprecated variables
+  hosts: 127.0.0.1
+  tasks:
+    - block:
+      - fail:
+          msg:
+            - "WARNING: The variable ssl_certfile is deprecated and will not work in future releases."
+      - pause:
+          seconds: 5
+      ignore_errors: yes
+      when: ssl_certfile is defined and config_done is defined
+
 - name: Perform SSL-Preflight check
   hosts: 127.0.0.1
   connection: local
