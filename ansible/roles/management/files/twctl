@@ -523,6 +523,7 @@ create_report() {
 
 	fi
 
+	report_map["Check if self signed cert is defined"]="$(grep 'ssl_certfile' ${ANSIBLE_DIR}/group_vars/all || echo 'NOT DEFINED')"
 	report_map["Show platform version(checkout)"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)"
 	report_map["Show platform version(applied)"]="$(cat /etc/platform_version)"
 	report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
