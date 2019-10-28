@@ -42,7 +42,7 @@ class CallbackModule(CallbackBase):
             self._display.warning("Could not determine applied platform version")
             applied_platform_version = "Unknown applied version"
 
-        self._applied_plaform_version = applied_platform_version
+        self._applied_plaform_version = applied_platform_version.strip()
         self.msg+= "applied platform version:\t" + applied_platform_version
 
     def get_checkout_platform_version(self):
@@ -57,7 +57,7 @@ class CallbackModule(CallbackBase):
                 sys.exit(1)
 
             checkout_platform_version_cmd = subprocess.Popen(["git",git_path,"describe","--always"],stdout=subprocess.PIPE)
-            checkout_platform_version = checkout_platform_version_cmd.communicate()[0]
+            checkout_platform_version = checkout_platform_version_cmd.communicate()[0].strip()
 
         except IOError:
             self._display.warning("Could not determine checkout platform version")

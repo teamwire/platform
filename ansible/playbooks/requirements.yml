@@ -95,7 +95,7 @@
   tasks:
   - copy:
       dest: /etc/platform_version
-      content: '{{ current_local_tag if current_local_tag is defined else "NONE" }} (incomplete)'
+      content: '{{ current_local_tag if current_local_tag is defined else "NONE" }}(incomplete)'
       owner: root
       group: root
       mode: 0644
