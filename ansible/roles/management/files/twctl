@@ -166,17 +166,27 @@ vault_unseal_cluster() {
 }
 
 vault_backup_cluster() {
-	STAMP=$(date +"%Y%m%d%H%M")
-	consul snapshot save "secrets-backup-${STAMP}"
-	echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}."
+	if [ -n "$FILENAME" ]; then
+		consul snapshot save "${FILENAME}"
+		echo "Backup complete and stored at ${FILENAME}."
+	else
+		STAMP=$(date +"%Y%m%d%H%M")
+		consul snapshot save "secrets-backup-${STAMP}"
+		echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}."
+	fi
 }
 
 vault_backup_single() {
-	STAMP=$(date +"%Y%m%d%H%M")
 	sudo systemctl stop vault
-	sudo tar -zcf "secrets-backup-${STAMP}" -C /var/lib/vault/ store/
+	if [ -n "$FILENAME" ]; then
+		sudo tar -zcf "$FILENAME" -C /var/lib/vault/ store/
+		echo "Backup complete and stored at ${FILENAME}. You must now unseal the secrets system."
+	else
+		STAMP=$(date +"%Y%m%d%H%M")
+		sudo tar -zcf "secrets-backup-${STAMP}" -C /var/lib/vault/ store/
+		echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}. You must now unseal the secrets system."
+	fi
 	sudo systemctl start vault
-	echo "Backup complete and stored at ${PWD}/secrets-backup-${STAMP}. You must now unseal the secrets system."
 }
 
 vault_restore_cluster() {
