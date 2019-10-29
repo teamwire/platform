@@ -4,6 +4,7 @@ Documentation=man:haproxy(1)
 Documentation=file:/usr/share/doc/haproxy/configuration.txt.gz
 After=network.target syslog.service
 Wants=syslog.service
+StartLimitIntervalSec=0
 
 [Service]
 Environment="CONFIG=/etc/haproxy" "PIDFILE=/run/haproxy.pid"
