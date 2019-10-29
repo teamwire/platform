@@ -12,6 +12,13 @@
     dest: /etc/systemd/system/haproxy.service
   notify: reload systemd
 
+- name: Replace HAproxy wrapper in debian 10
+  replace:
+     path: "/etc/systemd/system/haproxy.service"
+     regexp: "/usr/sbin/haproxy-systemd-wrapper"
+     replace: "/usr/sbin/haproxy -Ws"
+  when: ansible_distribution_release == "buster"
+
 - name: Start and enable HAProxy service
   service: name=haproxy state=started enabled=true
 
