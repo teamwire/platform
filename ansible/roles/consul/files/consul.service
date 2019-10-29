@@ -1,11 +1,12 @@
 [Unit]
 Description=Consul agent
 Requires=network-online.target
+StartLimitIntervalSec=0
 After=network-online.target
 
 [Service]
 EnvironmentFile=-/etc/default/consul
-Restart=on-failure
+Restart=always
 ExecStart=/usr/local/bin/consul agent $CONSUL_FLAGS -config-dir=/etc/consul.d
 ExecReload=/bin/kill -HUP $MAINPID
 KillSignal=SIGINT
