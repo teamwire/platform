@@ -119,6 +119,7 @@
 			],
 			"format": "qcow2",
 			"accelerator": "kvm",
+			"memory": "2096",
 			"headless": "true"
 		},
 		{
@@ -144,6 +145,7 @@
 			],
 			"format": "qcow2",
 			"accelerator": "kvm",
+			"memory": "2096",
 			"headless": "true"
 		}
 	],
