@@ -60,13 +60,8 @@
 - name: Install Docker
   apt: pkg=docker-ce state=present
 
-- name: Install python-docker (Debian 8)
-  pip: name=docker-py version=1.9.0 state=present
-  when: ansible_distribution_release == 'jessie'
-
-- name: Install python-docker (Debian 9)
+- name: Install python-docker
   apt: pkg=python-docker state=present
-  when: ansible_distribution_release == 'stretch'
 
 - name: Add user 'teamwire' to the docker group
   user: name=teamwire groups=docker append=yes

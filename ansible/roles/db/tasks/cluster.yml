@@ -39,7 +39,7 @@
 
 # Debian 9 includes mytop in the mariadb package, but has some broken dependencies
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=863596
-- name: Install Galera and requirements (Debian 9)
+- name: Install Galera and requirements
   apt: name={{ item }} state=present
   with_items:
   - galera
@@ -47,7 +47,7 @@
   - libterm-readkey-perl
   - percona-xtrabackup-24
   - socat
-  when: ansible_distribution_release == 'stretch'
+  when: ansible_distribution_version|int >= 9
 
 - name: Create database replication user
   mysql_user:
