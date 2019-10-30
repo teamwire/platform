@@ -75,7 +75,7 @@
   template:
     src: consul-redis.hcl.j2
     dest: "/etc/consul.d/redis-{{ item }}.hcl"
-  notify: restart consul
+  notify: reload consul
   with_items:
     - "{{ redis_instances.keys() }}"
 
@@ -83,7 +83,7 @@
   template:
     src: consul-redis-sentinel.hcl.j2
     dest: "/etc/consul.d/redis-sentinel-{{ item }}.hcl"
-  notify: restart consul
+  notify: reload consul
   with_items:
     - "{{ redis_instances.keys() }}"
 
