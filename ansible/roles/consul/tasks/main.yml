@@ -27,10 +27,13 @@
   notify: restart consul
   when: consul_downloaded.changed or not consul_binary.stat.exists
 
-- name: Create Consul config directory
+- name: Create Consul config and scripts directories
   file:
-    name: /etc/consul.d
+    name: "{{ item }}"
     state: directory
+  with_items:
+    - "/etc/consul.d"
+    - "/etc/consul.d/scripts/"
 
 - name: Write Consul server configuration file
   template:
