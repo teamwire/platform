@@ -79,3 +79,7 @@
   when: apns_certificate_3 is defined
   become: no
   run_once: true
+
+- name: Backup Ansible log file
+  command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
+  run_once: True
