@@ -70,6 +70,13 @@
     run_once: true
     when: groups['all'] | length() > 1
 
+- name: Check if in developer mode
+  hosts: all
+  tasks:
+    - set_fact: TW_DEV_MODE="{{ lookup('env','TW_DEV_MODE') }}"
+      delegate_facts: true
+      run_once: true
+
 - name: Get current git tag
   hosts: all
   tasks:
