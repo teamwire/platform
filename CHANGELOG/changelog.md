@@ -7,7 +7,20 @@ Teamwire on-premise platform release October 2019
 - Improve Redis cluster health checks for Consul
 - systemd: infinite retries to restart critical services
 - twctl: Allow secrets backup path to be defined
+- twctl: Improve dmesg output in report file
 - Warn user if using unsupported self-signed certificates
+
+### Bugfixes:
+
+- Add default timeout for curl commands
+- Fix platform version check
+
+### Notes:
+
+WARNING: On cluster systems, a Nomad/backend container restart will be applied during this platform update -- so this update should be scheduled.
+
+Please note that if you are using self-signed certificate, you will be greeted with a deprecation warning. This is due to the fact that self-signed certificates will not be supported in the future.
+
 ## 2019-09
 Teamwire on-premise platform release September 2019
 
