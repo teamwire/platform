@@ -1,3 +1,13 @@
+## 2019-10
+Teamwire on-premise platform release October 2019
+
+### Enhancements:
+
+- Write Ansible log to config_backup directory in management role
+- Improve Redis cluster health checks for Consul
+- systemd: infinite retries to restart critical services
+- twctl: Allow secrets backup path to be defined
+- Warn user if using unsupported self-signed certificates
 ## 2019-09
 Teamwire on-premise platform release September 2019
 
