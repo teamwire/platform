@@ -5,5 +5,5 @@
 - name: restart redis
   service: name=redis-server state=restarted
 
-- name: restart consul
-  service: name=consul state=restarted
+- name: reload consul
+  command: consul reload

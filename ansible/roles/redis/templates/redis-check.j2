@@ -1,0 +1,19 @@
+#!/bin/bash
+nc -z 127.0.0.1 6379
+if [ "$?" -ne 0 ]; then
+    echo "Unable to connect to Redis."
+    exit 2
+else
+    MODE=$(/usr/bin/redis-cli -p {{ redis_instances[item].server_port }} {{ '-a ' +  redis_instances[item].password if redis_instances[item].password else '' }} info | grep role);
+    JOIN_STATUS=$(/usr/bin/redis-cli -p {{ redis_instances[item].server_port }} {{ '-a ' +  redis_instances[item].password if redis_instances[item].password else '' }} info | grep "loading_start_time");
+    if [[ "$MODE" != *"role:master"* ]]; then
+        echo "Redis is in slave mode. This is purely informational and no errors have occured."
+        exit 1
+    elif [[ -n "$JOIN_STATUS" ]]; then
+        echo "Redis hasn't joined the cluster yet."
+        exit 1
+    else
+        echo "Redis is in master mode."
+        exit 0
+    fi
+fi

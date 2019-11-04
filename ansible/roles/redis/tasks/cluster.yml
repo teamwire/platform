@@ -63,11 +63,19 @@
     - [ 'server', 'sentinel']
     - "{{ redis_instances.keys() }}"
 
+- name: Write Redis check scripts for each instance
+  template:
+    src: redis-check.j2
+    dest: "/etc/consul.d/scripts/check-redis-{{ item }}.sh"
+    mode: 0755
+  with_items:
+    - "{{ redis_instances.keys() }}"
+
 - name: Register Redis servers with Consul
   template:
     src: consul-redis.hcl.j2
     dest: "/etc/consul.d/redis-{{ item }}.hcl"
-  notify: restart consul
+  notify: reload consul
   with_items:
     - "{{ redis_instances.keys() }}"
 
@@ -75,7 +83,7 @@
   template:
     src: consul-redis-sentinel.hcl.j2
     dest: "/etc/consul.d/redis-sentinel-{{ item }}.hcl"
-  notify: restart consul
+  notify: reload consul
   with_items:
     - "{{ redis_instances.keys() }}"
 
