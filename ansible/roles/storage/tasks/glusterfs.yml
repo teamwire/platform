@@ -4,6 +4,7 @@
   with_items:
     - glusterfs-server
     - glusterfs-client
+    - rpcbind
 
 - name: Create GlusterFS brick
   file:
@@ -15,6 +16,14 @@
     name: glusterfs-server
     state: started
     enabled: true
+  when: ansible_distribution_release == "stretch"
+
+- name: Start GlusterFS server
+  service:
+    name: glusterd
+    state: started
+    enabled: true
+  when: ansible_distribution_release == "buster"
 
 - name: Create Gluster volume "{{gluster_volume}}"
   gluster_volume:
