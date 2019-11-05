@@ -73,7 +73,7 @@
 - name: Check if in developer mode
   hosts: all
   tasks:
-    - set_fact: TW_DEV_MODE="{{ lookup('env','TW_DEV_MODE') }}"
+    - set_fact: TW_DEV_MODE="{{ lookup('env', 'TW_DEV_MODE' ) | ternary (lookup('env', 'TW_DEV_MODE' ), omit) }}"
       delegate_facts: true
       run_once: true
 
