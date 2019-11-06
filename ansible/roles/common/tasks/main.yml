@@ -97,6 +97,13 @@
   - python-wheel
   - python-setuptools
 
+- name: Install docker-py 1.10.6 from pypi (Debian 10)
+  pip:
+    name=docker-py
+    version=1.10.6
+    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
+  when: ansible_distribution_release == 'buster'
+
 - name: Install python-pyOpenSSL version {{ required_pyopenssl_version }}
   pip:
     name=pyopenssl
