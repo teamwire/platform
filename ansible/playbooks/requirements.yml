@@ -142,14 +142,14 @@
   tasks:
     - shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O = .*,' | sed 's/. OU.*//' | sed 's/O = //'
       register: cert_subject_org
-      when: packer_build_name is not defined and config_done is defined
+      when: packer_build_name is not defined and config_done is defined and ( ssl_certfile is defined or ssl_server_certificate is defined )
 
 - name: Register cert issuer organisation
   hosts: 127.0.0.1
   tasks:
     - shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O = .*,' | sed 's/O = //' | sed 's/,//'
       register: cert_issuer_org
-      when: packer_build_name is not defined and config_done is defined
+      when: packer_build_name is not defined and config_done is defined and ( ssl_certfile is defined or ssl_server_certificate is defined )
 
 - name: Check if Certificate is self signed
   hosts: 127.0.0.1
@@ -160,7 +160,7 @@
       - pause:
           seconds: 5
       ignore_errors: yes
-      when: "cert_subject_org.stdout == cert_issuer_org.stdout"
+      when: cert_subject_org.stdout is defined and cert_issuer_org.stdout is defined and cert_subject_org.stdout == cert_issuer_org.stdout
 
 - name: Perform SSL-Preflight check
   hosts: 127.0.0.1
