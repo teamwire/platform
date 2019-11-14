@@ -1,6 +1,6 @@
 #!/bin/bash
 VC="$(find /home -name vault-credentials | egrep '.*')"
-clear
+clear -x
 cat << 'FEOF'
 ###############################################################################
              _____                 __        ___          
