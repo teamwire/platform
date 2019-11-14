@@ -1,2 +1,3 @@
 ---
 registry_dir: /data/registry
+registry_config: registry-config.yml.j2
