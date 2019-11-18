@@ -1,9 +1,21 @@
 ---
-- name: Enable the Icinga2 API
+- name: Enable the Icinga2 API debian 10
   template: src=api.conf.j2 dest=/etc/icinga2/features-enabled/api.conf
   notify: restart icinga2
+  delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  when: ansible_distribution_release == "buster"
 
 - meta: flush_handlers
+  delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  when: ansible_distribution_release == "buster"
+
+- name: Enable the Icinga2 API debian 9
+  template: src=api.conf.j2 dest=/etc/icinga2/features-enabled/api.conf
+  notify: restart icinga2
+  when: ansible_distribution_release != "buster"
+
+- meta: flush_handlers
+  when: ansible_distribution_release != "buster"
 
 - name: Wait for Icinga client API port to start listening on master
   wait_for:
@@ -29,11 +41,23 @@
   when: client_cert_created.changed
   register: pki_ticket
 
-- name: Request the certificate from the Icinga master
-  command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.key
-  when: client_cert_created.changed
+- name: Request the certificate from the Icinga master debian 9
+  command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.crt
   args:
-   creates: /etc/icinga2/pki/ca.key
+   creates: /etc/icinga2/pki/ca.crt
+  when: client_cert_created.changed and ansible_distribution_release != "buster"
+
+- name: Request the certificate from the Icinga master debian 10
+  command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.crt
+  args:
+   creates: /etc/icinga2/pki/ca.crt
+  when: client_cert_created.changed and ansible_distribution_release == "buster" and groups['all'] | length() > 1 and "inventory_hostname != groups['monitoring'] | first"
+
+- name: Enable the Icinga2 API
+  template: src=api.conf.j2 dest=/etc/icinga2/features-enabled/api.conf
+  notify: restart icinga2
+
+- meta: flush_handlers
 
 - name: Setup Icinga node
   command: /usr/sbin/icinga2 node setup --ticket {{ pki_ticket.stdout }} --endpoint {{ groups.monitoring | first }} --zone {{ inventory_hostname }} --master_host {{ groups.monitoring | first }} --trustedcert /etc/icinga2/pki/trusted-master.crt --cn {{ inventory_hostname }}
