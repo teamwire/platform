@@ -85,8 +85,9 @@ external_hostname:
 ## APPLICATION
 ##############################################################################
 
-# The Teamwire server version. During initial installation, prod is the
-# latest available version, when updating, you'll be supplied with a specific
+# The Teamwire server version. During initial installation it is mandatory to 
+# manually specify a version tag. A tag consists of the prefix 'prod-' and the 
+# version. When updating, you'll be supplied automatically with a specific 
 # version tag.
 version: prod
 
