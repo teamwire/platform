@@ -76,7 +76,11 @@ frontend https-in
     http-request set-header X-Forwarded-Port %[dst_port]
     http-request add-header X-Forwarded-Proto https if { ssl_fc }
 
-    log-format %ID\ %ci:%cp\ [%t]\ %ft\ %b/%s\ %Tq/%Tw/%Tc/%Tr/%Tt\ %ST\ %B\ %CC\ %CS\ %tsc\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ %hr\ %hs\ %{+Q}r\ %sslv\ %sslc
+    http-request capture req.hdr(host) len 32
+    http-request capture req.hdr(X-Forwarded-For) len 32
+    http-request capture req.hdr(User-Agent) len 32
+
+    log-format 'LIMSTART{ "DATE":"%t","ID":"%ID","STATUS":"%ST","SourceIP":"%ci:%cp","ROUTE":"%ft/%b","METRIC":"%Tq/%Tw/%Tc/%Tr/%Tt ","httpRequest":"%r","requestHeader":"%hr","CON":"%tsc  %ac %fc %bc %sc %rc ","TSL-PROTO":"%sslv","TSL_CIPHER":"%sslc"}LIMEND'
     unique-id-format %{+X}o\ %ci:%cp_%fi:%fp_%Ts_%rt:%pid
     unique-id-header X-Request-ID
 
