@@ -57,6 +57,7 @@
       FAKE_SMS: "{{ fake_sms|default() }}"
       FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation|default() }}"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
+      FAKE_VALIDATE_DOMAIN: "{{ fake_validate_domain|default() }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
