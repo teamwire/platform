@@ -238,5 +238,8 @@ system_email_recipient:
 # do not encrypt the database
 # fake_db_encryption: true
 
+# Do not perform MX Lookups on domains for admin registration
+# fake_validate_domain: true
+
 # Notification service log level
 # notification_loglevel: debug
