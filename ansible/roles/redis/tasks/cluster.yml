@@ -44,7 +44,7 @@
     force: no
   with_nested:
     - [ 'redis', 'sentinel' ]
-    - "{{ redis_instances.keys() }}"
+    - "{{ redis_instances }}"
   register: redis_configuration
 
 - name: Create Redis runtime directory
@@ -61,31 +61,28 @@
     enabled: yes
   with_nested:
     - [ 'server', 'sentinel']
-    - "{{ redis_instances.keys() }}"
+    - "{{ redis_instances }}"
 
 - name: Write Redis check scripts for each instance
   template:
     src: redis-check.j2
     dest: "/etc/consul.d/scripts/check-redis-{{ item }}.sh"
     mode: 0755
-  with_items:
-    - "{{ redis_instances.keys() }}"
+  with_items: "{{ redis_instances }}"
 
 - name: Register Redis servers with Consul
   template:
     src: consul-redis.hcl.j2
     dest: "/etc/consul.d/redis-{{ item }}.hcl"
   notify: reload consul
-  with_items:
-    - "{{ redis_instances.keys() }}"
+  with_items: "{{ redis_instances }}"
 
 - name: Register Redis sentinels with Consul
   template:
     src: consul-redis-sentinel.hcl.j2
     dest: "/etc/consul.d/redis-sentinel-{{ item }}.hcl"
   notify: reload consul
-  with_items:
-    - "{{ redis_instances.keys() }}"
+  with_items: "{{ redis_instances }}"
 
 - name: Connect other Redis servers to first Redis server
   redis:
@@ -95,5 +92,4 @@
     login_port: "{{ redis_instances[item].server_port }}"
     login_password: "{{ redis_instances[item].password if redis_instances[item].password else omit }}"
   when: inventory_hostname != groups['redis_servers'] | first and redis_configuration.changed
-  with_items:
-    - "{{ redis_instances.keys() }}"
+  with_items: "{{ redis_instances }}"
