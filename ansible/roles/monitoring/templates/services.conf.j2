@@ -168,7 +168,7 @@ apply Service "check-vault-cert" {
 }
 {% endif %}
 
-{% for key, value in redis_instances.iteritems() %}
+{% for key, value in redis_instances.items() %}
 apply Service "check-redis-{{ key }}" {
   import "generic-service"
   check_command = "check_redis"
@@ -199,7 +199,7 @@ apply Service "check-redis-{{ instance }}-dns" {
 }
 {% endfor %}
 
-{% for key, value in redis_instances.iteritems() %}
+{% for key, value in redis_instances.items() %}
 apply Service "check-redis-sentinel-{{ key }}" {
   import "generic-service"
   check_command = "check_redis"
