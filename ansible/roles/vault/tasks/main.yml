@@ -67,8 +67,8 @@
     - name: Check if Vault certificates exist and are valid
       openssl_certificate:
         path: /var/lib/vault/ssl/vault.crt
-        privatekey_path: /var/lib/vault/ssl/vault.pem
-        has_expired: False
+        provider: assertonly
+        has_expired: no
   rescue:
     - debug: msg="Generating SSL certificates for Vault"
     - include: ssl-setup.yml
