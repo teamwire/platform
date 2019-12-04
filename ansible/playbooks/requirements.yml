@@ -166,7 +166,9 @@
   hosts: 127.0.0.1
   connection: local
   tasks:
-  - include_tasks: ../roles/frontend/tasks/ssl-check.yml ssl_first_check=yes
+  - include_tasks: ../roles/frontend/tasks/ssl-check.yml
+    vars:
+      ssl_first_check: yes
     when: packer_build_name is not defined
   become: no
   run_once: true
