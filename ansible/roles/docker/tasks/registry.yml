@@ -11,6 +11,7 @@
   when: config_done is defined
   docker_image:
     name: "{{ registry_version }}"
+    source: pull
     state: present
 
 - name: Run the Docker Registry container

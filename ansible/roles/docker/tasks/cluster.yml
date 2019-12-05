@@ -3,6 +3,7 @@
   when: (private_ip is defined and 'hashi_servers' in group_names)
   docker_image:
     name: "{{ hashui_container }}"
+    source: pull
     state: present
 
 - name: Run hashi-ui in clustered setups
