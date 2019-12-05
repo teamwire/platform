@@ -5,17 +5,12 @@
   delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
   when: ansible_distribution_release == "buster"
 
-- meta: flush_handlers
-  delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
-  when: ansible_distribution_release == "buster"
-
 - name: Enable the Icinga2 API debian 9
   template: src=api.conf.j2 dest=/etc/icinga2/features-enabled/api.conf
   notify: restart icinga2
   when: ansible_distribution_release != "buster"
 
 - meta: flush_handlers
-  when: ansible_distribution_release != "buster"
 
 - name: Wait for Icinga client API port to start listening on master
   wait_for:

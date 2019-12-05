@@ -10,5 +10,7 @@
 - name: Deploy and configure MySQL database
   hosts: database_servers
   serial: 1
-  roles:
-    - { role: ../../roles/db, when: config_done is defined and mysql_host is not defined }
+  tasks:
+    - include_role:
+        name: ../../roles/db
+      when: config_done is defined and mysql_host is not defined
