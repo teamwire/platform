@@ -119,7 +119,7 @@
         - ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
         - groups['all'] | length() == 1
     - include_role: # Cluster only
-        name: roles/vault.yml
+        name: ../roles/vault
         tasks_from: secrets
       when:
         - ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
