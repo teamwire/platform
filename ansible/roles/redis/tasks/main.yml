@@ -10,14 +10,14 @@
 - name: Enable vm.overcommit_memory for Redis
   sysctl:
     name: vm.overcommit_memory
-    value: 1
+    value: "1"
     state: present
     reload: yes
 
 - name: Increase number of socket connection backlog
   sysctl:
     name: net.core.somaxconn
-    value: 1024
+    value: "1024"
     state: present
     reload: yes
 

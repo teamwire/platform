@@ -188,7 +188,7 @@
 - name: Disable TCP timestamps
   sysctl:
     name: net.ipv4.tcp_timestamps
-    value: 0
+    value: "0"
     state: present
     reload: yes
 
