@@ -1,6 +1,8 @@
 ---
 ##### THIS HAS TO GO FIRST #####
-- hosts: all
+- hosts: 127.0.0.1
+  connection: local
+  become: no
   pre_tasks:
     - include_vars: ../roles/common/vars/main.yml
     - name: Check Ansible version
