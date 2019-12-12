@@ -421,33 +421,11 @@ apply Service "check-container-notification-server" {
   assign where host.vars.os == "Linux"
 }
 
-apply Service "check-container-screenshot-server" {
-  import "generic-service"
-  check_command = "check_docker"
-
-  vars.docker_containers = "teamwire_screenshot_server"
-  vars.docker_status = "running"
-
-  command_endpoint = host.vars.client_endpoint
-  assign where host.vars.os == "Linux"
-}
-
 apply Service "check-haproxy-backend" {
   import "generic-service"
   check_command = "http"
   vars.http_vhost = "{{ external_hostname }}"
   vars.http_uri = "/health"
-  vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
-
-  command_endpoint = host.vars.client_endpoint
-  assign where host.vars.os == "Linux"
-}
-
-apply Service "check-haproxy-screenshot-server" {
-  import "generic-service"
-  check_command = "http"
-  vars.http_vhost = "{{ external_hostname }}"
-  vars.http_uri = "/web-screenshot/health"
   vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
 
   command_endpoint = host.vars.client_endpoint

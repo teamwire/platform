@@ -48,10 +48,10 @@ else
 		exit 1
 	fi
 
-	CONTAINERS="teamwire_screenshot_server teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
+	CONTAINERS="teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
 fi
 
-IMAGES="teamwire/backend teamwire/web-screenshot-server teamwire/notification-server"
+IMAGES="teamwire/backend teamwire/notification-server"
 
 
 if [ "$VAULT_INITIALIZED" != "true" ]; then
