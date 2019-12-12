@@ -18,7 +18,6 @@ def eprint(*args, **kwargs):
 class TWImg():
     IMAGES = [
         'teamwire/backend',
-        'teamwire/web-screenshot-server',
         'teamwire/notification-server'
     ]
 

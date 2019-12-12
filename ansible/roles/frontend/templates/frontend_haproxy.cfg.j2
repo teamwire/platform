@@ -103,7 +103,6 @@ frontend https-in
 
     # Backends redirect
     use_backend notifications  if { path_beg -i /notifications }
-    use_backend web-screenshot if { path_beg -i /web-screenshot }
     use_backend teamwire-backend if IS_EXTERNAL_HOSTNAME || IS_ADMIN
 
 # ----------------------------------------------------
@@ -129,15 +128,4 @@ backend notifications
     server notification-server_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
     {{ end }}{% endraw %}
     {%else%}server notifications 127.0.0.1:9080 check port 9080
-    {% endif %}
-
-# ----------------------------------------------------
-# BACKEND: web-screenshot
-# ----------------------------------------------------
-backend web-screenshot
-    reqrep ^([^\ :]*)\ /web-screenshot/(.*)     \1\ /\2
-    {% if "frontend_servers" in groups %}{% raw %}{{ if service "web-screenshot-server" }}{{ range $index, $service := service "web-screenshot-server" }}
-    server web-screenshot-server_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
-    {{ end }}{% endraw %}
-    {%else%}server web-screenshot 127.0.0.1:8081 check port 8081
     {% endif %}
