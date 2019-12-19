@@ -226,6 +226,14 @@ system_email_recipient:
 
 # Do not enable any of these parameters unless you know what you are doing
 
+# Disable Vault integration. Passwords are stored in plaintext and
+# must be configured in this file. NOTE: Vault integration should
+# only be used for debugging purposes or for old installations.
+# By disabling Vault integration, you are removing a layer of
+# security to your installation. The disable_vault option
+# will be removed in the future and Vault will be mandatory.
+# disable_vault: true
+
 # Do not generate PINs but use a predefined value
 # fake_pin: true
 
