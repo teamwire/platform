@@ -41,6 +41,45 @@
         - "To display the latest valid backend versions, please run twctl show-tags"
     when: packer_build_name is not defined and vagrant_mode is not defined and (version is not defined or version | lower == "prod" or version == None or version | length == 0)
 
+- name: Check if in developer mode
+  hosts: all
+  tasks:
+    - set_fact: TW_DEV_MODE="{{ lookup('env', 'TW_DEV_MODE' ) | ternary (lookup('env', 'TW_DEV_MODE' ), omit) }}"
+      delegate_facts: true
+      run_once: true
+
+- name: Ensure valid configuration combination
+  hosts: all
+  tasks:
+    - name: Retrieve name of playbook file
+      set_fact: playbook_name="{{ (lookup('file', '/proc/self/cmdline') | regex_replace('\u0000',' ')).split()|select('match','^[a-z-_/]*[.]y[a]*ml')|list|first|basename }}"
+
+    # Checks if in single set-up
+    - set_fact: installation_type="single"
+      delegate_facts: true
+      run_once: true
+      when: groups['all'] | length() == 1 and inventory_file | basename == "hosts"
+
+    # Checks if in cluster set-up
+    - set_fact: installation_type="cluster"
+      delegate_facts: true
+      run_once: true
+      when: groups['all'] | length() > 1 and inventory_file | basename == "cluster_hosts"
+
+    # Finds all procedure plays in the relevant directory and against the yaml pattern only. This will also add our standard playbooks to the whitelist.
+    - set_fact:
+        permitted_playbooks: "{{query('fileglob', '{{inventory_dir}}/playbooks/procedures/*.yml') | map('basename')|list}} + 'site.yml' + 'cluster.yml'"
+
+    # An asserstion is made to ensure a valid configuration. This doesn't perform a configuration check if in Developer mode.
+    - assert:
+        that:
+          - "'installation_type' is defined"
+          - "playbook_name in permitted_playbooks"
+        msg:
+          - "WARNING: Incorrect configuration detected. Please ensure you are using the correct inventory file, playbook and variable config file."
+          - "If you encounter any problems or have any concerns, please contact support@teamwire.eu"
+      when: TW_DEV_MODE is not defined
+
 - name: Ensure valid management server configuration
   hosts: all
   tasks:
@@ -71,13 +110,6 @@
        - "Please refer to the cluster_example_hosts file for an example."
     run_once: true
     when: groups['all'] | length() > 1
-
-- name: Check if in developer mode
-  hosts: all
-  tasks:
-    - set_fact: TW_DEV_MODE="{{ lookup('env', 'TW_DEV_MODE' ) | ternary (lookup('env', 'TW_DEV_MODE' ), omit) }}"
-      delegate_facts: true
-      run_once: true
 
 - name: Get current git tag
   hosts: all
