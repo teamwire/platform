@@ -235,19 +235,19 @@ system_email_recipient:
 # disable_vault: true
 
 # Do not generate PINs but use a predefined value
-# fake_pin: true
+# fake_pin: "true"
 
 # Do not send SMS with the registration PIN
-# fake_sms: true
+# fake_sms: "true"
 
 # Use a predefined device confirmation URL in the email confirmation
-# fake_email_confirmation: true
+# fake_email_confirmation: "true"
 
 # do not encrypt the database
-# fake_db_encryption: true
+# fake_db_encryption: "true"
 
 # Do not perform MX Lookups on domains for admin registration
-# fake_validate_domain: true
+# fake_validate_domain: "true"
 
 # Notification service log level
-# notification_loglevel: debug
+# notification_loglevel: "debug"

@@ -7,6 +7,9 @@
         tasks_from: secrets
       when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
 
-- hosts: all
-  roles:
-  - { role: ../../roles/monitoring, when: config_done is defined and enable_monitoring is defined }
+- name: Deploy Icinga monitoring system
+  hosts: all
+  tasks:
+    - include_role:
+        name: ../../roles/monitoring
+      when: config_done is defined and enable_monitoring is defined

@@ -15,7 +15,14 @@
   - icingacli
   - icingaweb2-module-monitoring
   - python-mysqldb
-  - mysql-client
+
+- name: Install Web UI tools debian 9
+  apt: name=mysql-client state=present
+  when: ansible_distribution_release != "buster"
+
+- name: Install Web UI tools debian 10
+  apt: name=mariadb-client-10.3 state=present
+  when: ansible_distribution_release == "buster"
 
 - name: Configure Icinga MySQL adapter
   template: src=ido-mysql-conf.j2 dest=/etc/icinga2/features-available/ido-mysql.conf
@@ -37,7 +44,7 @@
     - command
   notify: restart icinga2
 
-- name: Install icinga2 Web UI PHP/Apache requirements
+- name: Install icinga2 Web UI PHP/Apache requirements debian 9
   apt: name={{item}} state=present
   with_items:
   - apache2
@@ -49,6 +56,21 @@
   - php{{ php_version }}-intl
   - php{{ php_version }}-gd
   - php{{ php_version }}-xml
+  when: ansible_distribution_release != "buster"
+
+- name: Install icinga2 Web UI PHP/Apache requirements debian 10
+  apt: name={{item}} state=present
+  with_items:
+  - apache2
+  - libapache2-mod-php
+  - php{{ php_version_debian_10 }}
+  - php{{ php_version_debian_10 }}-mysql
+  - php{{ php_version_debian_10 }}-curl
+  - php{{ php_version_debian_10 }}-imagick
+  - php{{ php_version_debian_10 }}-intl
+  - php{{ php_version_debian_10 }}-gd
+  - php{{ php_version_debian_10 }}-xml
+  when: ansible_distribution_release == "buster"
 
 - name: Set Apache listening port
   copy:
@@ -76,17 +98,36 @@
     force: yes
     ignore_configcheck: true
   notify: restart apache
+  when: ansible_distribution_release != "buster"
+
+- name: Enable PHP module for Apache
+  apache2_module:
+    name: "php{{ php_version_debian_10 }}"
+    state: present
+    force: yes
+    ignore_configcheck: true
+  notify: restart apache
+  when: ansible_distribution_release == "buster"
+
 
 - name: Find out timezone
   slurp:
      src: /etc/timezone
   register: etc_timezone
 
-- name: Set default timezone in php.ini
+- name: Set default timezone in php.ini debian 9
   replace:
     dest: /etc/php/{{ php_version }}/apache2/php.ini
     regexp: '^;date.timezone ='
     replace: 'date.timezone = "{{ etc_timezone["content"] | b64decode | regex_replace("\n") }}"'
+  when: ansible_distribution_release != "buster"
+
+- name: Set default timezone in php.ini debian 10
+  replace:
+    dest: /etc/php/{{ php_version_debian_10 }}/apache2/php.ini
+    regexp: '^;date.timezone ='
+    replace: 'date.timezone = "{{ etc_timezone["content"] | b64decode | regex_replace("\n") }}"'
+  when: ansible_distribution_release == "buster"
 
 - name: Ensure apache rewrite module is enabled
   apache2_module:
@@ -276,3 +317,16 @@
 - name: Configure Icinga2 zones
   template: src=zones.conf.j2 dest=/etc/icinga2/zones.conf
   notify: restart icinga2
+
+- name: Create new zone dir for debian 10
+  file:
+    path: /etc/icinga2/zones.d/{{ inventory_hostname }}
+    owner: nagios
+    group: nagios
+    state: directory
+  when:  ansible_distribution_release == "buster"
+
+- name: Copy files from old to new dir
+  shell: 'sudo mv /etc/icinga2/conf.d/* /etc/icinga2/zones.d/{{ inventory_hostname }}'
+  become: yes
+  when:  ansible_distribution_release == "buster"

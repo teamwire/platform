@@ -1,3 +1,7 @@
+## Packer
+
+Please use Packer in version 1.4.4.
+
 Building a VM image or Vagrant box with packer
 ==============================================
 

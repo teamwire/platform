@@ -16,7 +16,7 @@
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: consul_downloaded
   environment:
-    https_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ http_proxy|default() }}"
 
 - name: Install the Consul binary
   unarchive:

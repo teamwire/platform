@@ -150,6 +150,8 @@
   wait_for:
     host: active.vault.service.consul
     port: 8200
+  delegate_to: "{{ groups.hashi_servers | first }}"
+  run_once: true
   when: groups['all'] | length() > 1
 
 - name: Load user-specified secrets

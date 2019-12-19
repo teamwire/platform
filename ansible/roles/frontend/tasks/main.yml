@@ -12,6 +12,13 @@
     dest: /etc/systemd/system/haproxy.service
   notify: reload systemd
 
+- name: Replace HAproxy wrapper in debian 10
+  replace:
+     path: "/etc/systemd/system/haproxy.service"
+     regexp: "/usr/sbin/haproxy-systemd-wrapper"
+     replace: "/usr/sbin/haproxy -Ws"
+  when: ansible_distribution_release == "buster"
+
 - name: Start and enable HAProxy service
   service: name=haproxy state=started enabled=true
 
@@ -140,19 +147,19 @@
 - name: Re-use sockets in TIME_WAIT state for new connections
   sysctl:
     name: net.ipv4.tcp_tw_reuse
-    value: 1
+    value: "1"
     state: present
 
 - name: Ensure netfilter can handle a sufficient amount of connections
   sysctl:
     name: net.nf_conntrack_max
-    value: 65536
+    value: "65536"
     state: present
 
 - name: Increase number of socket connection backlog
   sysctl:
     name: net.core.somaxconn
-    value: 1024
+    value: "1024"
     state: present
     reload: yes
 

@@ -1,4 +1,6 @@
-- hosts: all
+- hosts: 127.0.0.1
+  connection: local
+  become: no
   tasks:
 
   - include_vars: ../../roles/common/vars/main.yml
@@ -7,15 +9,6 @@
   - name: Checking if Ansible {{ required_ansible_version }} is already installed
     fail: msg="This server is already running Ansible {{ required_ansible_version }}. Upgrade not required."
     when: ansible_version['full'] == required_ansible_version
-
-  # We need to ignore the expiry check due to the release being archived
-  - name: apt-get update (Debian 8)
-    command: apt-get -o Acquire::Check-Valid-Until=false update warn=False
-    when: ansible_distribution_release == 'jessie'
-
-  - name: apt-get update
-    apt: update_cache=yes
-    when: ansible_distribution_release != 'jessie'
 
   - name: Install Pip requirements
     apt: name={{item}} state=present
@@ -46,16 +39,3 @@
       version={{ required_ansible_version }}
       extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
     when: ansible_version['full'] != required_ansible_version
-
-  - name: Remove python-docker from backports (Debian 8)
-    apt:
-      name=python-docker
-      state=absent
-    when: ansible_distribution_release == 'jessie'
-
-  - name: Install docker-py 1.9.0 from pypi (Debian 8)
-    pip:
-      name=docker-py
-      version=1.9.0
-      extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
-    when: ansible_distribution_release == 'jessie'
