@@ -51,7 +51,7 @@ db2
 db3
 
 # Optional. You can use an external NFS storage.
-[nfs_servers]
+[storage_servers]
 db1
 db2
 db3

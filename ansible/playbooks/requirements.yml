@@ -111,6 +111,19 @@
     run_once: true
     when: groups['all'] | length() > 1
 
+- name: Ensure valid Storage server group configuration
+  hosts: all
+  tasks:
+  - assert:
+     that:
+       - "'nfs_servers' not in groups"
+     msg:
+       - "WARNING: Please ensure the storage_servers group has been defined in the cluster_hosts file and the nfs_servers group no longer exists."
+       - "The nfs_servers group has been renamed to storage_servers."
+       - "Please refer to the cluster_example_hosts file for an example."
+    run_once: true
+    when: groups['all'] | length() > 1
+
 - name: Get current git tag
   hosts: all
   tasks:
