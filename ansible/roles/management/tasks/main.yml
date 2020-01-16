@@ -53,5 +53,7 @@
      line: "/etc/motd.sh"
   when: grep_motd.rc == 1
 
+- include: twinstaller.yml
+
 - include: backup.yml
   when: config_done is defined
