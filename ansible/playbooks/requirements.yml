@@ -79,7 +79,10 @@
             msg:
               - "WARNING: Incorrect configuration detected. Please ensure you are using the correct inventory file, playbook and variable config file."
               - "If you encounter any problems or have any concerns, please contact support@teamwire.eu"
-      when: TW_DEV_MODE is not defined or packer_build_name is not defined
+      when:
+        - TW_DEV_MODE is not defined
+        - packer_build_name is not defined
+        - vagrant_mode is not defined
 
 - name: Ensure valid management server configuration
   hosts: all
