@@ -477,13 +477,25 @@ show-tags() {
 	local PASS="$(vault_read_secrets dockerhub/password)"
 
 	local TOKEN=$(curl -m ${DFLT_TMOUT} -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
-	local PROD="$(curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/ | jq -r '.results[].name' | grep -e 'prod-')"
-	PROD="$PROD\n$(curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/?page=2 | jq -r '.results[].name' | grep -e 'prod-')\n"
+	i=1
+	elem=0
+	PROD="***** Backend version: *****"
+	while [ $elem -le 10 ]
+	do
+	    ((i+=1))
+	    local TMP=$(curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/teamwire/backend/tags/?page=$i | jq -r '.results[].name' | grep -e 'prod-')
+	    if [[ $TMP != "" ]];
+	    then
+	        local PROD="$PROD\n$TMP"
+	    fi
+	    elem=$(printf "$PROD" | wc -l)
+	done
 
 	for version in "${PROD}"
 	do
 		printf "$version"
 	done
+	echo
 }
 
 create_report() {
