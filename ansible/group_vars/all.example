@@ -251,3 +251,7 @@ system_email_recipient:
 
 # Notification service log level
 # notification_loglevel: "debug"
+
+# The timeout and the interval to the endpoint /health can be adjusted here
+# nomad_health_backend_interval: "15"
+# nomald_health_backend_timeout: "2"
