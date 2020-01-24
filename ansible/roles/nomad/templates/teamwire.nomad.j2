@@ -79,8 +79,8 @@ job "teamwire" {
 				check {
 					type = "http"
 					path = "/health"
-					interval = "15s"
-					timeout = "2s"
+					interval = "{{ nomad_health_backend_interval|default('15') }}s"
+					timeout = "{{ nomald_health_backend_timeout|default('2') }}s"
 				}
 			}
 {% raw %}
