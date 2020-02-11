@@ -395,6 +395,7 @@ help() {
 	echo "version     	Show version information"
 	echo "report      	Create a report (system information & logs. --file can be specified for the file name)"
 	echo "connectivity 	Test external connections"
+	echo "ha-log      	Show content of haproxy.log. Pipe to less -R for pager with colour support"
 }
 
 test_server_condition_for_preflight_check() {
@@ -765,6 +766,11 @@ setup_containers_cluster() {
 	$NOMAD run "$NOMAD_JOB"
 }
 
+ha-log() {
+	local LOG_FILE="/var/log/haproxy.log"
+	sudo cat "${LOG_FILE}" | grep --line-buffered -o -P '(?<=LIMSTART).*(?=LIMEND)' | jq . -C
+}
+
 version() {
 	echo "#### Version information ####
 Installation type: ${INSTALLATION}
@@ -843,6 +849,9 @@ while [ $# -gt 0 ] ; do
 			;;
 		connectivity)
 			TASK="connectivity_test"
+			;;
+		ha-log)
+			TASK="ha-log"
 			;;
 	esac
 	shift
