@@ -78,6 +78,11 @@ job "teamwire" {
 					timeout = "{{ nomald_health_backend_timeout|default('2') }}s"
 				}
 			}
+      service {
+        name = "${TASK}-websocket"
+        tags = ["teamwire-websocket"]
+        port = "ws"
+      }
 
 			env {
 				AESKEY = "{{ aes_key }}"
@@ -110,6 +115,7 @@ job "teamwire" {
 				FAKE_VALIDATE_DOMAIN = "{{ fake_validate_domain|default() }}"
 				BIND_HOST = "${NOMAD_IP_http}"
 				BIND_PORT = "${NOMAD_PORT_http}"
+        WEBSOCKETS_ENABLED = "{{ websockets_enabled | default('false')}}"
 			}
 
 			resources {
@@ -118,6 +124,9 @@ job "teamwire" {
 				network {
 					mbits = 100
 					port "http" {}
+          port "ws" {
+            static = "8083"
+          }
 				}
 			}
 		}
