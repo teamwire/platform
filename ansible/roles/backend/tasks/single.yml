@@ -156,28 +156,3 @@
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       LOGLEVEL: "{{ notification_loglevel|default() }}"
 
-- name: Retrieve the Teamwire backend web screenshot container
-  when: config_done is defined
-  docker_image:
-    name: "teamwire/web-screenshot-server:{{version|default('prod')}}"
-    source: pull
-    state: present
-
-- name: Run the Teamwire backend web screenshot container
-  when: config_done is defined
-  docker_container:
-    name: teamwire_screenshot_server
-    image: "teamwire/web-screenshot-server:{{version|default('prod')}}"
-    state: started
-    restart_policy: always
-    network_mode: host
-    volumes: "/data/website-screenshot-cache:/website-screenshot-cache"
-    log_driver: "syslog"
-    log_opt:
-      tag: teamwire-screenshot-server
-      syslog-facility: "local6"
-    env:
-      BIND_HOST: "127.0.0.1"
-      BIND_PORT: "8081"
-      CACHE_DIR: /website-screenshot-cache
-      HTTP_PROXY: "{{ http_proxy|default() }}"
