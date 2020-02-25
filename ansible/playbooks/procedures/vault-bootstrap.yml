@@ -13,6 +13,10 @@
   - fail: msg="Please ensure your group_vars/all file is correctly configured and try again."
     when: config_done is not defined
 
+  tasks:
+  - fail: msg="You have the variable disable_vault defined and set to true in your config file, aborting bootstrap."
+    when: disable_vault is defined and disable_vault| lower() == "true"
+
 - name: Deploy Vault requirements
   hosts: all
   roles:
