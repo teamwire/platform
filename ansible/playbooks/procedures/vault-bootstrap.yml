@@ -245,6 +245,7 @@
       - icinga_admin_password
       - icinga_salt
       - icinga_api_password
+      - disable_vault
     delegate_to: localhost
     become: no
 
