@@ -17,6 +17,13 @@
   - fail: msg="You have the variable disable_vault defined and set to true in your config file, aborting bootstrap."
     when: disable_vault is defined and disable_vault| lower() == "true"
 
+  tasks:
+  - name: Set procedure fact
+    set_fact:
+      vault_bootstrap_procedure: "true"
+    run_once: True
+    delegate_facts: True
+
 - name: Deploy Vault requirements
   hosts: all
   roles:
