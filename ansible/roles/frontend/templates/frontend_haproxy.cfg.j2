@@ -103,6 +103,8 @@ frontend https-in
 
     # Backends redirect
     use_backend notifications  if { path_beg -i /notifications }
+    {% if websockets_enabled | string() == 'true' %}use_backend teamwire-backend-websockets if { path_beg -i /ws } IS_EXTERNAL_HOSTNAME
+{%endif%}
     use_backend teamwire-backend if IS_EXTERNAL_HOSTNAME || IS_ADMIN
 
 # ----------------------------------------------------
@@ -116,6 +118,22 @@ backend teamwire-backend
     {{ end }}{% endraw %}
     {%else%}server teamwire-backend 127.0.0.1:8080 check port 8080
     {% endif %}
+
+{% if websockets_enabled | string() == 'true' %}
+# ----------------------------------------------------
+# BACKEND: teamwire-backend-websockets
+# ----------------------------------------------------
+backend teamwire-backend-websockets
+    acl hdr_connection_upgrade hdr(Connection) -i upgrade
+    acl hdr_upgrade_websocket hdr(Upgrade) -i websocket
+    http-response set-header Server "HAProxy"
+    http-response set-header Connection keep-alive
+    {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend" }} {{ range $index, $service := service "backend" }}
+    server backend_ws_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{ end }}{% endraw %}
+    {%else%}server teamwire-backend_ws 127.0.0.1:8083 check port 8083
+    {% endif %}
+{%endif%}
 
 # ----------------------------------------------------
 # BACKEND: notifications
