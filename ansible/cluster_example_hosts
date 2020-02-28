@@ -35,8 +35,7 @@ db1
 db2
 db3
 
-# Optional; if you already run a Redis server, you can use that.
-# When installing Redis as part of the cluster, three servers are required.
+# Three servers are required.
 [redis_servers]
 db1
 db2
@@ -50,7 +49,10 @@ db1
 db2
 db3
 
-# Optional. You can use an external NFS storage.
+# Define the servers which you want to act as storage server (glusterfs) nodes. 
+# You may comment out the storage_servers group and server list if you are going
+# to use an external fileshare server, please check the file storage section of the
+# all.example file for more information on this.
 [storage_servers]
 db1
 db2
