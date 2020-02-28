@@ -101,5 +101,5 @@
 
 - name: Bootstrap Vault on new installations
   include_tasks: bootstrap.yml
-  when: ( config_done is defined and disable_vault is defined and disable_vault| lower() != "true" and ansible_local.vault is defined and ansible_local.vault.initialized != "true" ) or
-        ( config_done is defined and disable_vault is not defined and ansible_local.vault is defined and ansible_local.vault.initialized != "true" )
+  when: ( vault_bootstrap_procedure is not defined and config_done is defined and disable_vault is defined and disable_vault| lower() != "true" and ansible_local.vault is defined and ansible_local.vault.initialized != "true" ) or
+        ( vault_bootstrap_procedure is not defined and config_done is defined and disable_vault is not defined and ansible_local.vault is defined and ansible_local.vault.initialized != "true" )

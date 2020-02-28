@@ -1,6 +1,7 @@
 - hosts: all
   pre_tasks:
     - include_vars: ../../roles/common/vars/main.yml
+    - include_vars: ../../group_vars/all
     - name: Check Ansible version
       assert:
         that: "ansible_version.full is version_compare('{{ required_ansible_version }}', '>=')"
@@ -9,9 +10,18 @@
           - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
           - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
 
+    - fail: msg="Please ensure your group_vars/all file is correctly configured and try again."
+      when: config_done is not defined
+
+    - fail: msg="You have the variable disable_vault defined and set to true in your config file, aborting bootstrap."
+      when: disable_vault is defined and disable_vault| lower() == "true"
+
   tasks:
-  - fail: msg="Please ensure your group_vars/all file is correctly configured and try again."
-    when: config_done is not defined
+  - name: Set procedure fact
+    set_fact:
+      vault_bootstrap_procedure: "true"
+    run_once: True
+    delegate_facts: True
 
 - name: Deploy Vault requirements
   hosts: all
@@ -241,6 +251,7 @@
       - icinga_admin_password
       - icinga_salt
       - icinga_api_password
+      - disable_vault
     delegate_to: localhost
     become: no
 
