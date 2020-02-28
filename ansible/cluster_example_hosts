@@ -35,8 +35,7 @@ db1
 db2
 db3
 
-# Optional; if you already run a Redis server, you can use that.
-# When installing Redis as part of the cluster, three servers are required.
+# Three servers are required.
 [redis_servers]
 db1
 db2
