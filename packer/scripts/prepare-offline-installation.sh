@@ -107,7 +107,7 @@ echo "Step 2: Caching packages"
 echo "========================"
 
 # Add Percona repo
-echo 'deb http://repo.percona.com/apt stretch main' | sudo tee -a /etc/apt/sources.list > /dev/null
+echo 'deb http://repo.percona.com/apt buster main' | sudo tee -a /etc/apt/sources.list > /dev/null
 sudo apt-get update -q
 sudo apt-get install -qyd $REGULAR_PACKAGES
 
