@@ -10,3 +10,4 @@ ansible/group_vars/*
 **/*.retry
 ansible/playbooks/procedures/debian.cnf
 *.pyc
+.gitlab/*
