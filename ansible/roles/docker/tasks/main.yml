@@ -65,8 +65,14 @@
 
 # BUG DOCKER !!! REMOVE THIS WHEN A FIX IS RELEASED!!!
 # ISSUE 315 python-docker bug - Debian bug 910822
+- name: "CHECK IF BUG FILE EXISTS"
+  stat:
+    path: "/usr/bin/docker-credential-secretservice"
+  register: bug_file
+
 - name: "FIX BUG PLATFORM MR-315-python-docker"
   command: "mv /usr/bin/docker-credential-secretservice /usr/bin/docker-credential-secretservice.broken"
+  when: bug_file.stat.exists == true
 
 - name: Add user 'teamwire' to the docker group
   user: name=teamwire groups=docker append=yes
