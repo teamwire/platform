@@ -63,6 +63,11 @@
 - name: Install python-docker
   apt: pkg=python-docker state=present
 
+# BUG DOCKER !!! REMOVE THIS WHEN A FIX IS RELEASED!!!
+# ISSUE 315 python-docker bug - Debian bug 910822
+- name: "FIX BUG PLATFORM MR-315-python-docker"
+  command: "mv /usr/bin/docker-credential-secretservice /usr/bin/docker-credential-secretservice.broken"
+
 - name: Add user 'teamwire' to the docker group
   user: name=teamwire groups=docker append=yes
 
