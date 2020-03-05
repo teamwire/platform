@@ -28,8 +28,18 @@ class CallbackModule(CallbackBase):
         self._display.banner("TEAMWIRE PLATFORM [Pre flight check plugin]")
         self.msg = ""
         self.cwd = os.getcwd()
+        self.whiteList = list()
+        self.whiteList_path = '/home/teamwire/platform/ansible/plugins/callback_white.list'
         self._applied_plaform_version   = "NONE"
         self._checkout_platform_version = "NONE"
+        self.run_allowed = False
+
+    def get_whitelist_playbooks(self):
+        try:
+            self.whiteList = [line.strip('\n') for line in open(self.whiteList_path)]
+        except IOError as e:
+            print("callback playbook whitelist not found: ",e)
+            sys.exit(1)
 
     def get_applied_platorm_version(self):
         '''Open the file where the applied platform version is set.
@@ -75,11 +85,19 @@ class CallbackModule(CallbackBase):
             self.get_applied_platorm_version()
             self.get_checkout_platform_version()
             self._display.v(self.msg)
+            self.get_whitelist_playbooks()
 
-            if not ("site.yml" in self.playbook._file_name or "cluster.yml" in self.playbook._file_name):
-                if self._applied_plaform_version != self._checkout_platform_version:
-                    self._display.error("The applied Platform version( %s) doesn't match the checkout version( %s): you cannot run playbook: %s" %
-                        (self._applied_plaform_version, self._checkout_platform_version, self.playbook._file_name))
-                    sys.exit(1)
+            for playbook_allowed in self.whiteList:
+                if not (playbook_allowed in self.playbook._file_name):
+                    if self._applied_plaform_version == self._checkout_platform_version:
+                        self.run_allowed = True
+                else:
+                    self.run_allowed = True
         else:
             self._display.display("Running ansible in DEV-MODE without version check!!!")
+            self.run_allowed = True
+
+        if not self.run_allowed:
+            self._display.error("The applied Platform version( %s) doesn't match the checkout version( %s): you cannot run playbook: %s" %
+                            (self._applied_plaform_version, self._checkout_platform_version, self.playbook._file_name))
+            sys.exit(1)
