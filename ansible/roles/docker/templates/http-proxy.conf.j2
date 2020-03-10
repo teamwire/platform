@@ -1,5 +1,6 @@
 [Service]
 Environment="HTTP_PROXY={{http_proxy}}"
+Environment="HTTPS_PROXY={{http_proxy}}"
 {%- if 'docker_registry' in groups %}
  "NO_PROXY=
 {%- for host in groups.docker_registry %}
