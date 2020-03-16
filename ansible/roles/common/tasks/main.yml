@@ -88,7 +88,6 @@
 
 - name: Install gpg1
   apt: pkg=gnupg1
-  when: ansible_distribution_release == 'stretch'
 
 - name: Install pip
   apt: name={{item}} state=present
