@@ -2,8 +2,9 @@
   get_url:
     url: "https://dl.bintray.com/teamwire/devel-deb/pool/main/t/twinstaller_{{ twinstaller_version }}_all.deb"
     dest: "/tmp/twinstaller.deb"
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   environment:
-    - https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
+    https_proxy: "{{ http_proxy|default() }}"
 
 - name: Install new version of twinstaller
   shell: "dpkg -i /tmp/twinstaller.deb"
