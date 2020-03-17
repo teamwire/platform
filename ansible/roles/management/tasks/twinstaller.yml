@@ -11,7 +11,7 @@
 - name: Download twinstaller
   get_url:
     url: "https://dl.bintray.com/teamwire/devel-deb/pool/main/t/twinstaller_{{ twinstaller_version }}_all.deb"
-    dest: "/tmp/twinstaller.deb"
+    dest: "/var/cache/downloads/twinstaller.deb"
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: twinstaller_downloaded
   environment:
