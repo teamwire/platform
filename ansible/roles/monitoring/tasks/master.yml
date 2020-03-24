@@ -177,6 +177,17 @@
   args:
     creates: /etc/icinga2/pki/ca.crt
 
+- name: Register first installation var if external database is in use
+  command: mysql -u {{monitoring_db_user}} -h {{mysql_host}} -p{{monitoring_db_password}} {{monitoring_db_name}} -e 'SELECT count(*) FROM information_schema.tables WHERE table_schema = "monitor";'
+  register: isFirstExtInstallion
+  when: (mysql_host is defined and 'localhost' not in mysql_host) and (mysql_host is defined and '127.0.0.1' not in mysql_host)
+
+- name: Check if its the first installation on external database
+  debug: msg="{{ isFirstExtInstallion.stdout_lines[1] }}"
+  register: firstInstallDB
+  changed_when: "{{isFirstExtInstallion.stdout_lines[1] | int}} == 0"
+  when: isFirstExtInstallion.stdout_lines is defined and isFirstExtInstallion.stdout_lines[1] | int == 0
+
 - name: Create Icinga databases
   mysql_db:
     name: "{{ item }}"
@@ -188,7 +199,7 @@
     - "{{ monitoring_db_name }}"
     - "{{ monitoring_db_web_name }}"
   register: database_created
-  when: mysql_root_password is defined
+  when: isFirstExtInstallion.changed == false
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Create Icinga database users and assign privileges
@@ -204,7 +215,7 @@
   with_items:
     - { user: '{{monitoring_db_user}}', password: '{{monitoring_db_password}}', db: '{{monitoring_db_name}}' }
     - { user: '{{monitoring_db_web_user}}', password: '{{monitoring_db_web_password}}', db: '{{monitoring_db_web_name}}' }
-  when: mysql_root_password is defined
+  when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Fetch the Icinga DB schemas
@@ -235,6 +246,28 @@
   when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
+- name: Import Icinga database on external database server monitor DB
+  mysql_db:
+    state: import
+    name: "{{monitoring_db_name}}"
+    login_user: "{{monitoring_db_user}}"
+    login_password: "{{monitoring_db_password}}"
+    login_host: "{{mysql_host}}"
+    login_port: "{{mysql_port | int}}"
+    target: "/usr/share/icinga2-ido-mysql/schema/mysql.sql"
+  when: firstInstallDB.changed
+
+- name: Import Icinga database on external database server monitor_web DB
+  mysql_db:
+    state: import
+    name: "{{monitoring_db_web_name}}"
+    login_user: "{{monitoring_db_web_user}}"
+    login_password: "{{monitoring_db_web_password}}"
+    login_host: "{{mysql_host}}"
+    login_port: "{{mysql_port | int}}"
+    target: "/usr/share/icingaweb2/etc/schema/mysql.schema.sql"
+  when: firstInstallDB.changed
+
 - name: Delete the Icinga DB schemas from the database server
   file: dest="{{ item }}" state=absent
   with_items:
@@ -255,13 +288,13 @@
 - name: Encrypt Icinga web admin user password
   command: 'openssl passwd -1 "{{ icinga_admin_password }}"'
   register: icinga_admin_password
-  when: database_created.changed
+  when: database_created.changed or firstInstallDB.changed
 
 - name: Add admin user to Icinga web database
   command: >
     mysql --user='{{ monitoring_db_web_user }}' --password='{{ monitoring_db_web_password }}' --host='{{ monitoring_db_host }}' --port='{{ monitoring_db_port }}' '{{ monitoring_db_web_name }}'
     --execute="INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('admin', 1, '{{ icinga_admin_password.stdout }}');"
-  when: database_created.changed
+  when: database_created.changed or firstInstallDB.changed
 
 - name: Generate Icinga configuration files
   template: src={{ item }}.j2 dest=/etc/icinga2/conf.d/{{ item }}
