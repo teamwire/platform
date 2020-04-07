@@ -66,7 +66,6 @@ dnsutils
 
 DOCKER_IMAGES="
 teamwire/backend:${BACKEND_RELEASE}
-teamwire/web-screenshot-server:${BACKEND_RELEASE}
 teamwire/notification-server:${BACKEND_RELEASE}
 $(awk '{ gsub("\"",""); print $2; }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 "
