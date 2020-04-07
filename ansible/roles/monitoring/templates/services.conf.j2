@@ -229,7 +229,7 @@ apply Service "check-mysql" {
 }
 {% endif %}
 
-{% if 'database_servers' in groups or groups['all'] | length() == 1 %}
+{% if 'database_servers' in groups or ( groups['all'] | length() == 1 and monitoring_db_host == "localhost" ) %}
 apply Service "check-mysql-connections" {
   import "generic-service"
   check_command = "check_mysql_health"
