@@ -48,6 +48,10 @@ apply Service "check-memory" {
 apply Service "check-swap" {
   import "generic-service"
   check_command = "swap"
+
+  vars.swap_wfree = "25%"
+  vars.swap_cfree = "10%"
+
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux" && host.vars.client_endpoint
 }
