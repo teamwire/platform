@@ -144,7 +144,8 @@ apns_certificate: ""
 ## DATABASE
 ##############################################################################
 
-# Define the database user name. Defaults to 'teamwire'.
+# Define the database user name. Defaults to 'teamwire'.If you use an external
+# database, the teamwire_db_user must be defined.
 # teamwire_db_user: "teamwire"
 
 # Define the database name. Defaults to 'teamwire'.
