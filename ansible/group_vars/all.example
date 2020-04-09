@@ -121,7 +121,8 @@ apns_certificate: ""
 # When you want to install your SSL certificate on the backend server, uncomment
 # the following keys and add the full paths to the key file and the certificate
 # files. When you configure these values, unencrypted access to the backend
-# (i.e. access via the HTTP protocol on port 80) will be disabled.
+# (i.e. access via the HTTP protocol on port 80) will be forwarded to port 443.
+# Please note that we do not support self-signed certificates!
 # ssl_server_certificate:
 # ssl_intermediate_certificate:
 # ssl_root_certificate:
