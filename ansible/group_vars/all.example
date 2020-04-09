@@ -232,7 +232,8 @@ system_email_recipient:
 # only be used for debugging purposes or for old installations.
 # By disabling Vault integration, you are removing a layer of
 # security to your installation. The disable_vault option
-# will be removed in the future and Vault will be mandatory.
+# will be removed in the future and Vault will be mandatory.If this option is
+# enabled, we are unable to provide support for the installation.
 # disable_vault: true
 
 # Do not generate PINs but use a predefined value
