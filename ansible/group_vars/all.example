@@ -237,6 +237,10 @@ system_email_recipient:
 # enabled, we are unable to provide support for the installation.
 # disable_vault: true
 
+# Backend websockets integration is enabled by default. To disable websockets 
+# uncomment the line below:
+# websockets_enabled: "false"
+
 # Do not generate PINs but use a predefined value
 # fake_pin: "true"
 
