@@ -124,10 +124,9 @@ backend teamwire-backend
 # BACKEND: teamwire-backend-websockets
 # ----------------------------------------------------
 backend teamwire-backend-websockets
-    acl hdr_connection_upgrade hdr(Connection) -i upgrade
-    acl hdr_upgrade_websocket hdr(Upgrade) -i websocket
+    acl hdr_connection_upgrade hdr(Connection)    -i upgrade
+    acl hdr_upgrade_websocket hdr(Upgrade)        -i websocket
     http-response set-header Server "HAProxy"
-    http-response set-header Connection keep-alive
     {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend-websocket" }} {{ range $index, $service := service "backend-websocket" }}
     server backend_ws_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
     {{ end }}{% endraw %}
