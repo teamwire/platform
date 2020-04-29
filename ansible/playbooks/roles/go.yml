@@ -1,0 +1,4 @@
+- hosts: local:management_servers
+  roles:
+  - role: ../../roles/go
+
