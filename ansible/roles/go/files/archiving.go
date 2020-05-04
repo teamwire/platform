@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	GPGV string = "/usr/bin/gpg"
-	GPGH string = "/tmp/test/.gnupg/"
+	GPGV string = "/usr/bin/gpg1"
+	GPGH string = "/data/archiving/gpg/"
 )
 
 var (
@@ -30,6 +30,7 @@ var (
 	archivingConf   ini.File
 	createUser      bool
 	updateUser      bool
+	deleteUser      bool
 	ownerTrustLevel = map[string]int{
 		"never":     1,
 		"unknown":   2,
@@ -47,14 +48,28 @@ func main() {
 	if err != nil {
 		log.Println("Could not load archiving.conf", err)
 	}
-
-	importKey()
-	if !createUser || updateUser {
+	if createUser || updateUser {
+		importKey()
 		if ok := createNewUser(archivingConf); !ok {
 			log.Fatal("There was some error...")
 		}
 		log.Println("New user was added/updated successfully")
 	}
+	if deleteUser && (!createUser || !updateUser) {
+		if ok := delUser(archivingConf); !ok {
+			log.Fatal("Could not delete user")
+		}
+		log.Println("User was successfully deleted")
+	}
+}
+
+func parseFlags() {
+	flag.StringVar(&archivingPath, "archive-path", "/data/archiving/archiving.conf", "Define path to archiving.conf")
+	flag.StringVar(&tag, "tag", "example.de", "Set organization where the key should be added")
+	flag.StringVar(&publicKeyFile, "file", "", "Set path to public key file e.g. user.asc")
+	flag.BoolVar(&createUser, "add", false, "Add a new user into gpg keystore and archiving.conf")
+	flag.BoolVar(&deleteUser, "del", false, "Remove a user from gpg keystore and archiving.conf")
+	flag.Parse()
 }
 
 func createNewUser(confFile *ini.File) bool {
@@ -64,16 +79,30 @@ func createNewUser(confFile *ini.File) bool {
 		return false
 	}
 	confFile.Section(tag).Key(mail).SetValue(id)
-	confFile.SaveTo(archivingPath)
+	err := confFile.SaveTo(archivingPath)
+	if err != nil {
+		log.Println("[ADD] Could not save archiving.conf file")
+		return false
+	}
 	return true
 }
 
-func parseFlags() {
-	flag.StringVar(&archivingPath, "archive-path", "/data/archiving/archiving.conf", "Define path to archiving.conf")
-	flag.StringVar(&tag, "tag", "example.de", "Set organization where the key should be added")
-	flag.StringVar(&publicKeyFile, "file", "", "Set path to public key file e.g. user.asc")
-	flag.BoolVar(&createUser, "add", false, "Add a new user into gpg keystore and archiving.conf")
-	flag.Parse()
+// delUser function will delete the given user from
+// archiving but not from gpg keyring. That needs to
+// be also implemented
+func delUser(confFile *ini.File) bool {
+	mail, id, _ := readPublicKeyFile()
+	if len(mail) == 0 || len(id) == 0 {
+		log.Fatal("Mail or ID empty...")
+		return false
+	}
+	confFile.Section(tag).DeleteKey(mail)
+	err := confFile.SaveTo(archivingPath)
+	if err != nil {
+		log.Println("[DEL] Could not save archiving.conf file")
+		return false
+	}
+	return true
 }
 
 func readPublicKeyFile() (email string, id string, finger_print string) {
@@ -105,9 +134,11 @@ func readPublicKeyFile() (email string, id string, finger_print string) {
 	userID := e.(*packet.UserId)
 	fingerprint := strings.ToUpper(hex.EncodeToString(key.Fingerprint[:]))
 
-	return userID.Email, key.KeyIdString(), fingerprint
+	return userID.Email, key.KeyIdShortString(), fingerprint
 }
 
+// importKey imports a public key into gpg keyring. That keys
+// is automatic set to trust level "unlimited"
 func importKey() {
 	// opengpg lib for golang is not able to read nativ kbx files! Hence we need
 	// to use cmdline tools to add ability for importing keys.
@@ -139,6 +170,8 @@ func importKey() {
 	setFilePermission()
 }
 
+// setFilePermission execute all commands in cmdlist and set
+// the proper permissions for the corresponding files
 func setFilePermission() {
 	cmdList := []string{
 		fmt.Sprintf("chown -R daemon:daemon %s", gpgHomedir),
