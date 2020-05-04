@@ -14,6 +14,7 @@
 - include: roles/container.yml
 - include: roles/loghost.yml
 - include: roles/docker.yml
+- include: roles/go.yml
 - include: roles/redis_servers.yml
 - include: roles/frontend.yml
 - include: roles/load_balancers.yml

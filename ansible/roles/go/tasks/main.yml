@@ -1,0 +1,21 @@
+- name: Create local go src directory
+  file:
+     path: "/usr/local/src/go"
+     state: directory
+     mode: 0755
+
+- name: Copy source code to local src dir
+  copy:
+     src: "{{item}}"
+     dest: /usr/local/src/go/
+     mode: 0644
+     owner: teamwire
+     group: teamwire
+  with_items: "{{ gosource }}"
+  register: copySRC
+
+- name: Build golang binarys
+  shell: docker run -e GOFILE={{item}} -v /usr/local/bin:/dest -v /usr/local/src/go:/src teamwire/go-buildenv:latest
+  when: copySRC.changed
+  with_items: "{{ gosource }}"
+  become: true
