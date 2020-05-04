@@ -98,8 +98,10 @@ frontend https-in
     {% endif %}{% endif %}
 
     # ACL
-    acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i {{ external_hostname }}(:[0-9]+)?$
-    acl IS_ADMIN hdr_beg(host) -i admin
+    {%if external_hostname is iterable and external_hostname is not string%}{% for item in external_hostname %}
+    acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i {{ item }}(:[0-9]+)?$
+    {% endfor %}{%else%}acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i {{ external_hostname }}(:[0-9]+)?$
+    {%endif%}acl IS_ADMIN hdr_beg(host) -i admin
 
     # Backends redirect
     use_backend notifications  if { path_beg -i /notifications }
