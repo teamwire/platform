@@ -1,0 +1,17 @@
+- name: Save ocsp response into file
+  command: /usr/local/src/ocsp.sh
+  when: ha_installed.changed and stat_ocspfile.stat.exists == false
+  notify: restart haproxy
+
+- name: stat ocsp file and register it
+  stat:
+    path: "{{ ocspfile_path }}"
+  register: stat_ocspfile
+
+- name: Flush ocsp
+  meta: flush_handlers
+  when: ha_installed.changed and stat_ocspfile.stat.exists == true
+
+- name: Enable ocsp in haproxy
+  command: /usr/local/src/ocsp.sh
+  when: ha_installed.changed and stat_ocspfile.stat.exists == true

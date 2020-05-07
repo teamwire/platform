@@ -469,8 +469,8 @@ connectivity_test() {
 							"Check if APNS certificate is installed"
 		test_server_condition_for_preflight_check	"" \
 							"Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
-		test_server_condition_for_preflight_check       "" \
-                                                        "Check OCSP response: $([ -e /usr/local/src/ocsp.sh ] && sudo /usr/local/src/ocsp.sh DO NOT UPDATE)"
+		test_server_condition_for_preflight_check	"[ -e /usr/local/src/ocsp.sh ] && sudo /usr/local/src/ocsp.sh DO NOT UPDATE" \
+							"Check OCSP response"
 
 }
 

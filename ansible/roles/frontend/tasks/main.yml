@@ -5,6 +5,7 @@
   apt:
      name: haproxy
      state: present
+  register: ha_installed
 
 - name: Install HAproxy systemd config
   copy:
@@ -162,6 +163,8 @@
     value: "1024"
     state: present
     reload: yes
+
+- include_tasks: ocsp.yml
 
 - include_tasks: cluster.yml
   when: "'frontend_servers' in groups"

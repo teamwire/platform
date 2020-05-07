@@ -134,7 +134,7 @@ func readCertPEM(certPath string) x509.Certificate {
 	certFile, err := ioutil.ReadFile(certPath)
 	if err != nil {
 		log.Println("[ERROR - readCertPEMfunc1]: ", certPath)
-		log.Fatal("Coul not read certificate: ", err)
+		log.Fatal("Could not read certificate: ", err)
 	}
 	block, _ := pem.Decode(certFile)
 	if block == nil {
@@ -221,6 +221,14 @@ func isCertificateRevokedByOCSP(clientCert, issuerCert *x509.Certificate) bool {
 	switch ocspResponse.Status {
 	case ocsp.Good:
 		log.Println("ocsp: response looks good")
+		//Filepath could also be specified as var ?!
+		ocspFile, err := os.Create("/etc/ssl/certs/server_and_intermediate_and_root.crt.ocsp")
+		if err != nil {
+			log.Println("Could not create ocsp cert file")
+			return true
+		}
+		defer ocspFile.Close()
+		ocspFile.Write(output)
 		return false
 	case ocsp.Revoked:
 		log.Println("ocsp: certificate has been revoked (either permanantly or temporarily (on hold))")
