@@ -395,6 +395,7 @@ help() {
 	echo "version     	Show version information"
 	echo "report      	Create a report (system information & logs. --file can be specified for the file name)"
 	echo "connectivity 	Test external connections"
+	echo "archiving 	Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
 	echo "ha-log      	Show content of haproxy.log. Pipe to less -R for pager with colour support"
 }
 
@@ -764,6 +765,47 @@ Ansible: $(ansible --version | awk 'NR==1{print $2}')
 Vault enabled: ${VAULT_INITIALIZED}"
 }
 
+archiving() {
+	if [ ! -f "/data/archiving/archiving.conf" ]; then
+		sudo touch /data/archiving/archiving.conf
+		if [ $? != 0 ]; then
+			echo "archiving.conf does not exist and could not be created! Exit now"
+			exit 1
+		fi
+	fi
+
+	case $OPTION in
+			add)
+					if hash archiving 2>/dev/null; then
+						sudo mv /data/archiving/gpg/pubring.kbx{,.DO_NOT_USE} 2>/dev/null
+						sudo archiving -add -tag $TAG -file $FILENAME
+					else
+						echo "Archiving app not found"
+					fi
+					;;
+			remove)
+					if hash archiving 2>/dev/null; then
+						sudo mv /data/archiving/gpg/pubring.kbx{,.DO_NOT_USE} 2>/dev/null
+						sudo archiving -del -tag $TAG -file $FILENAME
+					else
+						echo "Archiving app not found"
+					fi
+					;;
+			*)
+					echo "Managing organisation archiving"
+					echo "Usage: twctl archiving {add|remove|list}"
+					echo
+					echo "--tag TAG 	set organisation name"
+					echo "--file NAME	path to user public key"
+					echo;echo
+					echo "	add:	adds a new user to organisation for archiving"
+					echo "	remove:	removes a user from organisation"
+					echo "	list:	show current archiving user/orgs as ini file"
+					echo "	*: 		displays this message"
+					;;
+	esac
+}
+
 TAG=""
 TASK=""
 while [ $# -gt 0 ] ; do
@@ -833,6 +875,17 @@ while [ $# -gt 0 ] ; do
 		connectivity)
 			TASK="connectivity_test"
 			;;
+		archiving)
+            if [ $2 == "list" ];then
+                sudo cat /data/archiving/archiving.conf
+                exit 0
+            else
+               TASK="archiving"
+               FILENAME_REQUIRED=yes
+               TAG_REQUIRED=yes
+               OPTION="$2"
+            fi
+            ;;
 		ha-log)
 			TASK="ha-log"
 			;;
