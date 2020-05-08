@@ -113,7 +113,7 @@ frontend https-in
 # BACKEND: teamwire-backend
 # ----------------------------------------------------
 backend teamwire-backend
-    http-response set-header Server "HAProxy"
+    http-response del-header Server
     http-response set-header Connection keep-alive
     {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend" }} {{ range $index, $service := service "backend" }}
     server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
@@ -128,7 +128,7 @@ backend teamwire-backend
 backend teamwire-backend-websockets
     acl hdr_connection_upgrade hdr(Connection)    -i upgrade
     acl hdr_upgrade_websocket hdr(Upgrade)        -i websocket
-    http-response set-header Server "HAProxy"
+    http-response del-header Server
     {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend-websocket" }} {{ range $index, $service := service "backend-websocket" }}
     server backend_ws_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
     {{ end }}{% endraw %}
@@ -143,6 +143,7 @@ backend notifications
     acl hdr_connection_upgrade hdr(Connection)                 -i upgrade
     acl hdr_upgrade_websocket  hdr(Upgrade)                    -i websocket
     http-request del-header   X-Powered-By
+    http-response del-header Server
     {% if "frontend_servers" in groups %}{% raw %}{{ if service "notification-server-9080" }}{{ range $index, $service := service "notification-server-9080" }}
     server notification-server_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
     {{ end }}{% endraw %}
