@@ -11,6 +11,15 @@
 # items, only then the configuration can be performed.
 # config_done: "true"
 
+# Platform version can be tagged to the following 3 versions:
+# - latest:  This means that the last/newest version is always checked out.
+# - release: This means that the last release is always checked out. But
+#            this does not necessarily always have to be the last published version
+# - 1.0x:    Exactly this version is checked out. If you you dont uncomment
+# the following line, always the newest (latest) version is checked out (masterbranch).
+# Or one of the 3 possibilities mentioned above can be set.
+# platform_version: "latest"
+
 # Insert your Docker Hub credentials below
 dockerhub_username: ""
 dockerhub_email: ""
@@ -18,8 +27,8 @@ dockerhub_email: ""
 # The external fully qualified host name under which the clients can access
 # this server, e.g. "teamwire.example.com". external_hostname can be a single
 # string like e.g. external_hostname: "teamwire.example.com" or you can provide
-# a list of domains. The first domain in the list on a single server is selected 
-# as hostname e.g. 
+# a list of domains. The first domain in the list on a single server is selected
+# as hostname e.g.
 # external_hostname:
 #     - teamwire.example.com
 #     - second.eample.com
@@ -243,7 +252,7 @@ system_email_recipient:
 # enabled, we are unable to provide support for the installation.
 # disable_vault: true
 
-# Backend websockets integration is enabled by default. To disable websockets 
+# Backend websockets integration is enabled by default. To disable websockets
 # uncomment the line below:
 # websockets_enabled: "false"
 
