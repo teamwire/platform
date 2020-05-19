@@ -188,6 +188,7 @@
     - { secret: 'monitoring/icinga_admin_password', value: "{{ icinga_admin_password | default('') }}" }
     - { secret: 'monitoring/icinga_salt', value: "{{ icinga_salt | default('') }}" }
     - { secret: 'monitoring/icinga_api_password', value: "{{ icinga_api_password | default('') }}" }
+    - { secret: 'reportfile/password', value: "{{ reportfile_password | default('NONE') }}" }
   run_once: true
 
 - name: Include secrets var file so the defined secrets can be read
