@@ -117,6 +117,8 @@ job "teamwire" {
 				BIND_PORT = "${NOMAD_PORT_http}"
 				WEBSOCKETS_ENABLED = "{{ websockets_enabled | default('true')}}"
 				BIND_PORT_WS = "${NOMAD_PORT_ws}"
+				ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
+				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 			}
 
 			resources {
