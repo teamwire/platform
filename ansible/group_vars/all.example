@@ -18,8 +18,8 @@ dockerhub_email: ""
 # The external fully qualified host name under which the clients can access
 # this server, e.g. "teamwire.example.com". external_hostname can be a single
 # string like e.g. external_hostname: "teamwire.example.com" or you can provide
-# a list of domains. The first domain in the list on a single server is selected 
-# as hostname e.g. 
+# a list of domains. The first domain in the list on a single server is selected
+# as hostname e.g.
 # external_hostname:
 #     - teamwire.example.com
 #     - second.eample.com
@@ -243,7 +243,7 @@ system_email_recipient:
 # enabled, we are unable to provide support for the installation.
 # disable_vault: true
 
-# Backend websockets integration is enabled by default. To disable websockets 
+# Backend websockets integration is enabled by default. To disable websockets
 # uncomment the line below:
 # websockets_enabled: "false"
 
@@ -268,3 +268,10 @@ system_email_recipient:
 # The timeout and the interval to the endpoint /health can be adjusted here
 # nomad_health_backend_interval: "15"
 # nomald_health_backend_timeout: "2"
+
+# To enable proxy usage for APNS, please uncomment the line below.
+# ENABLE_PROXY_FOR_APNS: "true"
+
+# To use port 443 for APNS instead of 2197, please set USE_APNS_STANDARD_PORT to
+# true. Default value is false (port 2197)
+# USE_APNS_STANDARD_PORT: "true"
