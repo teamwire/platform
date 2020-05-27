@@ -55,5 +55,7 @@
 
 - include: twinstaller.yml
 
+- include: gitwrapper.yml
+
 - include: backup.yml
   when: config_done is defined

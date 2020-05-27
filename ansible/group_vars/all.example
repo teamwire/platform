@@ -11,6 +11,15 @@
 # items, only then the configuration can be performed.
 # config_done: "true"
 
+# Platform version can be tagged to the following 3 versions:
+# - latest:  This means that the last/newest version is always checked out.
+# - release: This means that the last release is always checked out. But
+#            this does not necessarily always have to be the last published version
+# - 1.0x:    Exactly this version is checked out. If you you dont uncomment
+# the following line, always the newest (latest) version is checked out (masterbranch).
+# Or one of the 3 possibilities mentioned above can be set.
+# platform_version: "latest"
+
 # Insert your Docker Hub credentials below
 dockerhub_username: ""
 dockerhub_email: ""

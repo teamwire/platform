@@ -1,0 +1,19 @@
+- name: Install gitwrapper
+  copy:
+    src: gitwrapper.sh
+    dest: /usr/local/src
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Enable gitwrapper
+  lineinfile:
+    path: /etc/profile
+    line: 'source /usr/local/src/gitwrapper.sh'
+    state: present
+
+- name: Set gitwrapper as default
+  lineinfile:
+    path: /home/teamwire/.profile
+    line: 'export USE_TW_GIT=true'
+    state: present
