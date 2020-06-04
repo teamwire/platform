@@ -238,6 +238,30 @@ system_email_recipient:
 # monitoring_db_web_name: monitor_web
 
 ##############################################################################
+## NOMAD ALLOCATION & SETTINGS
+##############################################################################
+
+# The timeout and the interval to the endpoint /health can be adjusted here
+# nomad_health_backend_interval: "15"
+# nomald_health_backend_timeout: "2"
+
+# Allocation settings can be set here. This is usefull if you often get OOM-Kills.
+# RAM is allocated in MB. CPU is allocated in Mhz. 1000Mhz is equal to 1 CPU
+
+# Nomad CPU allocations in Mhz
+#backend_cpu_alloc: 0.2
+#worker_cpu_alloc: 0.2
+#notification_cpu_alloc: 0.2
+
+# Nomad RAM allocations in MB per CPU core
+#backend_ram_alloc: 256
+#backend_ram_alloc_min: backend_ram_alloc
+#worker_ram_alloc: 256
+#worker_ram_alloc_min: worker_ram_alloc
+#notification_ram_alloc: 64
+#notification_ram_alloc_min: notification_ram_alloc
+
+##############################################################################
 ## DEBUGGING
 ##############################################################################
 
