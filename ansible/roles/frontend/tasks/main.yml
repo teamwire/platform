@@ -55,6 +55,20 @@
   notify: restart haproxy
   when: "'frontend_servers' in groups and groups['all'] | length() > 1"
 
+- name: Collect all error template files
+  find:
+    paths: "/etc/haproxy/errors/"
+    patterns: "*.http"
+  register: errorfiles
+
+- name: Replace HTTP version in error files from 1.0 to 1.1
+  replace:
+    path: "{{ item.path }}"
+    regexp: 'HTTP\/1.0'
+    replace: 'HTTP/1.1'
+  with_items: "{{ errorfiles.files }}"
+  notify: reload haproxy
+
 - name: Generate the SSL certificate
   template:
     src: haproxy_oldstyle_certificate.j2
