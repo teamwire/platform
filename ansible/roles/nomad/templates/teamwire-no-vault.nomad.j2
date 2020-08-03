@@ -205,7 +205,7 @@ job "teamwire" {
 				REDIS_URI = "prod.redis.service.consul:6379:1"
 				REDIS_PASSWORD = "{{ redis_pass|default() }}"
 				NOTIFICATION_SERVER_URL = "http://notification-server-9081.service.consul:9081"
-				BLOBDIR = "/assets"
+				BLOB_DIR = "/assets"
 				APNS_CERT_1 = "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}"
 {% if apns_certificate_2 is defined %}
 				APNS_CERT_2 = "/app/certs/apns/{{ apns_certificate_2 | basename }},push_production,{{ apns_appid_2 }}"
