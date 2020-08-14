@@ -79,6 +79,8 @@ frontend https-in
     http-request capture req.hdr(host) len 32
     http-request capture req.hdr(X-Forwarded-For) len 32
     http-request capture req.hdr(User-Agent) len 32
+    http-request capture req.hdr(Connection) len 7
+    http-request capture req.hdr(Upgrade) len 9
 
     log-format 'LIMSTART{ "DATE":"%t","ID":"%ID","STATUS":"%ST","SourceIP":"%ci:%cp","ROUTE":"%ft/%b","METRIC":"%Tq/%Tw/%Tc/%Tr/%Tt ","httpRequest":"%r","requestHeader":"%hr","CON":"%tsc  %ac %fc %bc %sc %rc ","TLS-PROTO":"%sslv","TLS_CIPHER":"%sslc"}LIMEND'
     unique-id-format %{+X}o\ %ci:%cp_%fi:%fp_%Ts_%rt:%pid
