@@ -179,6 +179,7 @@
     reload: yes
 
 - include_tasks: ocsp.yml
+  when: not offline_mode.stat.exists
 
 - include_tasks: cluster.yml
   when: "'frontend_servers' in groups"
