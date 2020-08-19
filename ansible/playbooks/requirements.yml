@@ -280,11 +280,18 @@
       delegate_to: localhost
       become: no
 
+- name: Check if installing offline
+  hosts: 127.0.0.1
+  tasks:
+    - stat: path=/etc/offline_installation
+      register: offline_mode
+
 - name: Test if twinstaller repository is reachable
   hosts: 127.0.0.1
   tasks:
     - uri:
         url: https://dl.bintray.com/teamwire/devel-deb/pool/main/t/twinstaller_1.0_all.deb
+      when: not offline_mode.stat.exists
   environment:
     - https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
 

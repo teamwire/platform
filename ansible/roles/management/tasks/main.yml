@@ -54,6 +54,7 @@
   when: grep_motd.rc == 1
 
 - include: twinstaller.yml
+  when: not offline_mode.stat.exists
 
 - include: gitwrapper.yml
 
