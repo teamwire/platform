@@ -32,6 +32,7 @@
     owner: root
     group: root
     mode: 0755
+  when: not offline_mode.stat.exists
 
 - name: stat original motd
   stat:
@@ -46,12 +47,14 @@
   shell: grep '/etc/motd.sh' /etc/profile
   register: grep_motd
   failed_when: grep_motd.rc >= 2
+  when: not offline_mode.stat.exists
 
 - name: Activate new motd when not exists
   lineinfile:
      dest: /etc/profile
      line: "/etc/motd.sh"
   when: grep_motd.rc == 1
+  when: not offline_mode.stat.exists
 
 - include: twinstaller.yml
   when: not offline_mode.stat.exists
