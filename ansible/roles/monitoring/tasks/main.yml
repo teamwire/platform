@@ -17,7 +17,7 @@
 
 - name: Add icinga2 key for repository on debian 10
   shell: wget -O - https://packages.icinga.com/icinga.key | apt-key add
-  when: ansible_distribution_release == "buster"
+  when: ansible_distribution_release == "buster" and not offline_mode.stat.exists
 
 - name: Add icinga2 repository for debian 10
   apt_repository:
@@ -25,7 +25,7 @@
     state: present
     filename: icinga2
     update_cache: yes
-  when: ansible_distribution_release == "buster"
+  when: ansible_distribution_release == "buster" and not offline_mode.stat.exists
 
 - name: Install Icinga2 and monitoring plugins
   apt: name={{ item }} state=present
