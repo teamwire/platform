@@ -14,6 +14,8 @@ dnsmasq
 mydumper
 mariadb-server
 mariadb-client
+mariadb-backup
+sshpass
 python-mysqldb
 keepalived
 python-redis
