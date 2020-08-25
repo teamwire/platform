@@ -21,11 +21,13 @@ import (
 )
 
 var (
-	timeout   int
-	testCount int
-	allPath   string
-	debug     bool
-	allFile   GroupVarsAll
+	timeout          int
+	testCount        int
+	allPath          string
+	haConfDir        string
+	debug            bool
+	isFrontendServer bool
+	allFile          GroupVarsAll
 )
 
 type GroupVarsAll struct {
@@ -44,8 +46,13 @@ type GroupVarsAll struct {
 
 func main() {
 	parseCMDArgs()
+
+	debugMSG("Test if running on a frontend server...")
+	isFrontendServer = checkIsFrontendServer()
+
 	debugMSG("Going to parse group_vars/all file")
 	allFile = readGroupVarsAll(allPath)
+
 	debugMSG("Start parsing server certificate...")
 	var certX509 x509.Certificate = readCertPEM(allFile.SslServerCertificate)
 	debugMSG("Start parsing root certificate...")
@@ -86,7 +93,10 @@ func main() {
 	debugMSG("[OK] certificate is not self signed")
 	// VERIFY THAT HOSTNAME MATCH CERTIFICATE
 	if err := certX509.VerifyHostname(allFile.ExternalHostname); err != nil {
-		log.Fatal("external_hostname does not match certificate hostname in ", err)
+		if !isFrontendServer {
+			log.Fatal("External_hostname does not match certificate hostname in ", err)
+		}
+		log.Println("[SKIPPED] Skip hostname test on frontend server.Return dummy test was successful")
 	}
 	testCount++
 	debugMSG("[OK] Hostname match certificate host")
@@ -124,6 +134,7 @@ func debugMSG(msg string) {
 
 func parseCMDArgs() {
 	flag.StringVar(&allPath, "path-to-all-file", "/home/teamwire/platform/ansible/group_vars/all", "Define where to find group_vars/all")
+	flag.StringVar(&haConfDir, "path-to-haconf", "/etc/haproxy", "Define where to find haproxy dir")
 	flag.IntVar(&timeout, "timeout", 10, "Define timout for ocsp request")
 	flag.BoolVar(&debug, "debug", false, "Enables debugging. Output is more verbose")
 	flag.Parse()
@@ -151,14 +162,19 @@ func readCertPEM(certPath string) x509.Certificate {
 }
 
 func readGroupVarsAll(path string) GroupVarsAll {
-	ymlFile, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal("Could not read group_vars/all file: ", err)
-	}
 	var yml GroupVarsAll
-	err = yaml.Unmarshal(ymlFile, &yml)
-	if err != nil {
-		log.Fatal("Could not unmarschal group_vars/all to yaml: ", err)
+
+	if !isFrontendServer {
+		ymlFile, err := ioutil.ReadFile(path)
+		if err != nil {
+			log.Fatal("Could not read group_vars/all file: ", err)
+		}
+		err = yaml.Unmarshal(ymlFile, &yml)
+		if err != nil {
+			log.Fatal("Could not unmarschal group_vars/all to yaml: ", err)
+		}
+	} else {
+		yml = createFrontendDummyConf()
 	}
 	return yml
 }
@@ -242,5 +258,34 @@ func isCertificateRevokedByOCSP(clientCert, issuerCert *x509.Certificate) bool {
 	default:
 		log.Println("ocsp: unrecognised status")
 		return true
+	}
+}
+
+func checkIsFrontendServer() bool {
+	if _, err := os.Stat(allPath); os.IsNotExist(err) {
+		if _, err := os.Stat(haConfDir); !os.IsNotExist(err) {
+			return true
+		}
+	}
+	return false
+}
+
+// createFrontendDummyConf creates an dummy config in case
+// ocspResponder is running on a frontend server. Normaly
+// frontend server dont have a group_vars/all file to parse,
+// hence we return a dummy conf.
+func createFrontendDummyConf() GroupVarsAll {
+	return GroupVarsAll{
+		ConfigDone:                 "true",
+		ExternalHostname:           "dummy",
+		HTTPProxy:                  os.Getenv("http_proxy"),
+		Version:                    "NONE",
+		AllowUnknownUsers:          "NONE",
+		AllowUserQuery:             "NONE",
+		ApnsCertificate:            "NONE",
+		SslServerCertificate:       "/etc/ssl/certs/teamwire.server.crt",
+		SslIntermediateCertificate: "/etc/ssl/certs/teamwire.intermediate.crt",
+		SslRootCertificate:         "/etc/ssl/certs/teamwire.root.crt",
+		SslKeyfile:                 "/etc/ssl/private/teamwire-backend.key",
 	}
 }
