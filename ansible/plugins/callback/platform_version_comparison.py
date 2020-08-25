@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 from ansible.plugins.callback import CallbackBase
-import subprocess,sys,os
+import subprocess,sys,os,pwd
 
 DOCUMENTATION = '''
 callback: platform_version_comparison
@@ -33,6 +33,7 @@ class CallbackModule(CallbackBase):
         self._applied_plaform_version   = "NONE"
         self._checkout_platform_version = "NONE"
         self.run_allowed = False
+        self.playbook_user = pwd.getpwuid( os.getuid() )[ 0 ]
 
     def get_whitelist_playbooks(self):
         try:
@@ -76,10 +77,19 @@ class CallbackModule(CallbackBase):
         self._checkout_platform_version = checkout_platform_version
         self.msg+= "checkout platform version:\t" + checkout_platform_version
 
+    def check_current_user(self):
+        '''Check if current user is user `teamwire`. Only user `teamwire` is allowed
+        to run playbooks.'''
+        self._display.v("Current user: " + self.playbook_user)
+        if not self.playbook_user in "teamwire":
+            self._display.error("Playbooks must run as user Teamwire!")
+            sys.exit(1)
+
     def v2_playbook_on_start(self, playbook):
         '''Returns the applied/checkout platform version on every playbook run'''
 
         if not "TW_DEV_MODE" in os.environ :
+            self.check_current_user()
             self.playbook = playbook
             self.msg += "\nEntrypoint:\t\t\t" + self.playbook._file_name + "\n"
             self.get_applied_platorm_version()
