@@ -32,12 +32,8 @@ var (
 
 type GroupVarsAll struct {
 	ConfigDone                 string `yaml:"config_done"`
-	ExternalHostname           string `yaml:"external_hostname"`
+	ExternalHostname           string
 	HTTPProxy                  string `yaml:"http_proxy"`
-	Version                    string `yaml:"version"`
-	AllowUnknownUsers          string `yaml:"allow_unknown_users"`
-	AllowUserQuery             string `yaml:"allow_user_query"`
-	ApnsCertificate            string `yaml:"apns_certificate"`
 	SslServerCertificate       string `yaml:"ssl_server_certificate"`
 	SslIntermediateCertificate string `yaml:"ssl_intermediate_certificate"`
 	SslRootCertificate         string `yaml:"ssl_root_certificate"`
@@ -140,6 +136,36 @@ func parseCMDArgs() {
 	flag.Parse()
 }
 
+// external_hostname in group_vars/all can be a single string
+// or a list.To catch both cases we need to define a function
+// which is able to do so.
+func getHostname(ymlFile []byte) string {
+	if isFrontendServer {
+		debugMSG("Hostname not needed on a frontend server")
+		return ""
+	}
+
+	type hostSingle struct {
+		Hostname string `yaml:"external_hostname"`
+	}
+	type hostArray struct {
+		Hostname []string `yaml:"external_hostname"`
+	}
+
+	var hostnameS = hostSingle{}
+	var hostnameA = hostArray{}
+
+	err := yaml.Unmarshal(ymlFile, &hostnameS)
+	if err != nil {
+		err = yaml.Unmarshal(ymlFile, &hostnameA)
+		if err != nil {
+			log.Fatal("Could not parse group_vars/all file. External_hostname unkown: ", err)
+		}
+		return hostnameA.Hostname[0]
+	}
+	return hostnameS.Hostname
+}
+
 func readCertPEM(certPath string) x509.Certificate {
 	debugMSG("Load cert path: " + certPath)
 	certFile, err := ioutil.ReadFile(certPath)
@@ -173,10 +199,10 @@ func readGroupVarsAll(path string) GroupVarsAll {
 		if err != nil {
 			log.Fatal("Could not unmarschal group_vars/all to yaml: ", err)
 		}
-	} else {
-		yml = createFrontendDummyConf()
+		yml.ExternalHostname = getHostname(ymlFile)
+		return yml
 	}
-	return yml
+	return createFrontendDummyConf()
 }
 
 func isCertificateRevokedByOCSP(clientCert, issuerCert *x509.Certificate) bool {
@@ -277,12 +303,8 @@ func checkIsFrontendServer() bool {
 func createFrontendDummyConf() GroupVarsAll {
 	return GroupVarsAll{
 		ConfigDone:                 "true",
-		ExternalHostname:           "dummy",
+		ExternalHostname:           "",
 		HTTPProxy:                  os.Getenv("http_proxy"),
-		Version:                    "NONE",
-		AllowUnknownUsers:          "NONE",
-		AllowUserQuery:             "NONE",
-		ApnsCertificate:            "NONE",
 		SslServerCertificate:       "/etc/ssl/certs/teamwire.server.crt",
 		SslIntermediateCertificate: "/etc/ssl/certs/teamwire.intermediate.crt",
 		SslRootCertificate:         "/etc/ssl/certs/teamwire.root.crt",
