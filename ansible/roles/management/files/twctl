@@ -763,15 +763,28 @@ ha-log() {
 	sudo cat "${LOG_FILE}" | grep --line-buffered -o -P '(?<=LIMSTART).*(?=LIMEND)' | jq . -C
 }
 
+get_latest_tag() {
+  local latestFile="/etc/latest_remote_github_version"
+
+  if [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]];then
+     local HEAD=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep 'HEAD' | awk '{print $1}')
+     local LATEST=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep "${HEAD}" | grep -v -i 'HEAD' | awk '{print $2}')
+     sudo bash -c "echo $(grep -oP '[0-9]+\.[0-9]+' <<<${LATEST}) > ${latestFile}"
+     sudo chmod 0644 "${latestFile}"
+  fi
+}
+
 version() {
-	echo "#### Version information ####
+get_latest_tag
+        echo "#### Version information ####
 Installation type: ${INSTALLATION}
 Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
-Platform (latest)  : $((git --git-dir=${ANSIBLE_DIR}/../.git ls-remote --tags | awk '{print $2}' | tail -n 1 | grep -Po "(?<=refs/tags/).*(?=\^.*)") 2> /dev/null || echo "unknown")
+Platform (latest)  : $(</etc/latest_remote_github_version)
 Ansible: $(ansible --version | awk 'NR==1{print $2}')
 Vault enabled: ${VAULT_INITIALIZED}"
 }
+
 
 archiving() {
 	if [ ! -f "/data/archiving/archiving.conf" ]; then
