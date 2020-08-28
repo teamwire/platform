@@ -6,6 +6,7 @@
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
     email: "{{ dockerhub_email }}"
+  when: not offline_mode.stat.exists
 
 - name: Retrieve the Teamwire backend main container
   when: config_done is defined
@@ -13,6 +14,7 @@
     name: "teamwire/backend:{{version|default('prod')}}"
     source: pull
     state: present
+  when: not offline_mode.stat.exists
 
 - name: Run the Teamwire backend main container
   when: config_done is defined
