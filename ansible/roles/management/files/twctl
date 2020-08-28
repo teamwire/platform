@@ -565,7 +565,16 @@ create_report() {
 	find /var/log/docker/ -name *.log -exec sudo cp {} "$TMPDIR" \;
 	find /var/log/* -maxdepth 0 -type f -name haproxy.log  -exec sudo cp {} "$TMPDIR" \;
 
-	sudo tar JcfP "$REPORT" -C "$TMPDIR" .
+	# copy ansible config
+	cp -f "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/group_vars/all" "$TMPDIR" 2>/dev/null
+
+	REPORT_PASS=$(vault_read_secrets reportfile/password)
+	if [ ${REPORT_PASS} != "NONE" ]; then
+	  sudo tar JcP -C "$TMPDIR" . | openssl enc -e -aes-256-cbc -iter 1000000 -out "${REPORT}" -k "${REPORT_PASS}"
+	else
+	   sudo tar JcfP "$REPORT" -C "$TMPDIR" .
+	fi
+
 	rm -rf "$TMPDIR"
 
 	if [ -z "$FILENAME" ]; then
@@ -574,7 +583,6 @@ create_report() {
 		echo "The report was generated and saved as $REPORT"
 	fi
 	echo
-
 }
 
 backupdb() {

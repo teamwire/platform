@@ -28,5 +28,7 @@ secrets:
     path: secret/monitoring/icinga_salt
   icinga_api_password:
     path: secret/monitoring/icinga_api_password
+  reportfile_password:
+    path: secret/reportfile/password
 
 vault_certificate_ttl: 17532h
