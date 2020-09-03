@@ -569,8 +569,13 @@ create_report() {
 	cp -f "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/group_vars/all" "$TMPDIR" 2>/dev/null
 
 	REPORT_PASS=$(vault_read_secrets reportfile/password)
-	if [ ${REPORT_PASS} != "NONE" ]; then
-	  sudo tar JcP -C "$TMPDIR" . | openssl enc -e -aes-256-cbc -iter 1000000 -out "${REPORT}" -k "${REPORT_PASS}"
+	if [ ${REPORT_PASS} != "reportfile_password" ]; then
+		REPORT="${REPORT}.enc"
+		if [[ ! $(</etc/debian_version) =~ ^[9] ]];then
+			sudo tar JcP -C "$TMPDIR" . | openssl enc -e -aes-256-cbc -iter 1000000 -out "${REPORT}" -k "${REPORT_PASS}"
+		else
+			sudo tar JcP -C "$TMPDIR" . | openssl enc -e -aes-256-cbc -out "${REPORT}" -k "${REPORT_PASS}"
+		fi
 	else
 	   sudo tar JcfP "$REPORT" -C "$TMPDIR" .
 	fi
