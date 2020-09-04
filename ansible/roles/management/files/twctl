@@ -442,12 +442,12 @@ connectivity_test() {
 		echo "-----------------------------"
 		echo
 
-		test_server_condition_for_preflight_check	"wget -qO - https://rest.nexmo.com/sms/json | grep -q 'Missing'" \
+		test_server_condition_for_preflight_check	"wget --timeout=10 -qO - https://rest.nexmo.com/sms/json | grep -q 'Missing'" \
 							"Check first(Nexmo) SMS service reachability"
-		test_server_condition_for_preflight_check	"wget -qO - https://api.twilio.com/2010-04-01 | grep -q 'TwilioResponse'" \
+		test_server_condition_for_preflight_check	"wget --timeout=10 -qO - https://api.twilio.com/2010-04-01 | grep -q 'TwilioResponse'" \
 							"Check second(Twilio) SMS service reachability"
 		test_server_condition_for_preflight_check	"" \
-							"Check your outgoing IP: $(wget -qO - http://ipinfo.io/ip)"
+							"Check your outgoing IP: $(wget --timeout=10 -qO - http://ipinfo.io/ip)"
 		local mail_recipient="$(_get_config_value system_email_recipient)"
 		if [ -n "$mail_recipient" ] ; then
 			local mail_test_response="$(raw_smtp_connect $mail_recipient | tail -n 2 | head -n 1)"
