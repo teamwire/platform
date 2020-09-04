@@ -276,9 +276,9 @@ system_email_recipient:
 # enabled, we are unable to provide support for the installation.
 # disable_vault: true
 
-# Report files can be additional secured by encryption. To encrypt a report file
+# Report files can be secured by encryption. To encrypt a report file,
 # you need to assign a password to 'reportfile_password' and uncomment the line.
-# In case of support, please remember to inform us about the password.
+# In a case of requiring support, please ensure to provide us with the password.
 # reportfile_password: "somepass"
 
 # Backend websockets integration is enabled by default. To disable websockets 
