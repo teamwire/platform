@@ -59,6 +59,10 @@
     mysql_port: 3307
   when: mysql_port is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
 
+- name: Check if installing offline
+  stat: path=/etc/offline_installation
+  register: offline_mode
+
 - name: Ensure Redis servers are defined
   fail: msg="Redis servers aren't defined. Please check the cluster_hosts file"
   when: groups['all'] | length() > 1 and config_done is defined and 'redis_servers' not in groups
