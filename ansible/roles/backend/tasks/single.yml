@@ -105,6 +105,8 @@
       https_proxy: "{{http_proxy|default()}}"
       SERVICE_NAME: "worker"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
+      ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
+      USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 
 - name: Run the Teamwire beat container
   when: config_done is defined
