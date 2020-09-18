@@ -23,7 +23,7 @@ PROXY_CHECK=$(apt-config dump Acquire::http::Proxy | awk '{print $2}' | tr -d \;
 if [ -z "$PROXY_CHECK" ] ; then
 	PROXY_MODE=""
 else
-	PROXY_MODE="-proxy $PROXY_CHECK"
+	PROXY_MODE="-proxy ${PROXY_CHECK#"http://"}"
 fi
 
 if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
