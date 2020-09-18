@@ -247,6 +247,8 @@ job "teamwire" {
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
 				BIND_HOST = "${NOMAD_IP_health}"
 				BIND_PORT = "${NOMAD_PORT_health}"
+        ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
+        USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 			}
 
 			resources {
