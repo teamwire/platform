@@ -4,7 +4,7 @@
     - include_vars: ../../group_vars/all
     - name: Check Ansible version
       assert:
-        that: "ansible_version.full is version_compare('{{ required_ansible_version }}', '>=')"
+        that: "ansible_version.full is version_compare('{{ required_ansible_version }}', '==')"
         msg:
           - "Ansible {{ required_ansible_version }} is required, please run the upgrade procedure"
           - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
