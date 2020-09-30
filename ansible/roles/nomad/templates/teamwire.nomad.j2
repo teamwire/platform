@@ -237,7 +237,7 @@ job "teamwire" {
 				BLOB_DIR = "/assets"
 				APNS_CERT_1 = "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}"
 {% if apns_certificate_2 is defined %}
-				APNS_CERT_2 = "/app/certs/apns/{{ apns_certificate_2 | basename }},push_production,{{ apns_appid_2 }}"
+				APNS_CERT_2 = "/app/certs/apns/{{ apns_certificate_2 | basename }},{{ apns_certificate_type_2 | default('push_production') }},{{ apns_appid_2 }}"
 {% endif %}
 {% if apns_certificate_3 is defined %}
 				APNS_CERT_3 = "/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}"
