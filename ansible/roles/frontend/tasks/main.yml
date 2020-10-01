@@ -1,5 +1,10 @@
 ---
+- name: Retrieve package information
+  package_facts:
+    manager: "apt"
+
 - include_tasks: remove_nginx.yml
+  when: "'nginx-light' in ansible_facts.packages"
 
 - name: Install HAproxy
   apt:
