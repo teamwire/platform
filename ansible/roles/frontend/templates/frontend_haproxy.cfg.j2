@@ -89,7 +89,7 @@ frontend https-in
     # Admin/Dashboard restricted by IPs
     {% if admin_ip_ranges is defined %}{% for range in admin_ip_ranges %}acl adminpage_allowed src {{ range }}
     {% endfor %}{% raw %}
-    acl admin_page path_beg,url_dec -m beg -i /dashboard /admin
+    acl admin_page path_beg,url_dec -m reg -i  ^(/static)?/(dashboard/|admin/)?
     http-request deny if admin_page !adminpage_allowed
     {% endraw %}{% endif %}
 
