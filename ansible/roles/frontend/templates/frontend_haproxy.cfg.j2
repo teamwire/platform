@@ -89,8 +89,10 @@ frontend https-in
     # Admin/Dashboard restricted by IPs
     {% if admin_ip_ranges is defined %}{% for range in admin_ip_ranges %}acl adminpage_allowed src {{ range }}
     {% endfor %}{% raw %}
-    acl admin_page path_beg,url_dec -m reg -i  ^(/static)?/(dashboard/|admin/)?
-    http-request deny if admin_page !adminpage_allowed
+    acl admin_page_new path_beg,url_dec -m beg -i /static/dashboard /static/admin /static/dashboard/login
+    acl admin_page_old path beg.url_dec -m beg -i /dashboard /admin /dashboard/login
+    http-request deny if admin_page_new !adminpage_allowed
+    http-request deny if admin_page_old !adminpage_allowed
     {% endraw %}{% endif %}
 
     # Webclient restricted by IPs
