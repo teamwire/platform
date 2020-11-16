@@ -11,6 +11,16 @@ job "teamwire" {
 		value = "linux"
 	}
 
+	# In general both constraint are not needed and one of both were sufficient,
+	# but we might want to filter per instance in the future. A node class as
+	# well the the ansible group could help us to filter even finer in the future.
+	# Therefor we keep both "node.class" and "meta.groups".
+
+	constraint {
+		attribute = "${node.class}"
+		value     = "backend_servers"
+	}
+
 	constraint {
 		attribute = "${meta.groups}"
 		operator = "regexp"
