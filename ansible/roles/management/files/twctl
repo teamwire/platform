@@ -803,7 +803,6 @@ archiving() {
 	case $OPTION in
 			add)
 					if hash archiving 2>/dev/null; then
-						sudo mv /data/archiving/gpg/pubring.kbx{,.DO_NOT_USE} 2>/dev/null
 						sudo archiving -add -tag $TAG -file $FILENAME
 					else
 						echo "Archiving app not found"
@@ -811,7 +810,6 @@ archiving() {
 					;;
 			remove)
 					if hash archiving 2>/dev/null; then
-						sudo mv /data/archiving/gpg/pubring.kbx{,.DO_NOT_USE} 2>/dev/null
 						sudo archiving -del -tag $TAG -file $FILENAME
 					else
 						echo "Archiving app not found"
