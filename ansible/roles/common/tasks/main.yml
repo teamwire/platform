@@ -170,8 +170,13 @@
   template: src=ntp.conf.j2 dest=/etc/ntp.conf
   notify: restart NTP
 
+- name: Check that teamwire home dir exists
+  stat: path=/home/teamwire
+  register: teamwire_homedir
+
 - name: Allow copy and paste in vim
   copy: src=vimrc dest=/home/teamwire/.vimrc owner=teamwire group=teamwire mode=0644
+  when: teamwire_homedir.stat.exists
 
 # general firewall rules
 - name: Install the UFW firewall
