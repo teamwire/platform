@@ -22,7 +22,10 @@
   when: percona_repo_key.stdout == "absent" and http_proxy is not defined
 
 - name: Add Percona repo signing key (via proxy)
-  command: apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys 9334A25F8507EFA5
+  block:
+    - command: apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy="{{http_proxy}}" --recv-keys 9334A25F8507EFA5
+  rescue:
+    - command: curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9334A25F8507EFA5' | apt-key add -
   when: percona_repo_key.stdout == "absent" and http_proxy is defined
 
 - name: Configure Percona repository (cluster setups)
