@@ -1,5 +1,5 @@
 #!/bin/bash
-nc -z 127.0.0.1 6379
+nc -z 127.0.0.1 {{ redis_instances[item].server_port }}
 if [ "$?" -ne 0 ]; then
     echo "Unable to connect to Redis."
     exit 2
