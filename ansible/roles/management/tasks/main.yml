@@ -63,3 +63,5 @@
 
 - include: backup.yml
   when: config_done is defined
+
+- include: migrateGPG.yml

@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	GPGV string = "/usr/bin/gpg1"
+	GPGV string = "/usr/bin/gpg"
 	GPGH string = "/data/archiving/gpg/"
 )
 
