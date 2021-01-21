@@ -17,8 +17,11 @@ health:
     interval: 10s
     threshold: 3
 {% if not offline_mode.stat.exists %}
-proxy:
-      remoteurl: https://registry-1.docker.io
-      username: {{ dockerhub_username }}
-      password: {{ dockerhub_password }}
+# https://github.com/kubernetes-sigs/kind/issues/1775
+# https://docs.openshift.com/container-platform/3.11/install_config/registry/registry_known_issues.html
+# Pull through proxy not working. Should be fixed in version >0.9.X
+#proxy:
+#      remoteurl: {{ dockerhub_url }}
+#      username: {{ dockerhub_username }}
+#      password: {{ dockerhub_password }}
 {% endif %}

@@ -49,7 +49,11 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
+{% if LOCAL_REGISTRY is defined %}
+				image = "{{ LOCAL_REGISTRY }}teamwire/backend:{{ version }}"
+{% else %}
 				image = "teamwire/backend:{{ version }}"
+{% endif %}
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -171,7 +175,11 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
+{% if LOCAL_REGISTRY is defined %}
+				image = "{{ LOCAL_REGISTRY }}teamwire/backend:{{ version }}"
+{% else %}
 				image = "teamwire/backend:{{ version }}"
+{% endif %}
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -268,7 +276,11 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
+{% if LOCAL_REGISTRY is defined %}
+				image = "{{ LOCAL_REGISTRY }}teamwire/backend:{{ version }}"
+{% else %}
 				image = "teamwire/backend:{{ version }}"
+{% endif %}
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -341,7 +353,11 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
+{% if LOCAL_REGISTRY is defined %}
+				image = "{{ LOCAL_REGISTRY }}teamwire/notification-server:{{ version }}"
+{% else %}
 				image = "teamwire/notification-server:{{ version }}"
+{% endif %}
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"

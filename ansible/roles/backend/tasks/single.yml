@@ -3,6 +3,7 @@
 
 - name: Login to the docker registry
   docker_login:
+    registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry is defined and use_teamwire_registry == true else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
     email: "{{ dockerhub_email }}"
@@ -11,7 +12,7 @@
 - name: Retrieve the Teamwire backend main container
   when: config_done is defined
   docker_image:
-    name: "teamwire/backend:{{version|default('prod')}}"
+    name: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/backend:{{version|default('prod')}}"
     source: pull
     state: present
   when: not offline_mode.stat.exists
@@ -20,7 +21,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_backend
-    image: "teamwire/backend:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/backend:{{version|default('prod')}}"
     state: started
     restart_policy: always
     network_mode: host
@@ -69,7 +70,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_worker
-    image: "teamwire/backend:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/backend:{{version|default('prod')}}"
     state: started
     restart_policy: always
     network_mode: host
@@ -112,7 +113,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_beat
-    image: "teamwire/backend:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/backend:{{version|default('prod')}}"
     state: started
     restart_policy: always
     network_mode: host
@@ -142,7 +143,7 @@
 - name: Retrieve the Teamwire notification server container
   when: config_done is defined
   docker_image:
-    name: "teamwire/notification-server:{{version|default('prod')}}"
+    name: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/notification-server:{{version|default('prod')}}"
     source: pull
     state: present
 
@@ -150,7 +151,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_notification_server
-    image: "teamwire/notification-server:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/notification-server:{{version|default('prod')}}"
     state: started
     restart_policy: always
     network_mode: host

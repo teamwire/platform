@@ -243,8 +243,9 @@ _get_config_value() {
 
 check_tag() {
 	local TAG=$1
+	check_registry
 	for IMAGE in $IMAGES ; do
-		if ! docker images "$IMAGE" | grep -q "$TAG" ; then
+		if ! docker images "${PRFX}${IMAGE}" | grep -q "$TAG" ; then
 			# Required image not found for given tag
 			echo "ERROR: Containers for the requested tag could not be found."
 			echo "       Please pull the containers first using the pull action."
@@ -474,13 +475,29 @@ connectivity_test() {
 
 }
 
-show-tags() {
-	local USER="$(_get_config_value dockerhub_username)"
-	local PASS="$(vault_read_secrets dockerhub/password)"
+check_registry() {
+	shopt -s nocasematch
+	USE_TEAMWIRE_REGISTRY="$(_get_config_value use_teamwire_registry)"
+	if [ -z "${USE_TEAMWIRE_REGISTRY}" ] || [ "${USE_TEAMWIRE_REGISTRY}" == "false" ];then
+		: noop
+	else
+		PRFX="harbor.teamwire.eu/docker.io/"
+	fi
+	shopt -p nocasematch
+}
 
-	local TOKEN=$(curl -m ${DFLT_TMOUT} -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
-	echo "***** Backend version: *****"
-  curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" "https://registry.hub.docker.com/v2/repositories/teamwire/backend/tags/?name=prod&page_size=100" | jq -r '.results[].name'
+show-tags() {
+	check_registry
+  echo "***** Backend version: *****"
+	if [ "${USE_TEAMWIRE_REGISTRY}" == "" ] || [ "${USE_TEAMWIRE_REGISTRY}" == "false" ];then
+		local USER="$(_get_config_value dockerhub_username)"
+		local PASS="$(vault_read_secrets dockerhub/password)"
+
+		local TOKEN=$(curl -m ${DFLT_TMOUT} -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+		curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" "https://registry.hub.docker.com/v2/repositories/teamwire/backend/tags/?name=prod&page_size=100" | jq -r '.results[].name'
+	else
+		curl -m ${DFLT_TMOUT} -s "https://harbor.teamwire.eu:8000/tags" | jq -r '.results[].name'
+	fi
 }
 
 create_report() {
@@ -635,8 +652,9 @@ restoredb() {
 pull_images_base() {
 	echo "Pulling Teamwire container images for version $TAG"
 	echo
+	check_registry
 	for IMAGE in $IMAGES; do
-		docker pull "$IMAGE":"$TAG"
+		docker pull "${PRFX}$IMAGE":"$TAG"
 	done
 }
 
@@ -669,7 +687,7 @@ remove_containers_cluster() {
 run_migrations_base() {
 	check_tag "$TAG"
 	get_database_configuration
-
+	check_registry
 	echo "Running database migrations"
 	echo
 	docker run --rm --network host -e MODE=migration --name teamwire-migrations \
@@ -679,7 +697,7 @@ run_migrations_base() {
 		-e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
 		-e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
 		-e REDIS_URI="$REDIS_URI" -e REDIS_PASSWORD="$REDIS_PASSWORD"\
-		-e AESKEY="$AESKEY" teamwire/backend:"$TAG" 2>&1
+		-e AESKEY="$AESKEY" "${PRFX}teamwire/backend:${TAG}" 2>&1
 
 }
 
@@ -780,6 +798,7 @@ get_latest_tag() {
 }
 
 version() {
+check_registry
 get_latest_tag
         echo "#### Version information ####
 Installation type: ${INSTALLATION}
@@ -788,6 +807,8 @@ Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $(</etc/latest_remote_github_version)
 Ansible: $(ansible --version | awk 'NR==1{print $2}')
 Vault enabled: ${VAULT_INITIALIZED}"
+[ "${USE_TEAMWIRE_REGISTRY}" == "true" ] && echo "
+Harbor check IP: $(curl -s https://harbor.teamwire.eu:8000/loopback | jq . )"
 }
 
 
