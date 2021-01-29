@@ -1,4 +1,8 @@
 ---
+- name: Set fact for teamwire registry
+  set_fact:
+    use_teamwire_registry: "{{ use_teamwire_registry }}"
+
 - name: Ensure rsyslog is installed
   apt: pkg=rsyslog
 
@@ -128,7 +132,7 @@
   include_tasks: registry.yml
   when: config_done is defined and 'docker_registry' in group_names
 
-- name: Log in on Docker Hub
+- name: Log in on docker registry
   when:
     - config_done is defined
     - not "docker_registry" in groups
@@ -136,6 +140,7 @@
   become: True
   become_user: teamwire
   docker_login:
+    registry_url: "{{ 'harbor.teamwire.eu' if use_teamwire_registry == true else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
     email: "{{ dockerhub_email }}"

@@ -14,8 +14,16 @@
   with_items: "{{ gosource }}"
   register: copySRC
 
+- name: Login to the docker registry
+  docker_login:
+    registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry is defined and use_teamwire_registry == true else 'https://index.docker.io/v1/' }}"
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+  when: not offline_mode.stat.exists
+
 - name: Build golang binarys
-  shell: docker run -e GOFILE={{item}} -v /usr/local/bin:/dest -v /usr/local/src/go:/src teamwire/go-buildenv:latest
+  shell: docker run -e GOFILE={{item}} -v /usr/local/bin:/dest -v /usr/local/src/go:/src {{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/go-buildenv:latest
   when: copySRC.changed
   with_items: "{{ gosource }}"
   become: true

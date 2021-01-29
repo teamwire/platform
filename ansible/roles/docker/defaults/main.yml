@@ -1,3 +1,4 @@
 ---
 registry_dir: /data/registry
 registry_config: registry-config.yml.j2
+use_teamwire_registry: false
