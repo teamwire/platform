@@ -241,6 +241,7 @@ job "teamwire" {
 				ORA_DATABASE = "{{ teamwire_db_name if oracle_host is defined else '' }}"
 				ORA_USER = "{{ teamwire_db_user if oracle_host is defined else '' }}"
 				REDIS_URI = "prod.redis.service.consul:6379:1"
+				EMAIL_HOST = "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
 				NOTIFICATION_SERVER_URL = "http://notification-server-9081.service.consul:9081"
 				BLOB_DIR = "/assets"
 				APNS_CERT_1 = "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}"
