@@ -808,7 +808,7 @@ Platform (latest)  : $(</etc/latest_remote_github_version)
 Ansible: $(ansible --version | awk 'NR==1{print $2}')
 Vault enabled: ${VAULT_INITIALIZED}"
 [ "${USE_TEAMWIRE_REGISTRY}" == "true" ] && echo "
-Harbor check IP: $(curl -s https://harbor.teamwire.eu:8000/loopback | jq . )"
+Harbor check IP: $(curl -s https://harbor.teamwire.eu:8000/loopback | jq . )" || true
 }
 
 
