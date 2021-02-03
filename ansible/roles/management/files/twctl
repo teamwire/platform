@@ -69,6 +69,8 @@ fi
 
 BLACKLIST=("show-tags" "pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "restoredb" "secrets" "restart")
 
+WHITELIST_ENV=("development" "development3" "master" "staging" "production")
+
 if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" != "false" && "$2" != "unseal" ]]; then
 	for task in "${BLACKLIST[@]}"; do
 		if [[ "$@" == *"$task"* ]]; then
@@ -715,12 +717,30 @@ status_single() {
 	docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}"
 }
 
+_get_nomad_environment() {
+	if [ ! -z "${TAG}" ];then
+		for allowedENV in "${WHITELIST_ENV[@]}"; do
+			if [[ "${TAG}" == *"${allowedENV}"* ]]; then
+				echo "${TAG}"
+				NOT_ALLOWED=false
+				break
+			else
+				NOT_ALLOWED=true
+			fi
+		done
+	else
+		echo "teamwire"
+	fi
+	[ "${NOT_ALLOWED}" == "true" ] && echo "UNKNOWN_TAG"
+}
 status_cluster() {
 	if [ "$OPTION" = "--clean" ]; then
 		curl -m ${DFLT_TMOUT} -XPUT http://127.0.0.1:4646/v1/system/gc
 		echo "Container history cleaned"
 	else
-		$NOMAD status teamwire
+		$NOMAD status $(_get_nomad_environment) && \
+		echo && \
+		$NOMAD node status
 	fi
 }
 
@@ -733,7 +753,7 @@ stop_containers_single() {
 }
 
 stop_containers_cluster() {
-	$NOMAD stop teamwire
+	$NOMAD stop $(_get_nomad_environment)
 }
 
 start_containers_single() {
@@ -743,6 +763,10 @@ start_containers_single() {
 }
 
 start_containers_cluster() {
+	if [ "$(_get_nomad_environment)" != "teamwire" ]; then
+		NOMAD_JOB_PATH="/data/$(_get_nomad_environment)/cluster_config/teamwire.nomad"
+		[ -e "${NOMAD_JOB_PATH}" ] && NOMAD_JOB="${NOMAD_JOB_PATH}"
+	fi
 	$NOMAD run "$NOMAD_JOB"
 }
 
