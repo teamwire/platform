@@ -10,13 +10,13 @@
   when: not offline_mode.stat.exists
 
 - name: Retrieve the Teamwire backend main container
-  when: config_done is defined
   docker_image:
     name: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry is defined and use_teamwire_registry else '' }}teamwire/backend:{{version|default('prod')}}"
     source: pull
     state: present
-  when: not offline_mode.stat.exists
-
+  when: 
+    - config_done is defined
+    - not offline_mode.stat.exists
 - name: Run the Teamwire backend main container
   when: config_done is defined
   docker_container:
