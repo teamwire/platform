@@ -53,7 +53,7 @@
   lineinfile:
      dest: /etc/profile
      line: "/etc/motd.sh"
-  when: 
+  when:
     - grep_motd.rc == 1
     - not offline_mode.stat.exists
 

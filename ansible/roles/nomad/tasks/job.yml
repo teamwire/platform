@@ -18,13 +18,6 @@
     core_count: "{{ ansible_processor_vcpus }}"
     total_cpu_power: "{{ cpu_calculation.stdout }}"
 
-- name: Register docker registry
-  set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/"
-  when:
-    - config_done is defined and 'docker_registry' in group_names
-    - use_teamwire_registry is not defined or use_teamwire_registry == "false"
-
 - name: Register docker registry with harbor
   set_fact:
     LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/docker.io/"

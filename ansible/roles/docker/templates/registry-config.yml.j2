@@ -16,7 +16,7 @@ health:
     enabled: true
     interval: 10s
     threshold: 3
-{% if not offline_mode.stat.exists %}
+{% if not offline_mode.stat.exists and use_teamwire_registry != true %}
 proxy:
       remoteurl: {{ dockerhub_url }}
       username: {{ dockerhub_username }}
