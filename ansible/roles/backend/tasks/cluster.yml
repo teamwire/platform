@@ -13,3 +13,16 @@
     mode: 0640
     owner: root
     group: teamwire
+
+- name: Log into Harbor and force re-authorization
+  docker_login:
+    registry: harbor.teamwire.eu
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    reauthorize: yes
+  become: yes
+  become_user: teamwire
+  delegate_to: localhost
+  run_once: true
+  when:
+    - use_teamwire_registry is defined and use_teamwire_registry | lower() == "true"

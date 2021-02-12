@@ -6,6 +6,7 @@
 - name: Write Docker registry config file
   template: src="{{ registry_config }}" dest="{{ registry_dir }}/config.yml"
   run_once: true
+  notify: restart registry container
 
 - name: Retrieve the  Docker Registry container
   when: config_done is defined
@@ -13,20 +14,6 @@
     name: "{{ registry_version }}"
     source: pull
     state: present
-
-- name: Run the Docker Registry container
-  when: config_done is defined
-  docker_container:
-    name: docker-registry
-    image: "{{ registry_version }}"
-    state: started
-    restart_policy: always
-    network_mode: host
-    log_driver: syslog
-    log_options:
-      tag: docker-registry
-      syslog-facility: local6
-    volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
 
 # Push all local images to the local registry
 - name: Copy the registry image helper tool

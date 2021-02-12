@@ -1,4 +1,4 @@
 registry_version: "registry:2.6.2"
 hashui_container: "jippi/hashi-ui:v1.1.0"
 
-dockerhub_url:    "{{ 'harbor.teamwire.eu' if use_teamwire_registry == true else 'https://registry-1.docker.io' }}"
+dockerhub_url:    "https://registry-1.docker.io"

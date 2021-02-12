@@ -7,3 +7,17 @@
 
 - name: restart rsyslog
   service: name=rsyslog state=restarted
+
+- name: restart registry container
+  docker_container:
+    name: docker-registry
+    image: "{{ registry_version }}"
+    state: started
+    restart_policy: always
+    restart: yes
+    network_mode: host
+    log_driver: syslog
+    log_options:
+      tag: docker-registry
+      syslog-facility: local6
+    volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
