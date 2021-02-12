@@ -286,7 +286,7 @@ system_email_recipient:
 # In a case of requiring support, please ensure to provide us with the password.
 # reportfile_password: "somepass"
 
-# Backend websockets integration is enabled by default. To disable websockets 
+# Backend websockets integration is enabled by default. To disable websockets
 # uncomment the line below:
 # websockets_enabled: "false"
 
@@ -314,3 +314,8 @@ system_email_recipient:
 # To use port 443 for APNS instead of 2197, please set USE_APNS_STANDARD_PORT to
 # true. Default value is false (port 2197)
 # USE_APNS_STANDARD_PORT: "true"
+
+# To disable the message of the day banner during login, please set the variable
+# `enableMOTD` to the value `false` or uncomment the line afterwards ( default
+# value is `true`).
+# enableMOTD: false
