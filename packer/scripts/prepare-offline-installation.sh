@@ -1,5 +1,4 @@
 #!/bin/bash -e
-
 # Preparations for offline installations:
 #
 # * Download debian packages into the local package cache
@@ -94,7 +93,7 @@ echo "==========================================="
 sudo apt-key adv --no-tty --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
 sudo apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9334A25F8507EFA5 # Percona
 
-if [ -z "$OFFLINE_INSTALLATION" ] ; then
+if [ -z "${OFFLINE_INSTALLATION}" ] ; then
 	echo "Not preparing for offline installation."
 	exit
 fi
@@ -111,27 +110,27 @@ echo "========================"
 # Add Percona repo
 echo 'deb http://repo.percona.com/apt buster main' | sudo tee -a /etc/apt/sources.list > /dev/null
 sudo apt-get update -q
-sudo apt-get install -qyd $REGULAR_PACKAGES
+sudo apt-get install -qyd ${REGULAR_PACKAGES}
 
 echo "Step 3: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
-sudo docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-for IMAGE in $DOCKER_IMAGES ; do
+sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
+for IMAGE in ${DOCKER_IMAGES} ; do
 	sudo docker pull "${IMAGE}"
 done
 sudo rm -rf /root/.docker
 
 cd ~/platform/ansible/group_vars
 cp all.example all
-sed -i -e 's/^\(version: \).*$/\1'"$BACKEND_RELEASE"'/' all
+sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
 
 echo "Step 4: Downloading 3rd party software"
 echo "======================================"
 if [ ! -d /var/cache/downloads ] ; then
 	sudo mkdir /var/cache/downloads
 fi
-for DOWNLOAD in $DOWNLOADS ; do
+for DOWNLOAD in ${DOWNLOADS} ; do
 	# split line into URL and SHA256 checksum
 	UC=(${DOWNLOAD//;/ })
 	echo "Getting ${UC[0]}"
@@ -141,5 +140,5 @@ for DOWNLOAD in $DOWNLOADS ; do
 		echo "${FILENAME}: Checksum failure"
 		exit 1
 	fi
-	sudo mv "$FILENAME" /var/cache/downloads
+	sudo mv "${FILENAME}" /var/cache/downloads
 done
