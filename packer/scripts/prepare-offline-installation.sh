@@ -69,7 +69,7 @@ DOCKER_IMAGES="
 teamwire/backend:${BACKEND_RELEASE}
 teamwire/notification-server:${BACKEND_RELEASE}
 teamwire/go-buildenv:latest
-$(awk '{ gsub("\"",""); print $2; }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+$(awk '{ gsub("\"",""); print $2; }  NR==2{exit}' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
