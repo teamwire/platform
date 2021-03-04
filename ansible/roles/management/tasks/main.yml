@@ -56,8 +56,8 @@
      dest: /etc/profile
      line: "/etc/motd.sh"
   when:
-    - grep_motd.rc == 1
     - not offline_mode.stat.exists
+    - grep_motd.rc == 1
     - enableMOTD
 
 - name: Deactivate new motd if not enabled
