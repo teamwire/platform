@@ -5,7 +5,7 @@
   tasks:
 
   - include_vars: ../../roles/vault/defaults/main.yml
-  - include_vars: ../../group_vars/all
+  - include_vars: "{{ inventory_dir }}/group_vars/all"
 
   - name: Check Vault seal status
     fail: msg="Vault is not in an unsealed state, please run 'twctl secrets unseal'."
