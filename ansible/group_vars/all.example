@@ -281,10 +281,10 @@ system_email_recipient:
 # enabled, we are unable to provide support for the installation.
 # disable_vault: true
 
-# Report files can be secured by encryption. To encrypt a report file,
-# you need to assign a password to 'reportfile_password' and uncomment the line.
-# In a case of requiring support, please ensure to provide us with the password.
-# reportfile_password: "somepass"
+# To encrypt a report file please execute the command
+# `twctl secrets write reportfile/password`. Please set the password for the
+# report file by confirming the password twice. After that a newly generated
+# report file will be encrypted the next time.
 
 # Backend websockets integration is enabled by default. To disable websockets
 # uncomment the line below:
