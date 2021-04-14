@@ -25,4 +25,4 @@
   delegate_to: localhost
   run_once: true
   when:
-    - use_teamwire_registry is defined and use_teamwire_registry | lower() == "true"
+    - use_teamwire_registry | default('false') | bool
