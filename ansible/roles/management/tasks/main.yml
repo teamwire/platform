@@ -72,8 +72,6 @@
 - include: twinstaller.yml
   when: not offline_mode.stat.exists
 
-- include: gitwrapper.yml
-
 - include: backup.yml
   when: config_done is defined
 
