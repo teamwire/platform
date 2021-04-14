@@ -41,6 +41,11 @@
   roles:
     - { role: monitoring, when: config_done is defined and enable_monitoring is defined }
 
+- name: Run housekeeping job to remove unused dependencies
+  hosts: all
+  roles:
+    - { role: housekeeping, when: config_done is defined }
+
 - name: Set current tag (COMPLETE) in /etc/platform_version
   hosts: all
   tasks:

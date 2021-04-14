@@ -1,0 +1,18 @@
+---
+- name: Remove gitwrapper
+  file:
+    path: /usr/local/src/gitwrapper.sh
+    state: absent
+
+- name: Disable gitwrapper
+  lineinfile:
+    path: /etc/profile
+    line: 'source /usr/local/src/gitwrapper.sh'
+    state: absent
+
+- name: Unset gitwrapper as default
+  lineinfile:
+    path: /home/teamwire/.profile
+    line: 'export USE_TW_GIT=true'
+    state: absent
+
