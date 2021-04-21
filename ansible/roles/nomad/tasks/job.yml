@@ -22,15 +22,8 @@
   set_fact:
     LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/docker.io/"
   when:
-    - config_done is defined and 'docker_registry' in group_names
-    - use_teamwire_registry is defined and use_teamwire_registry | lower() == "true"
-
-- name: Register harbor without docker registry
-  set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/docker.io/"
-  when:
-    - config_done is defined and not 'docker_registry' in group_names
-    - use_teamwire_registry is defined and use_teamwire_registry == "true"
+    - config_done is defined
+    - use_teamwire_registry | default('false') | bool
 
 - name: Write Teamwire cluster nomad job (w/ Vault)
   template:

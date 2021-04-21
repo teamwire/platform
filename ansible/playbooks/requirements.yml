@@ -48,6 +48,20 @@
       delegate_facts: true
       run_once: true
 
+- name: Validate configuration values
+  hosts: all
+  tasks:
+    - name: Assert use_teamwire_registry is valid
+      assert:
+        that:
+          - use_teamwire_registry is string
+          - use_teamwire_registry | lower is in ['true', 'false']
+        msg: >-
+          Invalid value for configuration option `use_teamwire_registry`.
+          Please ensure your value is enquoted and is either 'true' or 'false'.
+      run_once: true
+      when: use_teamwire_registry is defined
+
 - name: Ensure valid configuration combination
   hosts: all
   tasks:
