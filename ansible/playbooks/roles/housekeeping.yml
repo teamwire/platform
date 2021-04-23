@@ -1,0 +1,7 @@
+# Please refer here: https://github.com/ansible/ansible/issues/30901 why `inventory_dir` is
+# sometimes not possible to use
+- hosts: local:management_servers
+  roles:
+  - role: "{{ ansible_inventory_sources[0] | dirname }}/roles/housekeeping"
+
+

@@ -1,0 +1,4 @@
+---
+# Remove gitwrapper and git pinning feature
+- include_tasks: gitwrapper.yml
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['management_servers']
