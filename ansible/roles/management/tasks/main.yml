@@ -69,9 +69,6 @@
     - not offline_mode.stat.exists
     - not enableMOTD
 
-- include: twinstaller.yml
-  when: not offline_mode.stat.exists
-
 - include: backup.yml
   when: config_done is defined
 
