@@ -32,10 +32,15 @@
 #  when: docker_repo_key.stdout == "absent" and http_proxy is not defined
 
 - name: Add the Docker repository signing key (direct connection)
-  command: apt-key adv --no-tty --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-  register: apt_key_tmp
-  until: apt_key_tmp is not failed
-  retries: 3
+  block:
+    - command: apt-key adv --no-tty --keyserver hkps://keyserver.ubuntu.com --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+      register: apt_key_tmp
+      until: apt_key_tmp is not failed
+      retries: 3
+  rescue:
+    - shell: curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DC858229FC7DD38854AE2D88D81803C0EBFCD88' | apt-key add -
+      args:
+        warn: no
   when: docker_repo_key.stdout == "absent" and http_proxy is not defined
 
 #### Temporary workaround until solution is implemented by Ansible ###
@@ -43,12 +48,14 @@
 #### ADD '--no-tty'
 - name: Add the Docker repository signing key (via proxy server)
   block:
-    - command: apt-key adv --no-tty --keyserver hkp://p80.pool.sks-keyservers.net:80 --keyserver-options http-proxy=\"{{http_proxy}}\" --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+    - command: apt-key adv --no-tty --keyserver hkps://keyserver.ubuntu.com --keyserver-options http-proxy=\"{{http_proxy}}\" --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
       register: apt_key_tmp_prox
       until: apt_key_tmp_prox is not failed
       retries: 3
   rescue:
-    - command: curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DC858229FC7DD38854AE2D88D81803C0EBFCD88' | apt-key add -
+    - shell: curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DC858229FC7DD38854AE2D88D81803C0EBFCD88' | apt-key add -
+      args:
+        warn: no
   when: docker_repo_key.stdout == "absent" and http_proxy is defined
 
 - name: Ensure apt-transport-https is installed
