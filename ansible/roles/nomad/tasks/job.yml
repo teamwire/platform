@@ -20,7 +20,7 @@
 
 - name: Register docker registry with harbor
   set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/docker.io/"
+    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/"
   when:
     - config_done is defined
     - use_teamwire_registry | default('false') | bool
