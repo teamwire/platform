@@ -103,12 +103,6 @@
     extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
   when: ansible_distribution_release == 'buster'
 
-- name: Install python-pyOpenSSL version {{ required_pyopenssl_version }}
-  pip:
-    name=pyopenssl
-    version={{ required_pyopenssl_version }}
-    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
-
 - name: Remove useless packages
   apt: pkg={{item}} state=absent purge=yes
   with_items:
