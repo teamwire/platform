@@ -1,10 +1,11 @@
 ---
 ##### THIS HAS TO GO FIRST #####
-- hosts: 127.0.0.1
+- name: Check Ansible version
+  hosts: 127.0.0.1
   connection: local
   become: no
-  pre_tasks:
-    - include_vars: ../roles/common/vars/main.yml
+  vars_files: ../roles/common/vars/main.yml
+  tasks:
     - name: Check Ansible version
       assert:
         that: "ansible_version.full is version_compare('{{ required_ansible_version }}', '==')"
@@ -15,44 +16,37 @@
           - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v2.yml"
         success_msg: Ansible {{ ansible_version.full }} matches expected version.
 
-- name: Ensure config_done is not set during Packer image builds
+- name: Check overall requirements
   hosts: all
   tasks:
-  - fail:
-      msg:
-        - "The config_done variable is defined, this cannot be present during packer builds."
-        - "Please ensure there is no group_vars/all configuration file in place."
-    when: packer_build_name is defined and config_done is defined
+    - name: Ensure config_done is not set during Packer image builds
+      fail:
+        msg:
+          - "The config_done variable is defined, this cannot be present during packer builds."
+          - "Please ensure there is no group_vars/all configuration file in place."
+      when: packer_build_name is defined and config_done is defined
 
-- name: Ensure config_done is defined on cluster setups
-  hosts: all
-  tasks:
-  - fail:
-      msg:
-        - "The config_done variable is not defined."
-        - "Please ensure there is a group_vars/all configuration file in place and config_done is set to true."
-    when: groups['all'] | length() > 1 and config_done is not defined
+    - name: Ensure config_done is defined on cluster setups
+      fail:
+        msg:
+          - "The config_done variable is not defined."
+          - "Please ensure there is a group_vars/all configuration file in place and config_done is set to true."
+      when: groups['all'] | length() > 1 and config_done is not defined
 
-- name: Ensure a proper backend version has been set
-  hosts: all
-  tasks:
-  - fail:
-      msg:
-        - "ERROR: group_vars/all => version: '{{ version if version is defined else 'not set' }}'."
-        - "Please set a valid backend version in group_vars/all variable 'version'"
-        - "To display the latest valid backend versions, please run twctl show-tags"
-    when: packer_build_name is not defined and vagrant_mode is not defined and (version is not defined or version | lower == "prod" or version == None or version | length == 0)
+    - name: Ensure a proper backend version has been set
+      fail:
+        msg:
+          - "ERROR: group_vars/all => version: '{{ version if version is defined else 'not set' }}'."
+          - "Please set a valid backend version in group_vars/all variable 'version'"
+          - "To display the latest valid backend versions, please run twctl show-tags"
+      when: packer_build_name is not defined and vagrant_mode is not defined and (version is not defined or version | lower == "prod" or version == None or version | length == 0)
 
-- name: Check if in developer mode
-  hosts: all
-  tasks:
-    - set_fact: TW_DEV_MODE="{{ lookup('env', 'TW_DEV_MODE' ) | ternary (lookup('env', 'TW_DEV_MODE' ), omit) }}"
+    - name: Check if in developer mode
+      set_fact:
+        TW_DEV_MODE: "{{ lookup('env', 'TW_DEV_MODE' ) | ternary (lookup('env', 'TW_DEV_MODE' ), omit) }}"
       delegate_facts: true
       run_once: true
 
-- name: Validate configuration values
-  hosts: all
-  tasks:
     - name: Assert use_teamwire_registry is valid
       assert:
         that:
@@ -64,10 +58,8 @@
       run_once: true
       when: use_teamwire_registry is defined
 
-- name: Ensure valid configuration combination
-  hosts: all
-  tasks:
-    - block:
+    - name: Ensure valid configuration combination
+      block:
         - name: Retrieve name of playbook file
           set_fact: playbook_name="{{ (lookup('file', '/proc/self/cmdline') | regex_replace('\u0000',' ')).split()|select('match','^[a-z-_/]*[.]y[a]*ml')|list|first|basename }}"
 
@@ -100,96 +92,81 @@
         - packer_build_name is not defined
         - vagrant_mode is not defined
 
-- name: Ensure valid management server configuration
-  hosts: all
-  tasks:
-  - assert:
-     that:
-       - "'management_servers' in groups"
-       - groups['management_servers'] | length > 0
-     msg:
-       - "WARNING: No management servers have been defined."
-       - "Management servers (group: management_servers), is a new management server group which you'll run twctl and Ansible provisions from."
-       - "WARNING: You must ensure all the relevant certificates, cluster_hosts and group_vars/all files are moved/adapted to the assigned management servers before proceeding."
-       - "You should also ensure the Vault token is in place at /root/.vault-token and /home/teamwire/.vault-token."
-       - "You must ensure at least 1 management server is defined in cluster_hosts, please check cluster_example_hosts for a reference."
-       - "If you encounter any problems or have any concerns, please contact support@teamwire.eu"
-    run_once: true
-    when: groups['all'] | length() > 1
+    - name: Ensure valid management server configuration
+      assert:
+        that:
+          - "'management_servers' in groups"
+          - groups['management_servers'] | length > 0
+        msg:
+          - "WARNING: No management servers have been defined."
+          - "Management servers (group: management_servers), is a new management server group which you'll run twctl and Ansible provisions from."
+          - "WARNING: You must ensure all the relevant certificates, cluster_hosts and group_vars/all files are moved/adapted to the assigned management servers before proceeding."
+          - "You should also ensure the Vault token is in place at /root/.vault-token and /home/teamwire/.vault-token."
+          - "You must ensure at least 1 management server is defined in cluster_hosts, please check cluster_example_hosts for a reference."
+          - "If you encounter any problems or have any concerns, please contact support@teamwire.eu"
+      run_once: true
+      when: groups['all'] | length() > 1
 
-- name: Ensure valid Hashi server group configuration
-  hosts: all
-  tasks:
-  - assert:
-     that:
-       - "'hashi_servers' in groups"
-       - "'consul_servers' not in groups"
-     msg:
-       - "WARNING: Please ensure the hashi_servers group has been defined in the cluster_hosts file and the consul_servers group no longer exists."
-       - "The consul_servers group has been renamed to hashi_servers."
-       - "Please refer to the cluster_example_hosts file for an example."
-    run_once: true
-    when: groups['all'] | length() > 1
+    - name: Ensure valid Hashi server group configuration
+      assert:
+        that:
+          - "'hashi_servers' in groups"
+          - "'consul_servers' not in groups"
+        msg:
+          - "WARNING: Please ensure the hashi_servers group has been defined in the cluster_hosts file and the consul_servers group no longer exists."
+          - "The consul_servers group has been renamed to hashi_servers."
+          - "Please refer to the cluster_example_hosts file for an example."
+      run_once: true
+      when: groups['all'] | length() > 1
 
-- name: Ensure valid Storage server group configuration
-  hosts: all
-  tasks:
-  - assert:
-     that:
-       - "'nfs_servers' not in groups"
-     msg:
-       - "WARNING: Please ensure the storage_servers group has been defined in the cluster_hosts file and the nfs_servers group no longer exists."
-       - "The nfs_servers group has been renamed to storage_servers."
-       - "Please refer to the cluster_example_hosts file for an example."
-    run_once: true
-    when: groups['all'] | length() > 1
+    - name: Ensure valid Storage server group configuration
+      assert:
+        that:
+          - "'nfs_servers' not in groups"
+        msg:
+          - "WARNING: Please ensure the storage_servers group has been defined in the cluster_hosts file and the nfs_servers group no longer exists."
+          - "The nfs_servers group has been renamed to storage_servers."
+          - "Please refer to the cluster_example_hosts file for an example."
+      run_once: true
+      when: groups['all'] | length() > 1
 
-- name: Get current git tag
-  hosts: all
-  tasks:
-  - command: "git describe --always --tags"
-    args:
-      chdir: "{{ inventory_dir if inventory_dir is defined else (ansible_inventory_sources[0] | dirname) }}"
-    register: current_local_tag_var
-    when: packer_build_name is not defined
-    delegate_to: localhost
-    become: no
-  run_once: true
-  check_mode: no
+    - name: Get current git tag
+      command: "git describe --always --tags"
+      args:
+        chdir: "{{ inventory_dir if inventory_dir is defined else (ansible_inventory_sources[0] | dirname) }}"
+      register: current_local_tag_var
+      when: packer_build_name is not defined
+      delegate_to: localhost
+      become: no
+      run_once: true
+      check_mode: no
 
-- name: Set fact current_local_tag
-  hosts: all
-  pre_tasks:
-    - set_fact:
-         current_local_tag: "{{ current_local_tag_var.stdout }}"
+    - name: Set fact current_local_tag
+      set_fact:
+          current_local_tag: "{{ current_local_tag_var.stdout }}"
       when: packer_build_name is not defined
 
-- name: Ensure voip group is configured properly when enabled
-  hosts: all
-  gather_facts: false
-  tasks:
-  - assert:
-     that:
-       - "'voip_servers' in groups"
-       - groups['voip_servers'] | length() == 1
-     msg:
-       - "ERROR: Ensure that group 'voip_servers' exists when voip feature is enabled and"
-       - "ensure that only one server in group 'voip_servers' is defined in file {{ inventory_file }}!"
-    when:
-      - groups['all'] | length() > 1
-      - enable_voip is defined and enable_voip | string() == 'true'
-    run_once: true
+    - name: Ensure voip group is configured properly when enabled
+      assert:
+        that:
+          - "'voip_servers' in groups"
+          - groups['voip_servers'] | length() == 1
+        msg:
+          - "ERROR: Ensure that group 'voip_servers' exists when voip feature is enabled and"
+          - "ensure that only one server in group 'voip_servers' is defined in file {{ inventory_file }}!"
+      when:
+        - groups['all'] | length() > 1
+        - enable_voip is defined and enable_voip | string() == 'true'
+      run_once: true
 
-- name: Set current git tag (incomplete) in /etc/platform_version
-  hosts: all
-  tasks:
-  - copy:
-      dest: /etc/platform_version
-      content: '{{ current_local_tag if current_local_tag is defined else "NONE" }}(incomplete)'
-      owner: root
-      group: root
-      mode: 0644
-    when: packer_build_name is not defined
+    - name: Set current git tag (incomplete) in /etc/platform_version
+      copy:
+        dest: /etc/platform_version
+        content: '{{ current_local_tag if current_local_tag is defined else "NONE" }}(incomplete)'
+        owner: root
+        group: root
+        mode: 0644
+      when: packer_build_name is not defined
 ##### END ######
 
 - name: Vault Status check
@@ -208,13 +185,15 @@
         - ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
         - groups['all'] | length() > 1
 
-- name: Check for deprecated variables
+- name: Check requirements for control host
   hosts: 127.0.0.1
   connection: local
   become: no
   tasks:
-    - block:
-      - fail:
+    - name: Check for deprecated variables
+      block:
+      - name: Check for deprecated variables
+        fail:
           msg:
             - "WARNING: The variable ssl_certfile is deprecated and will not work in future releases."
       - pause:
@@ -222,36 +201,31 @@
       ignore_errors: yes
       when: ssl_certfile is defined and config_done is defined
 
-- name: Register cert subject organisation
-  hosts: 127.0.0.1
-  connection: local
-  become: no
-  tasks:
-    - shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O = .*,' | sed 's/. OU.*//' | sed 's/O = //'
+    - name: Register cert subject organisation
+      shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O = .*,' | sed 's/. OU.*//' | sed 's/O = //'
       register: cert_subject_org
       when: packer_build_name is not defined and config_done is defined and ( ssl_certfile is defined or ssl_server_certificate is defined )
 
-- name: Register cert issuer organisation
-  hosts: 127.0.0.1
-  connection: local
-  become: no
-  tasks:
-    - shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O = .*,' | sed 's/O = //' | sed 's/,//'
+    - name: Register cert issuer organisation
+      shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O = .*,' | sed 's/O = //' | sed 's/,//'
       register: cert_issuer_org
       when: packer_build_name is not defined and config_done is defined and ( ssl_certfile is defined or ssl_server_certificate is defined )
 
-- name: Check if Certificate is self signed
-  hosts: 127.0.0.1
-  connection: local
-  become: no
-  tasks:
-    - block:
-      - fail:
+    - name: Check if Certificate is self signed
+      block:
+      - name: Check if Certificate is self signed
+        fail:
           msg: "Self signed certificates are not supported. We cannot provide warranty or support for this installation."
       - pause:
           seconds: 5
       ignore_errors: yes
       when: cert_subject_org.stdout is defined and cert_issuer_org.stdout is defined and cert_subject_org.stdout == cert_issuer_org.stdout
+
+- name: Check if installing offline
+  hosts: 127.0.0.1
+  tasks:
+    - stat: path=/etc/offline_installation
+      register: offline_mode
 
 - name: Perform SSL-Preflight check
   hosts: 127.0.0.1
@@ -266,74 +240,61 @@
 
 - hosts: all
   tasks:
-  - block:
-      - name: Check APNS certificate is valid and doesn't expire within the next month
-        openssl_certificate:
-          path: "{{ apns_certificate }}"
-          provider: assertonly
-          valid_in: "2630000"
-        when: config_done is defined
-        run_once: true
-        delegate_to: localhost
-        become: no
-    rescue:
-      - debug:
-          msg: 'Please change your APN-Certificate immediately'
+    - name: Check APNS certificate is valid and doesn't expire within the next month
+      block:
+        - name: Check APNS certificate is valid and doesn't expire within the next month
+          openssl_certificate:
+            path: "{{ apns_certificate }}"
+            provider: assertonly
+            valid_in: "2630000"
+          when: config_done is defined
+          run_once: true
+          delegate_to: localhost
+          become: no
+      rescue:
+        - debug:
+            msg: 'Please change your APN-Certificate immediately'
 
-- name: Ensure the secondary APNS certificate is configured correctly
-  hosts: all
-  tasks:
-    - fail: msg="The secondary APNS certificate is not configured correctly."
+    - name: Ensure the secondary APNS certificate is configured correctly
+      fail:
+        msg: "The secondary APNS certificate is not configured correctly."
       when: apns_certificate_2 is defined and apns_appid_2 is not defined or apns_appid_2 is defined and apns_certificate_2 is not defined
 
-- hosts: all
-  tasks:
-  - block:
-      - name: Check the secondary APNS certificate is valid and doesn't expire within the next month
-        openssl_certificate:
-          path: "{{ apns_certificate_2 }}"
-          provider: assertonly
-          valid_in: "2630000"
-        when: apns_certificate_2 is defined
-        run_once: true
-        delegate_to: localhost
-        become: no
-    rescue:
-      - debug:
-          msg: 'Please change your secondary APN-Certificate immediately'
+    - name: Check the secondary APNS certificate is valid and doesn't expire within the next month
+      block:
+        - name: Check the secondary APNS certificate is valid and doesn't expire within the next month
+          openssl_certificate:
+            path: "{{ apns_certificate_2 }}"
+            provider: assertonly
+            valid_in: "2630000"
+          when: apns_certificate_2 is defined
+          run_once: true
+          delegate_to: localhost
+          become: no
+      rescue:
+        - debug:
+            msg: 'Please change your secondary APN-Certificate immediately'
 
-- name: Ensure the third APNS certificate is configured correctly
-  hosts: all
-  tasks:
-    - fail: msg="The third APNS certificate is not configured correctly."
+    - name: Ensure the third APNS certificate is configured correctly
+      fail:
+        msg: "The third APNS certificate is not configured correctly."
       when: apns_certificate_3 is defined and apns_appid_3 is not defined or apns_appid_3 is defined and apns_certificate_3 is not defined
 
-- hosts: all
-  tasks:
-  - block:
-      - name: Check the third APNS certificate is valid and doesn't expire within the next month
-        openssl_certificate:
-          path: "{{ apns_certificate_3 }}"
-          provider: assertonly
-          valid_in: "2630000"
-        when: apns_certificate_3 is defined
-        run_once: true
-        delegate_to: localhost
-        become: no
-    rescue:
-      - debug:
-          msg: 'Please change your third APN-Certificate immediately'
+    - name: Check the third APNS certificate is valid and doesn't expire within the next month
+      block:
+        - name: Check the third APNS certificate is valid and doesn't expire within the next month
+          openssl_certificate:
+            path: "{{ apns_certificate_3 }}"
+            provider: assertonly
+            valid_in: "2630000"
+          when: apns_certificate_3 is defined
+          run_once: true
+          delegate_to: localhost
+          become: no
+      rescue:
+        - debug:
+            msg: 'Please change your third APN-Certificate immediately'
 
-
-
-- name: Check if installing offline
-  hosts: 127.0.0.1
-  tasks:
-    - stat: path=/etc/offline_installation
-      register: offline_mode
-
-# Check for unattended-upgrades
-- name: Wait for automatic system updates to complete
-  hosts: all
-  tasks:
-    - shell: while pgrep /usr/bin/unattended-upgrade; do sleep 1; done;
+    # Check for unattended-upgrades
+    - name: Wait for automatic system updates to complete
+      shell: while pgrep /usr/bin/unattended-upgrade; do sleep 1; done;
