@@ -82,6 +82,6 @@
 
 - name: Backup Ansible log file
   command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
-  when: TW_DEV_MODE is not defined
+  when: not TW_DEV_MODE
   run_once: True
   ignore_errors: yes

@@ -43,7 +43,7 @@
 
     - name: Check if in developer mode
       set_fact:
-        TW_DEV_MODE: "{{ lookup('env', 'TW_DEV_MODE' ) | ternary (lookup('env', 'TW_DEV_MODE' ), omit) }}"
+        TW_DEV_MODE: "{{ lookup('env', 'TW_DEV_MODE' ) | ternary (True, False) }}"
       delegate_facts: true
       run_once: true
 
@@ -88,7 +88,7 @@
               - "WARNING: Incorrect configuration detected. Please ensure you are using the correct inventory file, playbook and variable config file."
               - "If you encounter any problems or have any concerns, please contact support@teamwire.eu"
       when:
-        - TW_DEV_MODE is not defined
+        - not TW_DEV_MODE
         - packer_build_name is not defined
         - vagrant_mode is not defined
 
