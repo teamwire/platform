@@ -240,60 +240,79 @@
 
 - hosts: all
   tasks:
-    - name: Check APNS certificate is valid and doesn't expire within the next month
+    - name: Check APNS certificate validity
       block:
-        - name: Check APNS certificate is valid and doesn't expire within the next month
-          openssl_certificate:
+        - name: Check APNS certificate validity
+          openssl_certificate_info:
             path: "{{ apns_certificate }}"
-            provider: assertonly
-            valid_in: "2630000"
-          when: config_done is defined
-          run_once: true
-          delegate_to: localhost
-          become: no
+            valid_at:
+              next_month: "+30d"
+          register: __apns_certificate_validity
+        - name: Assert APNS certificate doesn't expire within the next month
+          assert:
+            that:
+              - __apns_certificate_validity.valid_at.next_month
       rescue:
         - debug:
-            msg: 'Please change your APN-Certificate immediately'
+            msg: 'Please change your APNS-Certificate immediately'
+      when: config_done is defined
+      run_once: true
+      delegate_to: localhost
+      become: no
 
     - name: Ensure the secondary APNS certificate is configured correctly
       fail:
         msg: "The secondary APNS certificate is not configured correctly."
       when: apns_certificate_2 is defined and apns_appid_2 is not defined or apns_appid_2 is defined and apns_certificate_2 is not defined
 
-    - name: Check the secondary APNS certificate is valid and doesn't expire within the next month
+    - name: Check secondary APNS certificate validity
       block:
-        - name: Check the secondary APNS certificate is valid and doesn't expire within the next month
-          openssl_certificate:
+        - name: Check secondary APNS certificate validity
+          openssl_certificate_info:
             path: "{{ apns_certificate_2 }}"
-            provider: assertonly
-            valid_in: "2630000"
-          when: apns_certificate_2 is defined
-          run_once: true
-          delegate_to: localhost
-          become: no
+            valid_at:
+              next_month: "+30d"
+          register: __apns_certificate_validity
+        - name: Assert secondary APNS certificate doesn't expire within the next month
+          assert:
+            that:
+              - __apns_certificate_validity.valid_at.next_month
       rescue:
         - debug:
-            msg: 'Please change your secondary APN-Certificate immediately'
+            msg: 'Please change your secondary APNS-Certificate immediately'
+      when:
+        - config_done is defined
+        - apns_certificate_2 is defined
+      run_once: true
+      delegate_to: localhost
+      become: no
 
-    - name: Ensure the third APNS certificate is configured correctly
+    - name: Ensure the tertiary APNS certificate is configured correctly
       fail:
-        msg: "The third APNS certificate is not configured correctly."
+        msg: "The tertiary APNS certificate is not configured correctly."
       when: apns_certificate_3 is defined and apns_appid_3 is not defined or apns_appid_3 is defined and apns_certificate_3 is not defined
 
-    - name: Check the third APNS certificate is valid and doesn't expire within the next month
+    - name: Check tertiary APNS certificate validity
       block:
-        - name: Check the third APNS certificate is valid and doesn't expire within the next month
-          openssl_certificate:
+        - name: Check tertiary APNS certificate validity
+          openssl_certificate_info:
             path: "{{ apns_certificate_3 }}"
-            provider: assertonly
-            valid_in: "2630000"
-          when: apns_certificate_3 is defined
-          run_once: true
-          delegate_to: localhost
-          become: no
+            valid_at:
+              next_month: "+30d"
+          register: __apns_certificate_validity
+        - name: Assert tertiary APNS certificate doesn't expire within the next month
+          assert:
+            that:
+              - __apns_certificate_validity.valid_at.next_month
       rescue:
         - debug:
-            msg: 'Please change your third APN-Certificate immediately'
+            msg: 'Please change your tertiary APNS-Certificate immediately'
+      when:
+        - config_done is defined
+        - apns_certificate_3 is defined
+      run_once: true
+      delegate_to: localhost
+      become: no
 
     # Check for unattended-upgrades
     - name: Wait for automatic system updates to complete
