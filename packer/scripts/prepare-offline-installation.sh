@@ -15,9 +15,9 @@ mariadb-server
 mariadb-client
 mariadb-backup
 sshpass
-python-mysqldb
+python3-mysqldb
 keepalived
-python-redis
+python3-redis
 redis-tools
 redis-server
 redis-sentinel
@@ -34,8 +34,7 @@ libterm-readkey-perl
 percona-xtrabackup-24
 socat
 patch
-python-backports.ssl-match-hostname
-python-docker
+python3-docker
 mlock
 libcap2-bin
 curl
@@ -61,7 +60,6 @@ php${PHP_VERSION}-intl
 php${PHP_VERSION}-gd
 php${PHP_VERSION}-xml
 jq
-gnupg1
 dnsutils
 "
 

@@ -110,7 +110,7 @@
     command: vault -autocomplete-install
     environment:
       VAULT_ADDR: "http://127.0.0.1:8200"
-    become: teamwire
+    become_user: teamwire
 
   #Enable TLS
 

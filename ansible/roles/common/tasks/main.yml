@@ -85,21 +85,26 @@
   - jq
   - pwgen
   - dnsutils
-
-- name: Install gpg1
-  apt: pkg=gnupg1
+  - tcpdump
 
 - name: Install pip
   apt: name={{item}} state=present
   with_items:
-  - python-pip
-  - python-wheel
-  - python-setuptools
+  - python3-pip
+  - python3-wheel
+  - python3-setuptools
 
-- name: Install docker-py 1.10.6 from pypi (Debian 10)
+# # https://docs.ansible.com/ansible/latest/collections/community/general/alternatives_module.html
+# - name: Update alternatives
+#   community.general.alternatives:
+#     name: python
+#     link: /usr/bin/python
+#     path: /usr/bin/{{ ansible_python.executable }}
+
+- name: Install Python Docker library 5.0.0 from pypi (Debian 10)
   pip:
-    name=docker-py
-    version=1.10.6
+    name=docker
+    version=5.0.0
     extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
   when: ansible_distribution_release == 'buster'
 

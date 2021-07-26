@@ -65,11 +65,11 @@
 
 - name: Enable Vault autocomplete
   lineinfile:
-     path: "/home/teamwire/.bashrc"
-     insertafter: EOF
-     line: complete -C /usr/local/bin/vault vault
-     state: present
-  become: teamwire
+      path: "/home/teamwire/.bashrc"
+      insertafter: EOF
+      line: complete -C /usr/local/bin/vault vault
+      state: present
+  become_user: teamwire
 
   #Enable TLS
 

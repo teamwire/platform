@@ -14,7 +14,7 @@
   - icingaweb2
   - icingacli
   - icingaweb2-module-monitoring
-  - python-mysqldb
+  - python3-mysqldb
 
 - name: Install Web UI tools debian 9
   apt: name=mysql-client state=present
@@ -340,7 +340,7 @@
 - name: Configure sender address for notifications
   replace:
     dest: /etc/icinga2/scripts/{{ item }}
-    regexp: '\mail -s'
+    regexp: 'mail -s'
     replace: 'mail -r "{{ sender_address}}" -s'
   with_items:
     - mail-host-notification.sh
