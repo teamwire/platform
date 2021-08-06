@@ -55,6 +55,48 @@ defaults
 #    stats auth ha_stat_user:ha_stat_pass
 #    stats uri /
 
+{% if enable_voip is defined and enable_voip | string() == 'true' -%}
+# ----------------------------------------------------
+# FRONTEND: VOIP WEB
+# ----------------------------------------------------
+frontend voip-web-in
+    bind {{ ansible_default_ipv4.address if groups['all'] | length == 1 else "*" }}:8080
+    {% if ssl_cert is defined or ssl_certfile is defined or ssl_server_certificate is defined %}redirect scheme https code 301 if !{ ssl_fc }
+    bind *:8443 ssl crt /etc/ssl/certs/server_and_intermediate_and_root.crt
+
+    tcp-request inspect-delay 5s
+    tcp-request content reject if { req.ssl_ver 3 }
+    tcp-request content accept if { req.ssl_hello_type 1 }
+    {% endif %}
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+
+    http-request capture req.hdr(host) len 32
+    http-request capture req.hdr(X-Forwarded-For) len 32
+    http-request capture req.hdr(User-Agent) len 32
+    http-request capture req.hdr(Connection) len 7
+    http-request capture req.hdr(Upgrade) len 9
+
+    log-format 'LIMSTART{ "DATE":"%t","ID":"%ID","STATUS":"%ST","SourceIP":"%ci:%cp","ROUTE":"%ft/%b","METRIC":"%Tq/%Tw/%Tc/%Tr/%Tt ","httpRequest":"%r","requestHeader":"%hr","CON":"%tsc  %ac %fc %bc %sc %rc ","TLS-PROTO":"%sslv","TLS_CIPHER":"%sslc"}LIMEND'
+    unique-id-format %{+X}o\ %ci:%cp_%fi:%fp_%Ts_%rt:%pid
+    unique-id-header X-Request-ID
+
+    default_backend teamwire-voip-web
+
+{% if groups['all'] | length > 1 %}
+# ----------------------------------------------------
+# FRONTEND: VOIP VIDEO INACTIVE !!!!!!!!!!!!!!!!!!!!!
+# ----------------------------------------------------
+#frontend voip-video-in
+#    bind *:10000
+#    mode tcp
+
+#    option tcplog
+
+#    default_backend teamwire-voip-video
+{% endif %}
+{% endif %}
+
 # ----------------------------------------------------
 # FRONTEND: HTTP + HTTPS
 # ----------------------------------------------------

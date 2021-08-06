@@ -41,7 +41,7 @@ server {
 
 # Enable the client
 client {
-	enabled = {{ "true" if inventory_hostname in groups['backend_servers'] or 'management_servers' in groups and inventory_hostname in groups['management_servers'] else "false" }}
+	enabled = {{ "true" if inventory_hostname in groups['backend_servers'] or inventory_hostname in groups['voip_servers'] or 'management_servers' in groups and inventory_hostname in groups['management_servers'] else "false" }}
 	network_interface =  "{{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}"
 	options = {
 		"docker.cleanup.image" = {{ "true" if "docker_registry" in groups else "false" }}

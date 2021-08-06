@@ -14,12 +14,14 @@
 - include: roles/container.yml
 - include: roles/loghost.yml
 - include: roles/docker.yml
+- include: roles/voip.yml
 - include: roles/go.yml
 - include: roles/redis_servers.yml
 - include: roles/frontend.yml
 - include: roles/load_balancers.yml
 - include: roles/monitoring.yml
 - include: roles/housekeeping.yml
+
 
 - name: Set current tag (COMPLETE) in /etc/platform_version
   hosts: all

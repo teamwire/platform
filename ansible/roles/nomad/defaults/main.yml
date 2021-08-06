@@ -22,4 +22,5 @@ notification_ram_alloc_min: notification_ram_alloc
 # Nomad jobs list
 nomad_jobs:
   - teamwire
+  - voip
 

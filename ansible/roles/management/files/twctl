@@ -3,6 +3,12 @@
 # Ensure we can parse all command output
 export LANG=C
 
+# Define colors
+RED='\033[0;31m'
+GRN='\033[0;32m'
+YLW='\033[0;33m'
+NOC='\033[0m'
+
 # Find Ansible configuration
 if [ -d ~/platform/ansible ] ; then
 	ANSIBLE_DIR=~/platform/ansible
@@ -58,9 +64,11 @@ else
 	fi
 
 	CONTAINERS="teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
+	VOIP_CONTAINERS="teamwire_web teamwire_prosody teamwire_jicofo teamwire_jvb"
 fi
 
 IMAGES="teamwire/backend teamwire/notification-server"
+
 
 
 if [ "$VAULT_INITIALIZED" != "true" ]; then
@@ -254,6 +262,63 @@ check_tag() {
 			exit 1
 		fi
 	done
+}
+is_voip_Enabled() {
+	local enabled="$(_get_config_value enable_voip)"
+	if [ ${enabled} != "yes" ]; then
+		exit 1
+	fi
+}
+
+voip_start_cluster() {
+	$NOMAD run /data/voip/voip.hcl
+}
+
+voip_start_single() {
+	for CONTAINER in $VOIP_CONTAINERS; do
+		c=$(docker start ${CONTAINER})
+        printf "${c:0:15}\t...${GRN}start [done]${NOC}\n"
+	done
+}
+
+voip_stop_cluster() {
+	$NOMAD job stop voip
+}
+voip_stop_single() {
+	for CONTAINER in $VOIP_CONTAINERS; do
+		c=$(docker stop ${CONTAINER})
+        printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+	done
+}
+
+voip_status_cluster() {
+	$NOMAD status voip
+}
+voip_status_single() {
+	status_single
+}
+
+voip() {
+	local enabled="$(_get_config_value enable_voip)"
+	if [ "${enabled,,}" != "true" ]; then
+		echo "VOIP is not enabled. Please enable voip in group_vars/all file"
+		exit
+	fi
+	case $OPTION in
+		start)
+			voip_start_$INSTALLATION
+			;;
+		stop)
+			voip_stop_$INSTALLATION
+			;;
+		restart)
+			voip_stop_$INSTALLATION
+			voip_start_$INSTALLATION
+			;;
+		status)
+			"voip_status_${INSTALLATION}"
+			;;
+	esac
 }
 
 get_database_configuration() {
@@ -957,6 +1022,11 @@ while [ $# -gt 0 ] ; do
             ;;
 		ha-log)
 			TASK="ha-log"
+			;;
+		voip)
+			TASK="voip"
+			OPTION="$2"
+			shift
 			;;
 	esac
 	shift

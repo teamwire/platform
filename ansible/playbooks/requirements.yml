@@ -162,6 +162,22 @@
          current_local_tag: "{{ current_local_tag_var.stdout }}"
       when: packer_build_name is not defined
 
+- name: Ensure voip group is configured properly when enabled
+  hosts: all
+  gather_facts: false
+  tasks:
+  - assert:
+     that:
+       - "'voip_servers' in groups"
+       - groups['voip_servers'] | length() == 1
+     msg:
+       - "ERROR: Ensure that group 'voip_servers' exists when voip feature is enabled and"
+       - "ensure that only one server in group 'voip_servers' is defined in file {{ inventory_file }}!"
+    when:
+      - groups['all'] | length() > 1
+      - enable_voip is defined and enable_voip | string() == 'true'
+    run_once: true
+
 - name: Set current git tag (incomplete) in /etc/platform_version
   hosts: all
   tasks:

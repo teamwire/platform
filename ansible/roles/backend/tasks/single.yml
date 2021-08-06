@@ -14,7 +14,7 @@
     name: "{{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry | default('false') | bool else '' }}teamwire/backend:{{version|default('prod')}}"
     source: pull
     state: present
-  when: 
+  when:
     - config_done is defined
     - not offline_mode.stat.exists
 - name: Run the Teamwire backend main container
@@ -65,6 +65,7 @@
       WEBSOCKETS_ENABLED: "{{ websockets_enabled | default('true')}}"
       ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
       USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
+      VOIP_URL: "http://localhost:7080"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined

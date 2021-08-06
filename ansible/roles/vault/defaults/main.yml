@@ -30,5 +30,11 @@ secrets:
     path: secret/monitoring/icinga_api_password
   reportfile_password:
     path: secret/reportfile/password
+  voip_jvb_password:
+    path: secret/voip/jvb_password
+  voip_jicofo_password:
+    path: secret/voip/jicofo_password
+  voip_jibri_password:
+    path: secret/voip/jibri_password
 
 vault_certificate_ttl: 17532h

@@ -1,0 +1,131 @@
+- name: Ensure voip DNS can be resolved
+  lineinfile:
+    path: "/etc/hosts"
+    insertafter: EOF
+    state: present
+    line: "127.0.0.1    {{ item }}"
+  with_items:
+    - xmpp.meet.jitsi
+    - meet.jitsi
+    - auth.meet.jitsi
+    - muc.meet.jitsi
+    - internal-muc.meet.jitsi
+    - guest.meet.jitsi
+    - recorder.meet.jitsi
+
+- name: Run the Teamwire voip web container
+  when: config_done is defined
+  docker_container:
+    name: teamwire_web
+    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    log_driver: "syslog"
+    log_opt:
+      tag: teamwire-web
+      syslog-facility: "local6"
+    env:
+      ENABLE_XMPP_WEBSOCKET: "0"
+      TZ: "UTC"
+      XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
+      XMPP_BOSH_URL_BASE: "http://{{ 'prosody.service.consul' if groups['all'] | length > 1 else 'xmpp.meet.jitsi' }}:5280"
+      XMPP_DOMAIN: "meet.jitsi"
+      XMPP_GUEST_DOMAIN: "guest.meet.jitsi"
+      XMPP_MUC_DOMAIN: "muc.meet.jitsi"
+      XMPP_RECORDER_DOMAIN: "recorder.meet.jitsi"
+      S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
+
+- name: Run the Teamwire voip prosody container
+  when: config_done is defined
+  docker_container:
+    name: teamwire_prosody
+    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - "{{ VOIP_ROOT_PATH }}/prosody/config:/config:Z"
+      - "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
+    log_driver: "syslog"
+    log_opt:
+      tag: teamwire-prosody
+      syslog-facility: "local6"
+    env:
+      JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
+      JIBRI_XMPP_PASSWORD: "{{ voip_jibri_password }}"
+      JICOFO_AUTH_PASSWORD: "{{ voip_jicofo_password }}"
+      ENABLE_XMPP_WEBSOCKET: "0"
+      XMPP_DOMAIN: "meet.jitsi"
+      XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
+      XMPP_GUEST_DOMAIN: "guest.meet.jitsi"
+      XMPP_MUC_DOMAIN: "muc.meet.jitsi"
+      XMPP_INTERNAL_MUC_DOMAIN: "internal-muc.meet.jitsi"
+      XMPP_MODULES: ""
+      XMPP_MUC_MODULES: ""
+      XMPP_INTERNAL_MUC_MODULES: ""
+      XMPP_RECORDER_DOMAIN: "recorder.meet.jitsi"
+      JICOFO_AUTH_USER: "focus"
+      JVB_AUTH_USER: "jvb"
+      JIBRI_XMPP_USER: "jibri"
+      TZ: "UTC"
+      S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
+
+- name: Run the Teamwire voip jicofo container
+  when: config_done is defined
+  docker_container:
+    name: teamwire_jicofo
+    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - "{{ VOIP_ROOT_PATH }}/jicofo:/config:Z"
+    log_driver: "syslog"
+    log_opt:
+      tag: teamwire-jicofo
+      syslog-facility: "local6"
+    env:
+      JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
+      JICOFO_AUTH_PASSWORD: "{{ voip_jicofo_password }}"
+      JICOFO_AUTH_USER: "focus"
+      JIBRI_BREWERY_MUC: "jibribrewery"
+      JIBRI_PENDING_TIMEOUT: "90"
+      JIGASI_BREWERY_MUC: "jigasibrewery"
+      JVB_BREWERY_MUC: "jvbbrewery"
+      TZ: "UTC"
+      XMPP_DOMAIN: "meet.jitsi"
+      XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
+      XMPP_INTERNAL_MUC_DOMAIN: "internal-muc.meet.jitsi"
+      XMPP_MUC_DOMAIN: "muc.meet.jitsi"
+      XMPP_SERVER: "xmpp.meet.jitsi"
+      S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
+
+- name: Run the Teamwire voip video bridge container
+  when: config_done is defined
+  docker_container:
+    name: teamwire_jvb
+    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - "{{ VOIP_ROOT_PATH }}/jvb:/config:Z"
+    log_driver: "syslog"
+    log_opt:
+      tag: teamwire-jvb
+      syslog-facility: "local6"
+    env:
+      JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
+      XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
+      XMPP_INTERNAL_MUC_DOMAIN: "internal-muc.meet.jitsi"
+      XMPP_SERVER: "xmpp.meet.jitsi"
+      JVB_AUTH_USER: "jvb"
+      JVB_BREWERY_MUC: "jvbbrewery"
+      JVB_PORT: "10000"
+      JVB_TCP_HARVESTER_DISABLED: "true"
+      JVB_TCP_PORT: "4443"
+      JVB_TCP_MAPPED_PORT: "4443"
+      JVB_STUN_SERVERS: "meet-jit-si-turnrelay.jitsi.net:443"
+      TZ: "UTC"
+      S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"

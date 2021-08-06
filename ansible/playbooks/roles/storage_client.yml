@@ -1,4 +1,4 @@
 - name: Mount cluster storage
-  hosts: backend_servers:hashi_servers:docker_registry:management_servers:local
+  hosts: backend_servers:voip_servers:hashi_servers:docker_registry:management_servers:local
   roles:
       - role: ../../roles/storage_client

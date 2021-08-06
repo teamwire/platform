@@ -1,0 +1,65 @@
+- name: Create data dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  with_items:
+    - "{{ VOIP_ROOT_PATH }}/transcripts"
+    - "{{ VOIP_ROOT_PATH }}/prosody/config"
+    - "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom"
+    - "{{ VOIP_ROOT_PATH }}/jicofo"
+    - "{{ VOIP_ROOT_PATH }}/jvb"
+    - "{{ VOIP_ROOT_PATH }}/jigasi"
+    - "{{ VOIP_ROOT_PATH }}/jibri"
+  run_once: true
+
+- name: Register docker registry with harbor
+  set_fact:
+    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/teamwire/"
+  when:
+    - config_done is defined
+    - use_teamwire_registry | default('false') | bool
+    - groups.docker_registry is defined
+
+- name: Template voip nomad job file
+  template:
+    src: "voip.hcl.tmpl"
+    dest: "{{ VOIP_ROOT_PATH }}/voip.hcl"
+    owner: root
+    group: root
+    mode: 0644
+  run_once: true
+  when: groups['all'] | length > 1
+
+- name: Login to the docker registry
+  docker_login:
+    registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry | default('false') | bool else 'https://index.docker.io/v1/' }}"
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+  when: not offline_mode.stat.exists
+
+- name: Pull and tag voip image to local registry
+  docker_image:
+    name: "{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    source: pull
+    repository: "{{ LOCAL_REGISTRY }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    push: yes
+  delegate_to: "{{ groups['management_servers'] | first() }}"
+  when:
+    - config_done is defined
+    - use_teamwire_registry is defined and use_teamwire_registry | default('false') | bool
+    - groups['all'] | length > 1
+  with_items:
+    - "{{ VOIP_CONTAINER_WEB }}"
+    - "{{ VOIP_CONTAINER_PROSODY }}"
+    - "{{ VOIP_CONTAINER_JICOFO }}"
+    - "{{ VOIP_CONTAINER_JVB }}"
+
+- name: Run voip container in a single server environment
+  include_tasks: single.yml
+  when:
+    - config_done is defined
+    - groups['all'] | length == 1

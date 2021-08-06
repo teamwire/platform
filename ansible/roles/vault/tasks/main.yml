@@ -42,7 +42,7 @@
     dest: /etc/logrotate.d/vault-log
 
 - name: Install the Vault binary
-  unarchive: 
+  unarchive:
     src: /var/cache/downloads/vault_{{vault_version}}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755

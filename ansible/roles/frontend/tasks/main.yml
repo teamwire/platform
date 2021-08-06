@@ -197,6 +197,12 @@
 - ufw: rule=allow port=443 proto=tcp
   when: ssl_keyfile is defined
 
+- ufw: rule=allow port=8443 proto=tcp
+  when: ssl_keyfile is defined and enable_voip is defined and enable_voip | string() == 'true'
+
+- ufw: rule=allow port=10000 proto=any
+  when: groups.all | length == 1 and enable_voip is defined and enable_voip | string() == 'true'
+
 - name: Re-use sockets in TIME_WAIT state for new connections
   sysctl:
     name: net.ipv4.tcp_tw_reuse
@@ -215,6 +221,19 @@
     value: "1024"
     state: present
     reload: yes
+
+- name: Template voip reverse proxy config
+  template:
+    src: "20-voip.cfg.j2"
+    dest: "/etc/haproxy/20-voip.cfg"
+    mode: 0644
+    owner: root
+    group: root
+  notify: restart haproxy
+  when:
+    - config_done is defined
+    - groups['all'] | length == 1
+    - enable_voip is defined and enable_voip | string() == 'true'
 
 - include_tasks: ocsp.yml
   when: not offline_mode.stat.exists
