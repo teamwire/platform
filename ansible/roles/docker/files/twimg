@@ -1,6 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-from __future__ import print_function
 import argparse
 import base64
 import csv
@@ -8,7 +7,7 @@ import io
 import os.path
 import sys
 import tarfile
-from docker import Client
+from docker import APIClient
 
 
 def eprint(*args, **kwargs):
@@ -23,7 +22,7 @@ class TWImg():
 
     def __init__(self, registry):
         self.registry = registry
-        self.cli = Client(base_url='unix://var/run/docker.sock')
+        self.cli = APIClient(base_url='unix://var/run/docker.sock')
 
     def _remoteNameFor(self, repo):
         return "{}/{}".format(self.registry, repo)

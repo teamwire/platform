@@ -86,6 +86,7 @@
   - pwgen
   - dnsutils
   - tcpdump
+  - sshpass
 
 - name: Install pip
   apt: name={{item}} state=present

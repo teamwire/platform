@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python3
 
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
@@ -68,7 +68,7 @@ class CallbackModule(CallbackBase):
                 sys.exit(1)
 
             checkout_platform_version_cmd = subprocess.Popen(["git",git_path,"describe","--always"],stdout=subprocess.PIPE)
-            checkout_platform_version = checkout_platform_version_cmd.communicate()[0].strip()
+            checkout_platform_version = checkout_platform_version_cmd.communicate()[0].decode('utf-8').strip()
 
         except IOError:
             self._display.warning("Could not determine checkout platform version")
