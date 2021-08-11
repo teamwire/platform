@@ -1,6 +1,15 @@
 ---
+
 - name: Import requirements which needs to run first
   import_playbook: requirements.yml
+
+- name: Ask for additional information upfront
+  hosts: all
+  tasks:
+    - name: Ask for additional information
+      include_role:
+        name: "{{ inventory_dir }}/roles/vault"
+        tasks_from: gather_information.yml
 
 - include: roles/common.yml
 - include: roles/management.yml

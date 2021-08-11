@@ -3,6 +3,9 @@
   stat: path=/usr/local/bin/vault
   register: vault_binary
 
+- name: Gather information about Vault
+  import_tasks: gather_information.yml
+
 - name: Create 3rd party download directory
   file:
     dest: /var/cache/downloads

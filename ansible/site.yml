@@ -2,6 +2,14 @@
 - name: Import requirements which needs to run first
   import_playbook: playbooks/requirements.yml
 
+- name: Ask for additional information upfront
+  hosts: all
+  tasks:
+    - name: Ask for additional information
+      include_role:
+        name: "{{ inventory_dir }}/roles/vault"
+        tasks_from: gather_information.yml
+
 - name: Apply common configuration to all nodes
   hosts: all
   roles:
