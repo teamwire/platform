@@ -1,9 +1,68 @@
 ---
+- name: Check if Vault is already installed
+  stat: path=/usr/local/bin/vault
+  register: vault_binary
+
+- name: Gather information about Vault
+  block:
+    - name: Gather information about Vault
+      command: vault status
+      register: vault_status
+      failed_when: vault_status.rc == 1 or vault_status.rc >= 3
+      changed_when: no
+    - name: Parse Vault information
+      set_fact:
+        vault_version_current: "{{ vault_status_version_line | regex_search('\\d+\\.\\d+\\.\\d+') }}"
+        vault_ha_enabled: "{{ vault_status_ha_enabled_line | regex_search('(true|false)') | bool }}"
+        # HA Mode is only displayed if Vault is unsealed
+        # A sealed Vault is treated as 'standby'
+        vault_ha_mode: "{{ 'standby' if vault_status_ha_mode_line|length == 0 else vault_status_ha_mode_line | first | regex_search('(standby|active)') }}"
+      vars:
+        vault_status_ha_enabled_line: "{{ vault_status.stdout_lines | select('match', '^HA Enabled.*$') | first }}"
+        vault_status_ha_mode_line: "{{ vault_status.stdout_lines | select('match', '^HA Mode.*$') | list }}"
+        vault_status_version_line: "{{ vault_status.stdout_lines | select('match', '^Version.*$') | first }}"
+  when: vault_binary.stat.exists
+
 # Some credentials shouldn't be stored as plain variables thus they're asked for interactively
 # In case this role is executed outside of the overall Teamwire platform playbook
 # they've already been asked at the very beginning
 - name: Ask for additional information
   block:
+
+    # If Vault will be updated it needs to be restarted and unsealed afterwards
+    # Ask for two unseal keys to be able to unseal Vault automatically
+    - name: Ask for unseal keys
+      block:
+        - name: Vault needs to be unsealed after upgrade
+          pause:
+            prompt: "Please provide first unseal key"
+            echo: no
+          register: pause_entry_01
+          run_once: true
+        - name: Vault needs to be unsealed after upgrade
+          pause:
+            prompt: "Please provide a second unseal key. Make sure it differs from the first key you've provided"
+            echo: no
+          register: pause_entry_02
+          run_once: true
+          when: pause_entry_01.user_input is defined
+        - name: Verify unseal keys have been provided
+          fail:
+            msg: Unseal keys are required to upgrade Vault. Please ensure you've provided two different unseal keys.
+          when: not pause_entry_01.user_input is defined or
+                    pause_entry_01.user_input == "" or
+                not pause_entry_02.user_input is defined or
+                    pause_entry_02.user_input == "" or
+                pause_entry_01.user_input == pause_entry_02.user_input
+        - name: Save unseal keys
+          set_fact:
+            vault_unseal_keys: [ "{{ pause_entry_01.user_input }}", "{{ pause_entry_02.user_input }}" ]
+          when:
+            - pause_entry_01.user_input is defined
+            - pause_entry_02.user_input is defined
+      when:
+        - vault_binary.stat.exists
+        - vault_version is version(vault_version_current, '>')
 
     - name: Ask for credentials
       block:
