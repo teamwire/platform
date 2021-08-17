@@ -8,6 +8,17 @@
   stat: path=/usr/local/bin/consul
   register: consul_binary
 
+- name: Gather information about Consul
+  block:
+    - name: Gather Consul version information
+      command: consul version
+      register: consul_version_cmd
+      changed_when: no
+    - name: Parse Consul information
+      set_fact:
+        consul_version_current: "{{ consul_version_cmd.stdout_lines[0] | regex_search('\\d+\\.\\d+\\.\\d+') }}"
+  when: consul_binary.stat.exists
+
 - name: Download Consul
   get_url:
     url: https://releases.hashicorp.com/consul/{{consul_version}}/consul_{{consul_version}}_linux_amd64.zip
@@ -18,7 +29,7 @@
   environment:
     https_proxy: "{{ http_proxy|default() }}"
 
-- name: Install the Consul binary
+- name: Install/Update the Consul binary
   unarchive:
     src: /var/cache/downloads/consul_{{consul_version}}_linux_amd64.zip
     dest: /usr/local/bin
@@ -64,3 +75,32 @@
 
 - name: Enable the Consul service
   service: name=consul state=started enabled=yes daemon_reload=yes
+
+# Upgraded binary has already been placed previously
+# The new version will take effect as soon as Consul process is restarted
+- name: Upgrade Consul node
+  block:
+    - name: Quit cluster
+      command: consul leave
+
+    - name: Restart Consul to re-join cluster
+      service:
+        name: consul
+        state: restarted
+
+    - name: Gather version information about upgraded Consul
+      command: consul version
+      register: consul_upgraded_version_cmd
+      changed_when: no
+
+    - name: Parse upgraded Consul version information
+      set_fact:
+        consul_upgraded_version: "{{ consul_upgraded_version_cmd.stdout_lines[0] | regex_search('\\d+\\.\\d+\\.\\d+') }}"
+
+    - name: Verify upgrade succeeded
+      assert:
+        that: consul_upgraded_version is version(consul_version, '==')
+
+  when:
+    - consul_binary.stat.exists
+    - consul_version_current is version(consul_version, '<')
