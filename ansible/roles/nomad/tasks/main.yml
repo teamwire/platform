@@ -2,6 +2,17 @@
   stat: path=/usr/local/bin/nomad
   register: nomad_binary
 
+- name: Gather information about Nomad
+  block:
+    - name: Gather Nomad version information
+      command: nomad version
+      register: nomad_version_cmd
+      changed_when: no
+    - name: Parse Nomad information
+      set_fact:
+        nomad_version_current: "{{ nomad_version_cmd.stdout | regex_search('\\d+\\.\\d+\\.\\d+') }}"
+  when: nomad_binary.stat.exists
+
 - name: Download Nomad
   get_url:
     url: https://releases.hashicorp.com/nomad/{{nomad_version}}/nomad_{{nomad_version}}_linux_amd64.zip
@@ -13,14 +24,14 @@
   environment:
     https_proxy: "{{ http_proxy|default() }}"
 
-- name: Install the Nomad binary
+- name: Install/Update the Nomad binary
   unarchive:
     src: /var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
     copy: no
   notify: Restart Nomad agent
-  when: nomad_downloaded.changed or not nomad_binary.stat.exists
+  when: not nomad_binary.stat.exists or nomad_version_current is version(nomad_version, '<')
 
 - name: Create Nomad config firectory
   file: dest=/etc/nomad state=directory mode=0755
@@ -39,6 +50,31 @@
 
 - name: Enable the Nomad service
   service: name=nomad state=started enabled=yes daemon_reload=yes
+
+# The new version will take effect as soon as Nomad process is restarted
+- name: Upgrade Nomad node
+  block:
+    - name: Restart Nomad
+      service:
+        name: nomad
+        state: restarted
+
+    - name: Gather version information about upgraded Nomad
+      command: nomad version
+      register: nomad_upgraded_version_cmd
+      changed_when: no
+
+    - name: Parse upgraded Nomad version information
+      set_fact:
+        nomad_upgraded_version: "{{ nomad_upgraded_version_cmd.stdout_lines[0] | regex_search('\\d+\\.\\d+\\.\\d+') }}"
+
+    - name: Verify upgrade succeeded
+      assert:
+        that: nomad_upgraded_version is version(nomad_version, '==')
+
+  when:
+    - nomad_binary.stat.exists
+    - nomad_version_current is version(nomad_version, '<')
 
 - include: vault-integration.yml
   when: hostvars[groups['hashi_servers'][0]].ansible_local.vault.initialized == "true"
