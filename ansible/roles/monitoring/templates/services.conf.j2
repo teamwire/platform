@@ -121,7 +121,9 @@ apply Service "check-nomad-health" {
   assign where "hashi_servers" in host.vars.roles || "backend_servers" in host.vars.roles
 }
 
+
 {% for job in nomad_jobs %}
+{% if job == 'teamwire' %}
 apply Service "check-nomad-job-{{ job }}" {
   import "generic-service"
   check_command = "http"
@@ -135,6 +137,23 @@ apply Service "check-nomad-job-{{ job }}" {
   command_endpoint = host.vars.client_endpoint
   assign where "hashi_servers" in host.vars.roles
 }
+{% else %}
+{% if enable_voip is defined and enable_voip == "true" %}
+apply Service "check-nomad-job-{{ job }}" {
+  import "generic-service"
+  check_command = "http"
+
+  vars.http_port = 4646
+  vars.http_uri = "/v1/job/{{ job }}"
+  vars.http_string = "running"
+  vars.address = "127.0.0.1"
+  vars.http_ssl = "false"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "voip_servers" in host.vars.roles
+}
+{% endif %}
+{% endif %}
 {% endfor %}
 
 {% if ansible_local.vault.initialized == "true" or groups['all'] | length() > 1 and hostvars[groups['hashi_servers'][0]].ansible_local.vault.initialized == "true" %}
@@ -424,6 +443,65 @@ apply Service "check-container-notification-server" {
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux"
 }
+
+{% if enable_voip is defined and enable_voip == 'true' %}
+apply Service "check-container-voip-web" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_web"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-voip-jvb" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_jvb"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-voip-jicofo" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_jicofo"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-voip-prosody" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_prosody"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-haproxy-voip" {
+  import "generic-service"
+  check_command = "http"
+
+  vars.http_port = 8443
+  vars.http_uri = "/"
+  vars.address = "127.0.0.1"
+  vars.http_ssl = "true"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+{% endif %}
 
 apply Service "check-haproxy-backend" {
   import "generic-service"

@@ -52,12 +52,20 @@
   with_items:
     - 01-base.hcl
     - 10-backend.hcl
+    - 20-voip.hcl
 
 - name: Write Consul Template haproxy frontend templates
   template:
     src: "{{ frontend_haproxy_template }}"
     dest: /etc/consul-template/templates/teamwire-backend.tmpl
   notify: restart Consul Template
+
+- name: Write voip backend template
+  template:
+    src: 20-voip.cfg.j2
+    dest: /etc/consul-template/templates/teamwire-voip.tmpl
+  notify: restart Consul Template
+  when: enable_voip is defined and enable_voip | string() == 'true'
 
 - name: Remove default HAproxy configs
   file:

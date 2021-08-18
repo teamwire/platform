@@ -1,0 +1,22 @@
+# ----------------------------------------------------
+# BACKEND: teamwire-voip-web
+# ----------------------------------------------------
+backend teamwire-voip-web
+    http-response del-header Server
+    {% if "frontend_servers" in groups %}{% raw %}{{ if service "voipWeb" }} {{ range $index, $service := service "voipWeb" }}
+    server backend_voip_web_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{ end }}{% endraw %}
+    {%else%}server backend_voip_web_0 127.0.0.1:7080 check port 7080
+    {% endif %}
+
+{% if groups['all'] | length > 1 %}
+# ----------------------------------------------------
+# BACKEND: teamwire-voip-video INACTIVE!!!!!!!!!!!!!
+# ----------------------------------------------------
+#backend teamwire-voip-video
+#    http-response del-header Server
+#    {% if "frontend_servers" in groups %}{% raw %}{{ if service "voipVideo" }} {{ range $index, $service := service "voipVideo" }}
+#    server backend_voip_video_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+#    {{ end }}{% endraw %}
+#    {% endif %}
+{% endif %}

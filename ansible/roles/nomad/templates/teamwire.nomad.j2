@@ -140,6 +140,7 @@ job "teamwire" {
 				BIND_PORT_WS = "${NOMAD_PORT_ws}"
 				ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
 				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
+				VOIP_URL = "http://voipWeb.service.consul:7080"
 			}
 
 			resources {

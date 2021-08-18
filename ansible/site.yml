@@ -33,6 +33,7 @@
   roles:
     - docker
     - { role: backend, when: config_done is defined }
+    - { role: voip, when: config_done is defined and enable_voip is defined and enable_voip | string() == 'true' }
     - { role: go, when: config_done is defined }
     - { role: frontend, when: config_done is defined }
 

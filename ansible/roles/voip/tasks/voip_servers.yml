@@ -1,0 +1,6 @@
+- name: Allow voip video bridge port
+  ufw:
+    rule: allow
+    port: "10000"
+    proto: any
+  when: enable_voip is defined and enable_voip | string() == 'true'

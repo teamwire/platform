@@ -9,6 +9,6 @@
 
 # This playbook applies to backend cluster nodes and the single server installation
 - name: Configure the Teamwire backend server(s)
-  hosts: backend_servers:local
+  hosts: backend_servers:voip_servers:local
   roles:
   - role: ../../roles/backend
