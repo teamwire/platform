@@ -88,7 +88,7 @@ https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_lin
 # Always perform this step, even if not preparing for offline installation - this spares us some firewall rules
 echo "Step 1: Import additional repo signing keys"
 echo "==========================================="
-sudo apt-key adv --no-tty --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
+sudo apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
 sudo apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9334A25F8507EFA5 # Percona
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
