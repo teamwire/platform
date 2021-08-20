@@ -1,0 +1,66 @@
+---
+- name: Check if vault certification folder exits
+  stat: path=/var/lib/vault/ssl
+  register: vault_ssl_folder
+
+- block:
+
+    - name: Create Vault user
+      user:
+        name: vault
+        shell: /usr/sbin/nologin
+        system: true
+        home: /var/lib/vault
+        state: present
+
+    - name: Create vault ssl folder
+      file:
+        path: /var/lib/vault/ssl
+        state: directory
+        owner: vault
+        group: vault
+        mode: '0750'
+
+    - name: Register Vault Root CA from first backend-node
+      slurp: src="/usr/local/share/ca-certificates/vault-rootCA.crt"
+      register: vault_rootCA
+      delegate_to: "{{ groups.backend_servers | first }}"
+
+    - name: Register Vault certificate from first backend-node
+      slurp: src="/var/lib/vault/ssl/vault.crt"
+      register: vault_crt
+      delegate_to: "{{ groups.backend_servers | first }}"
+
+    - name: Register Vault private key from first backend-node
+      slurp: src="/var/lib/vault/ssl/vault.pem"
+      register: vault_pem
+      delegate_to: "{{ groups.backend_servers | first }}"
+
+    - name: Copy Vault Root CA to destination
+      copy:
+        content: "{{ vault_rootCA.content | b64decode }}"
+        dest: "/usr/local/share/ca-certificates/vault-rootCA.crt"
+        mode: 0600
+        owner: root
+        group: root
+
+    - name: Trust the Vault Root CA
+      command: update-ca-certificates
+
+    - name: Copy Vault certificate to destination
+      copy:
+        content: "{{ vault_crt.content | b64decode }}"
+        dest: "/var/lib/vault/ssl/vault.crt"
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: Copy Vault private key to destination
+      copy:
+        content: "{{ vault_pem.content | b64decode }}"
+        dest: "/var/lib/vault/ssl/vault.pem"
+        mode: 0644
+        owner: root
+        group: root
+
+  when: vault_ssl_folder.stat.exists == false
