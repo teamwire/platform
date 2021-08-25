@@ -9,3 +9,8 @@
   tasks:
   - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip/tasks/voip_servers.yml"
     when: enable_voip is defined and enable_voip | string() == 'true'
+
+- hosts: voip_servers
+  tasks:
+  - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/backend/tasks/add_additional_host.yml"
+    when: enable_voip is defined and enable_voip | string() == 'true'
