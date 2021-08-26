@@ -64,36 +64,37 @@
     mode: 0755
 
 - name: Install useful tools
-  apt: name={{item}} state=present
-  with_items:
-  - htop
-  - sysstat
-  - iotop
-  - glances
-  - mc
-  - zile
-  - vim
-  - nano
-  - haveged
-  - ldap-utils
-  - bsd-mailx
-  - unzip
-  - patch
-  - mlock
-  - libcap2-bin
-  - curl
-  - jq
-  - pwgen
-  - dnsutils
-  - tcpdump
-  - sshpass
+  apt:
+    name:
+      - htop
+      - sysstat
+      - iotop
+      - gnupg2
+      - mc
+      - zile
+      - vim
+      - nano
+      - haveged
+      - ldap-utils
+      - bsd-mailx
+      - unzip
+      - patch
+      - mlock
+      - libcap2-bin
+      - curl
+      - jq
+      - pwgen
+      - dnsutils
+      - tcpdump
+      - sshpass
+      - tshark
 
 - name: Install pip
-  apt: name={{item}} state=present
-  with_items:
-  - python3-pip
-  - python3-wheel
-  - python3-setuptools
+  apt:
+    name:
+      - python3-pip
+      - python3-wheel
+      - python3-setuptools
 
 # # https://docs.ansible.com/ansible/latest/collections/community/general/alternatives_module.html
 # - name: Update alternatives
@@ -109,10 +110,11 @@
     extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
   when: ansible_distribution_release == 'buster'
 
-- name: Remove useless packages
-  apt: pkg={{item}} state=absent purge=yes
-  with_items:
-  - mlocate # sucks IO heavily
+- name: Remove unneeded packages
+  apt:
+    name: mlocate # sucks IO heavily
+    state: absent
+    purge: yes
 
 # Configure system-wide proxy
 - name: Enable system-wide proxy
