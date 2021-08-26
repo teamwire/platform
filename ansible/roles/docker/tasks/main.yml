@@ -6,12 +6,6 @@
   copy: src=10-docker.conf dest=/etc/rsyslog.d/10-docker.conf
   notify: restart rsyslog
 
-- name: Don't log container logs into /var/log/messages
-  patch: >
-    src=rsyslog.conf.patch
-    dest=/etc/rsyslog.conf
-  notify: restart rsyslog
-
 - name: Install logrotate job for cluster logs
   copy: src=container-log dest=/etc/logrotate.d/container-log
 
