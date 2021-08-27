@@ -36,5 +36,7 @@ secrets:
     path: secret/voip/jicofo_password
   voip_jibri_password:
     path: secret/voip/jibri_password
-
+  voip_stun_password:
+    path: secret/voip/stun_password
+    
 vault_certificate_ttl: 17532h
