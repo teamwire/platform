@@ -8,22 +8,36 @@
 
 - name: Install HAproxy
   apt:
-     name: haproxy
-     state: present
+    name: haproxy
+    state: present
   register: ha_installed
 
-- name: Install HAproxy systemd config
-  copy:
-    src: "{{ haproxy_service_file }}"
-    dest: /etc/systemd/system/haproxy.service
-  notify: reload systemd
+# This uses systemd's unit file drop-in override mechanism,
+# allowing us to keep vendor's default service unit file together with our customizations
+# https://manpages.debian.org/systemd/systemd.unit.5.en.html
+- name: Adapt HAproxy service to split-configuration setup
+  block:
+    - name: Create HAproxy drop-in override directory
+      file:
+        path: /etc/systemd/system/haproxy.service.d
+        state: directory
+      register: haproxy_systemd_service_unit_override
 
-- name: Replace HAproxy wrapper in debian 10
-  replace:
-     path: "/etc/systemd/system/haproxy.service"
-     regexp: "/usr/sbin/haproxy-systemd-wrapper"
-     replace: "/usr/sbin/haproxy -Ws"
-  when: ansible_distribution_release == "buster"
+    - name: Adapt HAproxy service to split-configuration setup
+      template:
+        src: haproxy.service.conf.j2
+        dest: "{{ haproxy_systemd_service_unit_override.path }}/haproxy.service.conf"
+      notify:
+        - reload systemd
+        - restart haproxy
+
+    - name: Remove old HAproxy service file
+      file:
+        path: /etc/systemd/system/haproxy.service
+        state: absent
+      notify:
+        - reload systemd
+        - restart haproxy
 
 - name: Start and enable HAProxy service
   service: name=haproxy state=started enabled=true

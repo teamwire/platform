@@ -1,0 +1,7 @@
+# HAproxy service drop-in override
+# https://manpages.debian.org/{{ ansible_distribution_release }}/systemd/systemd.unit.5.en.html
+# {{ ansible_managed }}
+
+[Service]
+# Read config from entire directory instead of single file (split-config setup)
+Environment="CONFIG=/etc/haproxy" "PIDFILE=/run/haproxy.pid"

@@ -1,4 +1,3 @@
 frontend_haproxy_template: frontend_haproxy.cfg.j2
 globals_haproxy_template: ../backend/templates/globals_haproxy.cfg.j2
-haproxy_service_file: ../backend/files/haproxy.service
 websockets_enabled: "true"
