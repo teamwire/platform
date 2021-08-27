@@ -161,6 +161,10 @@
     secrets: "{{ secrets|combine(user_secrets) }}"
   when: user_secrets is defined
 
+- name: Enable secrets engine
+  command: vault secrets enable -path secret kv
+  run_once: yes
+
 - name: Generate secret paths
   command: vault write "{{ item.value.path }}" value=""
   no_log: True
