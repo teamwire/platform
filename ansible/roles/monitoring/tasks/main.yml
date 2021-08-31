@@ -15,17 +15,17 @@
       - icinga_api_password is defined
   when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
 
-- name: Add icinga2 key for repository on debian 10
+- name: Add icinga2 key for repository
   shell: wget -O - https://packages.icinga.com/icinga.key | apt-key add
-  when: ansible_distribution_release == "buster" and not offline_mode.stat.exists
+  when: not offline_mode.stat.exists
 
-- name: Add icinga2 repository for debian 10
+- name: Add icinga2 repository
   apt_repository:
-    repo: deb https://packages.icinga.com/debian icinga-buster main
+    repo: deb https://packages.icinga.com/debian icinga-{{ ansible_distribution_release }} main
     state: present
     filename: icinga2
     update_cache: yes
-  when: ansible_distribution_release == "buster" and not offline_mode.stat.exists
+  when: not offline_mode.stat.exists
 
 - name: Install Icinga2 and monitoring plugins
   apt: name={{ item }} state=present
@@ -39,18 +39,21 @@
     - libdbd-mysql-perl
   check_mode: no
 
-- name: Rename plugin dir on debian 10
-  command: rm -rf /usr/share/icinga2/include/plugins-contrib.d
-  when: ansible_distribution_release == "buster"
-
-- name: Create empty plugin dir on debian 10
-  file:
-     path: /usr/share/icinga2/include/plugins-contrib.d
-     state: directory
-     owner: root
-     group: root
-     mode: 0755
-  when: ansible_distribution_release == "buster"
+- name: Clear plugin directory
+  block:
+    - name: Determine plugin directory content
+      find:
+        path: /usr/share/icinga2/include/plugins-contrib.d
+        file_type: any
+        hidden: yes
+      register: plugin_dir_content
+    - name: Delete plugin directory content
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ plugin_dir_content.files }}"
+      loop_control:
+        label: "{{ item.path }}"
 
 - name: Enable and start the icinga2 daemon
   service: name=icinga2 state=started enabled=true

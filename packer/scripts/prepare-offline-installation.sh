@@ -31,7 +31,6 @@ haproxy
 hatop
 libconfig-inifiles-perl
 libterm-readkey-perl
-percona-xtrabackup-24
 socat
 patch
 python3-docker
@@ -52,13 +51,13 @@ libdbd-mysql-perl
 dnsutils
 apache2
 libapache2-mod-php
-php${PHP_VERSION}
-php${PHP_VERSION}-mysql
-php${PHP_VERSION}-curl
-php${PHP_VERSION}-imagick
-php${PHP_VERSION}-intl
-php${PHP_VERSION}-gd
-php${PHP_VERSION}-xml
+php
+php-mysql
+php-curl
+php-imagick
+php-intl
+php-gd
+php-xml
 jq
 tcpdump
 gnupg2
@@ -76,7 +75,6 @@ CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansibl
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-PHP_VERSION=$(awk '/^php_version:/ { print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
@@ -91,7 +89,6 @@ https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_lin
 echo "Step 1: Import additional repo signing keys"
 echo "==========================================="
 sudo apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
-sudo apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9334A25F8507EFA5 # Percona
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
 	echo "Not preparing for offline installation."
@@ -107,8 +104,6 @@ sudo touch /etc/offline_installation
 echo "Step 2: Caching packages"
 echo "========================"
 
-# Add Percona repo
-echo 'deb http://repo.percona.com/apt buster main' | sudo tee -a /etc/apt/sources.list > /dev/null
 sudo apt-get update -q
 sudo apt-get install -qyd ${REGULAR_PACKAGES}
 

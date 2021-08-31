@@ -33,7 +33,7 @@
 
 - name: apt-get update
   apt: update_cache=yes
-  when: not offline_mode.stat.exists and ansible_distribution_release != 'jessie'
+  when: not offline_mode.stat.exists
 
   # Clusters: set up DNS with local dnsmasq
 - name: Install dnsmasq (cluster only)
@@ -95,6 +95,7 @@
       - python3-pip
       - python3-wheel
       - python3-setuptools
+      - python3-docker
 
 # # https://docs.ansible.com/ansible/latest/collections/community/general/alternatives_module.html
 # - name: Update alternatives
@@ -102,13 +103,6 @@
 #     name: python
 #     link: /usr/bin/python
 #     path: /usr/bin/{{ ansible_python.executable }}
-
-- name: Install Python Docker library 5.0.0 from pypi (Debian 10)
-  pip:
-    name=docker
-    version=5.0.0
-    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
-  when: ansible_distribution_release == 'buster'
 
 - name: Remove unneeded packages
   apt:

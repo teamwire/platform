@@ -1,3 +1,1 @@
-php_version: "7.0"
-php_version_debian_10: "7.3"
 check_delay: "2"
