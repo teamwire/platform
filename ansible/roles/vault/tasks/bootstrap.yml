@@ -193,6 +193,7 @@
     - { secret: 'voip/jicofo_password', value: "{{ voip_jicofo_password | default('') }}" }
     - { secret: 'voip/jvb_password', value: "{{ voip_jvb_password | default('') }}" }
     - { secret: 'voip/stun_password', value: "{{ voip_stun_password | default('') }}" }
+    - { secret: 'voip/jwt_app_secret', value: "{{ jwt_app_secret | default('') }}" }
   run_once: true
 
 - name: Include secrets var file so the defined secrets can be read

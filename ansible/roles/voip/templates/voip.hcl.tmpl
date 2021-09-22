@@ -96,6 +96,8 @@ job "voip" {
                 XMPP_GUEST_DOMAIN 				= "guest.meet.jitsi"
                 XMPP_MUC_DOMAIN 				= "muc.meet.jitsi"
                 XMPP_RECORDER_DOMAIN 			= "recorder.meet.jitsi"
+                ENABLE_AUTH                     = "1"
+                ENABLE_GUESTS                   = "0"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS 	= 2
             }
             resources {
@@ -166,6 +168,7 @@ job "voip" {
             JVB_AUTH_PASSWORD = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
             JIBRI_XMPP_PASSWORD = "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
             JICOFO_AUTH_PASSWORD ="{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
+            JWT_APP_SECRET: "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
             EOH
             destination = "secrets/file.env"
             env = true
@@ -190,6 +193,11 @@ job "voip" {
                 JIBRI_XMPP_USER = "jibri"
                 #JIBRI_RECORDER_USER = "recorder"
                 #JIBRI_RECORDER_PASSWORD = "c473a228428986904b9a342238137ac6"
+                ENABLE_AUTH = "1"
+                ENABLE_GUESTS = "0"
+                AUTH_TYPE = "jwt"
+                JWT_TOKEN_AUTH_MODULE = "token_verification"
+                JWT_APP_ID = "teamwire"
                 TZ = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS = 2
             }
@@ -273,6 +281,8 @@ job "voip" {
                 XMPP_INTERNAL_MUC_DOMAIN = "internal-muc.meet.jitsi"
                 XMPP_MUC_DOMAIN = "muc.meet.jitsi"
                 XMPP_SERVER = "prosody.service.consul"
+                ENABLE_AUTH = "1"
+                AUTH_TYPE = "jwt"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS = "2"
             }
 
