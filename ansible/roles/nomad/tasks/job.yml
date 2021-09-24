@@ -23,7 +23,7 @@
     LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/"
   when:
     - config_done is defined
-    - use_teamwire_registry | default('false') | bool
+    - use_teamwire_registry | default('true') | bool
 
 - name: Write Teamwire cluster nomad job (w/ Vault)
   template:

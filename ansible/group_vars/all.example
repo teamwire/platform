@@ -14,11 +14,6 @@
 # Insert your Docker Hub credentials below
 dockerhub_username: ""
 
-# To activate the teamwire docker registry, please set the variable `use_teamwire_registry`
-# to "true". During the first installation, you have to execute the command docker login again,
-# as described in the wiki (please ask support for this) and run the twctl pull command again.
-# use_teamwire_registry: "true"
-
 # The external fully qualified host name under which the clients can access
 # this server, e.g. "teamwire.example.com". external_hostname can be a single
 # string like e.g. external_hostname: "teamwire.example.com" or you can provide
