@@ -66,6 +66,7 @@
       ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
       USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
       VOIP_URL: "http://localhost:7080"
+      JWT_APP_SECRET: "{{ jwt_app_secret }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined

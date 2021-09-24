@@ -168,7 +168,7 @@ job "voip" {
             JVB_AUTH_PASSWORD = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
             JIBRI_XMPP_PASSWORD = "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
             JICOFO_AUTH_PASSWORD ="{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
-            JWT_APP_SECRET: "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
+            JWT_APP_SECRET = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
             EOH
             destination = "secrets/file.env"
             env = true
