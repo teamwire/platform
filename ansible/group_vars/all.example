@@ -13,7 +13,6 @@
 
 # Insert your Docker Hub credentials below
 dockerhub_username: ""
-dockerhub_email: ""
 
 # To activate the teamwire docker registry, please set the variable `use_teamwire_registry`
 # to "true". During the first installation, you have to execute the command docker login again,

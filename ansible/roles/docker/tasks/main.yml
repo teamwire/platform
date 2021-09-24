@@ -141,7 +141,6 @@
     registry_url: "{{ 'harbor.teamwire.eu' if use_teamwire_registry | default('false') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
-    email: "{{ dockerhub_email }}"
 
 - include_tasks: cluster.yml
   when: groups['all'] | length() > 1
