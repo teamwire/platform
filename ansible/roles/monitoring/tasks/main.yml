@@ -90,6 +90,11 @@
 - name: Fix Icinga PKI directory permissions
   file: dest=/etc/icinga2/pki owner=nagios group=nagios mode=0750
 
+- name: Download check_ntp_time from repo.teamwire.eu
+  get_url:
+    url: https://repo.teamwire.eu/bin/icinga/check_ntp_time
+    dest: /usr/lib/nagios/plugins/check_ntp_time
+     
 - include: "database-configuration.yml"
   when: mysql_root_password is defined
 
