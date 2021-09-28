@@ -15,13 +15,26 @@
       - icinga_api_password is defined
   when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
 
-- name: Add icinga2 key for repository
-  shell: wget -O - https://packages.icinga.com/icinga.key | apt-key add
+# Using `apt-key` to add third party signing keys is deprecated
+# https://wiki.debian.org/DebianRepository/UseThirdParty
+- name: Get Icinga repository key
+  get_url:
+    url: https://packages.icinga.com/icinga.key
+    dest: /usr/share/keyrings/icinga-archive-keyring.key
+    mode: '0644'
+  environment:
+    HTTP_PROXY: "{{ http_proxy | default() }}"
+    HTTPS_PROXY: "{{ http_proxy | default() }}"
+  register: icinga_signing_key
   when: not offline_mode.stat.exists
 
-- name: Add icinga2 repository
+- name: Dearmor Icinga repository key
+  command: gpg --dearmor -o {{ (icinga_signing_key.dest | splitext)[0] }}.gpg {{ icinga_signing_key.dest }}
+  when: icinga_signing_key.changed
+
+- name: Add Icinga repository
   apt_repository:
-    repo: deb https://packages.icinga.com/debian icinga-{{ ansible_distribution_release }} main
+    repo: deb [signed-by={{ (icinga_signing_key.dest | splitext)[0] }}.gpg] https://packages.icinga.com/debian icinga-{{ ansible_distribution_release }} main
     state: present
     filename: icinga2
     update_cache: yes

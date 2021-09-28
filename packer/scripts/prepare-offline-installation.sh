@@ -7,6 +7,13 @@
 # * Build Python modules
 #
 
+APT_3RD_PARTY_PREREQUISITES="
+ca-certificates
+curl
+gnupg
+lsb-release
+"
+
 REGULAR_PACKAGES="
 git
 dnsmasq
@@ -36,7 +43,6 @@ patch
 python3-docker
 mlock
 libcap2-bin
-curl
 icinga2
 icinga2-ido-mysql
 icingacli
@@ -84,12 +90,6 @@ https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_lin
 https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
 "
 
-# Add additional repo signing keys
-# Always perform this step, even if not preparing for offline installation - this spares us some firewall rules
-echo "Step 1: Import additional repo signing keys"
-echo "==========================================="
-sudo apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
-
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
 	echo "Not preparing for offline installation."
 	exit
@@ -101,13 +101,25 @@ echo "Preparing for offline installation."
 # the apt cache will not be updated.
 sudo touch /etc/offline_installation
 
-echo "Step 2: Caching packages"
-echo "========================"
+echo "Step 1: Install APT third-party prerequisites"
+echo "============================================="
+sudo apt-get update -q
+sudo apt-get install -qy ${APT_3RD_PARTY_PREREQUISITES}
 
+# Add additional repo signing keys
+# https://docs.docker.com/engine/install/debian/#install-using-the-repository
+echo "Step 2: Import additional repo signing keys"
+echo "==========================================="
+sudo apt-get update -q
+sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
+sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+
+echo "Step 3: Caching packages"
+echo "========================"
 sudo apt-get update -q
 sudo apt-get install -qyd ${REGULAR_PACKAGES}
 
-echo "Step 3: Getting Docker containers"
+echo "Step 4: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
 sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
@@ -120,7 +132,7 @@ cd ~/platform/ansible/group_vars
 cp all.example all
 sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
 
-echo "Step 4: Downloading 3rd party software"
+echo "Step 5: Downloading 3rd party software"
 echo "======================================"
 if [ ! -d /var/cache/downloads ] ; then
 	sudo mkdir /var/cache/downloads
