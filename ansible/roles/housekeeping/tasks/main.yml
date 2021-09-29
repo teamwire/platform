@@ -5,3 +5,6 @@
 
 # Remove APT repository signing keys from global trust anchor
 - include_tasks: apt_signing_keys.yml
+
+# Remove unneeded packages
+- include_tasks: apt_packages.yml

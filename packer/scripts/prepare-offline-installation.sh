@@ -35,7 +35,6 @@ glusterfs-client
 nfs-common
 galera
 haproxy
-hatop
 libconfig-inifiles-perl
 libterm-readkey-perl
 socat

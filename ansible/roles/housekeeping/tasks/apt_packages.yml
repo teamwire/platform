@@ -1,0 +1,10 @@
+# Remove APT packages that are no longer needed
+#
+
+- name: Remove unneeded packages
+  apt:
+    name:
+      - glances
+      - gnupg1
+      - hatop
+    state: absent
