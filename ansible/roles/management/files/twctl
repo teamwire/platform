@@ -548,7 +548,7 @@ check_registry() {
 	if [ -z "${USE_TEAMWIRE_REGISTRY}" ] || [ "${USE_TEAMWIRE_REGISTRY}" == "false" ];then
 		: noop
 	else
-		PRFX="harbor.teamwire.eu/docker.io/"
+		PRFX="harbor.teamwire.eu/"
 	fi
 	shopt -p nocasematch
 }

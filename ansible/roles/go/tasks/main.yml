@@ -23,7 +23,7 @@
   when: not offline_mode.stat.exists
 
 - name: Build golang binarys
-  shell: docker run -e GOFILE={{item}} -v /usr/local/bin:/dest -v /usr/local/src/go:/src {{ 'harbor.teamwire.eu/docker.io/' if use_teamwire_registry | default('false') | bool else '' }}teamwire/go-buildenv:latest
+  shell: docker run -e GOFILE={{item}} -v /usr/local/bin:/dest -v /usr/local/src/go:/src {{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('false') | bool else '' }}teamwire/go-buildenv:latest
   when: copySRC.changed
   with_items: "{{ gosource }}"
   become: true
