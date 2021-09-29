@@ -58,7 +58,9 @@ apply Service "check-swap" {
 
 apply Service "check-ntp" {
   import "generic-service"
-  check_command = "ntp_time"
+  check_command = "check_time"
+  vars.delay = {{ check_delay }}
+  vars.timeserver =  "{{ ntp_servers | default(['ptbtime1.ptb.de', 'ptbtime2.ptb.de', 'ptbtime3.ptb.de']) | first }}"
 
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux" && host.vars.client_endpoint
