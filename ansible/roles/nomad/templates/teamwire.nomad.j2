@@ -104,6 +104,7 @@ job "teamwire" {
 					ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
 {%- endraw %}{%endif %}{% raw %}
 					REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
+                                        JWT_APP_SECRET = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
 				EOH
 				destination = "secrets/file.env"
 				env = true

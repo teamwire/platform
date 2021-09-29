@@ -34,6 +34,8 @@
       XMPP_GUEST_DOMAIN: "guest.meet.jitsi"
       XMPP_MUC_DOMAIN: "muc.meet.jitsi"
       XMPP_RECORDER_DOMAIN: "recorder.meet.jitsi"
+      ENABLE_AUTH: "1"
+      ENABLE_GUESTS: "0"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
 
 - name: Run the Teamwire voip prosody container
@@ -65,6 +67,13 @@
       XMPP_MUC_MODULES: ""
       XMPP_INTERNAL_MUC_MODULES: ""
       XMPP_RECORDER_DOMAIN: "recorder.meet.jitsi"
+      ENABLE_AUTH: "1"
+      ENABLE_GUESTS: "0"
+      AUTH_TYPE: "jwt"
+      JWT_TOKEN_AUTH_MODULE: "token_verification"
+      JWT_APP_ID: "teamwire"
+      JWT_APP_SECRET: "{{ jwt_app_secret }}"
+      JWT_ALLOW_EMPTY: "0"
       JICOFO_AUTH_USER: "focus"
       JVB_AUTH_USER: "jvb"
       JIBRI_XMPP_USER: "jibri"
@@ -99,6 +108,8 @@
       XMPP_INTERNAL_MUC_DOMAIN: "internal-muc.meet.jitsi"
       XMPP_MUC_DOMAIN: "muc.meet.jitsi"
       XMPP_SERVER: "xmpp.meet.jitsi"
+      ENABLE_AUTH: "1"
+      AUTH_TYPE: "jwt"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
 
 - name: Run the Teamwire voip video bridge container
