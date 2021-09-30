@@ -90,13 +90,6 @@ OCSP wrapper test:
     - shellcheck --format=tty --color=always ./ansible/roles/frontend/files/ocsp.sh
   allow_failure: true
 
-GPG migrations test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/management/files/migrateGPG.sh
-  allow_failure: true
-
 GIT wrapper test:
   <<: *runner-tags
   stage: Shell check
