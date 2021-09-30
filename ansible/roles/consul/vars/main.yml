@@ -1,3 +1,2 @@
-consul_version: 1.5.0
-consul_checksum: 1399064050019db05d3378f757e058ec4426a917dd2d240336b51532065880b6
-
+consul_version: 1.10.1
+consul_checksum: abd9a7696e2eeed66fdb28965c220a2ba45ee5cd79ff263557f5392291aab730

@@ -11,3 +11,4 @@ ansible/group_vars/*
 ansible/playbooks/procedures/debian.cnf
 *.pyc
 .gitlab/*
+.local

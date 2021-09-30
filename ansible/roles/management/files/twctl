@@ -322,20 +322,13 @@ voip() {
 }
 
 get_database_configuration() {
-	if [ "$VAULT_INITIALIZED" == "true" ]; then
-		AESKEY="$(vault_read_secrets database/aes_key)"
-		DB_PASSWORD="$(vault_read_secrets database/password)"
-		REDIS_PASSWORD="$(vault_read_secrets redis/password)"
-	else
-		AESKEY="$(_get_config_value aes_key)"
-		DB_PASSWORD="$(_get_config_value teamwire_db_password)"
-		REDIS_PASSWORD="$(_get_config_value redis_pass)"
-	fi
+	AESKEY="$(vault_read_secrets database/aes_key)"
+	DB_PASSWORD="$(vault_read_secrets database/password)"
+	REDIS_PASSWORD="$(vault_read_secrets redis/password)"
 
 	if [ -z "$DB_PASSWORD" ] || [ -z "$AESKEY" ] ; then
-		echo "ERROR: Cannot read required parameters from $CONFIG_FILE."
-		echo "       Please ensure the file exists and the database is configured or"
-		echo "       Vault is running and unsealed."
+		echo "ERROR: Cannot read required parameters from Vault."
+		echo "       Please ensure Vault is running and unsealed."
 		exit 1
 	fi
 
@@ -545,7 +538,7 @@ connectivity_test() {
 check_registry() {
 	shopt -s nocasematch
 	USE_TEAMWIRE_REGISTRY="$(_get_config_value use_teamwire_registry)"
-	if [ -z "${USE_TEAMWIRE_REGISTRY}" ] || [ "${USE_TEAMWIRE_REGISTRY}" == "false" ];then
+	if [ "${USE_TEAMWIRE_REGISTRY}" == "false" ]; then
 		: noop
 	else
 		PRFX="harbor.teamwire.eu/"
@@ -556,7 +549,7 @@ check_registry() {
 show-tags() {
 	check_registry
   echo "***** Backend version: *****"
-	if [ "${USE_TEAMWIRE_REGISTRY}" == "" ] || [ "${USE_TEAMWIRE_REGISTRY}" == "false" ];then
+	if [ "${USE_TEAMWIRE_REGISTRY}" == "false" ]; then
 		local USER="$(_get_config_value dockerhub_username)"
 		local PASS="$(vault_read_secrets dockerhub/password)"
 
@@ -894,9 +887,8 @@ Installation type: ${INSTALLATION}
 Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $(</etc/latest_remote_github_version)
-Ansible: $(ansible --version | awk 'NR==1{print $2}')
-Vault enabled: ${VAULT_INITIALIZED}"
-[ "${USE_TEAMWIRE_REGISTRY}" == "true" ] && echo "
+Ansible: $(ANSIBLE_DEPRECATION_WARNINGS=false ansible --version | grep -oPm 1 '(\d+\.\d+\.\d+)')"
+[ "${USE_TEAMWIRE_REGISTRY}" == "true" ] || [ -z "${USE_TEAMWIRE_REGISTRY}" ] && echo "
 Harbor check IP: $(curl -m ${DFLT_TMOUT} -s https://harbor.teamwire.eu:8000/loopback | jq . )" || true
 }
 

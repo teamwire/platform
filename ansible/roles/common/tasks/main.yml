@@ -33,7 +33,7 @@
 
 - name: apt-get update
   apt: update_cache=yes
-  when: not offline_mode.stat.exists and ansible_distribution_release != 'jessie'
+  when: not offline_mode.stat.exists
 
   # Clusters: set up DNS with local dnsmasq
 - name: Install dnsmasq (cluster only)
@@ -64,55 +64,51 @@
     mode: 0755
 
 - name: Install useful tools
-  apt: name={{item}} state=present
-  with_items:
-  - htop
-  - sysstat
-  - iotop
-  - glances
-  - mc
-  - zile
-  - vim
-  - nano
-  - haveged
-  - ldap-utils
-  - bsd-mailx
-  - unzip
-  - patch
-  - mlock
-  - libcap2-bin
-  - curl
-  - jq
-  - pwgen
-  - dnsutils
-
-- name: Install gpg1
-  apt: pkg=gnupg1
+  apt:
+    name:
+      - htop
+      - sysstat
+      - iotop
+      - gnupg2
+      - mc
+      - zile
+      - vim
+      - nano
+      - haveged
+      - ldap-utils
+      - bsd-mailx
+      - unzip
+      - patch
+      - mlock
+      - libcap2-bin
+      - curl
+      - jq
+      - pwgen
+      - dnsutils
+      - tcpdump
+      - sshpass
+      - tshark
 
 - name: Install pip
-  apt: name={{item}} state=present
-  with_items:
-  - python-pip
-  - python-wheel
-  - python-setuptools
+  apt:
+    name:
+      - python3-pip
+      - python3-wheel
+      - python3-setuptools
+      - python3-docker
 
-- name: Install docker-py 1.10.6 from pypi (Debian 10)
-  pip:
-    name=docker-py
-    version=1.10.6
-    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
-  when: ansible_distribution_release == 'buster'
+# # https://docs.ansible.com/ansible/latest/collections/community/general/alternatives_module.html
+# - name: Update alternatives
+#   community.general.alternatives:
+#     name: python
+#     link: /usr/bin/python
+#     path: /usr/bin/{{ ansible_python.executable }}
 
-- name: Install python-pyOpenSSL version {{ required_pyopenssl_version }}
-  pip:
-    name=pyopenssl
-    version={{ required_pyopenssl_version }}
-    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
-
-- name: Remove useless packages
-  apt: pkg={{item}} state=absent purge=yes
-  with_items:
-  - mlocate # sucks IO heavily
+- name: Remove unneeded packages
+  apt:
+    name: mlocate # sucks IO heavily
+    state: absent
+    purge: yes
 
 # Configure system-wide proxy
 - name: Enable system-wide proxy

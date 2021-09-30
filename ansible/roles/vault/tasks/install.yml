@@ -1,0 +1,86 @@
+---
+- name: Create Vault user
+  user:
+    name: vault
+    shell: /usr/sbin/nologin
+    system: true
+    home: /var/lib/vault
+    state: present
+
+- name: Change audit log permission
+  file:
+    path: /var/log/vault_audit.log
+    owner: vault
+    group: vault
+    state: touch
+    mode: 0600
+
+- name: Install logrotate job for vault
+  copy:
+    src: vault-log
+    dest: /etc/logrotate.d/vault-log
+
+- name: Install the Vault binary
+  unarchive:
+    src: /var/cache/downloads/vault_{{vault_version}}_linux_amd64.zip
+    dest: /usr/local/bin
+    mode: 0755
+    copy: no
+  notify: Restart Vault
+  when: vault_downloaded.changed or not vault_binary.stat.exists
+
+- name: Create Vault directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0750
+    owner: vault
+    group: vault
+  with_items:
+    - /etc/vault
+    - /var/lib/vault
+    - /var/lib/vault/ssl
+    - /var/lib/vault/store
+
+- block:
+    - name: Check if Vault certificates exist and are valid
+      openssl_certificate:
+        path: /var/lib/vault/ssl/vault.crt
+        provider: assertonly
+        has_expired: no
+  rescue:
+    - debug: msg="Generating SSL certificates for Vault"
+    - include: ssl-setup.yml
+  when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+
+- name: Write Vault config
+  template:
+      src: vault.hcl.j2
+      dest: /etc/vault/vault.hcl
+      owner: vault
+      group: vault
+  notify: Restart Vault
+
+- name: Vault systemd config
+  copy:
+    src: vault.service
+    dest: /etc/systemd/system/vault.service
+  notify:
+    - Restart Vault
+
+- name: Enable the Vault service
+  service:
+    name: vault
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+# Handlers should be flushed before any possible bootstrapping
+- meta: flush_handlers
+
+- name: Bootstrap Vault on new installations
+  include_tasks: bootstrap.yml
+  when:
+    - config_done is defined
+    - ansible_local.vault is defined
+    - ansible_local.vault.initialized != "true"

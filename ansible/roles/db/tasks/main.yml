@@ -13,7 +13,7 @@
   with_items:
   - mariadb-server
   - mariadb-client
-  - python-mysqldb
+  - python3-mysqldb
   register: mysql_initial_installation
 
 - name: Create MariaDB binlog directory
@@ -28,7 +28,7 @@
 # Allow incoming connections to MySQL on all interfaces
 - name: Configure MariaDB to listen on all interfaces
   lineinfile:
-    dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
     regexp: ^bind-address\s*=\s*127.0.0.1
     backrefs: yes
     line: "bind-address=0.0.0.0"
@@ -36,14 +36,14 @@
 
 - name: Increase max_allowed_packet size
   replace:
-    dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
     regexp: ^max_allowed_packet\s*=\s*\d+M
     replace: "max_allowed_packet=64M"
   notify: restart MariaDB
 
 - name: Increase maximum allowed connections
   lineinfile:
-    dest: "/etc/mysql/{{ 'my.cnf' if ansible_distribution_release == 'jessie' else 'mariadb.conf.d/50-server.cnf'}}"
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
     regexp: ^max_connections
     line: "max_connections = 512"
   notify: restart MariaDB
@@ -51,14 +51,6 @@
 - name: Set UTF8 as default character set
   copy: src=utf8.cnf dest=/etc/mysql/conf.d/utf8.cnf
   notify: restart MariaDB
-
-- name: Set collation-server (Debian 9)
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: ^collation-server
-    line: "collation-server = utf8mb4_unicode_ci"
-  notify: restart MariaDB
-  when: ansible_distribution_release == 'stretch'
 
 - name: Set UTC as default time zone
   copy: src=timezone.cnf dest=/etc/mysql/conf.d/timezone.cnf

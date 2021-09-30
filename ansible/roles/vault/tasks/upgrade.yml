@@ -1,0 +1,112 @@
+---
+# Upgrade Vault
+# according to https://www.vaultproject.io/docs/upgrading
+
+# Update Vault on standby cluster nodes
+- name: Update Vault on standby nodes
+  block:
+    - name: Shutdown Vault on standby nodes
+      service:
+        name: vault
+        state: stopped
+
+    - name: Extract new Vault version over existing one
+      unarchive:
+        src: /var/cache/downloads/vault_{{vault_version}}_linux_amd64.zip
+        dest: /usr/local/bin
+        mode: 0755
+        copy: no
+
+    - name: Render Vault config
+      template:
+          src: vault.hcl.j2
+          dest: /etc/vault/vault.hcl
+          owner: vault
+          group: vault
+
+    - name: Start Vault on standby nodes
+      service:
+        name: vault
+        state: started
+
+    - name: Unseal Vault
+      command: vault operator unseal "{{ item }}"
+      no_log: true
+      loop: "{{ vault_unseal_keys }}"
+
+    - name: Gather information about upgraded Vault
+      command: vault status
+      register: vault_upgraded_status
+      failed_when: vault_upgraded_status.rc == 1 or vault_upgraded_status.rc >= 3
+
+    - name: Parse upgraded Vault information
+      set_fact:
+        vault_upgraded_version: "{{ vault_upgraded_status_version_line | regex_search('\\d+\\.\\d+\\.\\d+') }}"
+        # HA Mode is only displayed if Vault is unsealed
+        vault_upgraded_ha_mode: "{{ vault_upgraded_status_ha_mode_line | first | regex_search('standby') }}"
+      vars:
+        vault_upgraded_status_ha_mode_line: "{{ vault_upgraded_status.stdout_lines | select('match', '^HA Mode.*$') }}"
+        vault_upgraded_status_version_line: "{{ vault_upgraded_status.stdout_lines | select('match', '^Version.*$') | first }}"
+
+    - name: Verify upgrade on standby nodes succeeded
+      assert:
+        that:
+          - vault_upgraded_version is version(vault_version, '==')
+          - vault_upgraded_ha_mode == 'standby'
+
+  when: vault_ha_enabled and vault_ha_mode == 'standby'
+
+# Update Vault on single server or active cluster node
+- name: Update Vault on active node
+  block:
+    - name: Shutdown Vault on remaining active node
+      service:
+        name: vault
+        state: stopped
+
+    - name: Extract new Vault version over existing one
+      unarchive:
+        src: /var/cache/downloads/vault_{{vault_version}}_linux_amd64.zip
+        dest: /usr/local/bin
+        mode: 0755
+        copy: no
+
+    - name: Render Vault config
+      template:
+          src: vault.hcl.j2
+          dest: /etc/vault/vault.hcl
+          owner: vault
+          group: vault
+
+    - name: Start Vault on previously active node
+      service:
+        name: vault
+        state: started
+
+    - name: Unseal Vault
+      command: vault operator unseal "{{ item }}"
+      no_log: true
+      loop: "{{ vault_unseal_keys }}"
+
+    - name: Gather information about upgraded Vault
+      command: vault status
+      register: vault_upgraded_status
+      failed_when: vault_upgraded_status.rc == 1 or vault_upgraded_status.rc >= 3
+      changed_when: no
+
+    - name: Parse upgraded Vault information
+      set_fact:
+        vault_upgraded_version: "{{ vault_upgraded_status_version_line | regex_search('\\d+\\.\\d+\\.\\d+') }}"
+        # HA Mode is only displayed if Vault is unsealed
+        vault_upgraded_ha_mode: "{{ 'standby' if vault_upgraded_status_ha_mode_line|length == 0 else vault_upgraded_status_ha_mode_line | first | regex_search('standby') }}"
+      vars:
+        vault_upgraded_status_ha_mode_line: "{{ vault_upgraded_status.stdout_lines | select('match', '^HA Mode.*$') }}"
+        vault_upgraded_status_version_line: "{{ vault_upgraded_status.stdout_lines | select('match', '^Version.*$') | first }}"
+
+    - name: Verify upgrade on previously active node succeeded
+      assert:
+        that:
+          - vault_upgraded_version is version(vault_version, '==')
+          - vault_upgraded_ha_mode == 'standby'
+
+  when: not vault_ha_enabled or vault_ha_mode == 'active'

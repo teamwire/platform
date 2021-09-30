@@ -18,7 +18,6 @@
       tag: hashi-ui
       syslog-facility: local6
     network_mode: host
-    ports: "8000:3000"
     volumes: "/var/run/docker.sock:/tmp/docker.sock"
     env:
       CONSUL_ENABLE: "{{ '1' if 'hashi_servers' in groups else '0' }}"

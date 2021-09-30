@@ -11,6 +11,16 @@ job "teamwire" {
 		value = "linux"
 	}
 
+	# In general both constraint are not needed and one of both were sufficient,
+	# but we might want to filter per instance in the future. A node class as
+	# well the the ansible group could help us to filter even finer in the future.
+	# Therefor we keep both "node.class" and "meta.groups".
+
+	constraint {
+		attribute = "${node.class}"
+		value     = "backend_servers"
+	}
+
 	constraint {
 		attribute = "${meta.groups}"
 		operator = "regexp"
@@ -35,8 +45,8 @@ job "teamwire" {
 		count = {{ groups['backend_servers'] | count }}
 
 		constraint {
-		  operator = "distinct_hosts"
-		  value = "true"
+			operator = "distinct_hosts"
+			value = "true"
 		}
 
 		restart {
@@ -45,15 +55,20 @@ job "teamwire" {
 			delay = "25s"
 			mode = "delay"
 		}
+
+		network {
+			mode = "host"
+			port "http" {}
+			port "ws" {
+				static = "8083"
+			}
+		}
+
 		task "backend" {
 			driver = "docker"
 
 			config {
-{% if LOCAL_REGISTRY is defined %}
-				image = "{{ LOCAL_REGISTRY }}teamwire/backend:{{ version }}"
-{% else %}
-				image = "teamwire/backend:{{ version }}"
-{% endif %}
+				image = "{{ LOCAL_REGISTRY | default() }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -61,6 +76,9 @@ job "teamwire" {
 				}
 {%endif %}
 
+				# Although group-level networking is set to "host"
+				# Docker-specific networking setting is required
+				# https://github.com/hashicorp/nomad/issues/8747
 				network_mode = "host"
 
 				logging {
@@ -87,11 +105,12 @@ job "teamwire" {
 					timeout = "{{ nomald_health_backend_timeout|default('2') }}s"
 				}
 			}
-      service {
-        name = "${TASK}-websocket"
-        tags = ["teamwire-websocket"]
-        port = "ws"
-      }
+
+			service {
+				name = "${TASK}-websocket"
+				tags = ["teamwire-websocket"]
+				port = "ws"
+			}
 
 {% raw %}
 			template {
@@ -147,13 +166,6 @@ job "teamwire" {
 			resources {
 				cpu = {{ (total_cpu_power|int * backend_cpu_alloc)|int }} # Allocated CPU in MHz
 				memory = {{ [backend_ram_alloc_min|int, core_count|int * backend_ram_alloc|int]|max }} # Allocated RAM in MB
-				network {
-					mbits = 100
-					port "http" {}
-					port "ws" {
-					  static = "8083"
-					}
-				}
 			}
 		}
 	}
@@ -162,8 +174,8 @@ job "teamwire" {
 		count = {{ groups['backend_servers'] | count }}
 
 		constraint {
-		  operator = "distinct_hosts"
-		  value = "true"
+			operator = "distinct_hosts"
+			value = "true"
 		}
 
 		restart {
@@ -173,15 +185,16 @@ job "teamwire" {
 			mode = "delay"
 		}
 
+		network {
+			mode = "host"
+			port "health" {}
+		}
+
 		task "worker" {
 			driver = "docker"
 
 			config {
-{% if LOCAL_REGISTRY is defined %}
-				image = "{{ LOCAL_REGISTRY }}teamwire/backend:{{ version }}"
-{% else %}
-				image = "teamwire/backend:{{ version }}"
-{% endif %}
+				image = "{{ LOCAL_REGISTRY | default() }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -189,8 +202,10 @@ job "teamwire" {
 				}
 {%endif %}
 
+				# Although group-level networking is set to "host"
+				# Docker-specific networking setting is required
+				# https://github.com/hashicorp/nomad/issues/8747
 				network_mode = "host"
-
 				logging {
 					type = "syslog"
 					config {
@@ -198,6 +213,7 @@ job "teamwire" {
 						syslog-facility = "local6"
 					}
 				}
+
 				volumes = [
 					"/data/assets:/assets",
 					"/data/certs/apns:/app/certs/apns"
@@ -258,32 +274,28 @@ job "teamwire" {
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
 				BIND_HOST = "${NOMAD_IP_health}"
 				BIND_PORT = "${NOMAD_PORT_health}"
-        ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
-        USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
+				ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
+				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 			}
 
 			resources {
 				cpu = {{ (total_cpu_power|int * worker_cpu_alloc)|int }} # Allocated CPU in MHz
 				memory = {{ [worker_ram_alloc_min|int, core_count|int * worker_ram_alloc|int]|max }} # Allocated RAM in MB
-				network {
-					mbits = 100
-					port "health" {}
-				}
 			}
 		}
 	}
 
 	group "beat" {
 
+		network {
+			mode = "host"
+		}
+
 		task "beat" {
 			driver = "docker"
 
 			config {
-{% if LOCAL_REGISTRY is defined %}
-				image = "{{ LOCAL_REGISTRY }}teamwire/backend:{{ version }}"
-{% else %}
-				image = "teamwire/backend:{{ version }}"
-{% endif %}
+				image = "{{ LOCAL_REGISTRY | default() }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -291,8 +303,10 @@ job "teamwire" {
 				}
 {%endif %}
 
+				# Although group-level networking is set to "host"
+				# Docker-specific networking setting is required
+				# https://github.com/hashicorp/nomad/issues/8747
 				network_mode = "host"
-
 				logging {
 					type = "syslog"
 					config {
@@ -342,35 +356,36 @@ job "teamwire" {
 
 			resources {
 				cpu = 150 # Allocated CPU in MHz
-				memory = 96 # Allocated RAM in MB
-				network {
-					mbits = 100
-				}
+				memory = 128 # Allocated RAM in MB
 			}
 		}
 	}
 
 	group "notification-server" {
 
+		network {
+			# https://www.nomadproject.io/docs/drivers/docker#using-the-port-map
+			port "http" {
+				to = 9080
+			}
+			port "rest" {
+				static = 9081
+			}
+		}
+
 		task "notification-server" {
 			driver = "docker"
 
 			config {
-{% if LOCAL_REGISTRY is defined %}
-				image = "{{ LOCAL_REGISTRY }}teamwire/notification-server:{{ version }}"
-{% else %}
-				image = "teamwire/notification-server:{{ version }}"
-{% endif %}
+				image = "{{ LOCAL_REGISTRY | default() }}teamwire/notification-server:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
 					password = "{{ dockerhub_password }}"
 				}
-{%endif %}
-				port_map {
-					http = 9080
-					rest = 9081
-				}
+{% endif %}
+				ports = [ "http", "rest" ]
+
 				logging {
 					type = "syslog"
 					config {
@@ -391,6 +406,7 @@ job "teamwire" {
 					timeout = "2s"
 				}
 			}
+
 			service {
 				name = "${TASK}-9081"
 				tags = ["teamwire"]
@@ -413,13 +429,6 @@ job "teamwire" {
 			resources {
 				cpu = {{ (total_cpu_power|int * notification_cpu_alloc)|int }} # Allocated CPU in MHz
 				memory = {{ [notification_ram_alloc_min|int, core_count|int * notification_ram_alloc|int]|max }} # Allocated RAM in MB
-				network {
-					mbits = 100
-					port "http" {}
-					port "rest" {
-						static = 9081
-					}
-				}
 			}
 		}
 	}

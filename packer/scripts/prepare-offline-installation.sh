@@ -7,6 +7,13 @@
 # * Build Python modules
 #
 
+APT_3RD_PARTY_PREREQUISITES="
+ca-certificates
+curl
+gnupg
+lsb-release
+"
+
 REGULAR_PACKAGES="
 git
 dnsmasq
@@ -15,9 +22,9 @@ mariadb-server
 mariadb-client
 mariadb-backup
 sshpass
-python-mysqldb
+python3-mysqldb
 keepalived
-python-redis
+python3-redis
 redis-tools
 redis-server
 redis-sentinel
@@ -28,17 +35,13 @@ glusterfs-client
 nfs-common
 galera
 haproxy
-hatop
 libconfig-inifiles-perl
 libterm-readkey-perl
-percona-xtrabackup-24
 socat
 patch
-python-backports.ssl-match-hostname
-python-docker
+python3-docker
 mlock
 libcap2-bin
-curl
 icinga2
 icinga2-ido-mysql
 icingacli
@@ -53,16 +56,17 @@ libdbd-mysql-perl
 dnsutils
 apache2
 libapache2-mod-php
-php${PHP_VERSION}
-php${PHP_VERSION}-mysql
-php${PHP_VERSION}-curl
-php${PHP_VERSION}-imagick
-php${PHP_VERSION}-intl
-php${PHP_VERSION}-gd
-php${PHP_VERSION}-xml
+php
+php-mysql
+php-curl
+php-imagick
+php-intl
+php-gd
+php-xml
 jq
-gnupg1
-dnsutils
+tcpdump
+gnupg2
+tshark
 "
 
 DOCKER_IMAGES="
@@ -74,24 +78,16 @@ $(awk '{ gsub("\"",""); print $2; }  NR==2{exit}' ~teamwire/platform/ansible/rol
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
-NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/defaults/main.yml)
+NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-PHP_VERSION=$(awk '/^php_version:/ { print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
 https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
-https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/defaults/main.yml)
+https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
 "
-
-# Add additional repo signing keys
-# Always perform this step, even if not preparing for offline installation - this spares us some firewall rules
-echo "Step 1: Import additional repo signing keys"
-echo "==========================================="
-sudo apt-key adv --no-tty --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 # Docker
-sudo apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 9334A25F8507EFA5 # Percona
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
 	echo "Not preparing for offline installation."
@@ -104,15 +100,25 @@ echo "Preparing for offline installation."
 # the apt cache will not be updated.
 sudo touch /etc/offline_installation
 
-echo "Step 2: Caching packages"
-echo "========================"
+echo "Step 1: Install APT third-party prerequisites"
+echo "============================================="
+sudo apt-get update -q
+sudo apt-get install -qy ${APT_3RD_PARTY_PREREQUISITES}
 
-# Add Percona repo
-echo 'deb http://repo.percona.com/apt buster main' | sudo tee -a /etc/apt/sources.list > /dev/null
+# Add additional repo signing keys
+# https://docs.docker.com/engine/install/debian/#install-using-the-repository
+echo "Step 2: Import additional repo signing keys"
+echo "==========================================="
+sudo apt-get update -q
+sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
+sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+
+echo "Step 3: Caching packages"
+echo "========================"
 sudo apt-get update -q
 sudo apt-get install -qyd ${REGULAR_PACKAGES}
 
-echo "Step 3: Getting Docker containers"
+echo "Step 4: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
 sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
@@ -125,7 +131,7 @@ cd ~/platform/ansible/group_vars
 cp all.example all
 sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
 
-echo "Step 4: Downloading 3rd party software"
+echo "Step 5: Downloading 3rd party software"
 echo "======================================"
 if [ ! -d /var/cache/downloads ] ; then
 	sudo mkdir /var/cache/downloads

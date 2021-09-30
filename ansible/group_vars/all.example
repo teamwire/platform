@@ -13,12 +13,6 @@
 
 # Insert your Docker Hub credentials below
 dockerhub_username: ""
-dockerhub_email: ""
-
-# To activate the teamwire docker registry, please set the variable `use_teamwire_registry`
-# to "true". During the first installation, you have to execute the command docker login again,
-# as described in the wiki (please ask support for this) and run the twctl pull command again.
-# use_teamwire_registry: "true"
 
 # The external fully qualified host name under which the clients can access
 # this server, e.g. "teamwire.example.com". external_hostname can be a single
@@ -269,15 +263,6 @@ system_email_recipient:
 ##############################################################################
 
 # Do not enable any of these parameters unless you know what you are doing
-
-# Disable Vault integration. Passwords are stored in plaintext and
-# must be configured in this file. NOTE: Vault integration should
-# only be used for debugging purposes or for old installations.
-# By disabling Vault integration, you are removing a layer of
-# security to your installation. The disable_vault option
-# will be removed in the future and Vault will be mandatory.If this option is
-# enabled, we are unable to provide support for the installation.
-# disable_vault: true
 
 # To encrypt a report file please execute the command
 # `twctl secrets write reportfile/password`. Please set the password for the

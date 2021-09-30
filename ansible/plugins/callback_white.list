@@ -1,7 +1,5 @@
 site.yml
 cluster.yml
 galera-bootstrap.yml
-post-ansible-upgrade.yml
 renew-vault-certificate.yml
-upgrade-ansible.yml
-vault-bootstrap.yml
+upgrade-v2.yml

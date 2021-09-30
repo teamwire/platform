@@ -23,20 +23,12 @@
     LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/"
   when:
     - config_done is defined
-    - use_teamwire_registry | default('false') | bool
+    - use_teamwire_registry | default('true') | bool
 
-- name: Write Teamwire cluster nomad job (w/ Vault)
+- name: Write Teamwire cluster nomad job
   template:
     src: teamwire.nomad.j2
     dest: /data/cluster_config/teamwire.nomad
     owner: teamwire
   run_once: true
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
-
-- name: Write Teamwire cluster nomad job (w/o Vault)
-  template:
-    src: teamwire-no-vault.nomad.j2
-    dest: /data/cluster_config/teamwire.nomad
-    owner: teamwire
-  run_once: true
-  when: ansible_local.vault is defined and ansible_local.vault.initialized != "true"

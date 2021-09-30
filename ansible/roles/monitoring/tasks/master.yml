@@ -14,15 +14,8 @@
   - icingaweb2
   - icingacli
   - icingaweb2-module-monitoring
-  - python-mysqldb
-
-- name: Install Web UI tools debian 9
-  apt: name=mysql-client state=present
-  when: ansible_distribution_release != "buster"
-
-- name: Install Web UI tools debian 10
-  apt: name=mariadb-client-10.3 state=present
-  when: ansible_distribution_release == "buster"
+  - python3-mysqldb
+  - mariadb-client
 
 - name: Configure Icinga MySQL adapter
   template: src=ido-mysql-conf.j2 dest=/etc/icinga2/features-available/ido-mysql.conf
@@ -44,33 +37,18 @@
     - command
   notify: restart icinga2
 
-- name: Install icinga2 Web UI PHP/Apache requirements debian 9
-  apt: name={{item}} state=present
-  with_items:
-  - apache2
-  - libapache2-mod-php
-  - php{{ php_version }}
-  - php{{ php_version }}-mysql
-  - php{{ php_version }}-curl
-  - php{{ php_version }}-imagick
-  - php{{ php_version }}-intl
-  - php{{ php_version }}-gd
-  - php{{ php_version }}-xml
-  when: ansible_distribution_release != "buster"
-
-- name: Install icinga2 Web UI PHP/Apache requirements debian 10
-  apt: name={{item}} state=present
-  with_items:
-  - apache2
-  - libapache2-mod-php
-  - php{{ php_version_debian_10 }}
-  - php{{ php_version_debian_10 }}-mysql
-  - php{{ php_version_debian_10 }}-curl
-  - php{{ php_version_debian_10 }}-imagick
-  - php{{ php_version_debian_10 }}-intl
-  - php{{ php_version_debian_10 }}-gd
-  - php{{ php_version_debian_10 }}-xml
-  when: ansible_distribution_release == "buster"
+- name: Install icinga2 Web UI PHP/Apache requirements
+  apt:
+    name:
+      - apache2
+      - libapache2-mod-php
+      - php
+      - php-mysql
+      - php-curl
+      - php-imagick
+      - php-intl
+      - php-gd
+      - php-xml
 
 - name: Set Apache listening port
   copy:
@@ -91,6 +69,16 @@
     name: www-data
     groups: icingaweb2
 
+# Gather package facts to determine PHP version
+- name: Determine PHP version
+  block:
+    - name: Gather package facts
+      package_facts:
+        manager: apt
+    - name: Determine PHP version
+      set_fact:
+        php_version: "{{ ansible_facts.packages['php'][0].version | regex_search('\\d+:(\\d+\\.\\d+).*', '\\1') | first }}"
+
 - name: Enable PHP module for Apache
   apache2_module:
     name: "php{{ php_version }}"
@@ -98,36 +86,17 @@
     force: yes
     ignore_configcheck: true
   notify: restart apache
-  when: ansible_distribution_release != "buster"
-
-- name: Enable PHP module for Apache
-  apache2_module:
-    name: "php{{ php_version_debian_10 }}"
-    state: present
-    force: yes
-    ignore_configcheck: true
-  notify: restart apache
-  when: ansible_distribution_release == "buster"
-
 
 - name: Find out timezone
   slurp:
      src: /etc/timezone
   register: etc_timezone
 
-- name: Set default timezone in php.ini debian 9
+- name: Set default timezone in php.ini
   replace:
     dest: /etc/php/{{ php_version }}/apache2/php.ini
     regexp: '^;date.timezone ='
     replace: 'date.timezone = "{{ etc_timezone["content"] | b64decode | regex_replace("\n") }}"'
-  when: ansible_distribution_release != "buster"
-
-- name: Set default timezone in php.ini debian 10
-  replace:
-    dest: /etc/php/{{ php_version_debian_10 }}/apache2/php.ini
-    regexp: '^;date.timezone ='
-    replace: 'date.timezone = "{{ etc_timezone["content"] | b64decode | regex_replace("\n") }}"'
-  when: ansible_distribution_release == "buster"
 
 - name: Ensure apache rewrite module is enabled
   apache2_module:
@@ -340,7 +309,7 @@
 - name: Configure sender address for notifications
   replace:
     dest: /etc/icinga2/scripts/{{ item }}
-    regexp: '\mail -s'
+    regexp: 'mail -s'
     replace: 'mail -r "{{ sender_address}}" -s'
   with_items:
     - mail-host-notification.sh
@@ -351,15 +320,13 @@
   template: src=zones.conf.j2 dest=/etc/icinga2/zones.conf
   notify: restart icinga2
 
-- name: Create new zone dir for debian 10
+- name: Create new zone dir
   file:
     path: /etc/icinga2/zones.d/{{ inventory_hostname }}
     owner: nagios
     group: nagios
     state: directory
-  when:  ansible_distribution_release == "buster"
 
 - name: Copy files from old to new dir
   shell: 'sudo mv /etc/icinga2/conf.d/* /etc/icinga2/zones.d/{{ inventory_hostname }}'
   become: yes
-  when:  ansible_distribution_release == "buster"

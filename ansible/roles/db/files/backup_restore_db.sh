@@ -158,10 +158,6 @@ backup_db() {
 
 	# Run mydumper with maximum available threads and with user
 	# defined option.
-
-	# This is a compatibility layer or debian 10. Mydumper in version 0.9.1
-	# does not support option `--defaults-file`. So we can only apply that
-	# option, when debian >= 10.
 	mydumper $DEFAULTS_FILE \
 		--database=$DB \
 		--host=$HOST \
@@ -508,13 +504,8 @@ else
 	echo "$PID" > "$LOCKFILE"
 fi
 
-# Debian 10 compatibility layer mydumper
-if [ $(perl -e "if( `lsb_release -sr` < 10.0){print 1}") ];then
-	echo "[!] INFO: Mydumper is started in compatibility mode for Debian 10..."
-	DEFAULTS_FILE=""
-else
-	DEFAULTS_FILE="--defaults-file=$TMPFILE_PATH \\"
-fi
+# mydumper defaults file
+DEFAULTS_FILE="--defaults-file=$TMPFILE_PATH \\"
 
 # Executes password func
 if [ $TASK != "helpme" ]; then

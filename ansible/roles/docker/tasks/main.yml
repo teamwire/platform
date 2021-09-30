@@ -6,75 +6,43 @@
   copy: src=10-docker.conf dest=/etc/rsyslog.d/10-docker.conf
   notify: restart rsyslog
 
-- name: Don't log container logs into /var/log/messages
-  patch: >
-    src=rsyslog.conf.patch
-    dest=/etc/rsyslog.conf
-  notify: restart rsyslog
-
 - name: Install logrotate job for cluster logs
   copy: src=container-log dest=/etc/logrotate.d/container-log
 
 # Install and configure docker
-- name: Check if the Docker repository signing key needs to be installed
-  shell: bash -c "gpg --keyring /etc/apt/trusted.gpg -k 0EBFCD88 > /dev/null 2>&1 && echo present || echo absent"
-  register: docker_repo_key
-  changed_when: False
-  check_mode: no
+# Using `apt-key` to add third party signing keys is deprecated
+# https://wiki.debian.org/DebianRepository/UseThirdParty
+- name: Get Docker repository signing key
+  get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /usr/share/keyrings/docker-archive-keyring.key
+    mode: '0644'
+  environment:
+    HTTP_PROXY: "{{ http_proxy | default() }}"
+    HTTPS_PROXY: "{{ http_proxy | default() }}"
+  register: docker_signing_key
+  when: not offline_mode.stat.exists
 
-#### Temporary workaround until solution is implemented by Ansible ###
-#### See Ansible issue: https://github.com/ansible/ansible/pull/49950
-#- name: Add the Docker repository signing key (direct connection)
-#  apt_key:
-#    id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-#    keyserver: hkp://p80.pool.sks-keyservers.net:80
-#    state: present
-#  when: docker_repo_key.stdout == "absent" and http_proxy is not defined
+- name: Dearmor Docker repository key
+  command: gpg --dearmor -o {{ (docker_signing_key.dest | splitext)[0] }}.gpg {{ docker_signing_key.dest }}
+  when: docker_signing_key.changed
 
-- name: Add the Docker repository signing key (direct connection)
-  block:
-    - command: apt-key adv --no-tty --keyserver hkps://keyserver.ubuntu.com --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-      register: apt_key_tmp
-      until: apt_key_tmp is not failed
-      retries: 3
-  rescue:
-    - shell: curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DC858229FC7DD38854AE2D88D81803C0EBFCD88' | apt-key add -
-      args:
-        warn: no
-  when: docker_repo_key.stdout == "absent" and http_proxy is not defined
-
-#### Temporary workaround until solution is implemented by Ansible ###
-#### See Ansible issue: https://github.com/ansible/ansible/pull/49950
-#### ADD '--no-tty'
-- name: Add the Docker repository signing key (via proxy server)
-  block:
-    - command: apt-key adv --no-tty --keyserver hkps://keyserver.ubuntu.com --keyserver-options http-proxy=\"{{http_proxy}}\" --recv-keys 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-      register: apt_key_tmp_prox
-      until: apt_key_tmp_prox is not failed
-      retries: 3
-  rescue:
-    - shell: curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DC858229FC7DD38854AE2D88D81803C0EBFCD88' | apt-key add -
-      args:
-        warn: no
-  when: docker_repo_key.stdout == "absent" and http_proxy is defined
-
-- name: Ensure apt-transport-https is installed
-  apt: pkg=apt-transport-https state=present
-
-- name: Add the Docker repository
+- name: Add docker repository
   apt_repository:
-    repo: 'deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} stable'
+    repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} stable
     state: present
     update_cache: yes
+  when: not offline_mode.stat.exists
 
 - name: Install Docker
   apt: pkg=docker-ce state=present
 
-- name: Install python-docker
-  apt: pkg=python-docker state=present
+- name: Install python3-docker
+  apt: pkg=python3-docker state=present
 
 # BUG DOCKER !!! REMOVE THIS WHEN A FIX IS RELEASED!!!
 # ISSUE 315 python-docker bug - Debian bug 910822
+# https://github.com/docker/docker-credential-helpers/issues/105#issuecomment-584764909
 - name: "CHECK IF BUG FILE EXISTS"
   stat:
     path: "/usr/bin/docker-credential-secretservice"
@@ -143,10 +111,9 @@
   become: True
   become_user: teamwire
   docker_login:
-    registry_url: "{{ 'harbor.teamwire.eu' if use_teamwire_registry | default('false') | bool else 'https://index.docker.io/v1/' }}"
+    registry_url: "{{ 'harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
-    email: "{{ dockerhub_email }}"
 
 - include_tasks: cluster.yml
   when: groups['all'] | length() > 1

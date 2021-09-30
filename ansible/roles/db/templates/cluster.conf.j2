@@ -3,8 +3,8 @@ wsrep_on=ON
 wsrep_provider=/usr/lib/galera/libgalera_smm.so
 wsrep_cluster_name="teamwire"
 wsrep_cluster_address="gcomm://{% for host in groups['database_servers'] %}{{ hostvars[host].private_ip }}{{"," if not loop.last else ""}}{% endfor %}"
-wsrep_sst_method={% if ansible_distribution_release == "buster" %}mariabackup{% else %}xtrabackup-v2{% endif %}{{ '\n' -}}
-wsrep_sst_auth={% if ansible_distribution_release == "buster" %}mariabackup{% else %}xtrabackup{% endif %}:{{ xtrabackup_password }}
+wsrep_sst_method=mariabackup{{ '\n' -}}
+wsrep_sst_auth=mariabackup:{{ xtrabackup_password }}
 wsrep_node_address="{{ private_ip }}"
 wsrep_node_name="{{ inventory_hostname }}"
 

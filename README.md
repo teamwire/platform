@@ -1,4 +1,3 @@
-platform
-========
+# Teamwire Platform
 
-The Linux platform sources to deploy Teamwire
+The Ansible platform sources to deploy Teamwire

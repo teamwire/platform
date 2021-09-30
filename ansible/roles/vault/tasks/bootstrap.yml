@@ -65,11 +65,11 @@
 
 - name: Enable Vault autocomplete
   lineinfile:
-     path: "/home/teamwire/.bashrc"
-     insertafter: EOF
-     line: complete -C /usr/local/bin/vault vault
-     state: present
-  become: teamwire
+      path: "/home/teamwire/.bashrc"
+      insertafter: EOF
+      line: complete -C /usr/local/bin/vault vault
+      state: present
+  become_user: teamwire
 
   #Enable TLS
 
@@ -161,6 +161,10 @@
     secrets: "{{ secrets|combine(user_secrets) }}"
   when: user_secrets is defined
 
+- name: Enable secrets engine
+  command: vault secrets enable -path secret kv
+  run_once: yes
+
 - name: Generate secret paths
   command: vault write "{{ item.value.path }}" value=""
   no_log: True
@@ -197,72 +201,6 @@
   run_once: true
 
 - name: Include secrets var file so the defined secrets can be read
-  include_tasks: secrets.yml
-
-- name: Confirm Dockerhub password if empty
-  block:
-    - pause:
-        prompt: "Dockerhub password required. Please enter the password for {{ dockerhub_username }}"
-      register: pause_entry
-    - command: vault write secret/dockerhub/password value="{{ pause_entry.user_input }}"
-  no_log: true
-  run_once: true
-  when: dockerhub_password == ""
-
-- name: Confirm Google API key if empty
-  block:
-    - pause:
-        prompt: "Google API key required. Please enter the key you have received from us."
-      register: pause_entry
-    - command: vault write secret/keys/gcm value="{{ pause_entry.user_input }}"
-  no_log: true
-  run_once: true
-  when: gcm_api_key == ""
-
-- pause:
-    prompt: "Does your smtp server require password authentication? (yes/no)"
-  register: smtp_smartpass_required
-  when: smtp_smartpass == ""
-
-- name: Confirm SMTP password if empty
-  block:
-    - pause:
-        prompt: "SMTP password required. Please confirm the password for {{ smtp_smartuser }}"
-      register: pause_entry
-    - command: vault write secret/smtp/password value="{{ pause_entry.user_input }}"
-  no_log: true
-  run_once: true
-  when: (smtp_smartpass == "" and 'yes' in smtp_smartpass_required|lower) or
-        (smtp_smartpass == "" and 'y' in smtp_smartpass_required|lower)
-
-- name: Confirm teamwire database password if empty and using external database host
-  block:
-    - pause:
-        prompt: "Database password required. Please confirm the password for {{ teamwire_db_user }}"
-      register: pause_entry
-    - command: vault write secret/database/password value="{{ pause_entry.user_input }}"
-  no_log: true
-  run_once: true
-  when: (mysql_host is defined and teamwire_db_password == "") or
-        (oracle_host is defined and teamwire_db_password == "")
-
-- pause:
-    prompt: "Would you like to use an AES key from an existing installation? (yes/no)"
-    echo: yes
-  register: aes_confirm
-  when: aes_key == ""
-
-- name: Confirm Database AES key
-  block:
-    - pause:
-        prompt: "Database AES key required. Please confirm the AES key."
-      register: pause_entry
-    - command: vault write secret/database/aes_key value="{{ pause_entry.user_input }}"
-  no_log: true
-  run_once: true
-  when: "'yes' in aes_confirm|lower or 'y' in aes_confirm|lower"
-
-- name: Reload secrets variables to recognise changes
   include_tasks: secrets.yml
 
 - name: Generate and write internal secrets if empty
