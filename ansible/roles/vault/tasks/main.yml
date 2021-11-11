@@ -24,6 +24,13 @@
   when:
     - not vault_binary.stat.exists
 
+- name: Bootstrap Vault
+  include_tasks: bootstrap.yml
+  when:
+    - config_done is defined
+    - ansible_local.vault is defined
+    - ansible_local.vault.initialized != "true"
+
 - name: Upgrade Vault
   include_tasks: upgrade.yml
   when:

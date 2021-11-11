@@ -10,6 +10,8 @@
       register: vault_status
       failed_when: vault_status.rc == 1 or vault_status.rc >= 3
       changed_when: no
+      environment:
+        VAULT_ADDR: "{{ 'http' if ansible_local.vault is undefined or ansible_local.vault.initialized != 'true' else 'https' }}://127.0.0.1:8200"
     - name: Parse Vault information
       set_fact:
         vault_version_current: "{{ vault_status_version_line | regex_search('\\d+\\.\\d+\\.\\d+') }}"
@@ -61,6 +63,8 @@
             - pause_entry_01.user_input is defined
             - pause_entry_02.user_input is defined
       when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
         - vault_binary.stat.exists
         - vault_version is version(vault_version_current, '>')
 
@@ -147,7 +151,7 @@
                 aes_key: "{{ pause_entry.user_input }}"
               when: pause_entry.user_input is defined
           when: aes_key is undefined
-      when: ansible_local.vault is defined and ansible_local.vault.initialized != "true"
+      when: ansible_local.vault is undefined or ansible_local.vault.initialized != "true"
 
     - name: Remember that information have been asked for
       set_fact:
