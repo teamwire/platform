@@ -38,13 +38,11 @@
         - name: Vault needs to be unsealed after upgrade
           pause:
             prompt: "Please provide first unseal key"
-            echo: no
           register: pause_entry_01
           run_once: true
         - name: Vault needs to be unsealed after upgrade
           pause:
             prompt: "Please provide a second unseal key. Make sure it differs from the first key you've provided"
-            echo: no
           register: pause_entry_02
           run_once: true
           when: pause_entry_01.user_input is defined
@@ -75,7 +73,6 @@
             - name: Container registry password required
               pause:
                 prompt: "Please enter the password for {{ dockerhub_username }}"
-                echo: no
               register: pause_entry
               run_once: true
             - name: Save container registry password
@@ -89,7 +86,6 @@
             - name: Google API key required
               pause:
                 prompt: "Please enter the key you have received from us"
-                echo: no
               register: pause_entry
               run_once: true
             - name: Save container registry password
@@ -108,7 +104,6 @@
             - name: SMTP password required
               pause:
                 prompt: "SMTP password required. Please enter the password for {{ smtp_smartuser }}"
-                echo: no
               register: pause_entry
               run_once: true
               when:
@@ -126,7 +121,6 @@
             - name: Password required for external Teamwire database
               pause:
                 prompt: "Please enter the password for {{ teamwire_db_user }}"
-                echo: no
               run_once: true
             - name: Save database password
               set_fact:
@@ -146,7 +140,6 @@
             - name: Database AES key required
               pause:
                 prompt: "Please enter the AES key from your previous installation"
-                echo: no
               register: pause_entry
               run_once: true
               when:
