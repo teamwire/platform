@@ -3,7 +3,7 @@
   import_playbook: playbooks/requirements.yml
 
 - name: Ask for additional information upfront
-  hosts: all
+  hosts: hashi_servers:local
   tasks:
     - name: Ask for additional information
       include_role:
