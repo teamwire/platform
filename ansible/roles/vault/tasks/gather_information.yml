@@ -77,6 +77,7 @@
                 prompt: "Please enter the password for {{ dockerhub_username }}"
                 echo: no
               register: pause_entry
+              run_once: true
             - name: Save container registry password
               set_fact:
                 dockerhub_password: "{{ pause_entry.user_input }}"
@@ -90,6 +91,7 @@
                 prompt: "Please enter the key you have received from us"
                 echo: no
               register: pause_entry
+              run_once: true
             - name: Save container registry password
               set_fact:
                 gcm_api_key: "{{ pause_entry.user_input }}"
@@ -102,11 +104,13 @@
               pause:
                 prompt: "Does your SMTP server require password authentication? (yes/no)"
               register: smtp_smartpass_required
+              run_once: true
             - name: SMTP password required
               pause:
                 prompt: "SMTP password required. Please enter the password for {{ smtp_smartuser }}"
                 echo: no
               register: pause_entry
+              run_once: true
               when:
                 - smtp_smartpass_required.user_input is defined
                 - ('yes' in smtp_smartpass_required|lower) or
@@ -123,6 +127,7 @@
               pause:
                 prompt: "Please enter the password for {{ teamwire_db_user }}"
                 echo: no
+              run_once: true
             - name: Save database password
               set_fact:
                 teamwire_db_password: "{{ pause_entry.user_input }}"
@@ -137,11 +142,13 @@
                 prompt: "Would you like to use an AES key from an existing installation? (yes/no)"
                 echo: yes
               register: aes_confirm
+              run_once: true
             - name: Database AES key required
               pause:
                 prompt: "Please enter the AES key from your previous installation"
                 echo: no
               register: pause_entry
+              run_once: true
               when:
                 - aes_confirm.user_input is defined
                 - ('yes' in aes_confirm|lower) or
