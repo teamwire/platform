@@ -2,9 +2,18 @@
 - name: Ensure rsyslog is installed
   apt: pkg=rsyslog
 
-- name: Configure rsyslog for docker containers
-  copy: src=10-docker.conf dest=/etc/rsyslog.d/10-docker.conf
-  notify: restart rsyslog
+- name: Configure rsyslog for Docker containers
+  block:
+    - name: Configure rsyslog for Docker containers
+      copy:
+        src: 10-docker.conf
+        dest: /etc/rsyslog.d/10-docker.conf
+      notify: restart rsyslog
+    - name: Prevent Docker logs in default syslog
+      copy:
+        src: 99-docker-no-syslog.conf
+        dest: /etc/rsyslog.d/99-docker-no-syslog.conf
+      notify: restart rsyslog
 
 - name: Install logrotate job for cluster logs
   copy: src=container-log dest=/etc/logrotate.d/container-log
