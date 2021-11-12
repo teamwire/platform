@@ -77,10 +77,3 @@
 
 # Handlers should be flushed before any possible bootstrapping
 - meta: flush_handlers
-
-- name: Bootstrap Vault on new installations
-  include_tasks: bootstrap.yml
-  when:
-    - config_done is defined
-    - ansible_local.vault is defined
-    - ansible_local.vault.initialized != "true"

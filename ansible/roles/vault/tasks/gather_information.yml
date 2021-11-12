@@ -10,6 +10,8 @@
       register: vault_status
       failed_when: vault_status.rc == 1 or vault_status.rc >= 3
       changed_when: no
+      environment:
+        VAULT_ADDR: "{{ 'http' if ansible_local.vault is undefined or ansible_local.vault.initialized != 'true' else 'https' }}://127.0.0.1:8200"
     - name: Parse Vault information
       set_fact:
         vault_version_current: "{{ vault_status_version_line | regex_search('\\d+\\.\\d+\\.\\d+') }}"
@@ -36,13 +38,11 @@
         - name: Vault needs to be unsealed after upgrade
           pause:
             prompt: "Please provide first unseal key"
-            echo: no
           register: pause_entry_01
           run_once: true
         - name: Vault needs to be unsealed after upgrade
           pause:
             prompt: "Please provide a second unseal key. Make sure it differs from the first key you've provided"
-            echo: no
           register: pause_entry_02
           run_once: true
           when: pause_entry_01.user_input is defined
@@ -61,6 +61,8 @@
             - pause_entry_01.user_input is defined
             - pause_entry_02.user_input is defined
       when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
         - vault_binary.stat.exists
         - vault_version is version(vault_version_current, '>')
 
@@ -71,8 +73,8 @@
             - name: Container registry password required
               pause:
                 prompt: "Please enter the password for {{ dockerhub_username }}"
-                echo: no
               register: pause_entry
+              run_once: true
             - name: Save container registry password
               set_fact:
                 dockerhub_password: "{{ pause_entry.user_input }}"
@@ -84,8 +86,8 @@
             - name: Google API key required
               pause:
                 prompt: "Please enter the key you have received from us"
-                echo: no
               register: pause_entry
+              run_once: true
             - name: Save container registry password
               set_fact:
                 gcm_api_key: "{{ pause_entry.user_input }}"
@@ -98,11 +100,12 @@
               pause:
                 prompt: "Does your SMTP server require password authentication? (yes/no)"
               register: smtp_smartpass_required
+              run_once: true
             - name: SMTP password required
               pause:
                 prompt: "SMTP password required. Please enter the password for {{ smtp_smartuser }}"
-                echo: no
               register: pause_entry
+              run_once: true
               when:
                 - smtp_smartpass_required.user_input is defined
                 - ('yes' in smtp_smartpass_required|lower) or
@@ -118,7 +121,7 @@
             - name: Password required for external Teamwire database
               pause:
                 prompt: "Please enter the password for {{ teamwire_db_user }}"
-                echo: no
+              run_once: true
             - name: Save database password
               set_fact:
                 teamwire_db_password: "{{ pause_entry.user_input }}"
@@ -133,11 +136,12 @@
                 prompt: "Would you like to use an AES key from an existing installation? (yes/no)"
                 echo: yes
               register: aes_confirm
+              run_once: true
             - name: Database AES key required
               pause:
                 prompt: "Please enter the AES key from your previous installation"
-                echo: no
               register: pause_entry
+              run_once: true
               when:
                 - aes_confirm.user_input is defined
                 - ('yes' in aes_confirm|lower) or
@@ -147,7 +151,7 @@
                 aes_key: "{{ pause_entry.user_input }}"
               when: pause_entry.user_input is defined
           when: aes_key is undefined
-      when: ansible_local.vault is defined and ansible_local.vault.initialized != "true"
+      when: ansible_local.vault is undefined or ansible_local.vault.initialized != "true"
 
     - name: Remember that information have been asked for
       set_fact:

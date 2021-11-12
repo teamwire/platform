@@ -32,7 +32,7 @@
     - name: Unseal Vault
       command: vault operator unseal "{{ item }}"
       no_log: true
-      loop: "{{ vault_unseal_keys }}"
+      loop: "{{ vault_unseal_keys[:2] }}"
 
     - name: Gather information about upgraded Vault
       command: vault status
@@ -86,7 +86,7 @@
     - name: Unseal Vault
       command: vault operator unseal "{{ item }}"
       no_log: true
-      loop: "{{ vault_unseal_keys }}"
+      loop: "{{ vault_unseal_keys[:2] }}"
 
     - name: Gather information about upgraded Vault
       command: vault status

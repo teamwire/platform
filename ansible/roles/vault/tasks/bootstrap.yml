@@ -9,7 +9,7 @@
 - name: Extract Vault unseal keys and root token
   run_once: True
   set_fact:
-    vault_keys: "{{ (vault_info.stdout|from_json)['unseal_keys_b64'] }}"
+    vault_unseal_keys: "{{ (vault_info.stdout|from_json)['unseal_keys_b64'] }}"
     vault_token: "{{ (vault_info.stdout|from_json)['root_token'] }}"
   delegate_facts: True
   delegate_to: "{{ item }}"
@@ -29,9 +29,7 @@
 - name: Unseal Vault
   command: vault operator unseal "{{ item }}"
   no_log: true
-  with_items:
-    - "{{ vault_keys[0] }}"
-    - "{{ vault_keys[1] }}"
+  loop: "{{ vault_unseal_keys[:2] }}"
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
@@ -144,9 +142,7 @@
 - name: Unseal Vault
   command: vault operator unseal "{{ item }}"
   no_log: true
-  with_items:
-    - "{{ vault_keys[0] }}"
-    - "{{ vault_keys[1] }}"
+  loop: "{{ vault_unseal_keys[:2] }}"
 
 - name: Wait for Vault to elect a leader
   wait_for:
