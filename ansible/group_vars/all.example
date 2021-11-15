@@ -251,12 +251,12 @@ system_email_recipient:
 #notification_cpu_alloc: 0.2
 
 # Nomad RAM allocations in MB per CPU core
-#backend_ram_alloc: 256
-#backend_ram_alloc_min: backend_ram_alloc
+#backend_ram_alloc: 512
+#backend_ram_alloc_min: "{{ backend_ram_alloc }}"
 #worker_ram_alloc: 256
-#worker_ram_alloc_min: worker_ram_alloc
+#worker_ram_alloc_min: "{{ worker_ram_alloc }}"
 #notification_ram_alloc: 64
-#notification_ram_alloc_min: notification_ram_alloc
+#notification_ram_alloc_min: "{{ notification_ram_alloc }}"
 
 ##############################################################################
 ## DEBUGGING
