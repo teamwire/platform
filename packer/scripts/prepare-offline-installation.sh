@@ -110,8 +110,10 @@ sudo apt-get install -qy ${APT_3RD_PARTY_PREREQUISITES}
 echo "Step 2: Import additional repo signing keys"
 echo "==========================================="
 sudo apt-get update -q
-sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
-sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
+	sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
+	sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+fi
 
 echo "Step 3: Caching packages"
 echo "========================"
