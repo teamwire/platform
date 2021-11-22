@@ -33,7 +33,6 @@ rpcbind
 glusterfs-server
 glusterfs-client
 nfs-common
-galera
 haproxy
 libconfig-inifiles-perl
 libterm-readkey-perl
