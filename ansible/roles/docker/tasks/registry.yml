@@ -18,8 +18,3 @@
 # Push all local images to the local registry
 - name: Copy the registry image helper tool
   copy: src=twimg dest=/usr/local/bin/ mode=0755
-
-- name: Push local images to registry
-  command: /usr/local/bin/twimg --registry "{{ inventory_hostname }}:5000" push
-  when: offline_mode.stat.exists
-  run_once: true

@@ -710,12 +710,14 @@ restoredb() {
 }
 
 pull_images_base() {
-	echo "Pulling Teamwire container images for version $TAG"
-	echo
-	check_registry
-	for IMAGE in $IMAGES; do
-		docker pull "${PRFX}$IMAGE":"$TAG"
-	done
+	if [ ! -e /etc/offline_installation ]; then
+		echo "Pulling Teamwire container images for version $TAG"
+		echo
+		check_registry
+		for IMAGE in $IMAGES; do
+			docker pull "${PRFX}$IMAGE":"$TAG"
+		done
+	fi
 }
 
 pull_images_single() {

@@ -106,11 +106,19 @@
 - name: Fix Icinga PKI directory permissions
   file: dest=/etc/icinga2/pki owner=nagios group=nagios mode=0750
 
-- name: Download check_ntp_time from repo.teamwire.eu
+- name: Download Icinga check_ntp_time plugin
   get_url:
-    url: https://repo.teamwire.eu/bin/icinga/check_ntp_time
+    url: https://repo.teamwire.eu/bin/icinga/check_ntp_time-{{ check_ntp_time_version }}
+    dest: /var/cache/downloads/
+    checksum: sha256:{{ check_ntp_time_checksum }}
+  when: not offline_mode.stat.exists
+
+- name: Install Icinga check_ntp_time plugin
+  copy:
+    src: /var/cache/downloads/check_ntp_time-{{ check_ntp_time_version }}
     dest: /usr/lib/nagios/plugins/check_ntp_time
-     
+    remote_src: yes
+
 - include: "database-configuration.yml"
   when: mysql_root_password is defined
 

@@ -17,10 +17,9 @@
 
 - name: Register docker registry with harbor
   set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/teamwire/"
+    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/"
   when:
     - config_done is defined
-    - use_teamwire_registry | default('false') | bool
     - groups.docker_registry is defined
 
 - name: Template voip nomad job file
@@ -35,27 +34,42 @@
 
 - name: Login to the docker registry
   docker_login:
-    registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry | default('false') | bool else 'https://index.docker.io/v1/' }}"
+    registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
   when: not offline_mode.stat.exists
 
-- name: Pull and tag voip image to local registry
+- name: Pull VoIP Docker images
   docker_image:
-    name: "{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
     source: pull
-    repository: "{{ LOCAL_REGISTRY }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
-    push: yes
+    state: present
   delegate_to: "{{ groups['management_servers'] | first() }}"
-  when:
-    - config_done is defined
-    - use_teamwire_registry is defined and use_teamwire_registry | default('false') | bool
-    - groups['all'] | length > 1
-  with_items:
+  loop:
     - "{{ VOIP_CONTAINER_WEB }}"
     - "{{ VOIP_CONTAINER_PROSODY }}"
     - "{{ VOIP_CONTAINER_JICOFO }}"
     - "{{ VOIP_CONTAINER_JVB }}"
+  when:
+    - config_done is defined
+    - not offline_mode.stat.exists
+    - groups.docker_registry is defined
+
+- name: Push VoIP Docker images to local registry
+  docker_image:
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    source: local
+    repository: "{{ LOCAL_REGISTRY }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    push: yes
+  delegate_to: "{{ groups['management_servers'] | first() }}"
+  loop:
+    - "{{ VOIP_CONTAINER_WEB }}"
+    - "{{ VOIP_CONTAINER_PROSODY }}"
+    - "{{ VOIP_CONTAINER_JICOFO }}"
+    - "{{ VOIP_CONTAINER_JVB }}"
+  when:
+    - config_done is defined
+    - groups.docker_registry is defined
 
 - name: Run voip container in a single server environment
   include_tasks: single.yml

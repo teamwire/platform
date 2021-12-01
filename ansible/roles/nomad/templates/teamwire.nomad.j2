@@ -68,7 +68,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}teamwire/backend:{{ version }}"
+				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -194,7 +194,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}teamwire/backend:{{ version }}"
+				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -295,7 +295,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}teamwire/backend:{{ version }}"
+				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -377,7 +377,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}teamwire/notification-server:{{ version }}"
+				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/notification-server:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"

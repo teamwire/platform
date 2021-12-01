@@ -58,11 +58,7 @@ job "voip" {
             driver = "docker"
 
             config {
-{% if LOCAL_REGISTRY is defined %}
-                image        = "{{ LOCAL_REGISTRY }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
-{% else %}
-                image        = "{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
-{% endif %}
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"
@@ -132,11 +128,7 @@ job "voip" {
             driver = "docker"
 
             config {
-{% if LOCAL_REGISTRY is defined %}
-                image        = "{{ LOCAL_REGISTRY }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
-{% else %}
-                image        = "{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
-{% endif %}
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"
@@ -230,11 +222,7 @@ job "voip" {
             driver = "docker"
 
             config {
-{% if LOCAL_REGISTRY is defined %}
-                image        = "{{ LOCAL_REGISTRY }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
-{% else %}
-                image        = "{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
-{% endif %}
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"
@@ -313,11 +301,7 @@ job "voip" {
             driver = "docker"
 
             config {
-{% if LOCAL_REGISTRY is defined %}
-                image        = "{{ LOCAL_REGISTRY }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
-{% else %}
-                image        = "{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
-{% endif %}
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"

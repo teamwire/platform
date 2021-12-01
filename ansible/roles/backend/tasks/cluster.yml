@@ -26,3 +26,4 @@
   run_once: true
   when:
     - use_teamwire_registry | default('true') | bool
+    - not offline_mode.stat.exists
