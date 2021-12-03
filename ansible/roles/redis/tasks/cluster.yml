@@ -47,12 +47,23 @@
     - "{{ redis_instances }}"
   register: redis_configuration
 
-- name: Create Redis runtime directory
-  file:
-    name: /var/run/redis
-    state: directory
-    owner: redis
-    group: redis
+- name: Ensure Redis runtime directory is created
+  block:
+    - name: Create systemd-tmpfiles configuration
+      copy:
+        src: redis.conf
+        dest: /etc/tmpfiles.d/
+        owner: root
+        group: root
+        mode: 0644
+        directory_mode: 0755
+      register: redis_systemd_tmpfiles_configuration
+
+    # Re-apply new and/or changed systemd-tmpfiles configuration
+    # https://www.freedesktop.org/software/systemd/man/systemd-tmpfiles-setup.service.html
+    - name: Apply systemd-tmpfiles configuration
+      command: /bin/systemd-tmpfiles --create --remove
+      when: redis_systemd_tmpfiles_configuration.changed
 
 - name: Start and enable Redis services
   service:

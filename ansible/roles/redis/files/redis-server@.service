@@ -6,7 +6,7 @@ Documentation=http://redis.io/documentation, man:redis-server(1)
 [Service]
 Type=forking
 ExecStart=/usr/bin/redis-server /etc/redis/redis-%i.conf
-PIDFile=/var/run/redis/redis-server-%i.pid
+PIDFile=/run/redis/redis-server-%i.pid
 TimeoutStopSec=0
 Restart=always
 User=redis
