@@ -121,6 +121,7 @@
             - name: Password required for external Teamwire database
               pause:
                 prompt: "Please enter the password for {{ teamwire_db_user }}"
+              register: pause_entry
               run_once: true
             - name: Save database password
               set_fact:
