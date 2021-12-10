@@ -79,10 +79,6 @@
   with_fileglob:
     - "files/checks/*"
 
-- name: Configure Icinga2 commands
-  copy: src=commands.conf dest=/etc/icinga2/conf.d
-  notify: restart icinga2
-
 - name: Ensure sudo is installed
   apt:
     pkg: sudo
@@ -132,6 +128,22 @@
 - include: "master.yml"
   when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
 
+# On Single installation or monitoring masters, configuration is placed into zones.d/
+# On monitoring agents of a cluster installation, configuration is placed into conf.d/
+- name: Configure Icinga2 commands
+  copy:
+    src: "{{ item }}"
+    dest: "{{ icinga2_config_target_dir | trim }}"
+  loop:
+    - commands.conf
+    - commands.custom.conf
+  vars:
+    icinga2_config_target_dir: >-
+      {% if groups['all'] | length() == 1 or inventory_hostname in groups['monitoring'] %}
+        /etc/icinga2/zones.d/{{ inventory_hostname }}
+      {% else %}
+        /etc/icinga2/conf.d/
+      {% endif %}
+  notify: restart icinga2
+
 - include: "client.yml"
-
-
