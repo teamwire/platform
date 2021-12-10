@@ -79,7 +79,9 @@
               set_fact:
                 dockerhub_password: "{{ pause_entry.user_input }}"
               when: pause_entry.user_input is defined
-          when: dockerhub_password is undefined
+          when:
+            - dockerhub_password is undefined
+            - not offline_mode.stat.exists
 
         - name: Ask for Firebase Cloud Messaging (FCM) API key
           block:
