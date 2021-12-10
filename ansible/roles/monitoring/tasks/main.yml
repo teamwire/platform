@@ -119,6 +119,13 @@
     dest: /usr/lib/nagios/plugins/check_ntp_time
     remote_src: yes
 
+- name: Patch Icinga2 check_haproxy_stats plugin
+  lineinfile:
+    path: /usr/lib/nagios/plugins/check_haproxy_stats
+    regexp: "^/usr/bin/perl"
+    line: "#/usr/bin/perl"
+    backrefs: yes
+
 - include: "database-configuration.yml"
   when: mysql_root_password is defined
 
