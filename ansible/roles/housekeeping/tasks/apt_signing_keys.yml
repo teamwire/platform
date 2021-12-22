@@ -4,7 +4,7 @@
 #
 
 - name: Remove repository signing keys from global trust anchor
-  command: gpg --batch --yes --keyring /etc/apt/trusted.gpg --delete-key {{ item.key_id }}
+  command: gpg --batch --yes --no-default-keyring --keyring /etc/apt/trusted.gpg --delete-key {{ item.key_id }}
   register: remove_signing_key
   changed_when: remove_signing_key.rc == 0
   # Return codes

@@ -79,7 +79,9 @@
               set_fact:
                 dockerhub_password: "{{ pause_entry.user_input }}"
               when: pause_entry.user_input is defined
-          when: dockerhub_password is undefined
+          when:
+            - dockerhub_password is undefined
+            - not offline_mode.stat.exists
 
         - name: Ask for Firebase Cloud Messaging (FCM) API key
           block:
@@ -121,6 +123,7 @@
             - name: Password required for external Teamwire database
               pause:
                 prompt: "Please enter the password for {{ teamwire_db_user }}"
+              register: pause_entry
               run_once: true
             - name: Save database password
               set_fact:

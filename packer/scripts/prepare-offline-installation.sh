@@ -33,7 +33,6 @@ rpcbind
 glusterfs-server
 glusterfs-client
 nfs-common
-galera
 haproxy
 libconfig-inifiles-perl
 libterm-readkey-perl
@@ -69,24 +68,31 @@ gnupg2
 tshark
 "
 
-DOCKER_IMAGES="
-teamwire/backend:${BACKEND_RELEASE}
-teamwire/notification-server:${BACKEND_RELEASE}
-teamwire/go-buildenv:latest
-$(awk '{ gsub("\"",""); print $2; }  NR==2{exit}' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
-"
+CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
+CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
+NOMAD_VERSION=$(awk '/^nomad_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
+VAULT_VERSION=$(awk '/^vault_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
+JITSI_VERSION=$(awk '/^VOIP_JITSI_VERSION:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/voip/defaults/main.yml)
+CHECK_NTP_TIME_VERSION=$(awk '/^check_ntp_time_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 
-CONSUL_VERSION=$(awk '/^consul_version:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
-CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
-NOMAD_VERSION=$(awk '/^nomad_version:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
-VAULT_VERSION=$(awk '/^vault_version:/ { print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
+DOCKER_IMAGES="
+harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
+harbor.teamwire.eu/teamwire/notification-server:${BACKEND_RELEASE}
+harbor.teamwire.eu/teamwire/go-buildenv:latest
+harbor.teamwire.eu/teamwire/web2:${JITSI_VERSION}
+harbor.teamwire.eu/teamwire/prosody:${JITSI_VERSION}
+harbor.teamwire.eu/teamwire/jicofo:${JITSI_VERSION}
+harbor.teamwire.eu/teamwire/jvb:${JITSI_VERSION}
+$(awk '{ gsub("\"",""); print $2 } NR==2 {exit}' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+"
 
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
-https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
-https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
-https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
-https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
+https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
+https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
+https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
+https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
+https://repo.teamwire.eu/bin/icinga/check_ntp_time-${CHECK_NTP_TIME_VERSION};$(awk '/^check_ntp_time_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
@@ -110,18 +116,25 @@ sudo apt-get install -qy ${APT_3RD_PARTY_PREREQUISITES}
 echo "Step 2: Import additional repo signing keys"
 echo "==========================================="
 sudo apt-get update -q
-sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
-sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
+	sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
+	sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+fi
 
+# For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,
+# e.g. php-cli is required when solely installing icingaweb2, but not when installing all regular packages at once.
+# Thus, installing them one by one to get dependencies "properly" resolved
 echo "Step 3: Caching packages"
 echo "========================"
 sudo apt-get update -q
-sudo apt-get install -qyd ${REGULAR_PACKAGES}
+for pkg in ${REGULAR_PACKAGES}; do
+	sudo apt-get install -qyd $pkg
+done
 
 echo "Step 4: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
-sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
+sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}" harbor.teamwire.eu
 for IMAGE in ${DOCKER_IMAGES} ; do
 	sudo docker pull "${IMAGE}"
 done

@@ -67,7 +67,7 @@
       insertafter: EOF
       line: complete -C /usr/local/bin/vault vault
       state: present
-  become_user: teamwire
+  become: no
 
   #Enable TLS
 

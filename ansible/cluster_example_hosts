@@ -58,9 +58,7 @@ db1
 db2
 db3
 
-# Required when installing without external connection. Optional but heavily
-# recommended when access to the outside world is enabled. Multiple hosts can
-# be configured to ensure redundancy.
+# Optional, but recommended to reduce WAN traffic when pulling new Teamwire versions.
 [docker_registry]
 db1
 

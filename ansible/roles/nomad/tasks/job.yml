@@ -20,10 +20,10 @@
 
 - name: Register docker registry with harbor
   set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/harbor.teamwire.eu/"
+    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/"
   when:
     - config_done is defined
-    - use_teamwire_registry | default('true') | bool
+    - groups.docker_registry is defined
 
 - name: Write Teamwire cluster nomad job
   template:

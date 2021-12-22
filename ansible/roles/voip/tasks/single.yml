@@ -17,7 +17,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_web
-    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -42,7 +42,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_prosody
-    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -84,7 +84,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_jicofo
-    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -116,7 +116,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_jvb
-    image: "{{ LOCAL_REGISTRY if LOCAL_REGISTRY is defined else '' }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
     state: started
     restart_policy: always
     network_mode: host
