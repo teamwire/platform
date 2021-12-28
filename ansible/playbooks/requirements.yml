@@ -222,10 +222,11 @@
       when: cert_subject_org.stdout is defined and cert_issuer_org.stdout is defined and cert_subject_org.stdout == cert_issuer_org.stdout
 
 - name: Check if installing offline
-  hosts: 127.0.0.1
+  hosts: all
   tasks:
     - stat: path=/etc/offline_installation
       register: offline_mode
+      run_once: yes
 
 - name: Perform SSL-Preflight check
   hosts: 127.0.0.1
