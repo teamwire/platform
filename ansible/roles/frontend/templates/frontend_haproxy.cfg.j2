@@ -63,6 +63,7 @@ frontend voip-web-in
     bind {{ ansible_default_ipv4.address if groups['all'] | length == 1 else "*" }}:8080
     {% if ssl_cert is defined or ssl_certfile is defined or ssl_server_certificate is defined %}redirect scheme https code 301 if !{ ssl_fc }
     bind *:8443 ssl crt /etc/ssl/certs/server_and_intermediate_and_root.crt
+    bind :::8443 ssl crt /etc/ssl/certs/server_and_intermediate_and_root.crt
 
     tcp-request inspect-delay 5s
     tcp-request content reject if { req.ssl_ver 3 }
