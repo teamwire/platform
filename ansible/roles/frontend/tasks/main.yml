@@ -214,6 +214,9 @@
 - ufw: rule=allow port=8443 proto=tcp
   when: ssl_keyfile is defined and enable_voip is defined and enable_voip | string() == 'true'
 
+- ufw: rule=allow port=4443 proto=tcp
+  when: ssl_keyfile is defined and enable_voip is defined and enable_voip | string() == 'true'
+
 - ufw: rule=allow port=10000 proto=any
   when: groups.all | length == 1 and enable_voip is defined and enable_voip | string() == 'true'
 
