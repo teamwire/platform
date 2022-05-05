@@ -307,13 +307,10 @@
     - { src: 'commandtransports.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/commandtransports.ini' }
 
 - name: Configure sender address for notifications
-  replace:
-    dest: /etc/icinga2/scripts/{{ item }}
-    regexp: 'mail -s'
-    replace: 'mail -r "{{ sender_address}}" -s'
+  template: src={{ item.src }} dest={{ item.dest }} mode=0755
   with_items:
-    - mail-host-notification.sh
-    - mail-service-notification.sh
+    - { src: 'mail-host-notification.j2', dest: '/etc/icinga2/scripts/mail-host-notification.sh' }
+    - { src: 'mail-service-notification.j2', dest: '/etc/icinga2/scripts/mail-service-notification.sh' }
   notify: restart icinga2
 
 - name: Configure Icinga2 zones
