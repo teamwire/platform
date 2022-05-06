@@ -88,7 +88,7 @@ external_hostname: ""
 
 # VOIP
 # To enable the voice over IP feature, you must uncomment the enable_voip line.
-# You have to ensure that the value must be set to "true" with quotes! All other 
+# You have to ensure that the value must be set to "true" with quotes! All other
 # values are ignored. Also ensure you have added the necessary section [voip_servers]
 # inside the cluster_hosts in case you run a cluster setup.
 # enable_voip: "true"
@@ -288,8 +288,12 @@ system_email_recipient:
 # Do not perform MX Lookups on domains for admin registration
 # fake_validate_domain: "true"
 
-# Notification service log level
+# Container service log level
+# To increase the log level for each container, please comment out the corresponding line.
+# backend_loglevel: "debug"
+# worker_loglevel: "debug"
 # notification_loglevel: "debug"
+# beat_loglevel: "debug"
 
 # To enable proxy usage for APNS, please uncomment the line below.
 # ENABLE_PROXY_FOR_APNS: "true"
