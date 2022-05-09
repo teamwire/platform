@@ -66,6 +66,7 @@
       USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
       VOIP_URL: "http://localhost:7080"
       JWT_APP_SECRET: "{{ jwt_app_secret }}"
+      LOGLEVEL: "{{ backend_loglevel|default() }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
@@ -110,6 +111,7 @@
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
       ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
       USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
+      LOGLEVEL: "{{ worker_loglevel|default() }}"
 
 - name: Run the Teamwire beat container
   when: config_done is defined
@@ -141,6 +143,7 @@
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
+      LOGLEVEL: "{{ beat_loglevel|default() }}"
 
 - name: Retrieve the Teamwire notification server container
   when: config_done is defined

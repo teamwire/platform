@@ -161,6 +161,7 @@ job "teamwire" {
 				ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
 				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 				VOIP_URL = "http://voipWeb.service.consul:7080"
+				LOGLEVEL = "{{ backend_loglevel|default() }}"
 			}
 
 			resources {
@@ -276,6 +277,7 @@ job "teamwire" {
 				BIND_PORT = "${NOMAD_PORT_health}"
 				ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
 				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
+				LOGLEVEL = "{{ worker_loglevel|default() }}"
 			}
 
 			resources {
@@ -352,6 +354,7 @@ job "teamwire" {
 				REDIS_URI = "prod.redis.service.consul:6379:1"
 				CELERY_BEAT_SCHEDULE = "/beat/celerybeat-schedule"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
+				LOGLEVEL = "{{ beat_loglevel|default() }}"
 			}
 
 			resources {
