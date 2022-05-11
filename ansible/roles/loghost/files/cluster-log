@@ -6,4 +6,7 @@
         notifempty
         nocreate
         delaycompress
+        postrotate
+            /usr/lib/rsyslog/rsyslog-rotate
+        endscript
 }
