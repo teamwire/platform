@@ -15,6 +15,7 @@ worker_ram_alloc: 256
 worker_ram_alloc_min: "{{ worker_ram_alloc }}"
 notification_ram_alloc: 64
 notification_ram_alloc_min: "{{ notification_ram_alloc }}"
+beat_ram_alloc_min: 384
 
 # Nomad jobs list
 nomad_jobs:

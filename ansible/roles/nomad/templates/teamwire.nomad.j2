@@ -359,7 +359,7 @@ job "teamwire" {
 
 			resources {
 				cpu = 150 # Allocated CPU in MHz
-				memory = 128 # Allocated RAM in MB
+				memory = {{ [beat_ram_alloc_min|int, 384]|max }}  # Allocated RAM in MB
 			}
 		}
 	}
