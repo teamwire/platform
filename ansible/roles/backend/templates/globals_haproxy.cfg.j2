@@ -5,6 +5,7 @@ global
     log /dev/log    local0
     log /dev/log    local1 notice
     daemon
+    nbproc {{ haproxy_proc_count }}
     maxconn 4096
     spread-checks 3
     chroot /var/lib/haproxy
