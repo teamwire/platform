@@ -6,7 +6,7 @@ global
     log /dev/log    local1 notice
     daemon
     nbproc {{ haproxy_proc_count }}
-    maxconn 4096
+    maxconn 10240
     spread-checks 3
     chroot /var/lib/haproxy
     stats socket /run/haproxy/admin.sock mode 660 level admin

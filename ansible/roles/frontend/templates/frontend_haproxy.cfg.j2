@@ -114,6 +114,7 @@ frontend https-in
     tcp-request content accept if { req.ssl_hello_type 1 }
     {% endif %}
 
+    maxconn 10240
     timeout http-keep-alive 5m
 
     http-request set-header X-Forwarded-Port %[dst_port]
