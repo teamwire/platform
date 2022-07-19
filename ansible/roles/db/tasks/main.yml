@@ -130,3 +130,18 @@
 
 - include_tasks: cluster.yml
   when: galera_cluster is defined
+
+# Use command module instead of mysql_query for backward compatibility
+- name: Get optimal innodb buffer size
+  command: >
+    mysql -e "SELECT CEILING(Total_InnoDB_Bytes*1.6/POWER(1024,3)) RIBPS FROM
+    (SELECT SUM(data_length+index_length) Total_InnoDB_Bytes FROM information_schema.tables WHERE engine='InnoDB') A;"
+  register: innodb_buffer_size
+  become: yes
+
+- name: Set innodb buffer size
+  lineinfile:
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    insertafter: '\[mysqld\]'
+    line: 'innodb_buffer_pool_size = {{ innodb_buffer_size.stdout_lines[1] | int }}G'
+  notify: running config
