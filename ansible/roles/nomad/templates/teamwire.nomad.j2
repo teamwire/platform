@@ -166,7 +166,7 @@ job "teamwire" {
 
 			resources {
 				cpu = {{ (total_cpu_power|int * backend_cpu_alloc)|int }} # Allocated CPU in MHz
-				memory = {{ [backend_ram_alloc_min|int, core_count|int * backend_ram_alloc|int * 4]|max }} # Allocated backend RAM in MB
+				memory = {{ [backend_ram_alloc_min|int, core_count|int * backend_ram_alloc|int]|max }} # Allocated RAM in MB
 			}
 		}
 	}
@@ -282,7 +282,7 @@ job "teamwire" {
 
 			resources {
 				cpu = {{ (total_cpu_power|int * worker_cpu_alloc)|int }} # Allocated CPU in MHz
-				memory = {{ ([worker_ram_alloc_min|int, core_count|int * worker_ram_alloc|int * 1.5]|max)|int }} # Allocated worker RAM in MB
+				memory = {{ [worker_ram_alloc_min|int, core_count|int * worker_ram_alloc|int]|max }} # Allocated RAM in MB
 			}
 		}
 	}
@@ -359,7 +359,7 @@ job "teamwire" {
 
 			resources {
 				cpu = 150 # Allocated CPU in MHz
-				memory = {{ [beat_ram_alloc_min|int, 384]|max }}  # Allocated beat RAM in MB
+				memory = {{ [beat_ram_alloc_min|int, 384]|max }}  # Allocated RAM in MB
 			}
 		}
 	}
@@ -431,7 +431,7 @@ job "teamwire" {
 
 			resources {
 				cpu = {{ (total_cpu_power|int * notification_cpu_alloc)|int }} # Allocated CPU in MHz
-				memory = {{ ([notification_ram_alloc_min|int, core_count|int * notification_ram_alloc|int * 1.5]|max)|int }} # Allocated notifications RAM in MB
+				memory = {{ [notification_ram_alloc_min|int, core_count|int * notification_ram_alloc|int]|max }} # Allocated RAM in MB
 			}
 		}
 	}
