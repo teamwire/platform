@@ -25,6 +25,10 @@
     - config_done is defined
     - groups.docker_registry is defined
 
+- name: Register published nomad server token
+  set_fact:
+    NOMAD_SERVER_VAULT_TOKEN: "{{ lookup('file', '/etc/ansible/job-read.token') }}"
+
 - name: Write Teamwire cluster nomad job
   template:
     src: teamwire.nomad.j2

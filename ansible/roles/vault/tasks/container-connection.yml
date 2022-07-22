@@ -1,0 +1,47 @@
+- name: Check if the vault secret job token file exists
+  stat: path="/etc/ansible/job-read.token"
+  register: vault_job_token_file
+
+- name: Set the executing host
+  debug: msg="{{ 'localhost' if groups['all'] | length() == 1 else groups.hashi_servers | first }}"
+  register: host_to_delegate
+
+- name: Check if Nomad-job policy exists for Vault
+  shell: vault policy read nomad-job || true
+  register: policy_job_check
+  run_once: True
+  delegate_to: "{{ host_to_delegate.msg }}"
+
+- name: Delete possible outdated Nomad-job policy
+  shell: vault policy delete nomad-job
+  register: revoke_nomad_job_policy
+  run_once: true
+  delegate_to: "{{ host_to_delegate.msg }}"
+  when: not vault_job_token_file.stat.exists
+
+- name: Write/Update new vault job policy
+  command: "vault policy write nomad-job {{ role_path }}/files/nomad-job-policy.hcl"
+  delegate_to: "{{ host_to_delegate.msg }}"
+  when: revoke_nomad_job_policy.changed
+
+- name: Create Vault read only token for container jobs
+  command: vault token create -policy nomad-job -orphan -format=json
+  when:
+    - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
+    - revoke_nomad_job_policy.changed
+  register: vault_job_read_token
+
+- name: Set token fact
+  set_fact:
+    vault_job_read_token: "{{ vault_job_read_token.stdout | from_json }}"
+  when:
+    - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
+    - revoke_nomad_job_policy.changed
+
+- name: Publish vault job token into token file
+  copy:
+    dest: "/etc/ansible/job-read.token"
+    content: "{{ vault_job_read_token.auth.client_token }}"
+  when:
+    - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
+    - revoke_nomad_job_policy.changed

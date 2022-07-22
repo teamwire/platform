@@ -38,3 +38,11 @@
     - ansible_local.vault.initialized == "true"
     - vault_binary.stat.exists
     - vault_version is version(vault_version_current, '>')
+
+- name: Allow direct container connection to vault
+  include_tasks: container-connection.yml
+  when:
+    - config_done is defined
+    - ansible_local.vault is defined
+    - ansible_local.vault.initialized == "true"
+    - ansible_local.vault.sealed == "false"
