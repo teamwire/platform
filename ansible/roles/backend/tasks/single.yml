@@ -66,6 +66,7 @@
       USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
       VOIP_URL: "http://localhost:7080"
       JWT_APP_SECRET: "{{ jwt_app_secret }}"
+      PROSODY_KEY: "{{ prosody_key }}"
       LOGLEVEL: "{{ backend_loglevel|default() }}"
 
 - name: Run the Teamwire backend worker container

@@ -40,4 +40,6 @@ secrets:
     path: secret/voip/stun_password
   jwt_app_secret:
     path: secret/voip/jwt_app_secret
+  prosody_key:
+    path: secret/voip/prosody_key  
 vault_certificate_ttl: 17532h

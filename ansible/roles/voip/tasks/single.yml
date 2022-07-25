@@ -73,6 +73,7 @@
       JWT_TOKEN_AUTH_MODULE: "token_verification"
       JWT_APP_ID: "teamwire"
       JWT_APP_SECRET: "{{ jwt_app_secret }}"
+      PROSODY_KEY: "{{ prosody_key }}"
       JWT_ALLOW_EMPTY: "0"
       JICOFO_AUTH_USER: "focus"
       JVB_AUTH_USER: "jvb"
