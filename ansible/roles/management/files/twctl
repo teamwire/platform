@@ -295,7 +295,11 @@ voip_status_cluster() {
 	$NOMAD status voip
 }
 voip_status_single() {
-	status_single
+	FILTER=()
+	for CONTAINER in $VOIP_CONTAINERS; do
+		FILTER+="-f name=$CONTAINER "
+	done
+	docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}" $FILTER
 }
 
 voip() {
@@ -317,6 +321,14 @@ voip() {
 			;;
 		status)
 			"voip_status_${INSTALLATION}"
+			;;
+		*)
+			echo "Managing Voip container"
+			echo "Usage: twctl voip {start|stop|restart|status}"
+			echo "	start   : Starts the voip container if not already running"
+			echo "	stop    : Stops the voip container"
+			echo "	restart : Restart the voip container"
+			echo "	status  : Shows the status of voip container"
 			;;
 	esac
 }
@@ -458,6 +470,7 @@ help() {
 	echo "connectivity 	Test external connections"
 	echo "archiving 	Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
 	echo "ha-log      	Show content of haproxy.log. Pipe to less -R for pager with colour support"
+	echo "voip		Manage voip containers {start|stop|restart|status}"
 }
 
 test_server_condition_for_preflight_check() {
