@@ -16,6 +16,7 @@
   when:
     - config_done is defined
     - not offline_mode.stat.exists
+
 - name: Run the Teamwire backend main container
   when: config_done is defined
   docker_container:
@@ -168,4 +169,3 @@
       REDIS_URI: "127.0.0.1:6379:1"
       REDIS_PASSWORD: "{{ redis_pass|default() }}"
       LOGLEVEL: "{{ notification_loglevel|default() }}"
-
