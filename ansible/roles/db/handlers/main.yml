@@ -7,3 +7,7 @@
 
 - name: restart consul
   service: name=consul state=restarted
+
+- name: running config
+  command: mysql -e "SET GLOBAL innodb_buffer_pool_size=({{ innodb_buffer_size.stdout_lines[1] | int }} * 1024 * 1024 * 1024);"
+  become: true
