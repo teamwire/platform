@@ -59,6 +59,10 @@
     mysql_port: 3307
   when: mysql_port is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
 
+- name: Register published vault job token
+  set_fact:
+    VAULT_JOB_TOKEN: "{{ lookup('file', '/etc/ansible/job-read.token') }}"
+
 - name: Check if installing offline
   stat: path=/etc/offline_installation
   register: offline_mode
