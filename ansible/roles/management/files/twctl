@@ -350,8 +350,8 @@ voip() {
 			echo "	start   : Starts the voip container if not already running"
 			echo "	stop    : Stops the voip container"
 			echo "	restart : Restart the voip container"
-			echo "  setup   : Rebuilds voip containers"
 			echo "	status  : Shows the status of voip container"
+			echo "  setup   : Rebuilds voip containers"
 			;;
 	esac
 }
