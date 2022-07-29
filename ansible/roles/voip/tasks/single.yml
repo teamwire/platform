@@ -27,6 +27,7 @@
       syslog-facility: "local6"
     env:
       ENABLE_XMPP_WEBSOCKET: "0"
+      EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       TZ: "UTC"
       XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
       XMPP_BOSH_URL_BASE: "http://{{ 'prosody.service.consul' if groups['all'] | length > 1 else 'xmpp.meet.jitsi' }}:5280"
@@ -54,6 +55,7 @@
       tag: teamwire-prosody
       syslog-facility: "local6"
     env:
+      EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
       JIBRI_XMPP_PASSWORD: "{{ voip_jibri_password }}"
       JICOFO_AUTH_PASSWORD: "{{ voip_jicofo_password }}"
@@ -96,6 +98,7 @@
       tag: teamwire-jicofo
       syslog-facility: "local6"
     env:
+      EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
       JICOFO_AUTH_PASSWORD: "{{ voip_jicofo_password }}"
       JICOFO_AUTH_USER: "focus"
@@ -128,6 +131,7 @@
       tag: teamwire-jvb
       syslog-facility: "local6"
     env:
+      EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
       XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
       XMPP_INTERNAL_MUC_DOMAIN: "internal-muc.meet.jitsi"

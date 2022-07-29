@@ -93,6 +93,7 @@ job "voip" {
 
 			env {
 				ENABLE_XMPP_WEBSOCKET 			= "0"
+				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
 				TZ 								= "UTC"
 				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
 				XMPP_BOSH_URL_BASE 				= "http://prosody.service.consul:5280"
@@ -181,6 +182,7 @@ job "voip" {
 
 			env {
 				ENABLE_XMPP_WEBSOCKET = 0
+				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
 				XMPP_DOMAIN = "meet.jitsi"
 				XMPP_AUTH_DOMAIN = "auth.meet.jitsi"
 				XMPP_GUEST_DOMAIN = "guest.meet.jitsi"
@@ -276,6 +278,7 @@ job "voip" {
 {% endraw %}
 
 			env {
+				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
 				JICOFO_AUTH_USER = "focus"
 				JIBRI_BREWERY_MUC = "jibribrewery"
 				JIBRI_PENDING_TIMEOUT = "90"
@@ -366,6 +369,7 @@ job "voip" {
 			}
 
 			env {
+				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
 				XMPP_AUTH_DOMAIN = "auth.meet.jitsi"
 				XMPP_INTERNAL_MUC_DOMAIN = "internal-muc.meet.jitsi"
 				XMPP_SERVER = "prosody.service.consul"
