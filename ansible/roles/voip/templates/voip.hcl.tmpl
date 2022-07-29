@@ -169,43 +169,50 @@ job "voip" {
 {% raw %}
 			template {
 				data = <<EOH
+<<<<<<< HEAD
 					JVB_AUTH_PASSWORD = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
 					JIBRI_XMPP_PASSWORD = "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
 					JICOFO_AUTH_PASSWORD ="{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
 					JWT_APP_SECRET = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
 					PROSODY_KEY = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
+=======
+					JVB_AUTH_PASSWORD 		= "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
+					JIBRI_XMPP_PASSWORD 	= "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
+					JICOFO_AUTH_PASSWORD 	= "{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
+					JWT_APP_SECRET 			= "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
+>>>>>>> a5d6e9b (Cleanup voip hcl layout)
 				EOH
 				destination = "secrets/file.env"
-				env = true
+				env 		= true
 			}
 {% endraw %}
 
 			env {
-				ENABLE_XMPP_WEBSOCKET = 0
+				ENABLE_XMPP_WEBSOCKET 			= 0
 				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
-				XMPP_DOMAIN = "meet.jitsi"
-				XMPP_AUTH_DOMAIN = "auth.meet.jitsi"
-				XMPP_GUEST_DOMAIN = "guest.meet.jitsi"
-				XMPP_MUC_DOMAIN = "muc.meet.jitsi"
-				XMPP_INTERNAL_MUC_DOMAIN = "internal-muc.meet.jitsi"
-				XMPP_MODULES = ""
-				XMPP_MUC_MODULES = "tw_backend"
-				XMPP_INTERNAL_MUC_MODULES = ""
-				XMPP_RECORDER_DOMAIN = "recorder.meet.jitsi"
-				JICOFO_AUTH_USER = "focus"
-				JVB_AUTH_USER = "jvb"
-				#JIGASI_XMPP_USER = "jigasi"
-				#JIGASI_XMPP_PASSWORD = "4c94a9117f77b90a9d980e3622119886"
-				JIBRI_XMPP_USER = "jibri"
-				#JIBRI_RECORDER_USER = "recorder"
-				#JIBRI_RECORDER_PASSWORD = "c473a228428986904b9a342238137ac6"
-				ENABLE_AUTH = "1"
-				ENABLE_GUESTS = "0"
-				AUTH_TYPE = "jwt"
-				JWT_TOKEN_AUTH_MODULE = "token_verification"
-				JWT_APP_ID = "teamwire"
-				TZ = "UTC"
-				S6_BEHAVIOUR_IF_STAGE2_FAILS = 2
+				XMPP_DOMAIN 					= "meet.jitsi"
+				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
+				XMPP_GUEST_DOMAIN 				= "guest.meet.jitsi"
+				XMPP_MUC_DOMAIN 				= "muc.meet.jitsi"
+				XMPP_INTERNAL_MUC_DOMAIN 		= "internal-muc.meet.jitsi"
+				XMPP_MODULES 					= ""
+				XMPP_MUC_MODULES 				= "tw_backend"
+				XMPP_INTERNAL_MUC_MODULES 		= ""
+				XMPP_RECORDER_DOMAIN 			= "recorder.meet.jitsi"
+				JICOFO_AUTH_USER 				= "focus"
+				JVB_AUTH_USER 					= "jvb"
+				#JIGASI_XMPP_USER 				= "jigasi"
+				#JIGASI_XMPP_PASSWORD 			= "4c94a9117f77b90a9d980e3622119886"
+				JIBRI_XMPP_USER 				= "jibri"
+				#JIBRI_RECORDER_USER 			= "recorder"
+				#JIBRI_RECORDER_PASSWORD 		= "c473a228428986904b9a342238137ac6"
+				ENABLE_AUTH 					= "1"
+				ENABLE_GUESTS 					= "0"
+				AUTH_TYPE 						= "jwt"
+				JWT_TOKEN_AUTH_MODULE 			= "token_verification"
+				JWT_APP_ID 						= "teamwire"
+				TZ 								= "UTC"
+				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= 2
 			}
 
 			resources {
@@ -279,20 +286,20 @@ job "voip" {
 
 			env {
 				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
-				JICOFO_AUTH_USER = "focus"
-				JIBRI_BREWERY_MUC = "jibribrewery"
-				JIBRI_PENDING_TIMEOUT = "90"
-				JIGASI_BREWERY_MUC = "jigasibrewery"
-				JVB_BREWERY_MUC = "jvbbrewery"
-				TZ = "UTC"
-				XMPP_DOMAIN = "meet.jitsi"
-				XMPP_AUTH_DOMAIN = "auth.meet.jitsi"
-				XMPP_INTERNAL_MUC_DOMAIN = "internal-muc.meet.jitsi"
-				XMPP_MUC_DOMAIN = "muc.meet.jitsi"
-				XMPP_SERVER = "prosody.service.consul"
-				ENABLE_AUTH = "1"
-				AUTH_TYPE = "jwt"
-				S6_BEHAVIOUR_IF_STAGE2_FAILS = "2"
+				JICOFO_AUTH_USER 				= "focus"
+				JIBRI_BREWERY_MUC 				= "jibribrewery"
+				JIBRI_PENDING_TIMEOUT 			= "90"
+				JIGASI_BREWERY_MUC 				= "jigasibrewery"
+				JVB_BREWERY_MUC 				= "jvbbrewery"
+				TZ 								= "UTC"
+				XMPP_DOMAIN 					= "meet.jitsi"
+				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
+				XMPP_INTERNAL_MUC_DOMAIN 		= "internal-muc.meet.jitsi"
+				XMPP_MUC_DOMAIN 				= "muc.meet.jitsi"
+				XMPP_SERVER 					= "prosody.service.consul"
+				ENABLE_AUTH 					= "1"
+				AUTH_TYPE 						= "jwt"
+				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= "2"
 			}
 
 			resources {
@@ -344,7 +351,7 @@ job "voip" {
 				logging {
 					type = "syslog"
 					config {
-						tag = "teamwire-jvb"
+						tag 			= "teamwire-jvb"
 						syslog-facility = "local6"
 					}
 				}
@@ -370,18 +377,18 @@ job "voip" {
 
 			env {
 				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
-				XMPP_AUTH_DOMAIN = "auth.meet.jitsi"
-				XMPP_INTERNAL_MUC_DOMAIN = "internal-muc.meet.jitsi"
-				XMPP_SERVER = "prosody.service.consul"
-				JVB_AUTH_USER = "jvb"
-				JVB_BREWERY_MUC = "jvbbrewery"
-				JVB_PORT = "10000"
-				JVB_TCP_HARVESTER_DISABLED = "false"
-				JVB_TCP_PORT = "4443"
-				JVB_TCP_MAPPED_PORT = "4443"
-				JVB_STUN_SERVERS = "meet-jit-si-turnrelay.jitsi.net:443"
-				TZ = "UTC"
-				S6_BEHAVIOUR_IF_STAGE2_FAILS = "2"
+				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
+				XMPP_INTERNAL_MUC_DOMAIN 		= "internal-muc.meet.jitsi"
+				XMPP_SERVER 					= "prosody.service.consul"
+				JVB_AUTH_USER 					= "jvb"
+				JVB_BREWERY_MUC 				= "jvbbrewery"
+				JVB_PORT 						= "10000"
+				JVB_TCP_HARVESTER_DISABLED 		= "false"
+				JVB_TCP_PORT 					= "4443"
+				JVB_TCP_MAPPED_PORT 			= "4443"
+				JVB_STUN_SERVERS 				= "meet-jit-si-turnrelay.jitsi.net:443"
+				TZ 								= "UTC"
+				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= "2"
 			}
 
 			resources {
