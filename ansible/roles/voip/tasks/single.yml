@@ -64,7 +64,7 @@
       XMPP_MUC_DOMAIN: "muc.meet.jitsi"
       XMPP_INTERNAL_MUC_DOMAIN: "internal-muc.meet.jitsi"
       XMPP_MODULES: ""
-      XMPP_MUC_MODULES: ""
+      XMPP_MUC_MODULES: "tw_backend"
       XMPP_INTERNAL_MUC_MODULES: ""
       XMPP_RECORDER_DOMAIN: "recorder.meet.jitsi"
       ENABLE_AUTH: "1"
