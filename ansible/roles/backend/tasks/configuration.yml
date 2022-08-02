@@ -59,9 +59,15 @@
     mysql_port: 3307
   when: mysql_port is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
 
-- name: Register published vault job token
+- name: fetch VAULT_JOB_TOKEN
+  slurp:
+    src: /etc/ansible/job-read.token
+  register: remote_job_token
+  delegate_to: "{{ 'localhost' if groups['all'] | length == 1 else groups.hashi_servers | first }}"
+
+- name: Register published VAULT_JOB_TOKEN
   set_fact:
-    VAULT_JOB_TOKEN: "{{ lookup('file', '/etc/ansible/job-read.token') }}"
+    VAULT_JOB_TOKEN: "{{remote_job_token.content | b64decode}}"
 
 - name: Check if installing offline
   stat: path=/etc/offline_installation
