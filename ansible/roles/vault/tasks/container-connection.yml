@@ -31,8 +31,9 @@
         state: absent
       with_items: nomad-job-policy.hcl
   run_once: true
-  when: inventory_hostname == groups['hashi_servers'] | first  and revoke_nomad_job_policy.changed
-  
+  when: revoke_nomad_job_policy.changed
+  delegate_to: "{{ host_to_delegate.msg }}"
+
 - name: Create Vault read only token for container jobs
   command: vault token create -policy nomad-job -orphan -format=json
   when:

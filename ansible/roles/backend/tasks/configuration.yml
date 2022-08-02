@@ -63,7 +63,7 @@
   slurp:
     src: /etc/ansible/job-read.token
   register: remote_job_token
-  delegate_to: "{{ groups.hashi_servers | first }}"
+  delegate_to: "{{ 'localhost' if groups['all'] | length == 1 else groups.hashi_servers | first }}"
 
 - name: Register published VAULT_JOB_TOKEN
   set_fact:
