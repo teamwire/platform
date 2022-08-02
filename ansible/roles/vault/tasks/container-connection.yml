@@ -19,11 +19,20 @@
   delegate_to: "{{ host_to_delegate.msg }}"
   when: not vault_job_token_file.stat.exists
 
-- name: Write/Update new vault job policy
-  command: "vault policy write nomad-job {{ role_path }}/files/nomad-job-policy.hcl"
-  delegate_to: "{{ host_to_delegate.msg }}"
-  when: revoke_nomad_job_policy.changed
-
+- block:
+    - name: Write/Update new vault job policy
+      copy:
+        src: "{{ role_path }}/../vault/files/{{ item }}"
+        dest: /root/
+      with_items: nomad-job-policy.hcl
+    - command: vault policy write nomad-job /root/nomad-job-policy.hcl
+    - file:
+        dest: "/root/{{ item }}"
+        state: absent
+      with_items: nomad-job-policy.hcl
+  run_once: true
+  when: inventory_hostname == groups['hashi_servers'] | first  and revoke_nomad_job_policy.changed
+  
 - name: Create Vault read only token for container jobs
   command: vault token create -policy nomad-job -orphan -format=json
   when:
