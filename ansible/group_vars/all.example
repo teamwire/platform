@@ -307,3 +307,6 @@ system_email_recipient:
 # `enableMOTD` to the value `false` or uncomment the line afterwards ( default
 # value is `true`).
 # enableMOTD: false
+
+# To enable proxy usage for APT, please uncomment the line below.
+# ENABLE_PROXY_FOR_APT: "true"

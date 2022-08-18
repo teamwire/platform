@@ -1,10 +1,12 @@
 ---
 - name: Configure proxy for apt
-  when: http_proxy is defined
+  when: 
+  - http_proxy is defined
+  - ENABLE_PROXY_FOR_APT == true
   template: src=apt.proxy.conf.j2 dest=/etc/apt/apt.conf.d/01proxy
 
 - name: Remove apt proxy configuration when no proxy is configured
-  when: http_proxy is not defined
+  when: ENABLE_PROXY_FOR_APT == false or http_proxy is not defined
   file: dest=/etc/apt/apt.conf.d/01proxy state=absent
 
 # Installing dnsmasq is a chicken/egg problem: the apt cache must be updated
