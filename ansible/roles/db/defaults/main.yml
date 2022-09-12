@@ -5,3 +5,4 @@ mysql_databases:
     username: "{{ teamwire_db_user | default('teamwire') }}"
     password: "{{ teamwire_db_password }}"
 
+optimizer_search_depth_value: 0
