@@ -169,18 +169,11 @@ job "voip" {
 {% raw %}
 			template {
 				data = <<EOH
-<<<<<<< HEAD
-					JVB_AUTH_PASSWORD = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
-					JIBRI_XMPP_PASSWORD = "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
-					JICOFO_AUTH_PASSWORD ="{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
-					JWT_APP_SECRET = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
-					PROSODY_KEY = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
-=======
-					JVB_AUTH_PASSWORD 		= "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
-					JIBRI_XMPP_PASSWORD 	= "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
-					JICOFO_AUTH_PASSWORD 	= "{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
-					JWT_APP_SECRET 			= "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
->>>>>>> a5d6e9b (Cleanup voip hcl layout)
+					JVB_AUTH_PASSWORD	 = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
+					JIBRI_XMPP_PASSWORD	 = "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
+					JICOFO_AUTH_PASSWORD = "{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
+					JWT_APP_SECRET		 = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
+					PROSODY_KEY			 = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
 				EOH
 				destination = "secrets/file.env"
 				env 		= true
