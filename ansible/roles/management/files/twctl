@@ -62,13 +62,13 @@ else
 		echo "       Please configure the server before using this tool."
 		exit 1
 	fi
-
+    #####ContainerName (docker ps -> name)
 	CONTAINERS="teamwire_notification_server teamwire_beat teamwire_worker teamwire_backend"
 	VOIP_CONTAINERS="teamwire_web teamwire_prosody teamwire_jicofo teamwire_jvb"
 fi
-
+#####ImageNames - Mainifest
 IMAGES="teamwire/backend teamwire/notification-server"
-
+VOIPIMAGES="teamwire/web2 teamwire/prosody teamwire/jicofo teamwire/jvb"
 
 
 if [ "$VAULT_INITIALIZED" != "true" ]; then
@@ -265,24 +265,8 @@ check_tag() {
 }
 is_voip_Enabled() {
 	local enabled="$(_get_config_value enable_voip)"
-	if [ ${enabled} != "yes" ]; then
+	if [ ${enabled} != "true" ]; then
 		exit 1
-	fi
-}
-
-voip_setup_containers_single() {
-	if [ -f /etc/offline_installation ] ; then
-		ansible-playbook -i "${ANSIBLE_DIR}/hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "1"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
-	else
-		ansible-playbook -i "${ANSIBLE_DIR}/hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
-	fi
-}
-
-voip_setup_containers_cluster() {
-	if [ -f /etc/offline_installation ] ; then
-		ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "1"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
-	else
-		ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
 	fi
 }
 
@@ -303,7 +287,14 @@ voip_stop_cluster() {
 voip_stop_single() {
 	for CONTAINER in $VOIP_CONTAINERS; do
 		c=$(docker stop ${CONTAINER})
-        printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+		printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+	done
+}
+voip_remove_single() {
+	for CONTAINER in $VOIP_CONTAINERS; do
+		c=$(docker stop ${CONTAINER})
+		docker rm ${CONTAINER}
+        printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
 	done
 }
 
@@ -338,12 +329,6 @@ voip() {
 		status)
 			"voip_status_${INSTALLATION}"
 			;;
-		setup)
-			voip_stop_$INSTALLATION
-			voip_setup_containers_$INSTALLATION
-			voip_start_$INSTALLATION
-			;;
-
 		*)
 			echo "Managing Voip container"
 			echo "Usage: twctl voip {start|stop|restart|status}"
@@ -351,7 +336,6 @@ voip() {
 			echo "	stop    : Stops the voip container"
 			echo "	restart : Restart the voip container"
 			echo "	status  : Shows the status of voip container"
-			echo "  setup   : Rebuilds voip containers"
 			;;
 	esac
 }
@@ -493,7 +477,7 @@ help() {
 	echo "connectivity 	Test external connections"
 	echo "archiving 	Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
 	echo "ha-log      	Show content of haproxy.log. Pipe to less -R for pager with colour support"
-	echo "voip		    Manage voip containers {start|stop|restart|status}"
+	echo "voip		Manage voip containers {start|stop|restart|status}"
 }
 
 test_server_condition_for_preflight_check() {
@@ -748,6 +732,7 @@ restoredb() {
 }
 
 pull_images_base() {
+	local enabled="$(_get_config_value enable_voip)"
 	if [ ! -e /etc/offline_installation ]; then
 		echo "Pulling Teamwire container images for version $TAG"
 		echo
@@ -755,6 +740,11 @@ pull_images_base() {
 		for IMAGE in $IMAGES; do
 			docker pull "${PRFX}$IMAGE":"$TAG"
 		done
+		if [ ! -z ${enabled} ] && [ ${enabled} = "true" ]; then
+			for VOIPIMG in ${VOIPIMAGES}; do
+            	docker pull "${PRFX}$VOIPIMG":"$TAG" || exit 1;
+        	done
+		fi	
 	fi
 }
 
@@ -891,16 +881,30 @@ setup_containers_base() {
 }
 
 setup_containers_single() {
+	local enabled="$(_get_config_value enable_voip)"
 	setup_containers_base
 
 	ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
+	if [ -z ${enabled} ]; then
+	    	:
+	elif [ ${enabled} = "true" ]; then
+	voip_remove_single
+    ansible-playbook -i "${ANSIBLE_DIR}/hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
+	fi
 }
 
 setup_containers_cluster() {
+	local enabled="$(_get_config_value enable_voip)"
 	setup_containers_base
 
 	ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
 	$NOMAD run "$NOMAD_JOB"
+	if [ -z ${enabled} ]; then
+	    	:
+	elif [ ${enabled} = "true" ]; then
+	ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
+	$NOMAD run /data/voip/voip.hcl
+	fi
 }
 
 ha-log() {
