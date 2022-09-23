@@ -79,10 +79,10 @@ DOCKER_IMAGES="
 harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/notification-server:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/go-buildenv:latest
-harbor.teamwire.eu/teamwire/web2:${JITSI_VERSION}
-harbor.teamwire.eu/teamwire/prosody:${JITSI_VERSION}
-harbor.teamwire.eu/teamwire/jicofo:${JITSI_VERSION}
-harbor.teamwire.eu/teamwire/jvb:${JITSI_VERSION}
+harbor.teamwire.eu/teamwire/web2:${BACKEND_RELEASE}
+harbor.teamwire.eu/teamwire/prosody:${BACKEND_RELEASE}
+harbor.teamwire.eu/teamwire/jicofo:${BACKEND_RELEASE}
+harbor.teamwire.eu/teamwire/jvb:${BACKEND_RELEASE}
 $(awk '{ gsub("\"",""); print $2 } NR==2 {exit}' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 "
 
