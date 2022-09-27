@@ -11,3 +11,7 @@
 - name: running config
   command: mysql -e "SET GLOBAL innodb_buffer_pool_size=({{ innodb_buffer_size.stdout_lines[1] | int }} * 1024 * 1024 * 1024);"
   become: true
+
+- name: set optimizer in runtime
+  command: mysql -e "SET GLOBAL optimizer_search_depth={{optimizer_search_depth_value}};"
+  become: true

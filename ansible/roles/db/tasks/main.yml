@@ -145,3 +145,26 @@
     insertafter: '\[mysqld\]'
     line: 'innodb_buffer_pool_size = {{ innodb_buffer_size.stdout_lines[1] | int }}G'
   notify: running config
+
+# Configure optimizer search depth
+- name: Read mariadb configuration file
+  command: cat /etc/mysql/mariadb.conf.d/50-server.cnf
+  register: mariadb_config_file
+
+- name: Add optimizer search depth configuration if not present
+  lineinfile:
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    insertafter: ^\[mariadb\]
+    firstmatch: true
+    line: optimizer_search_depth={{optimizer_search_depth_value}}
+  when: mariadb_config_file.stdout.find('optimizer_search_depth=') == -1
+  notify: set optimizer in runtime
+
+- name: Change optimizer search depth configuration
+  lineinfile:
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    regex: ^optimizer_search_depth=
+    firstmatch: true
+    line: optimizer_search_depth={{optimizer_search_depth_value}}
+  when: mariadb_config_file.stdout.find('optimizer_search_depth=') != -1
+  notify: set optimizer in runtime
