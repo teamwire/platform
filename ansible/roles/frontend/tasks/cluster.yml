@@ -8,22 +8,22 @@
 
 - name: Download Consul Template
   get_url:
-    url: https://releases.hashicorp.com/consul-template/{{consul_template_version}}/consul-template_{{consul_template_version}}_linux_amd64.zip
-    dest: /var/cache/downloads/consul-template_{{consul_template_version}}_linux_amd64.zip
-    checksum: "sha256:{{consul_template_checksum}}"
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+    url: https://releases.hashicorp.com/consul-template/{{ consul_template_version }}/consul-template_{{ consul_template_version }}_linux_amd64.zip
+    dest: /var/cache/downloads/consul-template_{{ consul_template_version }}_linux_amd64.zip
+    checksum: "sha256:{{ consul_template_checksum }}"
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}' # noqa var-spacing
   register: consul_template_downloaded
   environment:
     https_proxy: "{{ http_proxy|default() }}"
 
 - name: Install the Consul Template binary
   unarchive:
-    src: /var/cache/downloads/consul-template_{{consul_template_version}}_linux_amd64.zip
+    src: /var/cache/downloads/consul-template_{{ consul_template_version }}_linux_amd64.zip
     dest: /usr/local/sbin
     mode: 0755
-    copy: no
+    copy: false
   notify: restart Consul Template
-  when: consul_template_downloaded.changed or not consul_template_binary.stat.exists
+  when: consul_template_downloaded.changed or not consul_template_binary.stat.exists # noqa no-handler
 
 - name: Install Consul Template systemd config
   copy:

@@ -4,34 +4,35 @@
   notify: restart icinga2
   delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
 
-- meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: Wait for Icinga client API port to start listening on master
   wait_for:
     port: 5665
   delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
-  run_once: yes
+  run_once: true
 
 - name: Create client certificate
-  command: /usr/sbin/icinga2 pki new-cert --cn {{ inventory_hostname }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
+  command: /usr/sbin/icinga2 pki new-cert --cn {{ inventory_hostname }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt # noqa no-handler line-length
   register: client_cert_created
   args:
-   creates: /etc/icinga2/pki/{{ inventory_hostname }}.*
+    creates: /etc/icinga2/pki/{{ inventory_hostname }}.*
 
 - name: Fetch the Icinga2 server certificate
-  command: /usr/sbin/icinga2 pki save-cert --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --host {{ groups.monitoring | first }}
+  command: /usr/sbin/icinga2 pki save-cert --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --host {{ groups.monitoring | first }} # noqa line-length no-handler
   when: client_cert_created.changed
   args:
-   creates: /etc/icinga2/pki/trusted-master.crt
+    creates: /etc/icinga2/pki/trusted-master.crt
 
 - name: Generate Icinga API ticket
-  command: /usr/sbin/icinga2 pki ticket --cn {{ inventory_hostname }} --salt "{{ icinga_salt }}"
+  command: /usr/sbin/icinga2 pki ticket --cn {{ inventory_hostname }} --salt "{{ icinga_salt }}" # noqa no-handler
   delegate_to: "{{ groups.monitoring | first if  groups['all'] | length() > 1 else inventory_hostname }}"
   when: client_cert_created.changed
   register: pki_ticket
 
 - name: Request the certificate from the Icinga master
-  command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.crt
+  command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.crt # noqa line-length
   args:
     creates: /etc/icinga2/pki/ca.crt
   when: client_cert_created.changed and groups['all'] | length() > 1 and "inventory_hostname != groups['monitoring'] | first"
@@ -40,11 +41,12 @@
   template: src=api.conf.j2 dest=/etc/icinga2/features-enabled/api.conf
   notify: restart icinga2
 
-- meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: Setup Icinga node
-  command: /usr/sbin/icinga2 node setup --ticket {{ pki_ticket.stdout }} --endpoint {{ groups.monitoring | first }} --zone {{ inventory_hostname }} --master_host {{ groups.monitoring | first }} --trustedcert /etc/icinga2/pki/trusted-master.crt --cn {{ inventory_hostname }}
+  command: /usr/sbin/icinga2 node setup --ticket {{ pki_ticket.stdout }} --endpoint {{ groups.monitoring | first }} --zone {{ inventory_hostname }} --master_host {{ groups.monitoring | first }} --trustedcert /etc/icinga2/pki/trusted-master.crt --cn {{ inventory_hostname }} # noqa line-length no-handler
   when: client_cert_created.changed
   notify: restart icinga2
   args:
-   creates: /etc/icinga2/pki/{{ inventory_hostname }}.*.orig
+    creates: /etc/icinga2/pki/{{ inventory_hostname }}.*.orig

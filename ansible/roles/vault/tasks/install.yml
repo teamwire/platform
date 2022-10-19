@@ -22,12 +22,12 @@
 
 - name: Install the Vault binary
   unarchive:
-    src: /var/cache/downloads/vault_{{vault_version}}_linux_amd64.zip
+    src: /var/cache/downloads/vault_{{ vault_version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
-    copy: no
+    copy: false
   notify: Restart Vault
-  when: vault_downloaded.changed or not vault_binary.stat.exists
+  when: vault_downloaded.changed or not vault_binary.stat.exists # noqa no-handler
 
 - name: Create Vault directories
   file:
@@ -42,23 +42,25 @@
     - /var/lib/vault/ssl
     - /var/lib/vault/store
 
-- block:
+- name: Check if Vault certificates
+  block:
     - name: Check if Vault certificates exist and are valid
       openssl_certificate:
         path: /var/lib/vault/ssl/vault.crt
         provider: assertonly
-        has_expired: no
+        has_expired: false
   rescue:
-    - debug: msg="Generating SSL certificates for Vault"
+    - name: Debugging SSL certificate
+      debug: msg="Generating SSL certificates for Vault"
     - include: ssl-setup.yml
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
 
 - name: Write Vault config
   template:
-      src: vault.hcl.j2
-      dest: /etc/vault/vault.hcl
-      owner: vault
-      group: vault
+    src: vault.hcl.j2
+    dest: /etc/vault/vault.hcl
+    owner: vault
+    group: vault
   notify: Restart Vault
 
 - name: Vault systemd config
@@ -72,8 +74,9 @@
   service:
     name: vault
     state: started
-    enabled: yes
-    daemon_reload: yes
+    enabled: true
+    daemon_reload: true
 
 # Handlers should be flushed before any possible bootstrapping
-- meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers

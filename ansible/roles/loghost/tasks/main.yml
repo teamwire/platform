@@ -4,9 +4,12 @@
   apt: pkg=rsyslog
 
 - name: Load rsyslog tcp module
-  template: src=10-receive.conf.j2 dest=/etc/rsyslog.d/10-receive.conf
+  template:
+    src: 10-receive.conf.j2
+    dest: /etc/rsyslog.d/10-receive.conf
   notify: restart rsyslog
 
 - name: Install logrotate job for cluster logs
-  copy: src=cluster-log dest=/etc/logrotate.d/cluster-log
-
+  copy:
+    src: cluster-log
+    dest: /etc/logrotate.d/cluster-log

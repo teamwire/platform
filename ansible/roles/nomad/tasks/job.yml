@@ -7,11 +7,11 @@
   run_once: true
 
 - name: Obtain total CPU compute power
-  shell: nomad node-status -self -json | awk -F'[^0-9]*' '/cpu.totalcompute/{print $2}'
+  shell: nomad node-status -self -json | awk -F'[^0-9]*' '/cpu.totalcompute/{print $2}' # noqa risky-shell-pipe
   register: cpu_calculation
   run_once: true
-  changed_when: False
-  check_mode: no
+  changed_when: false
+  check_mode: false
 
 - name: Set facts for total CPU power (cores*frequency) on Nomad clients
   set_fact:
@@ -33,7 +33,7 @@
 
 - name: Register published NOMAD_SERVER_VAULT_TOKEN
   set_fact:
-    VAULT_JOB_TOKEN: "{{remote_nomad_server_token.content | b64decode}}"
+    VAULT_JOB_TOKEN: "{{ remote_nomad_server_token.content | b64decode }}"
 
 - name: Write Teamwire cluster nomad job
   template:

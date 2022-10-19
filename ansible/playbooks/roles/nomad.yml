@@ -2,7 +2,8 @@
 - name: Vault Status check
   hosts: local:hashi_servers
   tasks:
-    - include_role:
+    - name: include vault role
+      include_role:
         name: ../../roles/vault
         tasks_from: secrets
       when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
@@ -10,4 +11,4 @@
 - hosts: hashi_servers:backend_servers:management_servers:voip_servers:stun_servers
   serial: 1
   roles:
-  - role: ../../roles/nomad
+    - role: ../../roles/nomad

@@ -1,7 +1,7 @@
 ---
 - name: Check if installing a storage cluster
   set_fact:
-    glusterfs_cluster: True
+    glusterfs_cluster: true
   when: '"storage_servers" in groups and groups["storage_servers"] | length > 1'
 
 - include_tasks: single.yml

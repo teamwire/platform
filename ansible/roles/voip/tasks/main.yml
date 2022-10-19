@@ -60,7 +60,7 @@
     name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
     source: local
     repository: "{{ LOCAL_REGISTRY }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
-    push: yes
+    push: true
   delegate_to: "{{ groups['management_servers'] | first() }}"
   loop:
     - "{{ VOIP_CONTAINER_WEB }}"

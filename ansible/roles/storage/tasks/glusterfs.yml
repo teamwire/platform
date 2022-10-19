@@ -17,7 +17,7 @@
     state: started
     enabled: true
 
-- name: Create Gluster volume "{{gluster_volume}}"
+- name: Create Gluster volume "{{ gluster_volume }}"
   gluster_volume:
     name: "{{ gluster_volume }}"
     bricks: "{{ gluster_brick_dir }}"

@@ -4,7 +4,7 @@
     dest: /etc/redis/redis.conf
     regexp: ^bind\s+127.0.0.1
     line: "bind 0.0.0.0"
-    backrefs: yes
+    backrefs: true
   notify: restart redis
 
 - name: Configure password for Redis
@@ -12,7 +12,7 @@
     dest: /etc/redis/redis.conf
     regexp: ^(# )+requirepass
     line: "requirepass {{ redis_pass }}"
-    backrefs: yes
+    backrefs: true
   when: redis_pass is defined
   notify: restart redis
 
@@ -20,4 +20,4 @@
   service:
     name: redis-server
     state: started
-    enabled: yes
+    enabled: true

@@ -5,14 +5,16 @@
 - name: Install database backup & restore script
   hosts: local:management_servers
   tasks:
-    - include_role:
+    - name: Include db role
+      include_role:
         name: ../../roles/db
         tasks_from: backupscript
 
 - name: Clean-up non-management servers
   hosts: all:!management_servers
   tasks:
-    - include_role:
+    - name: Include management role
+      include_role:
         name: ../../roles/management
         tasks_from: cleanup
       when: groups['all'] | length() > 1

@@ -6,5 +6,7 @@
   ufw: rule=allow src=224.0.0.18
 
 - name: Write keepalived configuration file
-  template: src=keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf
+  template:
+   src: keepalived.conf.j2
+   dest: /etc/keepalived/keepalived.conf
   notify: restart keepalived

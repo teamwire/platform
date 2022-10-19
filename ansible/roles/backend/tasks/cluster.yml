@@ -19,8 +19,8 @@
     registry: harbor.teamwire.eu
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
-    reauthorize: yes
-  become: yes
+    reauthorize: true
+  become: true
   become_user: teamwire
   delegate_to: localhost
   run_once: true

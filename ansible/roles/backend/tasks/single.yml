@@ -10,7 +10,7 @@
 
 - name: Retrieve the Teamwire backend main container
   docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing
     source: pull
     state: present
   when:
@@ -21,7 +21,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_backend
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing line-length
     state: started
     restart_policy: always
     network_mode: host
@@ -77,7 +77,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_worker
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing line-length
     state: started
     restart_policy: always
     network_mode: host
@@ -110,8 +110,8 @@
       NOTIFICATION_SERVER_URL: "http://127.0.0.1:9081"
       BLOB_DIR: /assets
       APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid|default('com.teamwire.messenger') }}"
-      APNS_CERT_2: "{% if apns_certificate_2 is defined %}/app/certs/apns/{{ apns_certificate_2 | basename }},{{ apns_certificate_type_2 | default('push_production') }},{{ apns_appid_2 }}{% endif %}"
-      APNS_CERT_3: "{% if apns_certificate_3 is defined %}/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}{% endif %}"
+      APNS_CERT_2: "{% if apns_certificate_2 is defined %}/app/certs/apns/{{ apns_certificate_2 | basename }},{{ apns_certificate_type_2 | default('push_production') }},{{ apns_appid_2 }}{% endif %}" # noqa line-length
+      APNS_CERT_3: "{% if apns_certificate_3 is defined %}/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}{% endif %}" # noqa line-length
       GCM_API_KEY: "{{ gcm_api_key }}"
       http_proxy: "{{http_proxy|default()}}"
       https_proxy: "{{http_proxy|default()}}"
@@ -125,7 +125,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_beat
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing line-length
     state: started
     restart_policy: always
     network_mode: host
@@ -159,7 +159,7 @@
 - name: Retrieve the Teamwire notification server container
   when: config_done is defined
   docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{version|default('prod')}}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{version|default('prod')}}" # noqa var-spacing line-length
     source: pull
     state: present
 
@@ -167,7 +167,7 @@
   when: config_done is defined
   docker_container:
     name: teamwire_notification_server
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{version|default('prod')}}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{version|default('prod')}}" # noqa var-spacing line-length
     state: started
     restart_policy: always
     network_mode: host

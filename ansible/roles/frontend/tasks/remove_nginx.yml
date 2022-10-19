@@ -9,7 +9,7 @@
   apt:
      name: "{{ item }}"
      state: absent
-     purge: yes
+     purge: true
   with_items:
      - nginx-common
      - nginx-light

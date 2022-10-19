@@ -3,36 +3,40 @@
 - name: Renew Vault SSL certificate
   hosts: all
   tasks:
-    - include_vars: ../../roles/vault/defaults/main.yml
-    - include_vars: "{{ inventory_dir }}/group_vars/all"
+    - name: Include vault vars yaml
+      include_vars: ../../roles/vault/defaults/main.yml
+    - name: Include group vars
+      include_vars: "{{ inventory_dir }}/group_vars/all"
 
     - name: Check Vault seal status
       fail: msg="Vault is not in an unsealed state, please run 'twctl secrets unseal'."
       when: ansible_local.vault.sealed != "false"
 
     - name: Issue a TLS certificate for Vault to use
-      command: vault write -tls-skip-verify pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['hashi_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['hashi_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
-      run_once: True
+      command: vault write -tls-skip-verify pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['hashi_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['hashi_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json # noqa line-length
+      run_once: true
       register: issue_info
       when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['hashi_servers']
 
     - name: Set certificate fact
-      run_once: True
+      run_once: true
       set_fact:
         vault_certificate: "{{ issue_info.stdout | from_json }}"
 
     - name: Install Vault root CA, tls certificate and private key
-      copy: content={{ item.content }} dest={{ item.dest }}
+      copy:
+        content: "{{ item.content }}"
+        dest: "{{ item.dest }}"
       with_items:
-        - {
-            content: "{{ vault_certificate.data.certificate }}",
-            dest: "/var/lib/vault/ssl/vault.crt",
-          }
-        - {
-            content: "{{ vault_certificate.data.private_key }}",
-            dest: "/var/lib/vault/ssl/vault.pem",
-          }
-      become: yes
+        - { # noqa yaml[indentation]
+            content: "{{ vault_certificate.data.certificate }}", # noqa yaml[indentation]
+            dest: "/var/lib/vault/ssl/vault.crt", # noqa yaml[indentation]
+          } # noqa yaml[indentation]
+        - { # noqa yaml[indentation]
+            content: "{{ vault_certificate.data.private_key }}", # noqa yaml[indentation]
+            dest: "/var/lib/vault/ssl/vault.pem", # noqa yaml[indentation]
+          } # noqa yaml[indentation]
+      become: true
 
     - name: Restart Nomad to recognise SSL renewal
       service: name=nomad state=restarted
@@ -42,10 +46,11 @@
       service: name=vault state=restarted
       when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['hashi_servers']
 
-    - debug:
+    - name: Vault certificate info
+      debug:
         msg:
           - "The Vault SSL certificate has now been renewed and is valid for 2 years, this procedure may be re-run at any point"
           - "IMPORTANT: Vault must be unsealed via twctl secrets unseal"
-          - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the hashi_servers group"
+          - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the hashi_servers group" # noqa line-length
           - "If you encounter any issues, please email support@teamwire.eu"
-      run_once: True
+      run_once: true

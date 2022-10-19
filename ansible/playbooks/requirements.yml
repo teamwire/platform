@@ -3,7 +3,7 @@
 - name: Check Ansible version
   hosts: 127.0.0.1
   connection: local
-  become: no
+  become: false
   vars_files: ../roles/common/vars/main.yml
   tasks:
     - name: Check Ansible version
@@ -39,7 +39,7 @@
           - "ERROR: group_vars/all => version: '{{ version if version is defined else 'not set' }}'."
           - "Please set a valid backend version in group_vars/all variable 'version'"
           - "To display the latest valid backend versions, please run twctl show-tags"
-      when: packer_build_name is not defined and vagrant_mode is not defined and (version is not defined or version | lower == "prod" or version == None or version | length == 0)
+      when: packer_build_name is not defined and vagrant_mode is not defined and (version is not defined or version | lower == "prod" or version == None or version | length == 0) # noqa line-length
 
     - name: Check if in developer mode
       set_fact:
@@ -61,26 +61,30 @@
     - name: Ensure valid configuration combination
       block:
         - name: Retrieve name of playbook file
-          set_fact: playbook_name="{{ (lookup('file', '/proc/self/cmdline') | regex_replace('\u0000',' ')).split()|select('match','^[a-z-_/]*[.]y[a]*ml')|list|first|basename }}"
+          set_fact: playbook_name="{{ (lookup('file', '/proc/self/cmdline') | regex_replace('\u0000',' ')).split()|select('match','^[a-z-_/]*[.]y[a]*ml')|list|first|basename }}" # noqa line-length var-spacing
 
         # Checks if in single set-up
-        - set_fact: installation_type="single"
+        - name: Check if installation is single
+          set_fact: installation_type="single"
           delegate_facts: true
           run_once: true
           when: groups['all'] | length() == 1 and inventory_file | basename == "hosts"
 
         # Checks if in cluster set-up
-        - set_fact: installation_type="cluster"
+        - name: Check if installation is cluster
+          set_fact: installation_type="cluster"
           delegate_facts: true
           run_once: true
           when: groups['all'] | length() > 1 and inventory_file | basename == "cluster_hosts"
 
         # Finds all procedure plays in the relevant directory and against the yaml pattern only. This will also add our standard playbooks to the whitelist.
-        - set_fact:
-            permitted_playbooks: "{{query('fileglob', '{{inventory_dir}}/playbooks/procedures/*.yml') | map('basename')|list}} + 'site.yml' + 'cluster.yml'"
+        - name: Whitelist permitted playbooks
+          set_fact:
+            permitted_playbooks: "{{ query('fileglob', '{{ inventory_dir }}/playbooks/procedures/*.yml') | map('basename')|list }} + 'site.yml' + 'cluster.yml'" # noqa var-spacing line-length
 
         # An asserstion is made to ensure a valid configuration. This doesn't perform a configuration check if in Developer mode.
-        - assert:
+        - name: Verify the configuration is valid
+          assert:
             that:
               - "'installation_type' is defined"
               - "playbook_name in permitted_playbooks"
@@ -100,7 +104,7 @@
         msg:
           - "WARNING: No management servers have been defined."
           - "Management servers (group: management_servers), is a new management server group which you'll run twctl and Ansible provisions from."
-          - "WARNING: You must ensure all the relevant certificates, cluster_hosts and group_vars/all files are moved/adapted to the assigned management servers before proceeding."
+          - "WARNING: You must ensure all the relevant certificates, cluster_hosts and group_vars/all files are moved/adapted to the assigned management servers before proceeding." # noqa line-length
           - "You should also ensure the Vault token is in place at /root/.vault-token and /home/teamwire/.vault-token."
           - "You must ensure at least 1 management server is defined in cluster_hosts, please check cluster_example_hosts for a reference."
           - "If you encounter any problems or have any concerns, please contact support@teamwire.eu"
@@ -131,19 +135,19 @@
       when: groups['all'] | length() > 1
 
     - name: Get current git tag
-      command: "git describe --always --tags"
+      command: "git describe --always --tags" # noqa command-instead-of-module
       args:
         chdir: "{{ inventory_dir if inventory_dir is defined else (ansible_inventory_sources[0] | dirname) }}"
       register: current_local_tag_var
       when: packer_build_name is not defined
       delegate_to: localhost
-      become: no
+      become: false
       run_once: true
-      check_mode: no
+      check_mode: false
 
     - name: Set fact current_local_tag
       set_fact:
-          current_local_tag: "{{ current_local_tag_var.stdout }}"
+        current_local_tag: "{{ current_local_tag_var.stdout }}"
       when: packer_build_name is not defined
 
     - name: Ensure voip group is configured properly when enabled
@@ -172,13 +176,15 @@
 - name: Vault Status check
   hosts: local:hashi_servers
   tasks:
-    - include_role: # Single only
+    - name: Include single installation role
+      include_role: # Single only
         name: ../roles/vault
         tasks_from: secrets
       when:
         - ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
         - groups['all'] | length() == 1
-    - include_role: # Cluster only
+    - name: Include cluster installation role
+      include_role: # Cluster only
         name: ../roles/vault
         tasks_from: secrets
       when:
@@ -188,55 +194,58 @@
 - name: Check requirements for control host
   hosts: 127.0.0.1
   connection: local
-  become: no
+  become: false
   tasks:
     - name: Check for deprecated variables
       block:
-      - name: Check for deprecated variables
-        fail:
-          msg:
-            - "WARNING: The variable ssl_certfile is deprecated and will not work in future releases."
-      - pause:
-          seconds: 5
-      ignore_errors: yes
+        - name: Check for deprecated variables
+          fail:
+            msg:
+              - "WARNING: The variable ssl_certfile is deprecated and will not work in future releases."
+        - name: Pause 5 seconds
+          pause:
+            seconds: 5
+      ignore_errors: true # noqa ignore-errors
       when: ssl_certfile is defined and config_done is defined
 
-    - name: Register cert subject organisation
-      shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O = .*,' | sed 's/. OU.*//' | sed 's/O = //'
+    - name: Register cert subject organization
+      shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O = .*,' | sed 's/. OU.*//' | sed 's/O = //' # noqa line-length risky-shell-pipe
       register: cert_subject_org
       when: packer_build_name is not defined and config_done is defined and ( ssl_certfile is defined or ssl_server_certificate is defined )
 
-    - name: Register cert issuer organisation
-      shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O = .*,' | sed 's/O = //' | sed 's/,//'
+    - name: Register cert issuer organization
+      shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O = .*,' | sed 's/O = //' | sed 's/,//' # noqa line-length risky-shell-pipe
       register: cert_issuer_org
       when: packer_build_name is not defined and config_done is defined and ( ssl_certfile is defined or ssl_server_certificate is defined )
 
     - name: Check if Certificate is self signed
       block:
-      - name: Check if Certificate is self signed
-        fail:
-          msg: "Self signed certificates are not supported. We cannot provide warranty or support for this installation."
-      - pause:
-          seconds: 5
-      ignore_errors: yes
+        - name: Check if Certificate is self signed
+          fail:
+            msg: "Self signed certificates are not supported. We cannot provide warranty or support for this installation."
+        - name: Pause 5 seconds
+          pause:
+            seconds: 5
+      ignore_errors: true # noqa ignore-errors
       when: cert_subject_org.stdout is defined and cert_issuer_org.stdout is defined and cert_subject_org.stdout == cert_issuer_org.stdout
 
 - name: Check if installing offline
   hosts: all
   tasks:
-    - stat: path=/etc/offline_installation
+    - name: Check if offline file is present
+      stat: path=/etc/offline_installation
       register: offline_mode
-      run_once: yes
+      run_once: true
 
 - name: Perform SSL-Preflight check
   hosts: 127.0.0.1
   connection: local
   tasks:
-  - include_tasks: ../roles/frontend/tasks/ssl-check.yml
-    vars:
-      ssl_first_check: yes
-    when: packer_build_name is not defined
-  become: no
+    - include_tasks: ../roles/frontend/tasks/ssl-check.yml
+      vars:
+        ssl_first_check: true
+      when: packer_build_name is not defined
+  become: false
   run_once: true
 
 - hosts: all
@@ -254,12 +263,13 @@
             that:
               - __apns_certificate_validity.valid_at.next_month
       rescue:
-        - debug:
+        - name: Check APNS certificate validity
+          debug:
             msg: 'Please change your APNS-Certificate immediately'
       when: config_done is defined
       run_once: true
       delegate_to: localhost
-      become: no
+      become: false
 
     - name: Ensure the secondary APNS certificate is configured correctly
       fail:
@@ -279,14 +289,15 @@
             that:
               - __apns_certificate_validity.valid_at.next_month
       rescue:
-        - debug:
+        - name: Check secondary APNS certificate validity
+          debug:
             msg: 'Please change your secondary APNS-Certificate immediately'
       when:
         - config_done is defined
         - apns_certificate_2 is defined
       run_once: true
       delegate_to: localhost
-      become: no
+      become: false
 
     - name: Ensure the tertiary APNS certificate is configured correctly
       fail:
@@ -306,14 +317,15 @@
             that:
               - __apns_certificate_validity.valid_at.next_month
       rescue:
-        - debug:
+        - name: Check tertiary APNS certificate validity
+          debug:
             msg: 'Please change your tertiary APNS-Certificate immediately'
       when:
         - config_done is defined
         - apns_certificate_3 is defined
       run_once: true
       delegate_to: localhost
-      become: no
+      become: false
 
     # Check for unattended-upgrades
     - name: Wait for automatic system updates to complete

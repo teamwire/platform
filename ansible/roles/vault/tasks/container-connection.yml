@@ -9,27 +9,30 @@
 - name: Check if Nomad-job policy exists for Vault
   shell: vault policy read nomad-job || true
   register: policy_job_check
-  run_once: True
+  run_once: true
   delegate_to: "{{ host_to_delegate.msg }}"
 
 - name: Delete possible outdated Nomad-job policy
-  shell: vault policy delete nomad-job
+  shell: vault policy delete nomad-job # noqa command-instead-of-shell
   register: revoke_nomad_job_policy
   run_once: true
   delegate_to: "{{ host_to_delegate.msg }}"
   when: not vault_job_token_file.stat.exists
 
-- block:
+- name: Write/update new vault
+  block:
     - name: Write/Update new vault job policy
       copy:
         src: "{{ role_path }}/../vault/files/{{ item }}"
         dest: /root/
-      with_items: nomad-job-policy.hcl
-    - command: vault policy write nomad-job /root/nomad-job-policy.hcl
-    - file:
+      with_items: nomad-job-policy.hcl # noqa deprecated-bare-vars
+    - name: Write nomad policy
+      command: vault policy write nomad-job /root/nomad-job-policy.hcl
+    - name: Remove file
+      file:
         dest: "/root/{{ item }}"
         state: absent
-      with_items: nomad-job-policy.hcl
+      with_items: nomad-job-policy.hcl # noqa deprecated-bare-vars
   run_once: true
   when: revoke_nomad_job_policy.changed
   delegate_to: "{{ host_to_delegate.msg }}"

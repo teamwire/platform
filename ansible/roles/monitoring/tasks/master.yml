@@ -1,14 +1,16 @@
 ---
 # Redis instance values are required for dynamic redis monitoring
-- include_vars: ../../roles/redis/defaults/main.yml
+- name: Include redis
+  include_vars: ../../roles/redis/defaults/main.yml
   when: redis_instances is not defined
 
 # Nomad job list is required for job status monitoring
-- include_vars: ../../roles/nomad/defaults/main.yml
+- name: Include nomad
+  include_vars: ../../roles/nomad/defaults/main.yml
   when: nomad_jobs is not defined
 
 - name: Install icinga2 Web UI and tools
-  apt: name={{item}} state=present
+  apt: name={{ item }} state=present
   with_items:
   - icinga2-ido-mysql
   - icingaweb2
@@ -18,7 +20,7 @@
   - mariadb-client
 
 - name: Configure Icinga MySQL adapter
-  template: src=ido-mysql-conf.j2 dest=/etc/icinga2/features-available/ido-mysql.conf
+  template: src=ido-mysql-conf.j2 dest=/etc/icinga2/features-available/ido-mysql.conf mode=0640
   notify: restart icinga2
 
 - name: Create Icinga Web 2 log directory
@@ -60,7 +62,7 @@
   apache2_module:
     name: mpm_event
     state: absent
-    force: yes
+    force: true
     ignore_configcheck: true
   notify: restart apache
 
@@ -83,13 +85,13 @@
   apache2_module:
     name: "php{{ php_version }}"
     state: present
-    force: yes
+    force: true
     ignore_configcheck: true
   notify: restart apache
 
 - name: Find out timezone
   slurp:
-     src: /etc/timezone
+    src: /etc/timezone
   register: etc_timezone
 
 - name: Set default timezone in php.ini
@@ -121,7 +123,7 @@
     dest: /etc/icinga2/constants.conf
     regexp: "^const TicketSalt = \"\"$"
     line: "const TicketSalt = \"{{ icinga_salt }}\""
-    backrefs: yes
+    backrefs: true
   notify: restart icinga2
 
 - name: Create Icinga PKI
@@ -131,33 +133,33 @@
     creates: /var/lib/icinga2/ca/ca.*
 
 - name: Create Icinga certificate
-  command: /usr/sbin/icinga2 pki new-cert --cn {{ inventory_hostname }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --csr /etc/icinga2/pki/{{ inventory_hostname }}.csr --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
+  command: /usr/sbin/icinga2 pki new-cert --cn {{ inventory_hostname }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --csr /etc/icinga2/pki/{{ inventory_hostname }}.csr --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt # noqa line-length
   register: icinga_cert
   args:
-   creates: /etc/icinga2/pki/{{ inventory_hostname }}.*
+    creates: /etc/icinga2/pki/{{ inventory_hostname }}.*
 
-- name: Sign Icinga CSR
+- name: Sign Icinga CSR # noqa no-handler
   when: icinga_cert.changed
   command: /usr/sbin/icinga2 pki sign-csr --csr /etc/icinga2/pki/{{ inventory_hostname }}.csr --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
 
-- name: Copy Icinga CA certificate
+- name: Copy Icinga CA certificate # noqa no-handler
   command: cp -vR --preserve=all /var/lib/icinga2/ca/ca.crt /etc/icinga2/pki
   when: icingia_pki.changed
   args:
     creates: /etc/icinga2/pki/ca.crt
 
 - name: Register first installation var if external database is in use
-  command: mysql -u {{monitoring_db_user}} -h {{mysql_host}} -p{{monitoring_db_password}} {{monitoring_db_name}} -e 'SELECT count(*) FROM information_schema.tables WHERE table_schema = "monitor";'
+  command: mysql -u {{ monitoring_db_user }} -h {{ mysql_host }} -p{{ monitoring_db_password }} {{ monitoring_db_name }} -e 'SELECT count(*) FROM information_schema.tables WHERE table_schema = "monitor";' # noqa line-length
   register: isFirstExtInstallion
   when: (mysql_host is defined and 'localhost' not in mysql_host) and (mysql_host is defined and '127.0.0.1' not in mysql_host)
 
 - name: Check if its the first installation on external database
   debug: msg="{{ isFirstExtInstallion.stdout_lines[1] }}"
   register: firstInstallDB
-  changed_when: "{{isFirstExtInstallion.stdout_lines[1] | int}} == 0"
+  changed_when: "{{ isFirstExtInstallion.stdout_lines[1] | int }} == 0"
   when: isFirstExtInstallion.stdout_lines is defined and isFirstExtInstallion.stdout_lines[1] | int == 0
 
-- name: Create Icinga databases
+- name: Create Icinga databases # noqa no-handler
   mysql_db:
     name: "{{ item }}"
     state: present
@@ -168,10 +170,10 @@
     - "{{ monitoring_db_name }}"
     - "{{ monitoring_db_web_name }}"
   register: database_created
-  when: isFirstExtInstallion.changed == false
+  when: isFirstExtInstallion.changed == false # noqa literal-compare
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
-- name: Create Icinga database users and assign privileges
+- name: Create Icinga database users and assign privileges # noqa no-handler
   mysql_user:
     name: "{{ item.user }}"
     password: "{{ item.password }}"
@@ -182,27 +184,27 @@
     host: "%"
   no_log: true
   with_items:
-    - { user: '{{monitoring_db_user}}', password: '{{monitoring_db_password}}', db: '{{monitoring_db_name}}' }
-    - { user: '{{monitoring_db_web_user}}', password: '{{monitoring_db_web_password}}', db: '{{monitoring_db_web_name}}' }
+    - { user: '{{ monitoring_db_user }}', password: '{{ monitoring_db_password }}', db: '{{ monitoring_db_name }}' } # noqa braces
+    - { user: '{{ monitoring_db_web_user }}', password: '{{ monitoring_db_web_password }}', db: '{{ monitoring_db_web_name }}' } # noqa braces
   when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
-- name: Fetch the Icinga DB schemas
+- name: Fetch the Icinga DB schemas # noqa no-handler
   fetch: src="{{ item.src }}" dest="{{ item.dest }}" flat=yes
   with_items:
-    - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: 'icinga2.sql'}
-    - { src: '/usr/share/icingaweb2/etc/schema/mysql.schema.sql', dest: 'icingaweb2.sql'}
+    - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: 'icinga2.sql'} # noqa braces
+    - { src: '/usr/share/icingaweb2/etc/schema/mysql.schema.sql', dest: 'icingaweb2.sql'} # noqa braces
   when: database_created.changed
 
-- name: Copy the Icinga DB schemas to the database server
-  copy: src="{{ item.src }}" dest="{{ item.dest }}"
+- name: Copy the Icinga DB schemas to the database server # noqa no-handler
+  copy: src="{{ item.src }}" dest="{{ item.dest }}" mode=0644
   with_items:
-    - { src: 'icinga2.sql', dest: '/tmp/icinga2.sql'}
-    - { src: 'icingaweb2.sql', dest: '/tmp/icingaweb2.sql'}
+    - { src: 'icinga2.sql', dest: '/tmp/icinga2.sql'} # noqa braces
+    - { src: 'icingaweb2.sql', dest: '/tmp/icingaweb2.sql'} # noqa braces
   when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
-- name: Import Icinga databases
+- name: Import Icinga databases # noqa no-handler
   mysql_db:
     name: "{{ item.db }}"
     state: import
@@ -210,34 +212,34 @@
     login_password: "{{ mysql_root_password }}"
     target: "{{ item.target }}"
   with_items:
-    - { db: '{{ monitoring_db_name }}', target: '/tmp/icinga2.sql'}
-    - { db: '{{ monitoring_db_web_name }}', target: '/tmp/icingaweb2.sql'}
+    - { db: '{{ monitoring_db_name }}', target: '/tmp/icinga2.sql'} # noqa braces
+    - { db: '{{ monitoring_db_web_name }}', target: '/tmp/icingaweb2.sql'} # noqa braces
   when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
-- name: Import Icinga database on external database server monitor DB
+- name: Import Icinga database on external database server monitor DB # noqa no-handler
   mysql_db:
     state: import
-    name: "{{monitoring_db_name}}"
-    login_user: "{{monitoring_db_user}}"
-    login_password: "{{monitoring_db_password}}"
-    login_host: "{{mysql_host}}"
-    login_port: "{{mysql_port | int}}"
+    name: "{{ monitoring_db_name }}"
+    login_user: "{{ monitoring_db_user }}"
+    login_password: "{{ monitoring_db_password }}"
+    login_host: "{{ mysql_host }}"
+    login_port: "{{ mysql_port | int }}"
     target: "/usr/share/icinga2-ido-mysql/schema/mysql.sql"
   when: firstInstallDB.changed
 
-- name: Import Icinga database on external database server monitor_web DB
+- name: Import Icinga database on external database server monitor_web DB  # noqa no-handler
   mysql_db:
     state: import
-    name: "{{monitoring_db_web_name}}"
-    login_user: "{{monitoring_db_web_user}}"
-    login_password: "{{monitoring_db_web_password}}"
-    login_host: "{{mysql_host}}"
-    login_port: "{{mysql_port | int}}"
+    name: "{{ monitoring_db_web_name }}"
+    login_user: "{{ monitoring_db_web_user }}"
+    login_password: "{{ monitoring_db_web_password }}"
+    login_host: "{{ mysql_host }}"
+    login_port: "{{ mysql_port | int }}"
     target: "/usr/share/icingaweb2/etc/schema/mysql.schema.sql"
   when: firstInstallDB.changed
 
-- name: Delete the Icinga DB schemas from the database server
+- name: Delete the Icinga DB schemas from the database server # noqa no-handler
   file: dest="{{ item }}" state=absent
   with_items:
     - "/tmp/icinga2.sql"
@@ -245,24 +247,22 @@
   when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
-- name: Delete the Icinga DB schemas from localhost
+- name: Delete the Icinga DB schemas from localhost # noqa no-handler
   file: dest="{{ playbook_dir }}/{{ item }}" state=absent
   with_items:
     - "icinga2.sql"
     - "icingaweb2.sql"
   when: database_created.changed
   delegate_to: localhost
-  become: no
+  become: false
 
-- name: Encrypt Icinga web admin user password
+- name: Encrypt Icinga web admin user passworda # noqa no-handler
   command: 'openssl passwd -1 "{{ icinga_admin_password }}"'
   register: icinga_admin_password
   when: database_created.changed or firstInstallDB.changed
 
-- name: Add admin user to Icinga web database
-  command: >
-    mysql --user='{{ monitoring_db_web_user }}' --password='{{ monitoring_db_web_password }}' --host='{{ monitoring_db_host }}' --port='{{ monitoring_db_port }}' '{{ monitoring_db_web_name }}'
-    --execute="INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('admin', 1, '{{ icinga_admin_password.stdout }}');"
+- name: Add admin user to Icinga web database # noqa no-handler
+  command: mysql --user='{{ monitoring_db_web_user }}' --password='{{ monitoring_db_web_password }}' --host='{{ monitoring_db_host }}' --port='{{ monitoring_db_port }}' '{{ monitoring_db_web_name }}' --execute="INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('admin', 1, '{{ icinga_admin_password.stdout }}');" # noqa line-length
   when: database_created.changed or firstInstallDB.changed
 
 - name: Generate Icinga configuration files
@@ -298,19 +298,19 @@
 - name: Generate icingaweb2 configuration files
   template: src={{ item.src }} dest={{ item.dest }} mode=0664
   with_items:
-    - { src: 'config.ini.j2', dest: '/etc/icingaweb2/config.ini' }
-    - { src: 'resources.ini.j2', dest: '/etc/icingaweb2/resources.ini' }
-    - { src: 'authentication.ini.j2', dest: '/etc/icingaweb2/authentication.ini' }
-    - { src: 'roles.ini.j2', dest: '/etc/icingaweb2/roles.ini' }
-    - { src: 'module-config.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/config.ini' }
-    - { src: 'backends.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/backends.ini' }
-    - { src: 'commandtransports.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/commandtransports.ini' }
+    - { src: 'config.ini.j2', dest: '/etc/icingaweb2/config.ini' } # noqa braces
+    - { src: 'resources.ini.j2', dest: '/etc/icingaweb2/resources.ini' } # noqa braces
+    - { src: 'authentication.ini.j2', dest: '/etc/icingaweb2/authentication.ini' } # noqa braces
+    - { src: 'roles.ini.j2', dest: '/etc/icingaweb2/roles.ini' } # noqa braces
+    - { src: 'module-config.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/config.ini' } # noqa braces
+    - { src: 'backends.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/backends.ini' } # noqa braces
+    - { src: 'commandtransports.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/commandtransports.ini' } # noqa braces
 
 - name: Configure sender address for notifications
   template: src={{ item.src }} dest={{ item.dest }} mode=0755
   with_items:
-    - { src: 'mail-host-notification.j2', dest: '/etc/icinga2/scripts/mail-host-notification.sh' }
-    - { src: 'mail-service-notification.j2', dest: '/etc/icinga2/scripts/mail-service-notification.sh' }
+    - { src: 'mail-host-notification.j2', dest: '/etc/icinga2/scripts/mail-host-notification.sh' } # noqa braces
+    - { src: 'mail-service-notification.j2', dest: '/etc/icinga2/scripts/mail-service-notification.sh' } # noqa braces
   notify: restart icinga2
 
 - name: Configure Icinga2 zones
@@ -326,4 +326,4 @@
 
 - name: Copy files from old to new dir
   shell: 'sudo mv /etc/icinga2/conf.d/* /etc/icinga2/zones.d/{{ inventory_hostname }}'
-  become: yes
+  become: true

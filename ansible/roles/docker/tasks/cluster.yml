@@ -22,4 +22,3 @@
     env:
       CONSUL_ENABLE: "{{ '1' if 'hashi_servers' in groups else '0' }}"
       NOMAD_ENABLE: "{{ '1' if 'backend_servers' in groups else '0' }}"
-

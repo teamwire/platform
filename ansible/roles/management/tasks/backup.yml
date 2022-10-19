@@ -16,7 +16,7 @@
     mode: 0750
   register: backup_directory
   run_once: true
-  check_mode: no
+  check_mode: false
 
 - name: Backup the configuration files
   copy:
@@ -25,7 +25,7 @@
   with_items:
     - "{{ inventory_dir }}/group_vars/all"
     - "{{ inventory_file }}"
-  become: no
+  become: false
   run_once: true
 
 - name: Backup SSL certificates and key
@@ -36,7 +36,7 @@
     - "{{ ssl_certfile }}"
     - "{{ ssl_keyfile }}"
   when: ssl_certfile is defined and ssl_keyfile is defined
-  become: no
+  become: false
   run_once: true
 
 - name: Backup SSL certificates and key (OSCP style)
@@ -53,7 +53,7 @@
     - ssl_intermediate_certificate is defined
     - ssl_root_certificate is defined
     - ssl_keyfile is defined
-  become: no
+  become: false
   run_once: true
 
 - name: Backup APNS certificate
@@ -61,7 +61,7 @@
     src: "{{ apns_certificate }}"
     dest: "{{ backup_directory.path }}/"
   when: apns_certificate is defined
-  become: no
+  become: false
   run_once: true
 
 - name: Backup secondary APNS certificate
@@ -69,7 +69,7 @@
     src: "{{ apns_certificate_2 }}"
     dest: "{{ backup_directory.path }}/"
   when: apns_certificate_2 is defined
-  become: no
+  become: false
   run_once: true
 
 - name: Backup third APNS certificate
@@ -77,11 +77,11 @@
     src: "{{ apns_certificate_3 }}"
     dest: "{{ backup_directory.path }}/"
   when: apns_certificate_3 is defined
-  become: no
+  become: false
   run_once: true
 
-- name: Backup Ansible log file
+- name: Backup Ansible log file # noqa ignore-errors
   command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
   when: not TW_DEV_MODE
-  run_once: True
-  ignore_errors: yes
+  run_once: true
+  ignore_errors: true

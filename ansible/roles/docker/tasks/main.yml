@@ -16,7 +16,9 @@
       notify: restart rsyslog
 
 - name: Install logrotate job for cluster logs
-  copy: src=container-log dest=/etc/logrotate.d/container-log
+  copy:
+    src: container-log
+    dest: /etc/logrotate.d/container-log
 
 # Install and configure docker
 # Using `apt-key` to add third party signing keys is deprecated
@@ -34,13 +36,13 @@
 
 - name: Dearmor Docker repository key
   command: gpg --dearmor -o {{ (docker_signing_key.dest | splitext)[0] }}.gpg {{ docker_signing_key.dest }}
-  when: docker_signing_key.changed
+  when: docker_signing_key.changed # noqa no-handler
 
 - name: Add docker repository
   apt_repository:
-    repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} stable
+    repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} stable # noqa line-length var-spacing
     state: present
-    update_cache: yes
+    update_cache: true
   when: not offline_mode.stat.exists
 
 - name: Install Docker
@@ -59,13 +61,15 @@
 
 - name: "FIX BUG PLATFORM MR-315-python-docker"
   command: "mv /usr/bin/docker-credential-secretservice /usr/bin/docker-credential-secretservice.broken"
-  when: bug_file.stat.exists == true
+  when: bug_file.stat.exists == true # noqa literal-compare
 
 - name: Add user 'teamwire' to the docker group
   user: name=teamwire groups=docker append=yes
 
 - name: Create systemd drop-in directory for docker
-  file: name=/etc/systemd/system/docker.service.d state=directory
+  file:
+    name: /etc/systemd/system/docker.service.d
+    state: directory
 
 - name: Configure proxy for docker
   when: http_proxy is defined and 'docker_registry' in groups
@@ -102,7 +106,8 @@
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
 # following step, otherwise the login would fail when a proxy is configured.
-- meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: Check if installing offline
   stat: path=/etc/offline_installation
@@ -117,7 +122,7 @@
     - config_done is defined
     - not "docker_registry" in groups
     - not offline_mode.stat.exists
-  become: True
+  become: true
   become_user: teamwire
   docker_login:
     registry_url: "{{ 'harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"

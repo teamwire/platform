@@ -3,7 +3,8 @@
   stat: path=/var/lib/vault/ssl
   register: vault_ssl_folder
 
-- block:
+- name: Configure vault
+  block:
 
     - name: Create Vault user
       user:
@@ -63,4 +64,4 @@
         owner: root
         group: root
 
-  when: vault_ssl_folder.stat.exists == false
+  when: vault_ssl_folder.stat.exists == false # noqa literal-compare

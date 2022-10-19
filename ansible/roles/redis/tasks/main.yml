@@ -1,6 +1,6 @@
 ---
 - name: Install Redis
-  apt: name={{item}} state=present
+  apt: name={{ item }} state=present
   with_items:
   - redis-tools
   - python3-redis
@@ -12,14 +12,14 @@
     name: vm.overcommit_memory
     value: "1"
     state: present
-    reload: yes
+    reload: true
 
 - name: Increase number of socket connection backlog
   sysctl:
     name: net.core.somaxconn
     value: "1024"
     state: present
-    reload: yes
+    reload: true
 
 - name: Remove redis-cli history files
   file:
