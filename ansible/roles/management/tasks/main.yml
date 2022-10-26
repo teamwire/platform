@@ -3,14 +3,15 @@
   apt: pkg=git state=present
 
 - name: Check out the teamwire/platform git repository
-  git:
+  git: # noqa git-latest
     repo: https://github.com/teamwire/platform.git
     depth: 1
     dest: /home/teamwire/platform
-    update: no
+    update: false
   notify: fix ownership of git checkout
 
-- stat: path=/home/teamwire/platform/ansible/group_vars/all
+- name: Check config file status
+  stat: path=/home/teamwire/platform/ansible/group_vars/all
   register: config_file
 
 - name: Secure permissions of Ansible configuration file
@@ -38,7 +39,7 @@
 
 - name: stat original motd
   stat:
-     path: /etc/motd
+    path: /etc/motd
   register: motd_stat
 
 - name: Deactivate old motd
@@ -46,15 +47,15 @@
   when: motd_stat.stat.exists
 
 - name: Test if line motd exists in global profile
-  shell: grep '/etc/motd.sh' /etc/profile
+  shell: grep '/etc/motd.sh' /etc/profile # noqa command-instead-of-shell
   register: grep_motd
   failed_when: grep_motd.rc >= 2
   when: not offline_mode.stat.exists
 
 - name: Activate new motd when not exists
   lineinfile:
-     dest: /etc/profile
-     line: "/etc/motd.sh"
+    dest: /etc/profile
+    line: "/etc/motd.sh"
   when:
     - not offline_mode.stat.exists
     - grep_motd.rc == 1

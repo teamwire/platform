@@ -1,6 +1,6 @@
 ---
 - name: reload systemd
-  command: systemctl daemon-reload
+  command: systemctl daemon-reload # noqa command-instead-of-module
 
 - name: restart redis
   service: name=redis-server state=restarted

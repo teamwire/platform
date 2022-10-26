@@ -2,5 +2,3 @@
   hosts: storage_servers
   roles:
     - { role: ../../roles/storage, when: config_done is defined and external_storage_path is not defined }
-
-

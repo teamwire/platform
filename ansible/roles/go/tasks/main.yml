@@ -1,16 +1,16 @@
 - name: Create local go src directory
   file:
-     path: "/usr/local/src/go"
-     state: directory
-     mode: 0755
+    path: "/usr/local/src/go"
+    state: directory
+    mode: 0755
 
 - name: Copy source code to local src dir
   copy:
-     src: "{{item}}"
-     dest: /usr/local/src/go/
-     mode: 0644
-     owner: teamwire
-     group: teamwire
+    src: "{{ item }}"
+    dest: /usr/local/src/go/
+    mode: 0644
+    owner: teamwire
+    group: teamwire
   with_items: "{{ gosource }}"
   register: copySRC
 
@@ -22,7 +22,7 @@
   when: not offline_mode.stat.exists
 
 - name: Build golang binarys
-  shell: docker run -e GOFILE={{item}} -v /usr/local/bin:/dest -v /usr/local/src/go:/src {{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/go-buildenv:latest
-  when: copySRC.changed
+  shell: docker run -e GOFILE={{ item }} -v /usr/local/bin:/dest -v /usr/local/src/go:/src {{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/go-buildenv:latest # noqa line-length command-instead-of-shell
+  when: copySRC.changed # noqa no-handler
   with_items: "{{ gosource }}"
   become: true

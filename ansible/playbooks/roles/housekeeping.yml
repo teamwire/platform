@@ -2,6 +2,6 @@
 # sometimes not possible to use
 - hosts: local:management_servers
   roles:
-  - role: "{{ ansible_inventory_sources[0] | dirname }}/roles/housekeeping"
+  - role: "{{ ansible_inventory_sources[0] | dirname }}/roles/housekeeping" # noqa internal-error
 
 

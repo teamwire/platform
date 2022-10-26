@@ -5,7 +5,8 @@
 - name: Install dnsmasq
   apt: pkg=dnsmasq
 
-- service:
+- name: Ensure dnsmasq is started
+  service:
     name: dnsmasq
     state: started
     enabled: true
@@ -25,10 +26,11 @@
 - name: Configure DHCP client to use local DNS server
   lineinfile:
     regexp: "^#+prepend domain-name-servers"
-    backrefs: yes
+    backrefs: true
     line: "supersede domain-name-servers 127.0.0.1;"
     dest: /etc/dhcp/dhclient.conf
   notify: reload dhclient
 
 # Ensure we have a valid DNS configuration
-- meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers

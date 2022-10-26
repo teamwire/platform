@@ -20,7 +20,7 @@
     dest: /etc/idmapd.conf
     regexp: '(# )?Domain = '
     line: 'Domain = {{ idmap_domain }}'
-    backrefs: yes
+    backrefs: true
   when: external_storage_path is defined and idmap_domain is defined
 
 - name: Comment NFSv4 ID mapping domain
@@ -28,7 +28,7 @@
     dest: /etc/idmapd.conf
     regexp: '(# )?Domain = '
     line: '# Domain = localdomain'
-    backrefs: yes
+    backrefs: true
   when: external_storage_path is defined and idmap_domain is not defined
 
 - name: "Mount NFS share (cluster)"
@@ -43,7 +43,7 @@
   mount:
     name: /data
     fstype: glusterfs
-    src: "{{ groups['storage_servers'] | first }}:/data"
+    src: "{{ groups['storage_servers'] | first }}:/data" # noqa var-spacing
     opts: "{% for host in groups['storage_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable"
     state: mounted
-  when: external_storage_path is not defined and 'storage_servers' in groups and groups['storage_servers'] | length > 1 and not inventory_hostname in groups['storage_servers']
+  when: external_storage_path is not defined and 'storage_servers' in groups and groups['storage_servers'] | length > 1 and not inventory_hostname in groups['storage_servers'] # noqa line-length

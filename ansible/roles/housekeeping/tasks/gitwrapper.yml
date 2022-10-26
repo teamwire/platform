@@ -15,4 +15,3 @@
     path: /home/teamwire/.profile
     line: 'export USE_TW_GIT=true'
     state: absent
-

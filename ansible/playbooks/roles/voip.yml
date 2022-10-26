@@ -11,7 +11,7 @@
 # sometimes not possible to use
 - hosts: local:management_servers
   roles:
-    - role: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip"
+    - role: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip" # noqa internal-error
       when: enable_voip is defined and enable_voip | string() == 'true'
 
 - hosts: voip_servers

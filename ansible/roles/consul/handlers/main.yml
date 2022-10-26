@@ -5,4 +5,4 @@
   service: name=dnsmasq state=restarted
 
 - name: run resolvconf
-  shell: resolvconf -u
+  shell: resolvconf -u # noqa command-instead-of-shell

@@ -5,15 +5,15 @@
 
 - name: Check if installing a database cluster
   set_fact:
-    galera_cluster: True
+    galera_cluster: true
   when: '"database_servers" in groups and groups["database_servers"] | length > 1'
 
 - name: Install MariaDB
-  apt: name={{item}} state=present
+  apt: name={{ item }} state=present
   with_items:
-  - mariadb-server
-  - mariadb-client
-  - python3-mysqldb
+    - mariadb-server
+    - mariadb-client
+    - python3-mysqldb
   register: mysql_initial_installation
 
 - name: Create MariaDB binlog directory
@@ -30,7 +30,7 @@
   lineinfile:
     dest: /etc/mysql/mariadb.conf.d/50-server.cnf
     regexp: ^bind-address\s*=\s*127.0.0.1
-    backrefs: yes
+    backrefs: true
     line: "bind-address=0.0.0.0"
   notify: restart MariaDB
 
@@ -49,23 +49,33 @@
   notify: restart MariaDB
 
 - name: Set UTF8 as default character set
-  copy: src=utf8.cnf dest=/etc/mysql/conf.d/utf8.cnf
+  copy:
+    src: utf8.cnf
+    dest: /etc/mysql/conf.d/utf8.cnf
   notify: restart MariaDB
 
 - name: Set UTC as default time zone
-  copy: src=timezone.cnf dest=/etc/mysql/conf.d/timezone.cnf
+  copy:
+    src: timezone.cnf
+    dest: /etc/mysql/conf.d/timezone.cnf
   notify: restart MariaDB
 
 - name: Log slow queries
-  copy: src=slow_query_log.cnf dest=/etc/mysql/conf.d/slow_query_log.cnf
+  copy:
+    src: slow_query_log.cnf
+    dest: /etc/mysql/conf.d/slow_query_log.cnf
   notify: restart MariaDB
 
 - name: Disable unsecure functionality
-  copy: src=security.cnf dest=/etc/mysql/conf.d/security.cnf
+  copy:
+    src: security.cnf
+    dest: /etc/mysql/conf.d/security.cnf
   notify: restart MariaDB
 
 - name: Enable binary logs
-  template: src=binlog.cnf.j2 dest=/etc/mysql/conf.d/binlog.cnf
+  template:
+    src: binlog.cnf.j2
+    dest: /etc/mysql/conf.d/binlog.cnf
   notify: restart MariaDB
   when: '"database_servers" not in groups'
 
@@ -74,20 +84,21 @@
 
 # Make sure MariaDB is restarted before the database is created, otherwise
 # the configured defaults are not used.
-- meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: Set password for root user on MariaDB interfaces
   mysql_user:
     name: root
-    password: "{{mysql_root_password}}"
-    host: "{{item}}"
+    password: "{{ mysql_root_password }}"
+    host: "{{ item }}"
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
   when: mysql_root_password is defined and (galera_cluster is not defined or inventory_hostname == groups['database_servers'][0])
   with_items:
     - 127.0.0.1
     - ::1
-    - "{{external_hostname|default()}}"
+    - "{{ external_hostname|default() }}" # noqa var-spacing
 
 - name: Create Teamwire database(s)
   mysql_db:
@@ -119,10 +130,10 @@
   command: "mysql --defaults-file=/etc/mysql/debian.cnf -Bs -e 'SELECT COUNT(*) FROM time_zone_name WHERE name=\"UTC\";' mysql"
   changed_when: false
   register: mariadb_timezone_count
-  check_mode: no
+  check_mode: false
 
 - name: Import MariaDB UTC timezone definition
-  shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --defaults-file=/etc/mysql/debian.cnf mysql"
+  shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --defaults-file=/etc/mysql/debian.cnf mysql" # noqa risky-shell-pipe
   when: mariadb_timezone_count.stdout == "0"
 
 # Install database backup script
@@ -137,7 +148,7 @@
     mysql -e "SELECT CEILING(Total_InnoDB_Bytes*1.6/POWER(1024,3)) RIBPS FROM
     (SELECT SUM(data_length+index_length) Total_InnoDB_Bytes FROM information_schema.tables WHERE engine='InnoDB') A;"
   register: innodb_buffer_size
-  become: yes
+  become: true
 
 - name: Set innodb buffer size
   lineinfile:
@@ -156,7 +167,7 @@
     dest: /etc/mysql/mariadb.conf.d/50-server.cnf
     insertafter: ^\[mariadb\]
     firstmatch: true
-    line: optimizer_search_depth={{optimizer_search_depth_value}}
+    line: optimizer_search_depth={{ optimizer_search_depth_value }}
   when: mariadb_config_file.stdout.find('optimizer_search_depth=') == -1
   notify: set optimizer in runtime
 
@@ -165,6 +176,6 @@
     dest: /etc/mysql/mariadb.conf.d/50-server.cnf
     regex: ^optimizer_search_depth=
     firstmatch: true
-    line: optimizer_search_depth={{optimizer_search_depth_value}}
+    line: optimizer_search_depth={{ optimizer_search_depth_value }}
   when: mariadb_config_file.stdout.find('optimizer_search_depth=') != -1
   notify: set optimizer in runtime

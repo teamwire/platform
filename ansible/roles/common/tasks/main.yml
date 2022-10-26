@@ -1,11 +1,15 @@
 ---
 - name: Configure proxy for apt
+  template:
+    src: apt.proxy.conf.j2
+    dest: /etc/apt/apt.conf.d/01proxy
   when: http_proxy is defined
-  template: src=apt.proxy.conf.j2 dest=/etc/apt/apt.conf.d/01proxy
 
 - name: Remove apt proxy configuration when no proxy is configured
+  file:
+    dest: /etc/apt/apt.conf.d/01proxy
+    state: absent
   when: http_proxy is not defined
-  file: dest=/etc/apt/apt.conf.d/01proxy state=absent
 
 # Installing dnsmasq is a chicken/egg problem: the apt cache must be updated
 # before dnsmasq can be installed, but that is only possible with a working
@@ -17,7 +21,9 @@
   when: '"hashi_servers" in groups'
 
 - name: Configure DNS servers
-  template: src=resolv.conf.j2 dest=/etc/resolv.conf
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
   when: dns_servers is defined and ("hashi_servers" not in groups or not dnsmasq_configuration.stat.exists)
 
 - name: Create rc.local for Debian
@@ -25,7 +31,6 @@
     src: rc.local.j2
     dest: /etc/rc.local
     owner: root
-    mode: 700
 
 - name: Check if installing offline
   stat: path=/etc/offline_installation
@@ -49,7 +54,7 @@
     dest: /etc/apt/apt.conf.d/50unattended-upgrades
     regexp: '^//Unattended-Upgrade::Mail "root";'
     line: 'Unattended-Upgrade::Mail "root";'
-    backrefs: yes
+    backrefs: true
 
 - name: Configure unattended-upgrade
   copy:
@@ -108,7 +113,7 @@
   apt:
     name: mlocate # sucks IO heavily
     state: absent
-    purge: yes
+    purge: true
 
 # Configure system-wide proxy
 - name: Enable system-wide proxy
@@ -116,8 +121,8 @@
     dest: /etc/environment
     line: "{{ item }}={{ http_proxy }}"
   with_items:
-  - http_proxy
-  - https_proxy
+    - http_proxy
+    - https_proxy
   when: http_proxy is defined
 
 - name: Disable system-wide proxy when no proxy is configured
@@ -126,20 +131,20 @@
     regexp: "^{{ item }}="
     state: absent
   with_items:
-  - http_proxy
-  - https_proxy
-  - no_proxy
+    - http_proxy
+    - https_proxy
+    - no_proxy
   when: http_proxy is not defined
 
 - name: Don't access localhost and local services via proxy
   lineinfile:
     dest: /etc/environment
-    line: "no_proxy=127.0.0.1,{{ groups['all'] | map('extract', hostvars, ['private_ip']) | join(',') }}{{ ',' + groups['all'] | join(',') + ',localhost,.consul' if groups['all']| length() > 1 else 'localhost' }}"
+    line: "no_proxy=127.0.0.1,{{ groups['all'] | map('extract', hostvars, ['private_ip']) | join(',') }}{{ ',' + groups['all'] | join(',') + ',localhost,.consul' if groups['all']| length() > 1 else 'localhost' }}" # noqa line-length var-spacing
   when: http_proxy is defined
 
 - name: Set hostname
   when: config_done is defined or inventory_hostname not in ignore_hostnames
-  hostname: name="{{ inventory_hostname if inventory_hostname not in ignore_hostnames else (external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname) }}"
+  hostname: name="{{ inventory_hostname if inventory_hostname not in ignore_hostnames else (external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname) }}" # noqa line-length
 
 - name: Add hostname to localhost
   when: config_done is defined
@@ -153,7 +158,9 @@
 
 # install ntp and set timezone to UTC
 - name: Set timezone to UTC
-  copy: content="Etc/UTC\n" dest=/etc/timezone
+  copy:
+    content: "Etc/UTC\n"
+    dest: /etc/timezone
   notify: update timezone
 
 - name: Install the NTP daemon
@@ -163,7 +170,9 @@
   service: name=ntp state=started enabled=true
 
 - name: Write NTP configuration file
-  template: src=ntp.conf.j2 dest=/etc/ntp.conf
+  template:
+    src: ntp.conf.j2
+    dest: /etc/ntp.conf
   notify: restart NTP
 
 - name: Check that teamwire home dir exists
@@ -190,7 +199,7 @@
     name: net.ipv4.tcp_timestamps
     value: "0"
     state: present
-    reload: yes
+    reload: true
 
 # SSH
 - name: Disable SSH password logins
@@ -240,7 +249,7 @@
   file:
     path: /etc/ansible/facts.d
     state: directory
-    recurse: yes
+    recurse: true
 
 - name: Write Vault fact
   template:
@@ -251,7 +260,7 @@
 
 - name: Reload Ansible local facts to register custom fact
   setup: filter=ansible_local
-  when: vault_fact.changed
+  when: vault_fact.changed # noqa no-handler
 
 - include_tasks: cluster.yml
   when: groups['all'] | length() > 1 and (skip_private_if is not defined or skip_private_if)

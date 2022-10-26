@@ -28,7 +28,7 @@
   register: icinga_signing_key
   when: not offline_mode.stat.exists
 
-- name: Dearmor Icinga repository key
+- name: Dearmor Icinga repository key # noqa no-handler
   command: gpg --dearmor -o {{ (icinga_signing_key.dest | splitext)[0] }}.gpg {{ icinga_signing_key.dest }}
   when: icinga_signing_key.changed
 
@@ -37,7 +37,7 @@
     repo: deb [signed-by={{ (icinga_signing_key.dest | splitext)[0] }}.gpg] https://packages.icinga.com/debian icinga-{{ ansible_distribution_release }} main
     state: present
     filename: icinga2
-    update_cache: yes
+    update_cache: true
   when: not offline_mode.stat.exists
 
 - name: Install Icinga2 and monitoring plugins
@@ -50,7 +50,7 @@
     - libmonitoring-plugin-perl
     - liblwp-useragent-determined-perl
     - libdbd-mysql-perl
-  check_mode: no
+  check_mode: false
 
 - name: Clear plugin directory
   block:
@@ -58,7 +58,7 @@
       find:
         path: /usr/share/icinga2/include/plugins-contrib.d
         file_type: any
-        hidden: yes
+        hidden: true
       register: plugin_dir_content
     - name: Delete plugin directory content
       file:
@@ -96,7 +96,7 @@
     dest: /etc/icinga2/constants.conf
     regexp: "^//const NodeName = \"localhost\"$"
     line: "const NodeName = \"{{ inventory_hostname }}\""
-    backrefs: yes
+    backrefs: true
   notify: restart icinga2
 
 - name: Fix Icinga PKI directory permissions
@@ -113,14 +113,14 @@
   copy:
     src: /var/cache/downloads/check_ntp_time-{{ check_ntp_time_version }}
     dest: /usr/lib/nagios/plugins/check_ntp_time
-    remote_src: yes
+    remote_src: true
 
 - name: Patch Icinga2 check_haproxy_stats plugin
   lineinfile:
     path: /usr/lib/nagios/plugins/check_haproxy_stats
     regexp: "^/usr/bin/perl"
     line: "#/usr/bin/perl"
-    backrefs: yes
+    backrefs: true
 
 - include: "database-configuration.yml"
   when: mysql_root_password is defined

@@ -1,6 +1,6 @@
 ---
 - name: reload systemd
-  command: systemctl daemon-reload
+  command: systemctl daemon-reload # noqa command-instead-of-module
 
 - name: restart docker
   systemd: name=docker state=restarted daemon_reload=yes
@@ -14,7 +14,7 @@
     image: "{{ registry_version }}"
     state: started
     restart_policy: always
-    restart: yes
+    restart: true
     network_mode: host
     log_driver: syslog
     log_options:

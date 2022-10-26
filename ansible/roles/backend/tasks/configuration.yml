@@ -8,7 +8,8 @@
     teamwire_db_user: "{{ oracle_user }}"
   when: oracle_user is defined
 
-- debug: msg="Usage of oracle_user is deprecated, please set teamwire_db_user"
+- name: Check Oracle database user
+  debug: msg="Usage of oracle_user is deprecated, please set teamwire_db_user"
   when: oracle_user is defined
 
 - name: Configure default Teamwire DB user name
@@ -21,7 +22,8 @@
     teamwire_db_name: "{{ oracle_database }}"
   when: oracle_database is defined
 
-- debug: msg="Usage of oracle_database is deprecated, please set teamwire_db_name"
+- name: Check Oracle database
+  debug: msg="Usage of oracle_database is deprecated, please set teamwire_db_name"
   when: oracle_database is defined
 
 - name: Configure default Teamwire DB name
@@ -36,7 +38,7 @@
 
 - name: Determine MariaDB host (Single MariaDB server)
   set_fact:
-    mysql_host: "{{hostvars[groups['database_servers'][0]].private_ip}}"
+    mysql_host: "{{ hostvars[groups['database_servers'][0]].private_ip }}"
   when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length == 1
 
 - name: Determine MariaDB host (Galera cluster)
@@ -67,7 +69,7 @@
 
 - name: Register published VAULT_JOB_TOKEN
   set_fact:
-    VAULT_JOB_TOKEN: "{{remote_job_token.content | b64decode}}"
+    VAULT_JOB_TOKEN: "{{ remote_job_token.content | b64decode }}"
 
 - name: Check if installing offline
   stat: path=/etc/offline_installation

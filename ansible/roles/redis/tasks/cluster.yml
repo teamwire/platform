@@ -12,13 +12,14 @@
     - redis-sentinel@.service
   notify: reload systemd
 
-- meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: Stop and disable the default Redis services
   service:
     name: "{{ item }}"
     state: stopped
-    enabled: no
+    enabled: false
   with_items:
     - redis-server
     - redis-sentinel
@@ -32,7 +33,7 @@
     - /var/log/redis/redis-server.log
     - /var/log/redis/redis-sentinel.log
     - /var/lib/redis/dump.rdb
-  when: disabled_redis_default_services.changed
+  when: disabled_redis_default_services.changed # noqa no-handler
 
 - name: Create Redis instance configuration files
   template:
@@ -41,9 +42,9 @@
     owner: redis
     group: redis
     mode: 0640
-    force: no
+    force: false
   with_nested:
-    - [ 'redis', 'sentinel' ]
+    - [ 'redis', 'sentinel' ] # noqa brackets
     - "{{ redis_instances }}"
   register: redis_configuration
 
@@ -69,9 +70,9 @@
   service:
     name: "redis-{{ item[0] }}@{{ item[1] }}"
     state: started
-    enabled: yes
+    enabled: true
   with_nested:
-    - [ 'server', 'sentinel']
+    - [ 'server', 'sentinel'] # noqa brackets
     - "{{ redis_instances }}"
 
 - name: Write Redis check scripts for each instance

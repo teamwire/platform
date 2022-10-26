@@ -21,4 +21,3 @@ beat_ram_alloc_min: 384
 nomad_jobs:
   - teamwire
   - voip
-

@@ -1,6 +1,6 @@
 ---
 - name: reload systemd
-  command: systemctl daemon-reload
+  command: systemctl daemon-reload # noqa command-instead-of-module
 
 - name: restart MariaDB
   service: name=mysql state=restarted
@@ -13,5 +13,5 @@
   become: true
 
 - name: set optimizer in runtime
-  command: mysql -e "SET GLOBAL optimizer_search_depth={{optimizer_search_depth_value}};"
+  command: mysql -e "SET GLOBAL optimizer_search_depth={{ optimizer_search_depth_value }};"
   become: true

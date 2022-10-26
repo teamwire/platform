@@ -7,7 +7,7 @@
     - name: Gather Nomad version information
       command: nomad version
       register: nomad_version_cmd
-      changed_when: no
+      changed_when: false
     - name: Parse Nomad information
       set_fact:
         nomad_version_current: "{{ nomad_version_cmd.stdout | regex_search('\\d+\\.\\d+\\.\\d+') }}"
@@ -15,21 +15,21 @@
 
 - name: Download Nomad
   get_url:
-    url: https://releases.hashicorp.com/nomad/{{nomad_version}}/nomad_{{nomad_version}}_linux_amd64.zip
-    dest: /var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip
-    checksum: sha256:{{nomad_checksum}}
+    url: https://releases.hashicorp.com/nomad/{{ nomad_version }}/nomad_{{ nomad_version }}_linux_amd64.zip
+    dest: /var/cache/downloads/nomad_{{ nomad_version }}_linux_amd64.zip
+    checksum: sha256:{{ nomad_checksum }}
     mode: 0440
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}' # noqa var-spacing
   register: nomad_downloaded
   environment:
     https_proxy: "{{ http_proxy|default() }}"
 
 - name: Install/Update the Nomad binary
   unarchive:
-    src: /var/cache/downloads/nomad_{{nomad_version}}_linux_amd64.zip
+    src: /var/cache/downloads/nomad_{{ nomad_version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
-    copy: no
+    copy: false
   notify: Restart Nomad agent
   when: not nomad_binary.stat.exists or nomad_version_current is version(nomad_version, '<')
 
@@ -40,11 +40,15 @@
   file: dest=/var/lib/nomad state=directory mode=0755
 
 - name: Write Nomad config
-  template: src=nomad.hcl.j2 dest=/etc/nomad/nomad.hcl
+  template:
+    src: nomad.hcl.j2
+    dest: /etc/nomad/nomad.hcl
   notify: Restart Nomad agent
 
 - name: Nomad systemd config
-  copy: src=nomad.service dest=/etc/systemd/system/nomad.service
+  copy:
+    src: nomad.service
+    dest: /etc/systemd/system/nomad.service
   notify:
     - Restart Nomad agent
 
@@ -62,7 +66,7 @@
     - name: Gather version information about upgraded Nomad
       command: nomad version
       register: nomad_upgraded_version_cmd
-      changed_when: no
+      changed_when: false
 
     - name: Parse upgraded Nomad version information
       set_fact:

@@ -1,10 +1,11 @@
 - name: Check if Nomad-server policy exists for Vault
   shell: vault policy read nomad-server || true
   register: policy_check
-  run_once: True
+  run_once: true
   delegate_to: "{{ groups.hashi_servers | first }}"
 
-- block:
+- name: Setup Nomad policy
+  block:
     - name: Setup the Nomad policy for Vault if it doesn't exist
       copy:
         src: "{{ role_path }}/../vault/files/{{ item }}"
@@ -13,10 +14,14 @@
         - nomad-server-policy.hcl
         - nomad-job-policy.hcl
         - nomad-cluster-role.json
-    - command: vault policy write nomad-server /root/nomad-server-policy.hcl
-    - command: vault policy write nomad-job /root/nomad-job-policy.hcl
-    - command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
-    - file:
+    - name: Write nomad server policies
+      command: vault policy write nomad-server /root/nomad-server-policy.hcl
+    - name: Write nomad job policies
+      command: vault policy write nomad-job /root/nomad-job-policy.hcl
+    - name: Write nomad cluster role
+      command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
+    - name: Remove nomad files
+      file:
         dest: "/root/{{ item }}"
         state: absent
       with_items:

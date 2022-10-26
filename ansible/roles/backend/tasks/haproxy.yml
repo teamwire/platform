@@ -44,8 +44,8 @@
     owner: haproxy
     group: haproxy
   with_items:
-    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
-    - { src: '{{ galera_haproxy_template }}', dest: '/etc/haproxy/02-galera.cfg' }
+    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' } # noqa braces
+    - { src: '{{ galera_haproxy_template }}', dest: '/etc/haproxy/02-galera.cfg' } # noqa braces
   notify: restart haproxy
 
 - name: Generate a new Diffie-Hellman group

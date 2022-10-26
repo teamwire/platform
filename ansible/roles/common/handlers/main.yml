@@ -31,9 +31,9 @@
 
 - name: reload dhclient
   command: pkill dhclient
-  ignore_errors: yes
+  ignore_errors: true # noqa ignore-errors
   notify: reload dhclient step 2
 
 - name: reload dhclient step 2
   command: dhclient
-  ignore_errors: yes
+  ignore_errors: true # noqa ignore-errors

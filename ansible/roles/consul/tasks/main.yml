@@ -13,7 +13,7 @@
     - name: Gather Consul version information
       command: consul version
       register: consul_version_cmd
-      changed_when: no
+      changed_when: false
     - name: Parse Consul information
       set_fact:
         consul_version_current: "{{ consul_version_cmd.stdout_lines[0] | regex_search('\\d+\\.\\d+\\.\\d+') }}"
@@ -21,22 +21,22 @@
 
 - name: Download Consul
   get_url:
-    url: https://releases.hashicorp.com/consul/{{consul_version}}/consul_{{consul_version}}_linux_amd64.zip
-    dest: /var/cache/downloads/consul_{{consul_version}}_linux_amd64.zip
-    checksum: "sha256:{{consul_checksum}}"
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+    url: https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_amd64.zip
+    dest: /var/cache/downloads/consul_{{ consul_version }}_linux_amd64.zip
+    checksum: "sha256:{{ consul_checksum }}"
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}' # noqa var-spacing
   register: consul_downloaded
   environment:
     https_proxy: "{{ http_proxy|default() }}"
 
 - name: Install/Update the Consul binary
   unarchive:
-    src: /var/cache/downloads/consul_{{consul_version}}_linux_amd64.zip
+    src: /var/cache/downloads/consul_{{ consul_version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
-    copy: no
+    copy: false
   notify: restart consul
-  when: consul_downloaded.changed or not consul_binary.stat.exists
+  when: consul_downloaded.changed or not consul_binary.stat.exists # noqa no-handler
 
 - name: Create Consul config and scripts directories
   file:
@@ -91,7 +91,7 @@
     - name: Gather version information about upgraded Consul
       command: consul version
       register: consul_upgraded_version_cmd
-      changed_when: no
+      changed_when: false
 
     - name: Parse upgraded Consul version information
       set_fact:

@@ -3,7 +3,8 @@
 # invoked.
 - name: FIRST - Check SSL certificate
   block:
-    - openssl_certificate:
+    - name: Check SSL certificate
+      openssl_certificate:
         path: "{{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }}"
         privatekey_path: "{{ ssl_keyfile }}"
         provider: assertonly
@@ -16,9 +17,10 @@
           - sha256WithECDSAEncryption
           - sha384WithECDSAEncryption
           - sha512WithECDSAEncryption
-        has_expired: False
+        has_expired: false
   rescue:
-    - fail:
+    - name: Check SSL certificate
+      fail:
         msg:
           - SSL-Certificate is not valid! Check that
           - key match certificate, certificate is not expired
@@ -41,6 +43,6 @@
       - sha256WithECDSAEncryption
       - sha384WithECDSAEncryption
       - sha512WithECDSAEncryption
-    has_expired: False
+    has_expired: false
   when: ssl_keyfile is defined and ssl_first_check is not defined
   run_once: true

@@ -59,8 +59,8 @@
     owner: haproxy
     group: haproxy
   with_items:
-    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
-    - { src: '{{ frontend_haproxy_template }}', dest: '/etc/haproxy/03-frontend.cfg' }
+    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' } # noqa braces
+    - { src: '{{ frontend_haproxy_template }}', dest: '/etc/haproxy/03-frontend.cfg' } # noqa braces
   notify: restart haproxy
   when: "'frontend_servers' not in groups and groups['all'] | length() == 1"
 
@@ -98,7 +98,7 @@
 
 - name: Create the SSL certificate chain
   template:
-    src:  server_and_intermediate_and_root.crt.j2
+    src: server_and_intermediate_and_root.crt.j2
     dest: /etc/ssl/certs/server_and_intermediate_and_root.crt
     mode: 0640
   when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
@@ -106,7 +106,7 @@
 
 - name: Create the SSL intermediate and root certificate file
   template:
-    src:  intermediate_and_root.crt.j2
+    src: intermediate_and_root.crt.j2
     dest: /etc/ssl/certs/intermediate_and_root.crt
     mode: 0640
   when: ssl_intermediate_certificate is defined and ssl_root_certificate is defined
@@ -160,20 +160,20 @@
 
 - name: Copy ocsp.sh to src dir
   copy:
-     src: ocsp.sh
-     dest: "/usr/local/src/"
-     mode: 0755
-     owner: root
-     group: root
+    src: ocsp.sh
+    dest: "/usr/local/src/"
+    mode: 0755
+    owner: root
+    group: root
   when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
 
 - name: Copy ocsp.sh to src dir on managment server
   copy:
-     src: ocsp.sh
-     dest: "/usr/local/src/"
-     mode: 0755
-     owner: root
-     group: root
+    src: ocsp.sh
+    dest: "/usr/local/src/"
+    mode: 0755
+    owner: root
+    group: root
   delegate_to: localhost
   run_once: true
   when:
@@ -188,10 +188,10 @@
 
 - name: Add OCSP daily cron job
   cron:
-     name: "daily ocsp job to create ocsp file"
-     special_time: daily
-     job: "/usr/local/src/ocsp.sh > /dev/null 2>&1"
-  ignore_errors: True
+    name: "daily ocsp job to create ocsp file"
+    special_time: daily
+    job: "/usr/local/src/ocsp.sh > /dev/null 2>&1"
+  ignore_errors: true # noqa ignore-errors
   when:
     - ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
 
@@ -205,19 +205,24 @@
   import_tasks: ssl-check.yml
 
 # open firewall ports for the web server
-- ufw: rule=allow port=80 proto=tcp
+- name: Add Firewall Rule allow 80
+  ufw: rule=allow port=80 proto=tcp
   when: config_done is defined
 
-- ufw: rule=allow port=443 proto=tcp
+- name: Add Firewall Rule allow 443
+  ufw: rule=allow port=443 proto=tcp
   when: ssl_keyfile is defined
 
-- ufw: rule=allow port=8443 proto=tcp
+- name: Add Firewall Rule allow 8443
+  ufw: rule=allow port=8443 proto=tcp
   when: ssl_keyfile is defined and enable_voip is defined and enable_voip | string() == 'true'
 
-- ufw: rule=allow port=4443 proto=tcp
+- name: Add Firewall Rule allow 4443
+  ufw: rule=allow port=4443 proto=tcp
   when: ssl_keyfile is defined and enable_voip is defined and enable_voip | string() == 'true'
 
-- ufw: rule=allow port=10000 proto=any
+- name: Add Firewall Rule allow 10000
+  ufw: rule=allow port=10000 proto=any
   when: groups.all | length == 1 and enable_voip is defined and enable_voip | string() == 'true'
 
 - name: Re-use sockets in TIME_WAIT state for new connections
@@ -237,7 +242,7 @@
     name: net.core.somaxconn
     value: "1024"
     state: present
-    reload: yes
+    reload: true
 
 - name: Template voip reverse proxy config
   template:
