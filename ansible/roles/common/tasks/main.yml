@@ -224,6 +224,15 @@
     line: "UseDNS no"
   notify: reload sshd
 
+- name: Enable secure SSH Ciphers
+  blockinfile:
+    path: /etc/ssh/sshd_config
+    block: |
+      # See chapter 3.4 - technische Richtlinie BSI-TR-02102-4.pdf
+      # Mac ciphers currently not supported ( AEAD_AES_128_GCM, AEAD_AES_256_GCM )
+      Ciphers aes256-cbc,aes192-cbc,aes128-cbc,aes256-ctr,aes192-ctr,aes128-ctr
+  notify: reload sshd
+
 # Prepare tmate usage
 # It needs any ssh key for the calling user to function
 - name: Create SSH keys for the teamwire user
