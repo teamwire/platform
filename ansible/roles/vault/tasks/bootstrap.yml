@@ -194,7 +194,6 @@
     - { secret: 'voip/jibri_password', value: "{{ voip_jibri_password | default('') }}" } # noqa braces
     - { secret: 'voip/jicofo_password', value: "{{ voip_jicofo_password | default('') }}" } # noqa braces
     - { secret: 'voip/jvb_password', value: "{{ voip_jvb_password | default('') }}" } # noqa braces
-    - { secret: 'voip/stun_password', value: "{{ voip_stun_password | default('') }}" } # noqa braces
     - { secret: 'voip/jwt_app_secret', value: "{{ jwt_app_secret | default('') }}" } # noqa braces
     - { secret: 'voip/prosody_key', value: "{{ prosody_key | default('') }}" } # noqa braces
   run_once: true

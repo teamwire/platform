@@ -14,6 +14,6 @@
     - role: ../../roles/docker
 
 - name: Deploy Docker (non-registry hosts)
-  hosts: backend_servers:voip_servers:stun_servers:management_servers:local:!docker_registry
+  hosts: backend_servers:voip_servers:management_servers:local:!docker_registry
   roles:
     - role: ../../roles/docker
