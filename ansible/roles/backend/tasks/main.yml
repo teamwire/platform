@@ -1,15 +1,15 @@
 ---
 - name: Create the backend storage directories
-    file:
-      path: "/data{{'/' + tw_environments[item.1] | default() if tw_environments is defined }}{{ '/' + item.0 }}"
-      owner: daemon
-      mode: "{{ (item.0 == 'archiving/gpg') | ternary('0700', '0750') }}" # sets file mode 0700 if the directory is archiving/gpg, else 0750
-      state: directory
-    when: config_done is defined
-    run_once: true
-    with_nested:
-      - [ 'archiving', 'archiving/gpg', 'assets', 'website-screenshot-cache', 'beat' ]
-      - "{{ groups['backend_servers'] }}"
+  file:
+    path: "/data{{'/' + tw_environments[item.1] | default() if tw_environments is defined }}{{ '/' + item.0 }}"
+    owner: daemon
+    mode: "{{ (item.0 == 'archiving/gpg') | ternary('0700', '0750') }}" # sets file mode 0700 if the directory is archiving/gpg, else 0750
+    state: directory
+  when: config_done is defined
+  run_once: true
+  with_nested:
+    - [ 'archiving', 'archiving/gpg', 'assets', 'website-screenshot-cache', 'beat' ]
+    - "{{ groups['backend_servers'] }}"
 
 - name: Create the backend certificate storage directories
   file:
