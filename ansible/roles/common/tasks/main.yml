@@ -136,12 +136,14 @@
     - no_proxy
   when: http_proxy is not defined
 
-- name: Don't access localhost and local services via proxy
+- name: NPRX_18 Don't access localhost and local services via proxy
   lineinfile:
     dest: /etc/environment
     line: "no_proxy=127.0.0.1,{{ groups['all'] | map('extract', hostvars, ['private_ip']) | join(',') }}{{ ',' + groups['all'] | join(',') + ',localhost,.consul' if groups['all']| length() > 1 else 'localhost' }}" # noqa line-length var-spacing
-  when: http_proxy is defined
-
+  when: 
+    - http_proxy is defined
+    - nprx_18 | default(true)
+    
 - name: Set hostname
   when: config_done is defined or inventory_hostname not in ignore_hostnames
   hostname: name="{{ inventory_hostname if inventory_hostname not in ignore_hostnames else (external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname) }}" # noqa line-length
