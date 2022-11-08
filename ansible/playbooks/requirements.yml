@@ -253,7 +253,9 @@
         - name: Check APNS certificate validity
           debug:
             msg: 'Please change your APNS-Certificate immediately'
-      when: config_done is defined
+      when: 
+        - config_done is defined
+        - apns_certificate is defined
       run_once: true
       delegate_to: localhost
       become: false
