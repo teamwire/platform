@@ -16,11 +16,13 @@
 - name: Install Postfix
   apt: pkg=postfix
 
-- name: Write the Postfix configuration file
+- name: PSTFX_4 Write the Postfix configuration file
   template:
     src: postfix-main.cf.j2
     dest: /etc/postfix/main.cf
-  when: config_done is defined
+  when: 
+    - config_done is defined
+    - pstfx_4 | default(true)
   notify: restart postfix
 
 - name: Write the Postfix password file
