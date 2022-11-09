@@ -10,12 +10,19 @@
   run_once: true
   notify: restart registry container
 
-- name: Retrieve the  Docker Registry container
-  when: config_done is defined
-  docker_image:
-    name: "{{ registry_version }}"
-    source: pull
-    state: present
+- name: Get information about docker-registry
+  docker_container_info:
+    name: docker-registry
+  register: result
+
+- name: Check if docker-registry is available and running
+  debug:
+    msg: "Container not available or running"
+  when:
+    - result.exists == false or result.container.State.Running == false
+  changed_when:
+    - result.exists == false or result.container.State.Running == false
+  notify: restart registry container
 
 # Push all local images to the local registry
 - name: Copy the registry image helper tool
