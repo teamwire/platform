@@ -285,6 +285,7 @@ job "teamwire" {
 				ENABLE_PROXY_FOR_APNS = "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
 				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 				LOGLEVEL = "{{ worker_loglevel|default() }}"
+				DEFAULT_FROM_EMAIL = "{{ sender_address }}"
 			}
 
 			resources {
