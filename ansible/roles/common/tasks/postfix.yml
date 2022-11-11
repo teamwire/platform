@@ -20,7 +20,7 @@
   template:
     src: postfix-main.cf.j2
     dest: /etc/postfix/main.cf
-  when: 
+  when:
     - config_done is defined
     - pstfx_4 | default(true)
   notify: restart postfix
@@ -33,7 +33,7 @@
   when: config_done is defined and smtp_smartpass is defined and smtp_smartuser is defined and smtp_smartuser !=""
   notify: rebuild postfix passwd map
 
-- name: Setup aliases
+- name: Setup e-mail aliases
   lineinfile:
     path: "/etc/aliases"
     regexp: "^root:"
@@ -43,7 +43,13 @@
   notify:
     - new aliases
     - restart postfix
-  when: system_email_recipient is defined
+
+- name: Test if e-mail alias.db is older then source file
+  lineinfile:
+    path: /var/log/mail.log
+    line: "database /etc/aliases.db is older than source file /etc/aliases"
+    state: present
+  notify: new aliases
 
 - name: Ensure postfix virtualmap is absent
   file:
