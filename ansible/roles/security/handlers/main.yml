@@ -1,0 +1,20 @@
+---
+- name: unload fs modules
+  ansible.builtin.command: "/sbin/modprobe -n -v {{ item }}"
+  with_items:
+    - freevxfs
+    - jffs2
+    - hfs
+    - hfsplus
+    - squashfs
+    - udf
+    - vfat
+
+- name: Restart kernel modules systemd
+  ansible.builtin.systemd:
+    name: systemd-modules-load.service
+    state: restarted
+
+- name: Permission handler
+  ansible.builtin.shell: "chmod 1777 /tmp"
+  become: true

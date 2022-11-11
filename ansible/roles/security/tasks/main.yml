@@ -1,0 +1,49 @@
+---
+# CIS - BENCHMARK IDS: 2500,2501,2502,2503,2504,2505,2506
+- name: Ensure mounting of additional filesystems is disabled
+  ansible.builtin.copy:
+    src: mountfs.conf
+    dest: "/etc/modprobe.d/mounts.conf"
+    mode: 0640
+    owner: root
+    group: root
+  notify:
+    - unload fs modules
+    - Restart kernel modules systemd
+
+# CIS - BENCHMARK ID: 2676 cis: 5.4.5
+- name: Harden bash
+  block:
+    - name: set TMOUT in /etc/profile
+      lineinfile:
+        dest: "/etc/profile"
+        line: "readonly TMOUT=900 ; export TMOUT"
+        state: present
+    - name: set TMOUT in /etc/bash.bashrc
+      lineinfile:
+        dest: "/etc/bash.bashrc"
+        line: "readonly TMOUT=900 ; export TMOUT"
+        state: present
+# CIS - BENCHMARK ID: 2682 cis: 6.1.6
+- name: Harden passwd-
+  file:
+    name: /etc/passwd-
+    owner: root
+    group: root
+    mode: u-x,go-rwx
+
+# CIS - BENCHMARK ID: 2684 cis: 6.1.8
+- name: Harden group-
+  file:
+    name: /etc/group-
+    owner: root
+    group: root
+    mode: u-x,go-rwx
+
+# CIS - BENCHMARK ID: 2669 cis: 5.3.4
+# See:
+# https://www.debian.org/releases/bullseye/amd64/release-notes/ch-information.en.html#pam-default-password
+
+
+# CIS - BENCHMARK tmp disk
+- include: tmp_disk.yml

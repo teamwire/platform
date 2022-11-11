@@ -30,7 +30,7 @@
 - include: roles/load_balancers.yml
 - include: roles/monitoring.yml
 - include: roles/housekeeping.yml
-
+- include: roles/security.yml
 
 - name: Set current tag (COMPLETE) in /etc/platform_version
   hosts: all
