@@ -99,13 +99,6 @@
       - python3-setuptools
       - python3-docker
 
-# # https://docs.ansible.com/ansible/latest/collections/community/general/alternatives_module.html
-# - name: Update alternatives
-#   community.general.alternatives:
-#     name: python
-#     link: /usr/bin/python
-#     path: /usr/bin/{{ ansible_python.executable }}
-
 - name: Remove unneeded packages
   apt:
     name: mlocate # sucks IO heavily
