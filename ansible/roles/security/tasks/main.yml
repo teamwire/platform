@@ -47,3 +47,5 @@
 
 # CIS - BENCHMARK tmp disk
 - include: tmp_disk.yml
+# CIS - BENCHMARK sshd hardening
+- include: sshd-hardening.yml

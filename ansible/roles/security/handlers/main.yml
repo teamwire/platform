@@ -17,4 +17,8 @@
 
 - name: Permission handler
   ansible.builtin.shell: "chmod 1777 /tmp"
-  become: true
+
+- name: Restart sshd
+  ansible.builtin.systemd:
+    name: sshd
+    state: restarted
