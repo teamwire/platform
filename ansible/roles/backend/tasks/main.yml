@@ -66,30 +66,6 @@
   command: docker restart teamwire_worker
   when: (apns_source.changed or apns2_source.changed or apns3_source.changed) and ansible_play_hosts | length() == 1 and 'teamwire_worker' in docker_procs.stdout # noqa line-length
 
-- name: Clean webscreenshot-cache on on-premise server/cluster
-  cron:
-    name: "keep website-screenshots dir clean"
-    minute: "0"
-    hour: "4"
-    user: root
-    job: "find /data/website-screenshot-cache/ -type f -mtime +90 -delete"
-    cron_file: webscreenshots_cleaner
-  when:
-    - config_done is defined and data_dirs is not defined
-    - groups['all'] | length() == 1 or inventory_hostname == groups['backend_servers'] | first
-
-- name: Clean webscreenshot-cache in different environment
-  cron:
-    name: "keep website-screenshots dir clean"
-    minute: "0"
-    hour: "4"
-    user: root
-    job: "find /data/**/website-screenshot-cache/ -type f -mtime +90 -delete"
-    cron_file: webscreenshots_cleaner
-  when:
-    - config_done is defined and data_dirs is defined and data_dirs | length() != 0
-    - inventory_hostname == groups['backend_servers'] | first
-
 - include_tasks: "single.yml"
   when: "'backend_servers' not in groups"
 
