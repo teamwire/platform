@@ -24,6 +24,7 @@
         dest: "/etc/bash.bashrc"
         line: "readonly TMOUT=900 ; export TMOUT"
         state: present
+
 # CIS - BENCHMARK ID: 2682 cis: 6.1.6
 - name: Harden passwd-
   file:
@@ -49,3 +50,5 @@
 - include: tmp_disk.yml
 # CIS - BENCHMARK sshd hardening
 - include: sshd-hardening.yml
+# CIS - BENCHMARK cronjobs
+- include: cronjob.yml
