@@ -1,0 +1,37 @@
+---
+# CIS - BENCHMARK ID: 2636 - 2641 cis: 5.1.2 - 5.1.7
+- name: Harden cron file permissions
+  ansible.builtin.file:
+    name: "{{ item }}"
+    owner: root
+    group: root
+    mode: og-rwx
+  with_items:
+    - /etc/crontab
+    - /etc/cron.hourly
+    - /etc/cron.daily
+    - /etc/cron.weekly
+    - /etc/cron.monthly
+
+# CIS - BENCHMARK ID: 2641 cis: 5.1.7
+- name: Harden cron job and ensure blacklist is removed
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/at.deny
+    - /etc/cron.deny
+
+# CIS - BENCHMARK ID: 2642 cis: 5.1.8
+- name: Harden cron job and ensure whitelist is present
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    line: "root"
+    state: present
+    create: true
+    owner: root
+    group: root
+    mode: 0640
+  with_items:
+    - /etc/at.allow
+    - /etc/cron.allow

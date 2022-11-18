@@ -1,0 +1,8 @@
+---
+- hosts: hashi_servers:local
+  roles:
+  - role: ../../roles/vault
+
+- hosts: all
+  roles:
+  - role: ../../roles/security

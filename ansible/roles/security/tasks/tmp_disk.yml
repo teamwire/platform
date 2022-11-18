@@ -1,0 +1,55 @@
+---
+- name: Check freespace on root partition
+  ansible.builtin.shell: 'df / --output\=avail | tail -1'
+  register: root_freespace
+  changed_when: false
+
+- name: Check if /tmp dir is defined in fstab
+  ansible.builtin.shell: 'grep "/tmp" -q /etc/fstab'
+  register: in_fstab
+  changed_when: false
+  ignore_errors: true
+
+- name: Check if /tmp is mounted
+  ansible.builtin.shell: 'df /tmp | grep -q "loop"'
+  register: is_mounted
+  changed_when: false
+  failed_when:
+    - is_mounted.rc != 0
+    - is_mounted.rc != 1
+
+- name: check if tmp file partition exists
+  ansible.builtin.stat:
+    path: "/usr/local/share/tmp.disk"
+  register: tmp_file
+
+- name: Create tmp disk file
+  ansible.builtin.shell: "dd if=/dev/zero of=/usr/local/share/tmp.disk bs=1 count=0 seek=10G"
+  register: tmp_disk_file
+  when:
+    - not tmp_file.stat.exists
+    - root_freespace.stdout | float > 13631488
+
+- name: Create filesystem on tmp file
+  ansible.builtin.shell: sudo mkfs.ext4 /usr/local/share/tmp.disk
+  when: tmp_disk_file.changed
+
+- name: Add file partition to fstab
+  ansible.posix.mount:
+    name: "/tmp"
+    src: "/usr/local/share/tmp.disk"
+    fstype: "ext4"
+    opts: "loop,nosuid,noexec,nodev,rw"
+    state: mounted
+  when:
+    - tmp_disk_file.changed
+    - in_fstab.rc == 1
+    - is_mounted.rc == 1
+  register: add_fstab
+  notify: Permission handler
+
+- name: Ensure tmp file is mounted
+  shell: "mount -a"
+  when:
+    - is_mounted.rc == 1
+  notify: Permission handler

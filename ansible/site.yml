@@ -50,9 +50,10 @@
   roles:
     - { role: monitoring, when: config_done is defined and enable_monitoring is defined } # noqa braces
 
-- name: Run housekeeping job to remove unused dependencies
+- name: Run security and housekeeping job to remove unused dependencies
   hosts: all
   roles:
+    - { role: security,     when: config_done is defined } # noqa braces
     - { role: housekeeping, when: config_done is defined } # noqa braces
 
 - name: Set current tag (COMPLETE) in /etc/platform_version
