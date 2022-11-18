@@ -7,12 +7,10 @@ pidfile /var/run/redis/redis-server-{{ item[1] }}.pid
 loglevel notice
 logfile /var/log/redis/redis-server-{{ item[1] }}.log
 
-save 900 1
-save 300 10
-save 60 10000
-
 dbfilename {{ item[1] }}.rdb
 dir /var/lib/redis
+
+save ""
 
 {% if redis_instances[item[1]].password != "" %}
 requirepass {{ redis_instances[item[1]].password }}
