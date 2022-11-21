@@ -260,6 +260,17 @@ system_email_recipient:
 #beat_ram_alloc_min: 384
 
 ##############################################################################
+## Miscellaneous
+##############################################################################
+
+# Mount tmp directory
+# In order to increase the basic security on the server, it is possible to mount
+# the /tmp directory on an extra partition or as a file. This allows special flags
+# to be set that generally make attacks more difficult. Mounting the /tmp directory
+# is purely optional. By default, the variable <enable_tmp_mount> is set to "False".
+# enable_tmp_mount: "false"
+
+##############################################################################
 ## DEBUGGING
 ##############################################################################
 

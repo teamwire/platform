@@ -48,6 +48,7 @@
 
 # CIS - BENCHMARK tmp disk
 - include: tmp_disk.yml
+  when: "{{ enable_tmp_mount | default(false) | bool }}"
 # CIS - BENCHMARK sshd hardening
 - include: sshd-hardening.yml
 # CIS - BENCHMARK cronjobs
