@@ -270,6 +270,13 @@ system_email_recipient:
 # is purely optional. By default, the variable <enable_tmp_mount> is set to "False".
 # enable_tmp_mount: "false"
 
+# Permit root_login
+# Root access to the server is strictly prohibited. However, if this is required,
+# you can turn it on with the permit_root_login switch with "yes". The variable
+# is set to "prohibit-password" by default. Only "yes","no" and "prohibit-password" 
+# are valid values for the variable. Otherwise "prohibit-password" is always inserted.
+# permit_root_login: "prohibit-password"
+
 ##############################################################################
 ## DEBUGGING
 ##############################################################################
