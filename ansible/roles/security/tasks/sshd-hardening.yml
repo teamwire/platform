@@ -8,6 +8,7 @@
         line: "{{ item.line }}"
         state: "{{ item.state | default('present') }}"
         validate: "sshd -t -f %s"
+      when: "{{ item.when | default('omit')}}"
       with_items:
         - line: "RSAAuthentication yes"
           state: "absent"
@@ -31,7 +32,8 @@
           line: "AllowTcpForwarding no"
         # DEFAULT BY TEAMWIRE COMPLIANCE
         - regexp: "^PermitRootLogin\ "
-          line: "PermitRootLogin no"
+          line: "PermitRootLogin {{ permit_root_login|lower if permit_root_login|lower == 'yes' or permit_root_login|lower == 'no' else 'prohibit-password' }}"
+          when: permit_root_login != 'default'
         # DEFAULT BY TEAMWIRE COMPLIANCE
         - regexp: "^PermitEmptyPasswords\ "
           line: "PermitEmptyPasswords no"
