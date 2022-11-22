@@ -6,3 +6,14 @@ mysql_databases:
     password: "{{ teamwire_db_password }}"
 
 optimizer_search_depth_value: 0
+
+# 50-server.cnf vars
+bind_address: "0.0.0.0"
+# max_allowed_packet: Previously 64M but not active!
+max_allowed_packet: "1G"
+max_connections: 512
+optimizer_search_depth: 0
+
+# 60-teamwire.cnf vars
+enable_auto_calculation_innodb: true
+innodb_buffer_pool_size: 0

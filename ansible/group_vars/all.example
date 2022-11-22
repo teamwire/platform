@@ -177,6 +177,20 @@ apns_certificate: ""
 # oracle_host:
 # oracle_port: 1521
 
+# enable_auto_calculation_innodb enables the automatic and optimal calculation
+# of the required RAM (in gigabytes) for the variable innodb_buffer_pool_size.
+# Please remember that you should not set autocalculation and manual configuration
+# at the same time. The variable is set to "true" by default. This variable can be
+# deactivated with "false".
+# enable_auto_calculation_innodb: true
+
+# The InnoDB buffer pool size can be overwritten manually and adapted to the
+# respective environment. The value of the variable must always be set in gigabytes
+# and as an integer. Please remember that you should not set autocalculation and
+# manual configuration at the same time. A possible value to set could be 6G (Gigabyte)
+# for example:
+# innodb_buffer_pool_size: 6
+
 ##############################################################################
 ## MAIL
 ##############################################################################
