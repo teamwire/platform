@@ -25,28 +25,10 @@
     state: directory
   when: '"database_servers" not in groups'
 
-# Allow incoming connections to MySQL on all interfaces
-- name: Configure MariaDB to listen on all interfaces
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: ^bind-address\s*=\s*127.0.0.1
-    backrefs: true
-    line: "bind-address=0.0.0.0"
-  notify: restart MariaDB
-
-- name: Increase max_allowed_packet size
-  replace:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: ^max_allowed_packet\s*=\s*\d+M
-    replace: "max_allowed_packet=64M"
-  notify: restart MariaDB
-
-- name: Increase maximum allowed connections
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: ^max_connections
-    line: "max_connections = 512"
-  notify: restart MariaDB
+# Install MariaDB server templates
+# 50-server.cnf
+# 60-teamwire.cnf
+- include_tasks: server_templates.yml
 
 - name: Set UTF8 as default character set
   copy:
@@ -141,41 +123,3 @@
 
 - include_tasks: cluster.yml
   when: galera_cluster is defined
-
-# Use command module instead of mysql_query for backward compatibility
-- name: Get optimal innodb buffer size
-  command: >
-    mysql -e "SELECT CEILING(Total_InnoDB_Bytes*1.6/POWER(1024,3)) RIBPS FROM
-    (SELECT SUM(data_length+index_length) Total_InnoDB_Bytes FROM information_schema.tables WHERE engine='InnoDB') A;"
-  register: innodb_buffer_size
-  become: true
-
-- name: Set innodb buffer size
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    insertafter: '\[mysqld\]'
-    line: 'innodb_buffer_pool_size = {{ innodb_buffer_size.stdout_lines[1] | int }}G'
-  notify: running config
-
-# Configure optimizer search depth
-- name: Read mariadb configuration file
-  command: cat /etc/mysql/mariadb.conf.d/50-server.cnf
-  register: mariadb_config_file
-
-- name: Add optimizer search depth configuration if not present
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    insertafter: ^\[mariadb\]
-    firstmatch: true
-    line: optimizer_search_depth={{ optimizer_search_depth_value }}
-  when: mariadb_config_file.stdout.find('optimizer_search_depth=') == -1
-  notify: set optimizer in runtime
-
-- name: Change optimizer search depth configuration
-  lineinfile:
-    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regex: ^optimizer_search_depth=
-    firstmatch: true
-    line: optimizer_search_depth={{ optimizer_search_depth_value }}
-  when: mariadb_config_file.stdout.find('optimizer_search_depth=') != -1
-  notify: set optimizer in runtime

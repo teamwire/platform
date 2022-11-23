@@ -1,0 +1,28 @@
+[mysqld]
+
+#
+# * InnoDB
+#
+
+# InnoDB is enabled by default with a 10MB datafile in /var/lib/mysql/.
+# Read the manual for more InnoDB related options. There are many!
+# Most important is to give InnoDB 80 % of the system RAM for buffer use:
+# https://mariadb.com/kb/en/innodb-system-variables/#innodb_buffer_pool_size
+{% if innodb_buffer_pool_size == 0 %}
+#innodb_buffer_pool_size = 8G
+{% else %}
+innodb_buffer_pool_size = {{innodb_buffer_pool_size}}G
+{% endif %}
+
+[mariadb]
+
+#
+# * Optimizer search depth
+#
+
+# Maximum depth of search performed by the query optimizer. Values larger than
+# the number of relations in a query result in better query plans, but take longer
+# to compile a query. Values smaller than the number of tables in a relation result
+# in faster optimization, but may produce very bad query plans. If set to 0, the
+# system will automatically pick a reasonable value.
+optimizer_search_depth   = {{ optimizer_search_depth }}

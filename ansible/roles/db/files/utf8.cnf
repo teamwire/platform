@@ -3,4 +3,12 @@ default-character-set = utf8mb4
 
 [mysqld]
 character-set-server = utf8mb4
-collation-server = utf8mb4_unicode_ci
+collation-server     = utf8mb4_unicode_ci
+
+[mariadb-dump]
+character-set-server = utf8mb4
+collation-server     = utf8mb4_unicode_ci
+
+[mariadb-import]
+character-set-server = utf8mb4
+collation-server     = utf8mb4_unicode_ci

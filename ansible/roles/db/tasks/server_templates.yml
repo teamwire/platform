@@ -1,0 +1,50 @@
+---
+- name: Check if innodb autocalculation and a fixed pool size is set
+  fail:
+    msg: |
+     A configuration error has occurred. Both variables were set,
+     although they contradict each other. innodb_buffer_pool_size and
+     enable_auto_calculation_innodb.
+     The value of innodb_buffer_pool_size on the server is applied.
+     Please correct the group_vars/all file!
+  ignore_errors: yes
+  when: enable_auto_calculation_innodb and innodb_buffer_pool_size != 0
+
+  # Use command module instead of mysql_query for backward compatibility
+- name: Get optimal innodb buffer size
+  command: >
+    mysql -e "SELECT CEILING(Total_InnoDB_Bytes*1.6/POWER(1024,3)) RIBPS FROM
+    (SELECT SUM(data_length+index_length) Total_InnoDB_Bytes FROM information_schema.tables WHERE engine='InnoDB') A;"
+  register: innodb_buffer_size
+  become: true
+  when:
+    - "{{ innodb_buffer_pool_size == 0 }}"
+    - enable_auto_calculation_innodb
+
+- name: Set innodb buffer size
+  ansible.builtin.set_fact:
+    innodb_buffer_pool_size: "{{ innodb_buffer_size.stdout_lines[1] | int }}"
+  notify: running config
+  when:
+    - "{{ innodb_buffer_pool_size == 0 }}"
+    - enable_auto_calculation_innodb
+
+- name: Template MariaDB 50-server.cnf
+  ansible.builtin.template:
+    src: 50-server.cnf.j2
+    dest: "/etc/mysql/mariadb.conf.d/50-server.cnf"
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart MariaDB
+
+- name: Template MariaDB 60-teamwire.cnf
+  ansible.builtin.template:
+    src: 60-teamwire.cnf.j2
+    dest: "/etc/mysql/mariadb.conf.d/60-teamwire.cnf"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - set innodb in runtime
+    - set optimizer in runtime
