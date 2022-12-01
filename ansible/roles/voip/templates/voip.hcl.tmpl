@@ -104,6 +104,8 @@ job "voip" {
 				ENABLE_AUTH                     = "1"
 				ENABLE_GUESTS                   = "0"
 				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= 2
+				ENABLE_COLIBRI_WEBSOCKET 		= "1"
+				PUBLIC_URL						= "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
 			}
 
 			resources {
@@ -206,6 +208,8 @@ job "voip" {
 				JWT_APP_ID 						= "teamwire"
 				TZ 								= "UTC"
 				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= 2
+				PUBLIC_URL						= "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
+
 			}
 
 			resources {
@@ -382,6 +386,10 @@ job "voip" {
 				JVB_STUN_SERVERS 				= "meet-jit-si-turnrelay.jitsi.net:443"
 				TZ 								= "UTC"
 				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= "2"
+				ENABLE_COLIBRI_WEBSOCKET 		= "1"
+				JVB_WS_SERVER_ID				= "127.0.0.1"
+				PUBLIC_URL						= "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
+
 			}
 
 			resources {
