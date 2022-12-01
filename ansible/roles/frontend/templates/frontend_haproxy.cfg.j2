@@ -84,10 +84,6 @@ frontend voip-web-in
 
     default_backend teamwire-voip-web
 
-    acl PATH_MATCH_VOIP_WEBSOCKETS path_beg /colibri-ws/
-    use_backend teamwire-voip-websockets if PATH_MATCH_VOIP_WEBSOCKETS
-
-
 {% if groups['all'] | length > 1 %}
 # ----------------------------------------------------
 # FRONTEND: VOIP VIDEO INACTIVE !!!!!!!!!!!!!!!!!!!!!
