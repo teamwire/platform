@@ -166,6 +166,7 @@ job "teamwire" {
 				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 				VOIP_URL = "http://voipWeb.service.consul:7080"
 				LOGLEVEL = "{{ backend_loglevel|default() }}"
+				WORKERS = "{{ workers|default() }}"
 			}
 
 			resources {
