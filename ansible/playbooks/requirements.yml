@@ -58,6 +58,16 @@
       run_once: true
       when: use_teamwire_registry is defined
 
+    - name: Assert workers variable is valid.
+      assert:
+        that:
+          - workers is string and workers|int
+        msg: >-
+          Invalid value for configuration option `workers`.
+          Please ensure your value is quoted and is a string of numbers.
+      run_once: true
+      when: workers is defined
+
     - name: Ensure valid configuration combination
       block:
         - name: Retrieve name of playbook file
