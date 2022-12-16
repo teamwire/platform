@@ -273,6 +273,12 @@ system_email_recipient:
 #notification_ram_alloc_min: "{{ notification_ram_alloc }}"
 #beat_ram_alloc_min: 384
 
+# Number of backend workers
+# Normally the numbers of workers in the backend container, is calculated based on
+# the number of CPUs. By defining the numbers of workers you can decide how many you
+# workers you want to have.
+# workers: ""
+
 ##############################################################################
 ## Miscellaneous
 ##############################################################################

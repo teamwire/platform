@@ -72,6 +72,7 @@
       JWT_APP_SECRET: "{{ jwt_app_secret }}"
       PROSODY_KEY: "{{ prosody_key }}"
       LOGLEVEL: "{{ backend_loglevel|default() }}"
+      WORKERS: "{{ workers|default() }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
