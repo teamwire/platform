@@ -8,7 +8,7 @@
         line: "{{ item.line }}"
         state: "{{ item.state | default('present') }}"
         validate: "sshd -t -f %s"
-      when: "{{ item.when | default('omit')}}"
+      when: item.when | default('omit')
       with_items:
         - line: "RSAAuthentication yes"
           state: "absent"
