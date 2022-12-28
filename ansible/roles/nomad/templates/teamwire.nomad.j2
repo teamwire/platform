@@ -167,6 +167,7 @@ job "teamwire" {
 				VOIP_URL = "http://voipWeb.service.consul:7080"
 				LOGLEVEL = "{{ backend_loglevel|default() }}"
 				WORKERS = "{{ workers|default() }}"
+      			CHANNEL_GROUP_EXPIRY = "{{ channel_group_expiry|default('86400') }}"
 			}
 
 			resources {
