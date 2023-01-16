@@ -279,6 +279,11 @@ system_email_recipient:
 # workers you want to have.
 # workers: ""
 
+# Define expiry time for group channels
+# This variable default value is 86400, to change this value, uncomment the 
+# variable and define the value that is wanted.
+# channel_group_expiry: "86400"
+
 ##############################################################################
 ## Miscellaneous
 ##############################################################################

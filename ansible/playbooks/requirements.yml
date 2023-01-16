@@ -68,6 +68,16 @@
       run_once: true
       when: workers is defined
 
+    - name: Assert channel_group_expiry variable is valid.
+      assert:
+        that:
+          - channel_group_expiry is string and channel_group_expiry|int
+        msg: >-
+          Invalid value for configuration option `channel_group_expiry`.
+          Please ensure your value is quoted and is a string of numbers.
+      run_once: true
+      when: channel_group_expiry is defined
+
     - name: Ensure valid configuration combination
       block:
         - name: Retrieve name of playbook file
