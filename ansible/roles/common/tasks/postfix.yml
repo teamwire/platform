@@ -37,7 +37,7 @@
   lineinfile:
     path: "/etc/aliases"
     regexp: "^root:"
-    line: "root{{':'}} {{ system_email_recipient }}"
+    line: "root{{':'}} {{ system_email_recipient | default() }}"
     insertafter: EOF
     state: present
   notify:
