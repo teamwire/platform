@@ -31,6 +31,18 @@
     - "{{ VOIP_ROOT_PATH }}/jibri"
   run_once: true
 
+- name: Create JVB users for cluster environment.
+  file:
+    path: "{{ VOIP_ROOT_PATH }}/jvb{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  with_sequence: start=1 end="{{ end_at }}"
+  vars:
+    - end_at: "{{ groups['video_servers'] | count | int - 1 }}" 
+  when: groups['all'] | length > 1
+
 - name: Register docker registry with harbor
   set_fact:
     LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/"
@@ -92,3 +104,4 @@
   when:
     - config_done is defined
     - groups['all'] | length == 1
+    

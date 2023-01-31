@@ -88,6 +88,15 @@ tw5
 #[voip_servers]
 #vp1
 
+# Optional. This section is only required when running voip. Ensure also that variable
+# "enable_voip" is set to "true" with qoutes in group_vars/all file. Please also remember
+# that each registered server may require a port share in the firewall on port 10000
+# This servers group, defines where VoipVideo container will run.
+#[video_servers]
+#tw1
+#tw2
+#tw3
+
 # Required. This role can be installed on the same servers as the backend
 # when an existing load balancer is used.
 [frontend_servers]

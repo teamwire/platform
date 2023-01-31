@@ -17,12 +17,6 @@ job "voip" {
         value = "linux"
     }
 
-    constraint {
-        attribute = "${meta.groups}"
-        operator = "regexp"
-        value = "voip"
-    }
-
     # Configure the job to do rolling updates
     update {
         # Stagger updates every 10 seconds
@@ -43,6 +37,12 @@ job "voip" {
         constraint {
             operator = "distinct_hosts"
             value    = "true"
+        }
+
+        constraint {
+            attribute = "${meta.groups}"
+            operator = "regexp"
+            value = "voip_servers"
         }
 
         restart {
@@ -119,6 +119,12 @@ job "voip" {
         constraint {
             operator = "distinct_hosts"
             value    = "true"
+        }
+
+        constraint {
+            attribute = "${meta.groups}"
+            operator = "regexp"
+            value = "voip_servers"
         }
 
         restart {
@@ -223,6 +229,12 @@ job "voip" {
             value    = "true"
         }
 
+        constraint {
+            attribute = "${meta.groups}"
+            operator = "regexp"
+            value = "voip_servers"
+        }
+
         restart {
             interval = "5m"
             attempts = 10
@@ -303,11 +315,17 @@ job "voip" {
     }
 
     group "voipVideo" {
-        count = 1
+        count = {{ groups['video_servers'] | count }}
 
         constraint {
             operator = "distinct_hosts"
             value    = "true"
+        }
+
+        constraint {
+            attribute = "${meta.groups}"
+            operator = "regexp"
+            value = "video_servers"
         }
 
         restart {
@@ -344,12 +362,12 @@ job "voip" {
                 logging {
                     type = "syslog"
                     config {
-                        tag        = "teamwire-jvb"
+                        tag 			= "teamwire-jvb"
                         syslog-facility = "local6"
                     }
                 }
                 volumes = [
-                    "{{ VOIP_ROOT_PATH }}/jvb:/config:Z"
+                    "{{ VOIP_ROOT_PATH }}/jvb${NOMAD_ALLOC_INDEX}:/config:Z"
                 ]
             }
 {% raw %}
@@ -385,9 +403,11 @@ job "voip" {
                 ENABLE_COLIBRI_WEBSOCKET        = "1"
                 PUBLIC_URL                      = "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
                 JVB_WS_SERVER_ID                = "voipVideo${NOMAD_ALLOC_INDEX}.service.consul"
+                JVB_AUTH_USER                   = "jvb${NOMAD_ALLOC_INDEX}"
+                USERNAME                        = "jvb${NOMAD_ALLOC_INDEX}"
+                MUC_NICKNAME                    = "jvb${NOMAD_ALLOC_INDEX}"
             }
             
-
             resources {
                 cpu    = 900 #900
                 memory = 900 #1500

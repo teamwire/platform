@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SCHEME=http
+HOST=localhost
+PORT=4646
+VERSION=v1
+ENDPOINT=allocations
+URI="${SCHEME}://${HOST}:${PORT}/${VERSION}/${ENDPOINT}"
+
+# Set job and container
+JOB_NAME=voip
+TASK_NAME=voipProsodys
+
+# Fetch container allocation ID as bash array
+allocations=($(curl -s ${URI} | jq -r ".[] | select ( (.Name | contains( \"${JOB_NAME}.${TASK_NAME}\" )) and (.ClientStatus | contains( \"running\" ))) | .ID"))
+
+# Execute command on first element of array
+nomad alloc exec ${allocations[0]} prosodyctl --config /config/prosody.cfg.lua $@
