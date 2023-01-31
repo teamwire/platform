@@ -190,10 +190,13 @@
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Fetch the Icinga DB schemas # noqa no-handler
-  fetch: src="{{ item.src }}" dest="{{ item.dest }}" flat=yes
+  fetch: 
+    src: "{{ item.src }}" 
+    dest: "{{ item.dest }}" 
+    flat: yes
   with_items:
     - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: 'icinga2.sql'} # noqa braces
-    - { src: '/usr/share/icingaweb2/etc/schema/mysql.schema.sql', dest: 'icingaweb2.sql'} # noqa braces
+    - { src: '/usr/share/icingaweb2/schema/mysql.schema.sql', dest: 'icingaweb2.sql'} # noqa braces
   when: database_created.changed
 
 - name: Copy the Icinga DB schemas to the database server # noqa no-handler
