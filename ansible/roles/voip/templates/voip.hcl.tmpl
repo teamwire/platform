@@ -1,393 +1,397 @@
 job "voip" {
 
-	meta {
-		JITSI_VERSION = "{{ VOIP_JITSI_VERSION }}"
-		ROOT_PATH     = "{{ VOIP_ROOT_PATH }}"
-	}
+    meta {
+        JITSI_VERSION = "{{ VOIP_JITSI_VERSION }}"
+        ROOT_PATH     = "{{ VOIP_ROOT_PATH }}"
+    }
 
-	# Specify the datacenters within the region this job can run in.
-	datacenters = ["dc1"]
+    # Specify the datacenters within the region this job can run in.
+    datacenters = ["dc1"]
 
-	# Priority controls our access to resources and scheduling priority.
-	# This can be 1 to 100, inclusively, and defaults to 50.
-	priority = 100
+    # Priority controls our access to resources and scheduling priority.
+    # This can be 1 to 100, inclusively, and defaults to 50.
+    priority = 100
 
-	constraint {
-		attribute = "${attr.kernel.name}"
-		value = "linux"
-	}
+    constraint {
+        attribute = "${attr.kernel.name}"
+        value = "linux"
+    }
 
-	constraint {
-		attribute = "${meta.groups}"
-		operator = "regexp"
-		value = "voip"
-	}
+    constraint {
+        attribute = "${meta.groups}"
+        operator = "regexp"
+        value = "voip"
+    }
 
-	# Configure the job to do rolling updates
-	update {
-		# Stagger updates every 10 seconds
-		stagger = "10s"
+    # Configure the job to do rolling updates
+    update {
+        # Stagger updates every 10 seconds
+        stagger = "10s"
 
-		# Update a single task at a time
-		max_parallel = 1
-	}
+        # Update a single task at a time
+        max_parallel = 1
+    }
 
-	vault {
-		policies = ["nomad-job"]
-		change_mode = "restart"
-	}
+    vault {
+        policies = ["nomad-job"]
+        change_mode = "restart"
+    }
 
-	group "webs" {
-		count = 1
+    group "webs" {
+        count = 1
 
-		constraint {
-			operator = "distinct_hosts"
-			value    = "true"
-		}
+        constraint {
+            operator = "distinct_hosts"
+            value    = "true"
+        }
 
-		restart {
-			interval = "5m"
-			attempts = 10
-			delay    = "25s"
-			mode     = "delay"
-		}
+        restart {
+            interval = "5m"
+            attempts = 10
+            delay    = "25s"
+            mode     = "delay"
+        }
 
-		network {
-			mode = "host"
-			port "http" {
-				static = "{{ NGINX_HTTP_PORT }}"
-			}
-		}
+        network {
+            mode = "host"
+            port "http" {
+                static = "{{ NGINX_HTTP_PORT }}"
+            }
+        }
 
-		task "voipWeb" {
-			driver = "docker"
+        task "voipWeb" {
+            driver = "docker"
 
-			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
+            config {
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
-				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
-				}
+                auth {
+                    username = "{{ dockerhub_username }}"
+                    password = "{{ dockerhub_password }}"
+                }
 {%endif %}
 
-				# Although group-level networking is set to "host"
-				# Docker-specific networking setting is required
-				# https://github.com/hashicorp/nomad/issues/8747
-				network_mode = "host"
+                # Although group-level networking is set to "host"
+                # Docker-specific networking setting is required
+                # https://github.com/hashicorp/nomad/issues/8747
+                network_mode = "host"
 
-				logging {
-					type = "syslog"
-					config {
-						tag = "teamwire-web"
-						syslog-facility = "local6"
-					}
-				}
-			}
+                logging {
+                    type = "syslog"
+                    config {
+                        tag = "teamwire-web"
+                        syslog-facility = "local6"
+                    }
+                }
+            }
 
-			service {
-				name = "${TASK}"
-				tags = ["voip_servers","voip","${TASK}"]
-				port = "http"
-			}
+            service {
+                name = "${TASK}"
+                tags = ["voip_servers","voip","${TASK}"]
+                port = "http"
+            }
 
-			env {
-				ENABLE_XMPP_WEBSOCKET 			= "0"
-				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
-				TZ 								= "UTC"
-				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
-				XMPP_BOSH_URL_BASE 				= "http://prosody.service.consul:5280"
-				XMPP_DOMAIN 					= "meet.jitsi"
-				XMPP_GUEST_DOMAIN 				= "guest.meet.jitsi"
-				XMPP_MUC_DOMAIN 				= "muc.meet.jitsi"
-				XMPP_RECORDER_DOMAIN 			= "recorder.meet.jitsi"
-				ENABLE_AUTH                     = "1"
-				ENABLE_GUESTS                   = "0"
-				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= 2
-			}
+            env {
+                ENABLE_XMPP_WEBSOCKET           = "0"
+                EXTERNAL_HOSTNAME               = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+                TZ                              = "UTC"
+                XMPP_AUTH_DOMAIN                = "auth.meet.jitsi"
+                XMPP_BOSH_URL_BASE              = "http://prosody.service.consul:5280"
+                XMPP_DOMAIN                     = "meet.jitsi"
+                XMPP_GUEST_DOMAIN               = "guest.meet.jitsi"
+                XMPP_MUC_DOMAIN                 = "muc.meet.jitsi"
+                XMPP_RECORDER_DOMAIN            = "recorder.meet.jitsi"
+                ENABLE_AUTH                     = "1"
+                ENABLE_GUESTS                   = "0"
+                S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
+            }
 
-			resources {
-				cpu    = 300
-				memory = 200
-			}
-		}
-	}
+            resources {
+                cpu    = 300
+                memory = 200
+            }
+        }
+    }
 
-	group "voipProsodys" {
-		count = 1
+    group "voipProsodys" {
+        count = 1
 
-		constraint {
-			operator = "distinct_hosts"
-			value    = "true"
-		}
+        constraint {
+            operator = "distinct_hosts"
+            value    = "true"
+        }
 
-		restart {
-			interval = "5m"
-			attempts = 10
-			delay    = "25s"
-			mode     = "delay"
-		}
+        restart {
+            interval = "5m"
+            attempts = 10
+            delay    = "25s"
+            mode     = "delay"
+        }
 
-		network {
-			mode = "host"
-		}
+        network {
+            mode = "host"
+        }
 
-		task "prosody" {
-			driver = "docker"
+        task "prosody" {
+            driver = "docker"
 
-			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
+            config {
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
-				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
-				}
+                auth {
+                    username = "{{ dockerhub_username }}"
+                    password = "{{ dockerhub_password }}"
+                }
 {%endif %}
 
-				# Although group-level networking is set to "host"
-				# Docker-specific networking setting is required
-				# https://github.com/hashicorp/nomad/issues/8747
-				network_mode = "host"
+                # Although group-level networking is set to "host"
+                # Docker-specific networking setting is required
+                # https://github.com/hashicorp/nomad/issues/8747
+                network_mode = "host"
 
-				logging {
-					type = "syslog"
-					config {
-						tag = "teamwire-prosody"
-						syslog-facility = "local6"
-					}
-				}
-				volumes      = [
-					"{{ VOIP_ROOT_PATH }}/prosody/config:/config:Z",
-					"{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
-				]
-			}
+                logging {
+                    type = "syslog"
+                    config {
+                        tag = "teamwire-prosody"
+                        syslog-facility = "local6"
+                    }
+                }
+                volumes      = [
+                    "{{ VOIP_ROOT_PATH }}/prosody/config:/config:Z",
+                    "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
+                ]
+            }
 
-			service {
-				name = "${TASK}"
-				tags = ["voip_servers","voip","${TASK}"]
-			}
+            service {
+                name = "${TASK}"
+                tags = ["voip_servers","voip","${TASK}"]
+            }
 {% raw %}
-			template {
-				data = <<EOH
-					JVB_AUTH_PASSWORD	 = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
-					JIBRI_XMPP_PASSWORD	 = "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
-					JICOFO_AUTH_PASSWORD = "{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
-					JWT_APP_SECRET		 = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
-					PROSODY_KEY			 = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
-				EOH
-				destination = "secrets/file.env"
-				env 		= true
-			}
+            template {
+                data = <<EOH
+                    JVB_AUTH_PASSWORD       = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
+                    JIBRI_XMPP_PASSWORD     = "{{ with secret "secret/voip/jibri_password"}}{{.Data.value}}{{end}}"
+                    JICOFO_AUTH_PASSWORD    = "{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
+                    JWT_APP_SECRET          = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
+                    PROSODY_KEY             = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
+                EOH
+                destination = "secrets/file.env"
+                env      = true
+            }
 {% endraw %}
 
-			env {
-				ENABLE_XMPP_WEBSOCKET 			= 0
-				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
-				XMPP_DOMAIN 					= "meet.jitsi"
-				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
-				XMPP_GUEST_DOMAIN 				= "guest.meet.jitsi"
-				XMPP_MUC_DOMAIN 				= "muc.meet.jitsi"
-				XMPP_INTERNAL_MUC_DOMAIN 		= "internal-muc.meet.jitsi"
-				XMPP_MODULES 					= ""
-				XMPP_MUC_MODULES 				= "tw_backend"
-				XMPP_INTERNAL_MUC_MODULES 		= ""
-				XMPP_RECORDER_DOMAIN 			= "recorder.meet.jitsi"
-				JICOFO_AUTH_USER 				= "focus"
-				JVB_AUTH_USER 					= "jvb"
-				#JIGASI_XMPP_USER 				= "jigasi"
-				#JIGASI_XMPP_PASSWORD 			= "4c94a9117f77b90a9d980e3622119886"
-				JIBRI_XMPP_USER 				= "jibri"
-				#JIBRI_RECORDER_USER 			= "recorder"
-				#JIBRI_RECORDER_PASSWORD 		= "c473a228428986904b9a342238137ac6"
-				ENABLE_AUTH 					= "1"
-				ENABLE_GUESTS 					= "0"
-				AUTH_TYPE 						= "jwt"
-				JWT_TOKEN_AUTH_MODULE 			= "token_verification"
-				JWT_APP_ID 						= "teamwire"
-				TZ 								= "UTC"
-				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= 2
-			}
+            env {
+                ENABLE_XMPP_WEBSOCKET           = 0
+                EXTERNAL_HOSTNAME               = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+                XMPP_DOMAIN                     = "meet.jitsi"
+                XMPP_AUTH_DOMAIN                = "auth.meet.jitsi"
+                XMPP_GUEST_DOMAIN               = "guest.meet.jitsi"
+                XMPP_MUC_DOMAIN                 = "muc.meet.jitsi"
+                XMPP_INTERNAL_MUC_DOMAIN        = "internal-muc.meet.jitsi"
+                XMPP_MODULES                    = ""
+                XMPP_MUC_MODULES                = "tw_backend"
+                XMPP_INTERNAL_MUC_MODULES       = ""
+                XMPP_RECORDER_DOMAIN            = "recorder.meet.jitsi"
+                JICOFO_AUTH_USER                = "focus"
+                JVB_AUTH_USER                   = "jvb"
+                #JIGASI_XMPP_USER               = "jigasi"
+                #JIGASI_XMPP_PASSWORD           = "4c94a9117f77b90a9d980e3622119886"
+                JIBRI_XMPP_USER                 = "jibri"
+                #JIBRI_RECORDER_USER            = "recorder"
+                #JIBRI_RECORDER_PASSWORD        = "c473a228428986904b9a342238137ac6"
+                ENABLE_AUTH                     = "1"
+                ENABLE_GUESTS                   = "0"
+                AUTH_TYPE                       = "jwt"
+                JWT_TOKEN_AUTH_MODULE           = "token_verification"
+                JWT_APP_ID                      = "teamwire"
+                TZ                              = "UTC"
+                S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
+            }
 
-			resources {
-				cpu    = 300
-				memory = 400
-			}
-		}
-	}
+            resources {
+                cpu    = 300
+                memory = 400
+            }
+        }
+    }
 
-	group "voipJicofos" {
-		count = 1
+    group "voipJicofos" {
+        count = 1
 
-		constraint {
-			operator = "distinct_hosts"
-			value    = "true"
-		}
+        constraint {
+            operator = "distinct_hosts"
+            value    = "true"
+        }
 
-		restart {
-			interval = "5m"
-			attempts = 10
-			delay    = "25s"
-			mode     = "delay"
-		}
+        restart {
+            interval = "5m"
+            attempts = 10
+            delay    = "25s"
+            mode     = "delay"
+        }
 
-		network {
-			mode = "host"
-		}
+        network {
+            mode = "host"
+        }
 
-		task "voipCofo" {
-			driver = "docker"
+        task "voipCofo" {
+            driver = "docker"
 
-			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
+            config {
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
-				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
-				}
+                auth {
+                    username = "{{ dockerhub_username }}"
+                    password = "{{ dockerhub_password }}"
+                }
 {%endif %}
 
-				# Although group-level networking is set to "host"
-				# Docker-specific networking setting is required
-				# https://github.com/hashicorp/nomad/issues/8747
-				network_mode = "host"
+                # Although group-level networking is set to "host"
+                # Docker-specific networking setting is required
+                # https://github.com/hashicorp/nomad/issues/8747
+                network_mode = "host"
 
-				logging {
-					type = "syslog"
-					config {
-						tag = "teamwire-jicofo"
-						syslog-facility = "local6"
-					}
-				}
-				volumes = [
-					"{{ VOIP_ROOT_PATH }}/jicofo:/config:Z"
-				]
-			}
+                logging {
+                    type = "syslog"
+                    config {
+                        tag = "teamwire-jicofo"
+                        syslog-facility = "local6"
+                    }
+                }
+                volumes = [
+                    "{{ VOIP_ROOT_PATH }}/jicofo:/config:Z"
+                ]
+            }
 
-			service {
-				name = "${TASK}"
-				tags = ["voip_servers","voip","${TASK}"]
-			}
+            service {
+                name = "${TASK}"
+                tags = ["voip_servers","voip","${TASK}"]
+            }
 {% raw %}
-			template {
-				data = <<EOH
-					JICOFO_AUTH_PASSWORD ="{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
-				EOH
-				destination = "secrets/file.env"
-				env = true
-			}
+            template {
+                data = <<EOH
+                    JICOFO_AUTH_PASSWORD ="{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
+                EOH
+                destination = "secrets/file.env"
+                env = true
+            }
 {% endraw %}
 
-			env {
-				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
-				JICOFO_AUTH_USER 				= "focus"
-				JIBRI_BREWERY_MUC 				= "jibribrewery"
-				JIBRI_PENDING_TIMEOUT 			= "90"
-				JIGASI_BREWERY_MUC 				= "jigasibrewery"
-				JVB_BREWERY_MUC 				= "jvbbrewery"
-				TZ 								= "UTC"
-				XMPP_DOMAIN 					= "meet.jitsi"
-				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
-				XMPP_INTERNAL_MUC_DOMAIN 		= "internal-muc.meet.jitsi"
-				XMPP_MUC_DOMAIN 				= "muc.meet.jitsi"
-				XMPP_SERVER 					= "prosody.service.consul"
-				ENABLE_AUTH 					= "1"
-				AUTH_TYPE 						= "jwt"
-				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= "2"
-			}
+            env {
+                EXTERNAL_HOSTNAME               = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+                JICOFO_AUTH_USER                = "focus"
+                JIBRI_BREWERY_MUC               = "jibribrewery"
+                JIBRI_PENDING_TIMEOUT           = "90"
+                JIGASI_BREWERY_MUC              = "jigasibrewery"
+                JVB_BREWERY_MUC                 = "jvbbrewery"
+                TZ                              = "UTC"
+                XMPP_DOMAIN                     = "meet.jitsi"
+                XMPP_AUTH_DOMAIN                = "auth.meet.jitsi"
+                XMPP_INTERNAL_MUC_DOMAIN        = "internal-muc.meet.jitsi"
+                XMPP_MUC_DOMAIN                 = "muc.meet.jitsi"
+                XMPP_SERVER                     = "prosody.service.consul
+                ENABLE_AUTH                     = "1"
+                AUTH_TYPE                       = "jwt"
+                S6_BEHAVIOUR_IF_STAGE2_FAILS    = "2"            
+                }
 
-			resources {
-				cpu    = 300
-				memory = 400
-			}
-		}
-	}
+            resources {
+                cpu    = 300
+                memory = 400
+            }
+        }
+    }
 
-	group "voipVideo" {
-		count = 1
+    group "voipVideo" {
+        count = 1
 
-		constraint {
-			operator = "distinct_hosts"
-			value    = "true"
-		}
+        constraint {
+            operator = "distinct_hosts"
+            value    = "true"
+        }
 
-		restart {
-			interval = "5m"
-			attempts = 10
-			delay    = "25s"
-			mode     = "delay"
-		}
+        restart {
+            interval = "5m"
+            attempts = 10
+            delay    = "25s"
+            mode     = "delay"
+        }
 
-		network {
-			mode = "host"
-			port "jvb" {
-				static = "10000"
-			}
-		}
+        network {
+            mode = "host"
+            port "jvb" {
+                static = "10000"
+            }
+        }
 
-		task "voipVideo" {
-			driver = "docker"
+        task "voipVideo" {
+            driver = "docker"
 
-			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
+            config {
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
 {% if not "docker_registry" in groups %}
-				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
-				}
+                auth {
+                    username = "{{ dockerhub_username }}"
+                    password = "{{ dockerhub_password }}"
+                }
 {%endif %}
 
-				# Although group-level networking is set to "host"
-				# Docker-specific networking setting is required
-				# https://github.com/hashicorp/nomad/issues/8747
-				network_mode = "host"
+                # Although group-level networking is set to "host"
+                # Docker-specific networking setting is required
+                # https://github.com/hashicorp/nomad/issues/8747
+                network_mode = "host"
 
-				logging {
-					type = "syslog"
-					config {
-						tag 			= "teamwire-jvb"
-						syslog-facility = "local6"
-					}
-				}
-				volumes = [
-					"{{ VOIP_ROOT_PATH }}/jvb:/config:Z"
-				]
-			}
+                logging {
+                    type = "syslog"
+                    config {
+                        tag        = "teamwire-jvb"
+                        syslog-facility = "local6"
+                    }
+                }
+                volumes = [
+                    "{{ VOIP_ROOT_PATH }}/jvb:/config:Z"
+                ]
+            }
 {% raw %}
-			template {
-			data = <<EOH
-			JVB_AUTH_PASSWORD = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
-			EOH
-			destination = "secrets/file.env"
-			env = true
-			}
+            template {
+            data = <<EOH
+            JVB_AUTH_PASSWORD = "{{ with secret "secret/voip/jvb_password"}}{{.Data.value}}{{end}}"
+            EOH
+            destination = "secrets/file.env"
+            env = true
+            }
 {% endraw %}
 
-			service {
-				name = "${TASK}"
-				tags = ["voip_servers","voip","${TASK}"]
-				port = "jvb"
-			}
+            service {
+                name = "${TASK}${NOMAD_ALLOC_INDEX}"
+                tags = ["voip_servers","voip","${TASK}${NOMAD_ALLOC_INDEX}"]
+                port = "jvb"
+            }
 
-			env {
-				EXTERNAL_HOSTNAME				= "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
-				XMPP_AUTH_DOMAIN 				= "auth.meet.jitsi"
-				XMPP_INTERNAL_MUC_DOMAIN 		= "internal-muc.meet.jitsi"
-				XMPP_SERVER 					= "prosody.service.consul"
-				JVB_AUTH_USER 					= "jvb"
-				JVB_BREWERY_MUC 				= "jvbbrewery"
-				JVB_PORT 						= "10000"
-				JVB_TCP_HARVESTER_DISABLED 		= "false"
-				JVB_TCP_PORT 					= "4443"
-				JVB_TCP_MAPPED_PORT 			= "4443"
-				JVB_STUN_SERVERS 				= "meet-jit-si-turnrelay.jitsi.net:443"
-				TZ 								= "UTC"
-				S6_BEHAVIOUR_IF_STAGE2_FAILS 	= "2"
-			}
+            env {
+                EXTERNAL_HOSTNAME               = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+                XMPP_AUTH_DOMAIN                = "auth.meet.jitsi"
+                XMPP_INTERNAL_MUC_DOMAIN        = "internal-muc.meet.jitsi"
+                XMPP_SERVER                     = "prosody.service.consul"
+                JVB_AUTH_USER                   = "jvb"
+                JVB_BREWERY_MUC                 = "jvbbrewery"
+                JVB_PORT                        = "10000"
+                JVB_TCP_HARVESTER_DISABLED      = "false"
+                JVB_TCP_PORT                    = "4443"
+                JVB_TCP_MAPPED_PORT             = "4443"
+                JVB_STUN_SERVERS                = "meet-jit-si-turnrelay.jitsi.net:443"
+                TZ                              = "UTC"
+                S6_BEHAVIOUR_IF_STAGE2_FAILS    = "2"
+                ENABLE_COLIBRI_WEBSOCKET        = "1"
+                PUBLIC_URL                      = "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
+                JVB_WS_SERVER_ID                = "voipVideo${NOMAD_ALLOC_INDEX}.service.consul"
+            }
+            
 
-			resources {
-				cpu    = 900 #900
-				memory = 900 #1500
-			}
-		}
-	}
+            resources {
+                cpu    = 900 #900
+                memory = 900 #1500
+            }
+        }
+    }
 }
