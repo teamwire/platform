@@ -23,12 +23,13 @@
     content: "nameserver 127.0.0.1\n"
     dest: /etc/resolv.conf
 
-- name: Configure DHCP client to use local DNS server
+- name: DHCP_6 Configure DHCP client to use local DNS server
   lineinfile:
     regexp: "^#+prepend domain-name-servers"
     backrefs: true
     line: "supersede domain-name-servers 127.0.0.1;"
     dest: /etc/dhcp/dhclient.conf
+  when: dhcp_6 | default(true)
   notify: reload dhclient
 
 # Ensure we have a valid DNS configuration
