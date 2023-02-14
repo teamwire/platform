@@ -8,7 +8,7 @@
   when: config_done is defined
   run_once: true
   with_nested:
-    - [ 'archiving', 'archiving/gpg', 'assets', 'website-screenshot-cache', 'beat', 'cluster_config' ]
+    - [ 'archiving', 'archiving/gpg', 'assets', 'website-screenshot-cache', 'beat' ]
     - "{{ groups['backend_servers'] | default() }}"
 
 - name: Create the backend certificate storage directories
