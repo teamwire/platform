@@ -1,3 +1,4 @@
+---
 - name: Ensure voip DNS can be resolved
   lineinfile:
     path: "/etc/hosts"
@@ -82,6 +83,9 @@
       JIBRI_XMPP_USER: "jibri"
       TZ: "UTC"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
+      TURN_CREDENTIALS: "{{ stun_password if enable_stun is defined and enable_stun | string() == 'true'  |default() }}"
+      TURNS_HOST: "{{ stun_hostname if enable_stun is defined and enable_stun | string() == 'true' |default() }}"
+      TURNS_PORT: "{{ '5349' if enable_stun is defined and enable_stun | string() == 'true' |default() }}"
 
 - name: Run the Teamwire voip jicofo container
   when: config_done is defined
@@ -142,9 +146,28 @@
       JVB_TCP_HARVESTER_DISABLED: "false"
       JVB_TCP_PORT: "4443"
       JVB_TCP_MAPPED_PORT: "4443"
-      JVB_STUN_SERVERS: "meet-jit-si-turnrelay.jitsi.net:443"
+      JVB_STUN_SERVERS: "{{ stun_hostname +':5349' if enable_stun is defined and enable_stun | string() == 'true' else 'meet-jit-si-turnrelay.jitsi.net:443' }}"
       TZ: "UTC"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
       ENABLE_COLIBRI_WEBSOCKET: "1"
       PUBLIC_URL: "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
       JVB_WS_SERVER_ID: "127.0.0.1"
+
+
+- name: Run the Teamwire turn container
+  when:
+    - enable_stun is defined and enable_stun | string() == 'true'
+    - config_done is defined
+  docker_container:
+    name: teamwire_turn
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_TURN }}:{{ VOIP_JITSI_VERSION }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - "{{ VOIP_ROOT_PATH }}/turn/config:/etc/coturn:Z"
+      - "turnvol:/data"
+    log_driver: "syslog"
+    log_opt:
+      tag: teamwire-turn
+      syslog-facility: "local6"

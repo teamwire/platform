@@ -29,6 +29,7 @@
       }
     - "{{ VOIP_ROOT_PATH }}/jigasi"
     - "{{ VOIP_ROOT_PATH }}/jibri"
+    - "{{ VOIP_ROOT_PATH }}/turn/config"
   run_once: true
 
 - name: Create JVB users for cluster environment.
@@ -42,6 +43,16 @@
   vars:
     - end_at: "{{ groups['video_servers'] | count | int - 1 if groups['video_servers'] is defined else groups['backend_servers'] | count | int - 1 }}"
   when: groups['all'] | length > 1 and enable_jvb_cluster == "true"
+  
+- name: Template Turnserver configuration to destination
+  template:
+    src:  "turn.j2"
+    dest: "{{ VOIP_ROOT_PATH }}/turn/config/turnserver.conf"
+    owner: root
+    group: root
+    mode: 0644
+  run_once: true
+  when: enable_stun is defined and enable_stun | string() == 'true'
 
 - name: Register docker registry with harbor
   set_fact:
@@ -78,6 +89,7 @@
     - "{{ VOIP_CONTAINER_PROSODY }}"
     - "{{ VOIP_CONTAINER_JICOFO }}"
     - "{{ VOIP_CONTAINER_JVB }}"
+    - "{{ VOIP_CONTAINER_TURN }}"
   when:
     - config_done is defined
     - not offline_mode.stat.exists
@@ -95,9 +107,19 @@
     - "{{ VOIP_CONTAINER_PROSODY }}"
     - "{{ VOIP_CONTAINER_JICOFO }}"
     - "{{ VOIP_CONTAINER_JVB }}"
+    - "{{ VOIP_CONTAINER_TURN }}"
   when:
     - config_done is defined
     - groups.docker_registry is defined
+
+- name: Checkvolume if single server
+  include_tasks: checkvolume.yml
+  when:
+    - enable_voip is defined
+    - enable_voip | string() == 'true'
+    - enable_stun is defined
+    - enable_stun | string() == 'true'
+    - groups['all'] | length == 1
 
 - name: Run voip container in a single server environment
   include_tasks: single.yml

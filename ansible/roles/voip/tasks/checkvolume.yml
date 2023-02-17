@@ -1,0 +1,11 @@
+---
+
+- name: Check if docker volume exists
+  command: docker volume inspect turnvol
+  register: turn_volume_status
+  failed_when: turn_volume_status.rc == 3
+
+- name: Create docker volume for turn
+  include_tasks: createvol.yml
+  when:
+    - turn_volume_status.rc == 1

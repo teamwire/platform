@@ -107,6 +107,13 @@ external_hostname: ""
 # This variable only works with voip enabled.
 # enable_jvb_cluster: "false"
 
+# TURN/STUN
+# To run a own turn server, enable_voip must be enabled. Further a DNS entry must 
+# be created e.g. stun.yourdomain.com which points to the public Ip of the Voip server. 
+# Then the next two lines can be commented out.
+# stun_hostname: "stun.yourdomain.com"
+# enable_stun: "true"
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################

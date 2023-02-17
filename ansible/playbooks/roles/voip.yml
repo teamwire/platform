@@ -27,6 +27,16 @@
 
 - hosts: voip_servers
   tasks:
+    - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip/tasks/checkvolume.yml"
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true'
+        - enable_stun is defined
+        - enable_stun | string() == 'true'
+        - groups['all'] | length > 1
+
+- hosts: voip_servers
+  tasks:
     - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip/tasks/voip_servers.yml"
       when: 
         - enable_voip is defined
