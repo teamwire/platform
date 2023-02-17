@@ -36,12 +36,12 @@
     path: "{{ VOIP_ROOT_PATH }}/jvb{{ item }}"
     state: directory
     mode: 0755
-    owner: root
-    group: root
-  with_sequence: start=1 end="{{ end_at }}"
+    owner: 999
+    group: 1000
+  with_sequence: start=0 end="{{ end_at }}"
   vars:
-    - end_at: "{{ groups['video_servers'] | count | int - 1 }}" 
-  when: groups['all'] | length > 1
+    - end_at: "{{ groups['video_servers'] | count | int - 1 if groups['video_servers'] is defined else groups['backend_servers'] | count | int - 1 }}"
+  when: groups['all'] | length > 1 and enable_jvb_cluster == "true"
 
 - name: Register docker registry with harbor
   set_fact:
@@ -104,4 +104,3 @@
   when:
     - config_done is defined
     - groups['all'] | length == 1
-    

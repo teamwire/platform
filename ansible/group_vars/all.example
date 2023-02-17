@@ -86,12 +86,26 @@ external_hostname: ""
 # preferred TTL in hours, appended with "h" at the end.
 # vault_certificate_ttl: "17532h"
 
+##############################################################################
+## VOIP
+##############################################################################
 # VOIP
 # To enable the voice over IP feature, you must uncomment the enable_voip line.
 # You have to ensure that the value must be set to "true" with quotes! All other
 # values are ignored. Also ensure you have added the necessary section [voip_servers]
-# inside the cluster_hosts in case you run a cluster setup.
-# enable_voip: "true"
+# Ensure enable_jvb_cluster is defined.
+# enable_voip: "false"
+
+# VIDEO
+# To enable video in cluster mode, you must change the enable_jvb_cluster from false to true.
+# You have to ensure that the value is inside quotes! All other values are ignored. 
+# This variable needs to be used in conjection with enable_voip:
+#    If you want voip feature without a video cluster, set to false
+#    If you want voip feature with a video cluster, set to true
+#    If you want a voip feature with a configurable video cluster, set to true and add
+#    the necessary section [video_servers]
+# This variable only works with voip enabled.
+# enable_jvb_cluster: "false"
 
 ##############################################################################
 ## APPLICATION

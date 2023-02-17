@@ -315,17 +315,15 @@ job "voip" {
     }
 
     group "voipVideo" {
-        count = {{ groups['video_servers'] | count }}
-
-        constraint {
-            operator = "distinct_hosts"
-            value    = "true"
-        }
-
+        count = "{{ video_servers_count }}"
         constraint {
             attribute = "${meta.groups}"
             operator = "regexp"
-            value = "video_servers"
+            value = "{{ video_servers }}"
+        }
+        constraint {
+            operator = "distinct_hosts"
+            value    = "true"
         }
 
         restart {
@@ -391,7 +389,6 @@ job "voip" {
                 XMPP_AUTH_DOMAIN                = "auth.meet.jitsi"
                 XMPP_INTERNAL_MUC_DOMAIN        = "internal-muc.meet.jitsi"
                 XMPP_SERVER                     = "prosody.service.consul"
-                JVB_AUTH_USER                   = "jvb"
                 JVB_BREWERY_MUC                 = "jvbbrewery"
                 JVB_PORT                        = "10000"
                 JVB_TCP_HARVESTER_DISABLED      = "false"

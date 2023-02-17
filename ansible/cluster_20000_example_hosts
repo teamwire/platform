@@ -79,15 +79,16 @@ tw2
 tw3
 
 # Optional. This section is only required when running voip. Ensure also that variable
-# "enable_voip" is set to "true" with qoutes in group_vars/all file. Please also remember
+# "enable_voip" is set to "true" with quotes in group_vars/all file. Please also remember
 # that each registered server may require a port share in the firewall on port 10000
 #[voip_servers]
 #vp1
 
-# Optional. This section is only required when running voip. Ensure also that variable
-# "enable_voip" is set to "true" with qoutes in group_vars/all file. Please also remember
-# that each registered server may require a port share in the firewall on port 10000
-# This servers group, defines where VoipVideo container will run.
+# Optional. This section is only used when running video in cluster mode. Ensure also that variable
+# "enable_voip" is set to "true" with quotes in group_vars/all file. Please also remember
+# that each registered servers may require a port share in the firewall on port 10000
+# This server group, defines where VoipVideo container will run.
+# This section is only used if both enable_voip is enabled and enable_jvb_cluster is enabled.
 #[video_servers]
 #tw1
 #tw2
