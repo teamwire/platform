@@ -143,7 +143,7 @@
   lineinfile:
     dest: /etc/hosts
     regexp: ^127\.0\.0\.1\s+localhost
-    line: "127.0.0.1 localhost {{ external_hostname }}"
+    line: "127.0.0.1 localhost {{ external_hostname | join(' ') if external_hostname|type_debug == 'list' else external_hostname }}"
 
 # send outgoing mail over smarthost
 - include: postfix.yml
