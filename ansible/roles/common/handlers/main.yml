@@ -37,3 +37,9 @@
 - name: reload dhclient step 2
   command: dhclient
   ignore_errors: true # noqa ignore-errors
+
+- name: reload systemd
+  command: systemctl daemon-reload # noqa command-instead-of-module
+
+- name: restart docker
+  systemd: name=docker state=restarted daemon_reload=yes
