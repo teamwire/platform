@@ -3,10 +3,14 @@
   command: dpkg-reconfigure --frontend noninteractive tzdata
 
 - name: restart NTP
-  service: name=ntp state=restarted
+  service:
+    name: ntp
+    state: restarted
 
 - name: reload sshd
-  service: name=ssh state=reloaded
+  service:
+    name: ssh
+    state: reloaded
 
 - name: rebuild postfix passwd map
   command: postmap /etc/postfix/sasl/passwd
@@ -15,13 +19,19 @@
   command: postmap /etc/postfix/generic
 
 - name: restart postfix
-  service: name=postfix state=restarted
+  service:
+    name: postfix
+    state: restarted
 
 - name: restart dnsmasq
-  service: name=dnsmasq state=restarted
+  service:
+    name: dnsmasq
+    state: restarted
 
 - name: restart rsyslog
-  service: name=rsyslog state=restarted
+  service:
+    name: rsyslog
+    state: restarted
 
 - name: new aliases
   command: newaliases
@@ -42,4 +52,7 @@
   command: systemctl daemon-reload # noqa command-instead-of-module
 
 - name: restart docker
-  systemd: name=docker state=restarted daemon_reload=yes
+  systemd:
+    name: docker
+    state: restarted
+    daemon_reload: true

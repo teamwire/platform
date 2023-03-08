@@ -1,10 +1,12 @@
 ---
 - name: Ensure private IP address in configured
-  fail: msg="private_ip is not configured. Please check your inventory file"
+  fail:
+    msg: "private_ip is not configured. Please check your inventory file"
   when: private_ip is not defined
 
 - name: Ensure private IP address is valid
-  fail: msg="Defined private_ip is not configured on the system. Please check your config."
+  fail:
+    msg: "Defined private_ip is not configured on the system. Please check your config."
   when: private_ip not in ansible_all_ipv4_addresses
 
 - name: Add other cluster nodes to /etc/hosts
@@ -16,6 +18,8 @@
   when: disable_private_connection is not defined
 
 - name: Allow all access from other cluster nodes
-  ufw: rule=allow src="{{ hostvars[item]['private_ip'] }}"
+  ufw:
+    rule: allow
+    src: "{{ hostvars[item]['private_ip'] }}"
   with_items: "{{ groups['all'] | default([]) }}"
   when: item != inventory_hostname and disable_private_connection is not defined

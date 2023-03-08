@@ -16,7 +16,8 @@
 # DNS configuration. Hence we write a temporary resolv.conf that gets
 # overwritten as soon as dnsmasq is configured.
 - name: Check if dnsmasq is already installed (cluster only)
-  stat: path=/etc/dnsmasq.d/20-upstream
+  stat:
+    path: /etc/dnsmasq.d/20-upstream
   register: dnsmasq_configuration
   when: '"hashi_servers" in groups'
 
@@ -33,11 +34,13 @@
     owner: root
 
 - name: Check if installing offline
-  stat: path=/etc/offline_installation
+  stat:
+    path: /etc/offline_installation
   register: offline_mode
 
 - name: apt-get update
-  apt: update_cache=yes
+  apt:
+    update_cache: yes
   when: not offline_mode.stat.exists
 
   # Clusters: set up DNS with local dnsmasq
@@ -47,7 +50,9 @@
 
 # do security upgrades
 - name: Install unattended-upgrades
-  apt: pkg=unattended-upgrades state=present
+  apt:
+    pkg: unattended-upgrades
+    state: present
 
 - name: Mail root on unattended-upgrades
   lineinfile:
@@ -180,10 +185,14 @@
   notify: update timezone
 
 - name: Install the NTP daemon
-  apt: pkg=ntp
+  apt:
+    pkg: ntp
 
 - name: Enable and start the NTP daemon
-  service: name=ntp state=started enabled=true
+  service:
+    name: ntp
+    state: started
+    enabled: true
 
 - name: Write NTP configuration file
   template:
@@ -192,22 +201,34 @@
   notify: restart NTP
 
 - name: Check that teamwire home dir exists
-  stat: path=/home/teamwire
+  stat:
+    path: /home/teamwire
   register: teamwire_homedir
 
 - name: Allow copy and paste in vim
-  copy: src=vimrc dest=/home/teamwire/.vimrc owner=teamwire group=teamwire mode=0644
+  copy:
+    src: vimrc
+    dest: /home/teamwire/.vimrc
+    owner: teamwire
+    group: teamwire
+    mode: 0644
   when: teamwire_homedir.stat.exists
 
 # general firewall rules
 - name: Install the UFW firewall
-  apt: pkg=ufw state=present
+  apt:
+    pkg: ufw
+    state: present
 
 - name: Allow incoming SSH access
-  ufw: rule=allow name=OpenSSH
+  ufw:
+    rule: allow
+    name: OpenSSH
 
 - name: Configure default firewall policy
-  ufw: state=enabled policy=reject
+  ufw:
+    state: enabled
+    policy: reject
 
 # TCP timestamps can be used to calculate server uptime
 - name: Disable TCP timestamps
@@ -237,15 +258,19 @@
 # Prepare tmate usage
 # It needs any ssh key for the calling user to function
 - name: Create SSH keys for the teamwire user
-  user: name=teamwire generate_ssh_key=yes
+  user:
+    name: teamwire
+    generate_ssh_key: true
   when: config_done is defined
 
 # Install tmate
 - name: Install tmate
-  apt: pkg=tmate
+  apt:
+    pkg: tmate
 
 - name: Ensure rsyslog is installed
-  apt: pkg=rsyslog
+  apt:
+    pkg: rsyslog
 
 - name: Send all logs to loghost or remote syslog servers
   when: "'loghost' in groups or syslog_servers is defined"
@@ -269,7 +294,8 @@
   register: vault_fact
 
 - name: Reload Ansible local facts to register custom fact
-  setup: filter=ansible_local
+  setup:
+    filter: ansible_local
   when: vault_fact.changed # noqa no-handler
 
 - include_tasks: cluster.yml
