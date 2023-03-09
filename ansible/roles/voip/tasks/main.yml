@@ -1,16 +1,32 @@
 - name: Create data dirs
   file:
-    path: "{{ item }}"
+    path: "{{ item.path | default(item) }}"
     state: directory
     mode: 0755
-    owner: root
-    group: root
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
   with_items:
     - "{{ VOIP_ROOT_PATH }}/transcripts"
-    - "{{ VOIP_ROOT_PATH }}/prosody/config"
-    - "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom"
-    - "{{ VOIP_ROOT_PATH }}/jicofo"
-    - "{{ VOIP_ROOT_PATH }}/jvb"
+    - {
+        path: "{{ VOIP_ROOT_PATH }}/prosody/config",
+        owner: 101,
+        group: 101
+      }
+    - {
+        path: "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom",
+        owner: 101,
+        group: 101
+      }
+    - {
+        path: "{{ VOIP_ROOT_PATH }}/jicofo",
+        owner: 999,
+        group: 1000 
+      }
+    - {
+        path: "{{ VOIP_ROOT_PATH }}/jvb",
+        owner: 999,
+        group: 1000
+      }
     - "{{ VOIP_ROOT_PATH }}/jigasi"
     - "{{ VOIP_ROOT_PATH }}/jibri"
   run_once: true
