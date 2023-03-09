@@ -14,7 +14,8 @@
   when: config_done is defined
 
 - name: Install Postfix
-  apt: pkg=postfix
+  apt:
+    pkg: postfix
 
 - name: PSTFX_4 Write the Postfix configuration file
   template:
@@ -61,4 +62,6 @@
 
 - name: Give root a speaking name
   when: config_done is defined
-  user: name=root comment="root@{{ external_hostname }}"
+  user:
+    name: root
+    comment: "root@{{ external_hostname }}"

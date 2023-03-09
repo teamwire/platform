@@ -3,10 +3,15 @@
   command: systemctl daemon-reload # noqa command-instead-of-module
 
 - name: restart docker
-  systemd: name=docker state=restarted daemon_reload=yes
+  systemd:
+    name: docker
+    state: restarted
+    daemon_reload: yes
 
 - name: restart rsyslog
-  service: name=rsyslog state=restarted
+  service:
+    name: rsyslog
+    state: restarted
 
 - name: restart registry container
   docker_container:

@@ -1,6 +1,7 @@
 ---
 - name: Ensure rsyslog is installed
-  apt: pkg=rsyslog
+  apt:
+    pkg: rsyslog
 
 - name: Configure rsyslog for Docker containers
   block:
@@ -46,10 +47,14 @@
   when: not offline_mode.stat.exists
 
 - name: Install Docker
-  apt: pkg=docker-ce state=present
+  apt:
+    pkg: docker-ce
+    state: present
 
 - name: Install python3-docker
-  apt: pkg=python3-docker state=present
+  apt:
+    pkg: python3-docker
+    state: present
 
 # BUG DOCKER !!! REMOVE THIS WHEN A FIX IS RELEASED!!!
 # ISSUE 315 python-docker bug - Debian bug 910822
@@ -64,30 +69,10 @@
   when: bug_file.stat.exists == true # noqa literal-compare
 
 - name: Add user 'teamwire' to the docker group
-  user: name=teamwire groups=docker append=yes
-
-- name: Create systemd drop-in directory for docker
-  file:
-    name: /etc/systemd/system/docker.service.d
-    state: directory
-
-- name: Configure proxy for docker
-  when: http_proxy is defined and 'docker_registry' in groups
-  template:
-    src: http-proxy.conf.j2
-    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
-  notify:
-    - reload systemd
-    - restart docker
-
-- name: Disable proxy for docker when no proxy is configured
-  when: http_proxy is not defined
-  file:
-    name: /etc/systemd/system/docker.service.d/http-proxy.conf
-    state: absent
-  notify:
-    - reload systemd
-    - restart docker
+  user:
+    name: teamwire
+    groups: docker
+    append: true
 
 - name: Configure Docker daemon parameters
   template:
@@ -101,7 +86,9 @@
   copy:
     src: wait_for_nfs.conf
     dest: /etc/systemd/system/docker.service.d/wait_for_nfs.conf
-  notify: reload systemd
+  notify:
+    - reload systemd
+    - restart docker
 
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
@@ -110,7 +97,8 @@
   meta: flush_handlers
 
 - name: Check if installing offline
-  stat: path=/etc/offline_installation
+  stat:
+    path: /etc/offline_installation
   register: offline_mode
 
 - name: Install Docker Registry on configured host
