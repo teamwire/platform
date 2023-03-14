@@ -13,3 +13,13 @@
     owner: root
     group: root
   when: groups['all'] | length > 1 
+  
+- name: Add turns Firewall Rule allow 5349
+  ufw:
+    rule=allow
+    port=5349
+    proto=any
+  when:
+    - enable_stun is defined
+    - enable_stun | string() == 'true'
+    - inventory_hostname in groups["voip_servers"]

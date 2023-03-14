@@ -180,6 +180,13 @@ job "voip" {
                     JICOFO_AUTH_PASSWORD    = "{{ with secret "secret/voip/jicofo_password"}}{{.Data.value}}{{end}}"
                     JWT_APP_SECRET          = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
                     PROSODY_KEY             = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
+{%- endraw %}
+{%- if enable_stun is defined  and enable_stun |lower == "true" %}
+{%- raw %}                    
+                    TURN_CREDENTIALS        = "{{ with secret "secret/voip/stun_password" }}{{.Data.value}}{{end}}"
+{%- endraw %}
+{%- endif %}
+{%- raw %}
                 EOH
                 destination = "secrets/file.env"
                 env      = true
@@ -212,6 +219,10 @@ job "voip" {
                 JWT_APP_ID                      = "teamwire"
                 TZ                              = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
+                {% if enable_stun is defined | default() -%}
+                TURNS_HOST                      = "{{ stun_hostname }}"
+                TURNS_PORT                      = 5349
+                {% endif %}
             }
 
             resources {
@@ -304,7 +315,7 @@ job "voip" {
                 XMPP_SERVER                     = "prosody.service.consul"
                 ENABLE_AUTH                     = "1"
                 AUTH_TYPE                       = "jwt"
-                S6_BEHAVIOUR_IF_STAGE2_FAILS    = "2"            
+                S6_BEHAVIOUR_IF_STAGE2_FAILS    = "2"
                 }
 
             resources {
@@ -394,7 +405,11 @@ job "voip" {
                 JVB_TCP_HARVESTER_DISABLED      = "false"
                 JVB_TCP_PORT                    = "4443"
                 JVB_TCP_MAPPED_PORT             = "4443"
+{% if enable_stun is defined  and enable_stun |lower == "true" %}
+                JVB_STUN_SERVERS                = "{{ stun_hostname }}:5349"
+{% else %}
                 JVB_STUN_SERVERS                = "meet-jit-si-turnrelay.jitsi.net:443"
+{% endif %}
                 TZ                              = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = "2"
                 ENABLE_COLIBRI_WEBSOCKET        = "1"
@@ -411,4 +426,77 @@ job "voip" {
             }
         }
     }
+
+{% if enable_stun is defined  and enable_stun |lower == "true" %}
+    group "turn" {
+
+        count = 1
+
+        constraint {
+            operator = "distinct_hosts"
+            value    = "true"
+        }
+
+        constraint {
+            attribute = "${meta.groups}"
+            operator = "regexp"
+            value = "voip_servers"
+        }
+
+
+        restart {
+            interval = "5m"
+            attempts = 10
+            delay    = "25s"
+            mode     = "delay"
+        }
+
+        network {
+            port "stun" {
+            static = "5349"
+            }
+        }
+
+        task "coturn" {
+            driver = "docker"
+
+            config {
+                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_TURN }}:{{ VOIP_JITSI_VERSION }}"
+
+                network_mode = "host"
+
+                logging {
+                    type = "syslog"
+                    config {
+                            tag = "teamwire-turn"
+                            syslog-facility = "local6"
+                    }
+                }
+            
+            mounts = [
+                {
+                type = "volume"
+                target = "/data"
+                source = "turnvol"
+                }
+            ]
+            
+            volumes = [
+                "/data/voip/turn/config:/etc/coturn/:Z"
+            ]
+            }
+
+            service {
+                name = "${TASK}"
+                tags = ["voip_servers","voip","${TASK}"]
+                port = "stun"
+            }
+
+            resources {
+                cpu    = 300
+                memory = 200
+            }
+        }
+    }
+{%endif %}
 }

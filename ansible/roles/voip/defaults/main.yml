@@ -9,6 +9,7 @@ VOIP_CONTAINER_WEB: "teamwire/web2"
 VOIP_CONTAINER_PROSODY: "teamwire/prosody"
 VOIP_CONTAINER_JICOFO: "teamwire/jicofo"
 VOIP_CONTAINER_JVB: "teamwire/jvb"
+VOIP_CONTAINER_TURN: "teamwire/turn"
 
 nomad_health_voip_interval: 15
 nomald_health_voip_timeout: 2

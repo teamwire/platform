@@ -1,0 +1,34 @@
+# TURN server name and realm
+realm={{ stun_hostname }}
+server-name={{ stun_hostname }}
+
+# Use fingerprint in TURN message
+fingerprint
+
+# IPs the TURN server listens to
+#listening-ip=0.0.0.0
+
+# External IP-Address of the TURN server
+external-ip={{ ansible_default_ipv4.address }}
+# Main listening port
+#listening-port=3478
+tls-listening-port=5349
+
+# Certificate file.
+cert=/data/teamwire.server.crt
+# Private key file.
+pkey=/data/teamwire-backend.key
+
+# Further ports that are open for communication
+min-port=10000
+max-port=20000
+
+# Enable verbose logging
+verbose
+
+# Specify the user for the TURN authentification
+use-auth-secret
+static-auth-secret={{ stun_password }}
+
+#avoid errors in logfile
+cli-password={{ stun_password }}
