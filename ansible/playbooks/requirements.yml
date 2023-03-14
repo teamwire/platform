@@ -77,6 +77,29 @@
           Please ensure your value is quoted and is a string of numbers.
       run_once: true
       when: channel_group_expiry is defined
+    
+    - name: Assert voip is enabled.
+      assert:
+        that:
+          - enable_voip is defined and enable_voip is string
+        msg: >-
+          Invalid value for configuration option `enable_voip`.
+          Please ensure your value is quoted and is a string.
+          To enable jvb cluster voip must be enabled.
+      run_once: true
+      when: enable_jvb_cluster is defined
+
+    - name: Assert jvb cluster is enabled.
+      assert:
+        that:
+          - enable_jvb_cluster is defined and enable_jvb_cluster is string
+        msg: >-
+          Invalid value for configuration option `enable_jvb_cluster`.
+          Please ensure your value is quoted and is a string.
+          To enable voip, jvb cluster must be defined.
+      run_once: true
+      when: enable_voip is defined and enable_voip == "true"
+
 
     - name: Ensure valid configuration combination
       block:

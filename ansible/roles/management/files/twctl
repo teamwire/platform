@@ -309,6 +309,13 @@ voip_status_single() {
 	docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}" $FILTER
 }
 
+voip_jvb_register() {
+	JVB_AUTH_PASSWORD="$(vault_read_secrets voip/jvb_password)"
+	for JVB_USER in `ls /data/voip/ | grep -x 'jvb[0-9]*'`; do
+		/usr/local/bin/tw_prosodyctl register $JVB_USER auth.meet.jitsi $JVB_AUTH_PASSWORD
+	done
+}
+
 voip() {
 	local enabled="$(_get_config_value enable_voip)"
 	if [ "${enabled,,}" != "true" ]; then
@@ -477,7 +484,7 @@ help() {
 	echo "connectivity 	Test external connections"
 	echo "archiving 	Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
 	echo "ha-log      	Show content of haproxy.log. Pipe to less -R for pager with colour support"
-	echo "voip		Manage voip containers {start|stop|restart|status}"
+	echo "voip			Manage voip containers {start|stop|restart|status}"
 }
 
 test_server_condition_for_preflight_check() {
@@ -904,6 +911,7 @@ setup_containers_cluster() {
 	elif [ ${enabled} = "true" ]; then
 	ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
 	$NOMAD run /data/voip/voip.hcl
+	voip_jvb_register
 	fi
 }
 

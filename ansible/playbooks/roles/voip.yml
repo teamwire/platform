@@ -13,13 +13,69 @@
   roles:
     - role: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip" # noqa internal-error
       when: enable_voip is defined and enable_voip | string() == 'true'
+  tasks:
+    - name: Copy tw_prosodyctl script to management server.
+      copy:
+        src: ../../roles/voip/files/tw_prosodyctl
+        dest: "/usr/local/bin/tw_prosodyctl"
+        mode: 0755
+        owner: root
+        group: root
+      when: 
+        - groups['all'] | length > 1 
+        - "'video_servers' not in group_names"
 
 - hosts: voip_servers
   tasks:
     - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip/tasks/voip_servers.yml"
-      when: enable_voip is defined and enable_voip | string() == 'true'
+      when: 
+        - enable_voip is defined
+        - enable_voip | string() == 'true'
+        - groups['all'] | length == 1
+
+- hosts: voip_servers
+  tasks:
+    - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip/tasks/voip_servers.yml"
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true'
+        - groups['all'] | length  > 1
+        - enable_jvb_cluster is defined
+        - enable_jvb_cluster | string() == 'false'
+
+- hosts: backend_servers
+  tasks:
+    - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip/tasks/voip_servers.yml"
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true' 
+        - groups['all'] | length  > 1
+        - groups['video_servers'] is not defined
+        - enable_jvb_cluster is defined
+        - enable_jvb_cluster | string() == 'true'
+
+- hosts: video_servers
+  tasks:
+    - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/voip/tasks/voip_servers.yml"
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true' 
+        - groups['all'] | length  > 1
+        - enable_jvb_cluster is defined
+        - enable_jvb_cluster | string() == 'true'
 
 - hosts: voip_servers
   tasks:
     - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/backend/tasks/add_additional_host.yml"
-      when: enable_voip is defined and enable_voip | string() == 'true'
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true' 
+        - groups['all'] | length == 1
+
+- hosts: video_servers
+  tasks:
+    - import_tasks: "{{ ansible_inventory_sources[0] | dirname }}/roles/backend/tasks/add_additional_host.yml"
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true' 
+        - groups['all'] | length > 1
