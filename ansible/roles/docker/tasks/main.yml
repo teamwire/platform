@@ -48,8 +48,9 @@
 
 - name: Install Docker
   apt:
-    pkg: docker-ce
+    pkg: "docker-ce={{ docker_ce_version }}"
     state: present
+    force: true
 
 - name: Install python3-docker
   apt:

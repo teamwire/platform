@@ -2,3 +2,7 @@
 registry_dir: /data/registry
 registry_config: registry-config.yml.j2
 use_teamwire_registry: true
+
+# Set fixed version for docker because of known bug in docker version 23.0
+# See also https://docs.docker.com/engine/release-notes/23.0/#known-issues
+docker_ce_version: "5:20.10.20~3-0~debian-{{ ansible_lsb.codename }}"
