@@ -90,8 +90,9 @@
           Please refer to the cluster_example_hosts file for an example.
       run_once: true
       when:
+        - enable_voip is defined
         - enable_voip | lower == "true"
-
+        - groups['all'] | length() > 1
 
     - name: Ensure enable_voip is enabled when enable_stun is activated
       assert:
