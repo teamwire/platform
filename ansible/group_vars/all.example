@@ -93,19 +93,17 @@ external_hostname: ""
 # To enable the voice over IP feature, you must uncomment the enable_voip line.
 # You have to ensure that the value must be set to "true" with quotes! All other
 # values are ignored. Also ensure you have added the necessary section [voip_servers]
-# Ensure enable_jvb_cluster is defined.
-# enable_voip: "false"
+# enable_voip: "true"
 
 # VIDEO
-# To enable video in cluster mode, you must change the enable_jvb_cluster from false to true.
+# To enable video in cluster mode,you must uncomment the enable_jvb_cluster line.
 # You have to ensure that the value is inside quotes! All other values are ignored. 
 # This variable needs to be used in conjection with enable_voip:
-#    If you want voip feature without a video cluster, set to false
-#    If you want voip feature with a video cluster, set to true
-#    If you want a voip feature with a configurable video cluster, set to true and add
-#    the necessary section [video_servers]
+#   - If you want voip feature with a video cluster, set to true.
+#   - If you want voip feature with a configurable video cluster, set to true and add 
+#    the necessary section [video_servers].
 # This variable only works with voip enabled.
-# enable_jvb_cluster: "false"
+# enable_jvb_cluster: "true"
 
 # TURN/STUN
 # To run a own turn server, enable_voip must be enabled. Further a DNS entry must 

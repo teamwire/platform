@@ -8,7 +8,7 @@
   with_items:
     - "{{ VOIP_ROOT_PATH }}/transcripts"
     - {
-        path: "{{ VOIP_ROOT_PATH }}/prosody/config",
+        path: "{{ VOIP_ROOT_PATH }}/prosody/config/",
         owner: 101,
         group: 101
       }
@@ -18,18 +18,24 @@
         group: 101
       }
     - {
-        path: "{{ VOIP_ROOT_PATH }}/jicofo",
-        owner: 999,
-        group: 1000 
+        path: "{{ VOIP_ROOT_PATH }}/prosody/config/data/auth%2emeet%2ejitsi/accounts",
+        owner: 101,
+        group: 102
       }
     - {
-        path: "{{ VOIP_ROOT_PATH }}/jvb",
+        path: "{{ VOIP_ROOT_PATH }}/jicofo",
+        owner: 999,
+        group: 1000
+      }
+    - {
+        path: "{{ VOIP_ROOT_PATH }}/jvb0",
         owner: 999,
         group: 1000
       }
     - "{{ VOIP_ROOT_PATH }}/jigasi"
     - "{{ VOIP_ROOT_PATH }}/jibri"
     - "{{ VOIP_ROOT_PATH }}/turn/config"
+
   run_once: true
 
 - name: Create JVB users for cluster environment.
@@ -42,7 +48,7 @@
   with_sequence: start=0 end="{{ end_at }}"
   vars:
     - end_at: "{{ groups['video_servers'] | count | int - 1 if groups['video_servers'] is defined else groups['backend_servers'] | count | int - 1 }}"
-  when: groups['all'] | length > 1 and enable_jvb_cluster == "true"
+  when: groups['all'] | length > 1 and enable_jvb_cluster is defined and enable_jvb_cluster | lower  == "true"
   
 - name: Template Turnserver configuration to destination
   template:
