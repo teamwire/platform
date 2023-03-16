@@ -103,6 +103,14 @@
       run_once: true
       when: enable_stun is defined and enable_stun |lower == "true"
 
+    - name: Ensure that enable_jvb_cluster is not set on single server installation
+      assert:
+        that: enable_jvb_cluster is not defined
+        msg: >- 
+          The option 'enable_jvb_cluster' can not be set in a single server installation.
+          Ensure to remove the option from group_vars/all file.
+      when: groups['all'] | length() == 1
+
     - name: Ensure stun_hostname is set, when enable_stun is activated
       assert:
         that:
