@@ -78,6 +78,21 @@
       run_once: true
       when: channel_group_expiry is defined
 
+    - name: Ensure voip_server group has only one member
+      assert:
+        that:
+          - "groups['voip_servers'] is defined"
+          - "groups['voip_servers'] | length == 1"
+        msg: >-
+          WARNING: It seems like the group voip_servers has none or more than one member.
+            If you have enable_voip set to true you have to define a host in this group.
+            If you have more than one host in this group. Please only define one server.
+          Please refer to the cluster_example_hosts file for an example.
+      run_once: true
+      when:
+        - enable_voip | lower == "true"
+
+
     - name: Ensure enable_voip is enabled when enable_stun is activated
       assert:
         that:
@@ -97,7 +112,7 @@
       when:
         - enable_stun is defined and enable_stun |lower == "true"
         - enable_voip is defined and enable_voip |lower == "true"
-    
+
     - name: Ensure valid configuration combination
       block:
         - name: Retrieve name of playbook file
@@ -293,7 +308,7 @@
         - name: Check APNS certificate validity
           debug:
             msg: 'Please change your APNS-Certificate immediately'
-      when: 
+      when:
         - config_done is defined
         - apns_certificate is defined
       run_once: true
