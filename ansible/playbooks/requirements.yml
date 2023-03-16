@@ -77,6 +77,26 @@
           Please ensure your value is quoted and is a string of numbers.
       run_once: true
       when: channel_group_expiry is defined
+
+    - name: Ensure enable_voip is enabled when enable_stun is activated
+      assert:
+        that:
+          - enable_voip is defined and enable_voip |lower == "true"
+        msg: >-
+          Ensure enable_voip is defined and value is set to quoted true
+      run_once: true
+      when: enable_stun is defined and enable_stun |lower == "true"
+
+    - name: Ensure stun_hostname is set, when enable_stun is activated
+      assert:
+        that:
+          - "stun_hostname is defined and stun_hostname is string and stun_hostname | string | length >= 1"
+        msg: >-
+          Ensure stun_hostname is set to a non empty string and its a resolveable hostname which points to the Voip Servers public ip
+      run_once: true
+      when:
+        - enable_stun is defined and enable_stun |lower == "true"
+        - enable_voip is defined and enable_voip |lower == "true"
     
     - name: Assert voip is enabled.
       assert:
