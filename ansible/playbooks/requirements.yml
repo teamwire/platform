@@ -94,6 +94,39 @@
         - enable_voip | lower == "true"
         - groups['all'] | length() > 1
 
+    - name: Ensure enable_voip is a string when enabled
+      assert:
+        that:
+          - enable_voip is string
+          - enable_voip is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_voip is set to lower quoted true or false when enabled
+      run_once: true
+      when:
+        - enable_voip is defined
+
+    - name: Ensure enable_stun is a string when enabled
+      assert:
+        that:
+          - enable_stun is string
+          - enable_stun is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_stun is set to lower quoted true or false when enabled
+      run_once: true
+      when:
+        - enable_stun is defined
+
+    - name: Ensure enable_jvb_cluster is a string when enabled
+      assert:
+        that:
+          - enable_jvb_cluster is string
+          - enable_jvb_cluster is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_jvb_cluster is set to lower quoted true or false when enabled
+      run_once: true
+      when:
+        - enable_jvb_cluster is defined
+
     - name: Ensure enable_voip is enabled when enable_stun is activated
       assert:
         that:
