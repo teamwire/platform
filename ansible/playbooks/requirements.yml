@@ -136,6 +136,15 @@
       run_once: true
       when: enable_stun is defined and enable_stun |lower == "true"
 
+    - name: Ensure enable_voip is set to true when enable_jvb_cluster is activated
+      assert:
+        that:
+          - enable_voip is defined and enable_voip |lower == "true"
+        msg: >-
+          Ensure enable_voip is defined and value is set to quoted true
+      run_once: true
+      when: enable_jvb_cluster is defined and enable_jvb_cluster |lower == "true"
+
     - name: Ensure that enable_jvb_cluster is not set on single server installation
       assert:
         that: enable_jvb_cluster is not defined
