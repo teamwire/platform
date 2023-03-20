@@ -182,7 +182,7 @@ job "voip" {
                     PROSODY_KEY             = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
 {%- endraw %}
 {%- if enable_stun is defined  and enable_stun |lower == "true" %}
-{%- raw %}                    
+{%- raw %}
                     TURN_CREDENTIALS        = "{{ with secret "secret/voip/stun_password" }}{{.Data.value}}{{end}}"
 {%- endraw %}
 {%- endif %}
@@ -219,7 +219,7 @@ job "voip" {
                 JWT_APP_ID                      = "teamwire"
                 TZ                              = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
-                {% if enable_stun is defined | default() -%}
+                {% if enable_stun is defined and enable_stun | lower == "true" -%}
                 TURNS_HOST                      = "{{ stun_hostname }}"
                 TURNS_PORT                      = 5349
                 {% endif %}
@@ -419,7 +419,7 @@ job "voip" {
                 USERNAME                        = "jvb${NOMAD_ALLOC_INDEX}"
                 MUC_NICKNAME                    = "jvb${NOMAD_ALLOC_INDEX}"
             }
-            
+
             resources {
                 cpu    = 900 #900
                 memory = 900 #1500
@@ -472,7 +472,7 @@ job "voip" {
                             syslog-facility = "local6"
                     }
                 }
-            
+
             mounts = [
                 {
                 type = "volume"
@@ -480,7 +480,7 @@ job "voip" {
                 source = "turnvol"
                 }
             ]
-            
+
             volumes = [
                 "/data/voip/turn/config:/etc/coturn/:Z"
             ]
