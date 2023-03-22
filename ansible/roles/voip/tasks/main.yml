@@ -67,7 +67,7 @@
     - config_done is defined
     - groups.docker_registry is defined
 
-- name: Template voip nomad job file
+- name: VOIPHCL_5 Template voip nomad job file
   template:
     src: "voip.hcl.tmpl"
     dest: "{{ VOIP_ROOT_PATH }}/voip.hcl"
@@ -75,7 +75,9 @@
     group: root
     mode: 0644
   run_once: true
-  when: groups['all'] | length > 1
+  when: 
+    - groups['all'] | length > 1
+    - voiphcl_5 | default(true)
 
 - name: Login to the docker registry
   docker_login:
