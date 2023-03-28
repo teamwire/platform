@@ -50,7 +50,6 @@
         - enable_voip is defined
         - enable_voip | string() == 'true'
         - groups['all'] | length  > 1
-        - enable_jvb_cluster | string() | lower != 'true' or enable_jvb_cluster is not defined
 
 - hosts: backend_servers
   tasks:
