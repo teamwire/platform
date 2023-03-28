@@ -13,7 +13,6 @@
      - 'assets'
      - 'website-screenshot-cache'
      - 'beat'
-     - 'cluster_config'
 
 - name: Create the backend certificate storage directories
   file:
