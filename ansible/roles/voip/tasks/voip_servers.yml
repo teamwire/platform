@@ -1,9 +1,23 @@
-- name: Allow voip video bridge port
+- name: Allow voip video bridge port in voip_servers.
   ufw:
     rule: allow
     port: "10000"
     proto: any
-  when: enable_voip is defined and enable_voip | string() == 'true'
+  when: enable_jvb_cluster | string() | lower != 'true' or enable_jvb_cluster is not defined and inventory_hostname in groups["voip_servers"]
+
+- name: Allow voip video bridge port in backend_servers.
+  ufw:
+    rule: allow
+    port: "10000"
+    proto: any
+  when: enable_jvb_cluster | string() | lower == 'true' and enable_jvb_cluster is defined and inventory_hostname in groups["backend_servers"]
+
+- name: Allow voip video bridge port in video_servers.
+  ufw:
+    rule: allow
+    port: "10000"
+    proto: any
+  when: enable_jvb_cluster | string() | lower == 'true' and enable_jvb_cluster is defined and groups["video_servers"] is defined and inventory_hostname in groups["video_servers"]
 
 - name: Copy tw_prosodyctl script.
   copy:
@@ -12,8 +26,8 @@
     mode: 0755
     owner: root
     group: root
-  when: groups['all'] | length > 1 
-  
+  when: groups['all'] | length > 1
+
 - name: Add turns Firewall Rule allow 5349
   ufw:
     rule=allow
