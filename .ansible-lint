@@ -1,13 +1,4 @@
 ---
-exclude_paths:
-  # This file has issues with the schema that I'm not able to figure out what
-  - ansible/playbooks/procedures/galera-bootstrap.yml
-
-#warn_list:
-#   - fqcn-builtins 
 skip_list:
-   - fqcn-builtins 
-   - no-changed-when
-   - var-naming
-   - empty-string-compare
-   - risky-file-permissions
+  - yaml[new-line-at-end-of-file]
+  - yaml[line-length]  
