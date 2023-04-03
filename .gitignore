@@ -12,3 +12,4 @@ ansible/playbooks/procedures/debian.cnf
 *.pyc
 .gitlab/*
 .local
+ansible/ansible.log
