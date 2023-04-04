@@ -1,6 +1,6 @@
 ---
 - name: Ensure voip DNS can be resolved
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/hosts"
     insertafter: EOF
     state: present
@@ -15,8 +15,7 @@
     - recorder.meet.jitsi
 
 - name: Run the Teamwire voip web container
-  when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_web
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
     state: started
@@ -39,10 +38,10 @@
       ENABLE_AUTH: "1"
       ENABLE_GUESTS: "0"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
+  when: config_done is defined
 
 - name: Run the Teamwire voip prosody container
-  when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_prosody
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
     state: started
@@ -86,10 +85,10 @@
       TURN_CREDENTIALS: "{{ stun_password if enable_stun is defined and enable_stun | string() == 'true'  |default() }}"
       TURNS_HOST: "{{ stun_hostname if enable_stun is defined and enable_stun | string() == 'true' |default() }}"
       TURNS_PORT: "{{ '5349' if enable_stun is defined and enable_stun | string() == 'true' |default() }}"
+  when: config_done is defined
 
 - name: Run the Teamwire voip jicofo container
-  when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_jicofo
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
     state: started
@@ -119,10 +118,10 @@
       ENABLE_AUTH: "1"
       AUTH_TYPE: "jwt"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
+  when: config_done is defined
 
 - name: Run the Teamwire voip video bridge container
-  when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_jvb
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
     state: started
@@ -146,19 +145,16 @@
       JVB_TCP_HARVESTER_DISABLED: "false"
       JVB_TCP_PORT: "4443"
       JVB_TCP_MAPPED_PORT: "4443"
-      JVB_STUN_SERVERS: "{{ stun_hostname +':5349' if enable_stun is defined and enable_stun | string() == 'true' else 'meet-jit-si-turnrelay.jitsi.net:443' }}"
+      JVB_STUN_SERVERS: "{{ stun_hostname + ':5349' if enable_stun is defined and enable_stun | string() == 'true' else 'meet-jit-si-turnrelay.jitsi.net:443' }}"
       TZ: "UTC"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
       ENABLE_COLIBRI_WEBSOCKET: "1"
       PUBLIC_URL: "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
       JVB_WS_SERVER_ID: "127.0.0.1"
-
+  when: config_done is defined
 
 - name: Run the Teamwire turn container
-  when:
-    - enable_stun is defined and enable_stun | string() == 'true'
-    - config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_turn
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_TURN }}:{{ VOIP_JITSI_VERSION }}"
     state: started
@@ -171,3 +167,7 @@
     log_opt:
       tag: teamwire-turn
       syslog-facility: "local6"
+  when:
+    - enable_stun is defined
+    - enable_stun | string() == 'true'
+    - config_done is defined
