@@ -1,0 +1,21 @@
+---
+
+- name: Generate Docker volume turnvol
+  community.docker.docker_volume:
+    name: turnvol
+
+- name: Copy teamwire certificate
+  ansible.builtin.copy:
+    src: "{{ ssl_server_certificate }}"
+    dest: "/var/lib/docker/volumes/turnvol/_data/teamwire.server.crt"
+    mode: 0644
+  notify: Trigger_turn_restart
+  when: ssl_server_certificate is defined
+
+- name: Copy the teamwire ssl key
+  ansible.builtin.copy:
+    src: "{{ ssl_keyfile }}"
+    dest: /var/lib/docker/volumes/turnvol/_data/teamwire-backend.key
+    mode: 0644
+  notify: Trigger_turn_restart
+  when: ssl_keyfile is defined

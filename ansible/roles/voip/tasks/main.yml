@@ -121,7 +121,7 @@
     - groups.docker_registry is defined
 
 - name: Checkvolume if single server
-  include_tasks: createvol.yml
+  include_tasks: turn_volume.yml
   when:
     - enable_voip is defined
     - enable_voip | string() == 'true'
