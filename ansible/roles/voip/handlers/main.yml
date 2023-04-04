@@ -1,0 +1,13 @@
+---
+
+- name: Trigger_turn_restart
+  ansible.builtin.command: "docker ps -f volume=turnvol -q"
+  notify: Turn_restart
+  changed_when: turn_container.stdout | length > 1
+  register: turn_container
+
+- name: Turn_restart
+  ansible.builtin.command:
+    cmd: "docker restart {{ item }}"
+  with_items: "{{ turn_container.stdout }}"
+  when: turn_container.stdout | length > 1

@@ -1,49 +1,18 @@
 ---
 
-- name: Include vars
-  ansible.builtin.include_vars:
-    file: "{{ teamwire_platform_dir  if tw_environments is defined else  inventory_dir }}/roles/voip/defaults/main.yml"
-
-- name: Register docker registry with harbor
-  set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/"
-  when:
-    - groups.docker_registry is defined
-
 - name: Generate Docker volume turnvol
-  docker_volume:
+  community.docker.docker_volume:
     name: turnvol
 
-- name: Run the temporarily Teamwire turn container
-  when: config_done is defined
-  docker_container:
-    name: teamwire_turn
-    image: "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_TURN }}:{{ VOIP_JITSI_VERSION }}"
-    state: started
-    restart_policy: always
-    network_mode: host
-    volumes:
-      - "{{ VOIP_ROOT_PATH }}/turn/config:/etc/coturn:Z"
-      - "turnvol:/data"
-    log_driver: "syslog"
-    log_opt:
-      tag: teamwire-turn
-      syslog-facility: "local6"
-
-- name: Copy the SSL key
-  copy:
-    src: "{{ ssl_keyfile }}"
-    dest: /etc/ssl/private/teamwire-backend.key
-    mode: 0640
-  when: ssl_keyfile is defined
-
 - name: Copy teamwire certificate
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssl_server_certificate }}"
-    dest: "/etc/ssl/certs/teamwire.server.crt"
-    mode: 0640
+    dest: "/var/lib/docker/volumes/turnvol/_data/teamwire.server.crt"
+    mode: 0644
+  notify: Trigger_turn_restart
   when: ssl_server_certificate is defined
 
+<<<<<<< HEAD
 - name: Copy certificate to turnvol
   command: docker cp /etc/ssl/certs/teamwire.server.crt teamwire_turn:/data
 
@@ -61,3 +30,12 @@
     name: teamwire_turn
     image: "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_TURN }}:{{ VOIP_JITSI_VERSION }}"
     state: absent
+=======
+- name: Copy the teamwire ssl key
+  ansible.builtin.copy:
+    src: "{{ ssl_keyfile }}"
+    dest: /var/lib/docker/volumes/turnvol/_data/teamwire-backend.key
+    mode: 0644
+  notify: Trigger_turn_restart
+  when: ssl_keyfile is defined
+>>>>>>> 56d8d30 (Make sure ssl certificates on turn volume get updated)
