@@ -98,10 +98,8 @@ OcspResonder test:
   stage: Golint
   script:
     - golint ./ansible/roles/go/files/ocspResponder.go
-  allow_failure: true
 
 Archiving test:
   stage: Golint
   script:
     - golint ./ansible/roles/go/files/archiving.go
-  allow_failure: true
