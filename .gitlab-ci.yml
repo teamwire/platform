@@ -41,67 +41,56 @@ Packer Build vmware test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/build-vmware.sh
-  allow_failure: true
 
 Packer network fix script test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/fix-network.sh
-  allow_failure: true
 
 Packer shrink test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/shrink-image.sh
-  allow_failure: true
 
 Packer offline image test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./prepare-offline-installation.sh
-  allow_failure: true
 
 Packer unique test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/make-unique.sh
-  allow_failure: true
 
 Packer guest tools test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/vm-guest-tools.sh
-  allow_failure: true
 
 OCSP wrapper test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/frontend/files/ocsp.sh
-  allow_failure: true
 
 GIT wrapper test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/management/files/gitwrapper.sh
-  allow_failure: true
 
 Backup / Restore test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/db/files/backup_restore_db.sh
-  allow_failure: true
 
 Offline installation test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/prepare-offline-installation.sh
-  allow_failure: true
 
 TWCTL test:
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/management/files/twctl
-  allow_failure: true
 
 # --- GO LINT TEST --- #
 
