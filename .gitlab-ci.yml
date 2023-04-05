@@ -1,4 +1,8 @@
 ---
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 stages:
   - Ansible lint
   - Shell check
