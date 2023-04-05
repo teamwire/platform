@@ -20,6 +20,13 @@
   when: dns_servers is defined
   notify: restart dnsmasq
 
+- name: Configure dnsmasq to listen on private_ip and localhost
+  template:
+    src: 01-address.j2
+    dest: /etc/dnsmasq.d/01-address
+  when: dns_servers is defined
+  notify: restart dnsmasq
+
 - name: Resolve DNS using dnsmasq
   copy:
     content: "nameserver 127.0.0.1\n"
