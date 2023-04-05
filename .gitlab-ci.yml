@@ -18,6 +18,8 @@ variables:
   ANSIBLE_LINT_IMAGE: "cytopia/ansible-lint:6-0.12"
   ANSIBLE_LINT_CMD: "docker run --rm -v $(pwd):/data $ANSIBLE_LINT_IMAGE"
   SHELLCHECK_VERSION: "0.7.1"
+  GOLINT_IMAGE: "cytopia/golint:latest-0.3"
+  GOLINT_CMD: "docker run --rm -v $(pwd):/data $GOLINT_IMAGE"
 
 # --- Define changes ---- #
 
@@ -32,6 +34,14 @@ Ensure ansible-lint docker image exists:
   stage: startup
   script: docker pull $ANSIBLE_LINT_IMAGE
   extends: .ansible-changes
+
+Ensure golint docker image exists:
+  stage: startup
+  script: docker pull $GOLINT_IMAGE
+  only:
+    changes:
+      - ansible/roles/go/files/ocspResponder.go
+      - ansible/roles/go/files/archiving.go
 
 # --- Get shellcheck version ---- #
 
@@ -173,10 +183,16 @@ TWCTL test:
 
 OcspResonder test:
   stage: Golint
-  script:
-    - golint ./ansible/roles/go/files/ocspResponder.go
+  script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/ocspResponder.go"
+  only:
+    changes:
+      - ansible/roles/go/files/ocspResponder.go
+  needs: ['Ensure golint docker image exists']
 
 Archiving test:
   stage: Golint
-  script:
-    - golint ./ansible/roles/go/files/archiving.go
+  script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/archiving.go"
+  only:
+    changes:
+      - ansible/roles/go/files/archiving.go
+  needs: ['Ensure golint docker image exists']
