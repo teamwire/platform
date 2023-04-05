@@ -8,36 +8,32 @@ stages:
   - Shell check
   - Golint
 
-.global-tags: &runner-tags
+default:
   tags:
-    - lint
-    - platform
+    - desktop
+    - linux
 
 # --- ANSIBLE LINT TEST ---- #
 
 Single server test:
-  <<: *runner-tags
   stage: Ansible lint
   script:
     - ansible-lint ./ansible/site.yml -x 301 --force-color
   allow_failure: true
 
 Cluster server test:
-  <<: *runner-tags
   stage: Ansible lint
   script:
     - ansible-lint ./ansible/playbooks/cluster.yml -x 301 --force-color
   allow_failure: true
 
 Procedure test:
-  <<: *runner-tags
   stage: Ansible lint
   script:
     - ansible-lint ansible/playbooks/procedures/*.yml -x 301        --force-color
   allow_failure: true
 
 Roles dir test:
-  <<: *runner-tags
   stage: Ansible lint
   script:
     - ansible-lint ./ansible/playbooks/roles/*.yml -x 301 --force-color
@@ -46,77 +42,66 @@ Roles dir test:
 # ---SHELL CHECK TEST ---- #
 
 Packer Build vmware test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/build-vmware.sh
   allow_failure: true
 
 Packer network fix script test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/fix-network.sh
   allow_failure: true
 
 Packer shrink test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/shrink-image.sh
   allow_failure: true
 
 Packer offline image test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./prepare-offline-installation.sh
   allow_failure: true
 
 Packer unique test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/make-unique.sh
   allow_failure: true
 
 Packer guest tools test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/vm-guest-tools.sh
   allow_failure: true
 
 OCSP wrapper test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/frontend/files/ocsp.sh
   allow_failure: true
 
 GIT wrapper test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/management/files/gitwrapper.sh
   allow_failure: true
 
 Backup / Restore test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/db/files/backup_restore_db.sh
   allow_failure: true
 
 Offline installation test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./packer/scripts/prepare-offline-installation.sh
   allow_failure: true
 
 TWCTL test:
-  <<: *runner-tags
   stage: Shell check
   script:
     - shellcheck --format=tty --color=always ./ansible/roles/management/files/twctl
@@ -125,14 +110,12 @@ TWCTL test:
 # --- GO LINT TEST --- #
 
 OcspResonder test:
-  <<: *runner-tags
   stage: Golint
   script:
     - golint ./ansible/roles/go/files/ocspResponder.go
   allow_failure: true
 
 Archiving test:
-  <<: *runner-tags
   stage: Golint
   script:
     - golint ./ansible/roles/go/files/archiving.go
