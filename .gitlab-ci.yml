@@ -6,7 +6,7 @@ workflow:
 stages:
   - startup
   - ansible-lint
-  - Shell check
+  - shellcheck
   - Golint
 
 default:
@@ -17,6 +17,7 @@ default:
 variables:
   ANSIBLE_LINT_IMAGE: "cytopia/ansible-lint:6-0.12"
   ANSIBLE_LINT_CMD: "docker run --rm -v $(pwd):/data $ANSIBLE_LINT_IMAGE"
+  SHELLCHECK_VERSION: "0.7.1"
 
 # --- Define changes ---- #
 
@@ -31,6 +32,25 @@ Ensure ansible-lint docker image exists:
   stage: startup
   script: docker pull $ANSIBLE_LINT_IMAGE
   extends: .ansible-changes
+
+# --- Get shellcheck version ---- #
+
+Ensure shellcheck has correct version:
+  stage: startup
+  script: dpkg -l | grep "ii  shellcheck" | grep $SHELLCHECK_VERSION
+  only:
+    changes:
+      - packer/build-vmware.sh
+      - packer/scripts/fix-network.sh
+      - packer/scripts/shrink-image.sh
+      - prepare-offline-installation.sh
+      - packer/scripts/make-unique.sh
+      - packer/scripts/vm-guest-tools.sh
+      - ansible/roles/frontend/files/ocsp.sh
+      - ansible/roles/management/files/gitwrapper.sh
+      - ansible/roles/db/files/backup_restore_db.sh
+      - packer/scripts/prepare-offline-installation.sh
+      - ansible/roles/management/files/twctl
 
 # --- ANSIBLE LINT TEST ---- #
 
@@ -61,59 +81,93 @@ Roles dir test:
 # ---SHELL CHECK TEST ---- #
 
 Packer Build vmware test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/build-vmware.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/build-vmware.sh
+  only:
+    changes:
+      - packer/build-vmware.sh
+  needs: ['Ensure shellcheck has correct version']
+
 
 Packer network fix script test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/fix-network.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/fix-network.sh
+  only:
+    changes:
+      - packer/scripts/fix-network.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer shrink test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/shrink-image.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/shrink-image.sh
+  only:
+    changes:
+      - packer/scripts/shrink-image.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer offline image test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./prepare-offline-installation.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always prepare-offline-installation.sh
+  only:
+    changes:
+      - prepare-offline-installation.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer unique test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/make-unique.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/make-unique.sh
+  only:
+    changes:
+      - packer/scripts/make-unique.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer guest tools test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/vm-guest-tools.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/vm-guest-tools.sh
+  only:
+    changes:
+      - packer/scripts/vm-guest-tools.sh
+  needs: ['Ensure shellcheck has correct version']
 
 OCSP wrapper test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/frontend/files/ocsp.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/frontend/files/ocsp.sh
+  only:
+    changes:
+      - ansible/roles/frontend/files/ocsp.sh
+  needs: ['Ensure shellcheck has correct version']
 
 GIT wrapper test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/management/files/gitwrapper.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ./ansible/roles/management/files/gitwrapper.sh
+  only:
+    changes:
+      - ansible/roles/management/files/gitwrapper.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Backup / Restore test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/db/files/backup_restore_db.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/db/files/backup_restore_db.sh
+  only:
+    changes:
+      - ansible/roles/db/files/backup_restore_db.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Offline installation test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/prepare-offline-installation.sh
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/prepare-offline-installation.sh
+  only:
+    changes:
+      - packer/scripts/prepare-offline-installation.sh
+  needs: ['Ensure shellcheck has correct version']
 
 TWCTL test:
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/management/files/twctl
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/management/files/twctl
+  only:
+    changes:
+      - ansible/roles/management/files/twctl
+  needs: ['Ensure shellcheck has correct version']
 
 # --- GO LINT TEST --- #
 
