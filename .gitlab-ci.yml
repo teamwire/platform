@@ -19,25 +19,21 @@ Single server test:
   stage: Ansible lint
   script:
     - ansible-lint ./ansible/site.yml -x 301 --force-color
-  allow_failure: true
 
 Cluster server test:
   stage: Ansible lint
   script:
     - ansible-lint ./ansible/playbooks/cluster.yml -x 301 --force-color
-  allow_failure: true
 
 Procedure test:
   stage: Ansible lint
   script:
     - ansible-lint ansible/playbooks/procedures/*.yml -x 301        --force-color
-  allow_failure: true
 
 Roles dir test:
   stage: Ansible lint
   script:
     - ansible-lint ./ansible/playbooks/roles/*.yml -x 301 --force-color
-  allow_failure: true
 
 # ---SHELL CHECK TEST ---- #
 
