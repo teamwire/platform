@@ -4,7 +4,8 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 stages:
-  - Ansible lint
+  - startup
+  - ansible-lint
   - Shell check
   - Golint
 
@@ -13,27 +14,49 @@ default:
     - desktop
     - linux
 
+variables:
+  ANSIBLE_LINT_IMAGE: "cytopia/ansible-lint:6-0.12"
+  ANSIBLE_LINT_CMD: "docker run --rm -v $(pwd):/data $ANSIBLE_LINT_IMAGE"
+
+# --- Define changes ---- #
+
+.ansible-changes:
+  only:
+    changes:
+      - ansible/*
+
+# --- Ensure docker image exisits ---- #
+
+Ensure ansible-lint docker image exists:
+  stage: startup
+  script: docker pull $ANSIBLE_LINT_IMAGE
+  extends: .ansible-changes
+
 # --- ANSIBLE LINT TEST ---- #
 
 Single server test:
-  stage: Ansible lint
-  script:
-    - ansible-lint ./ansible/site.yml -x 301 --force-color
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/site.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
 Cluster server test:
-  stage: Ansible lint
-  script:
-    - ansible-lint ./ansible/playbooks/cluster.yml -x 301 --force-color
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/cluster.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
 Procedure test:
-  stage: Ansible lint
-  script:
-    - ansible-lint ansible/playbooks/procedures/*.yml -x 301        --force-color
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/procedures/*.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
 Roles dir test:
-  stage: Ansible lint
-  script:
-    - ansible-lint ./ansible/playbooks/roles/*.yml -x 301 --force-color
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/roles/*.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
 # ---SHELL CHECK TEST ---- #
 
