@@ -21,14 +21,22 @@ variables:
   GOLINT_IMAGE: "cytopia/golint:latest-0.3"
   GOLINT_CMD: "docker run --rm -v $(pwd):/data $GOLINT_IMAGE"
 
-# --- Define changes ---- #
+# ------------------------------------------------------------------------------
+#
+# Rules declaration
+#
+# ------------------------------------------------------------------------------
 
 .ansible-changes:
   only:
     changes:
       - ansible/*
 
-# --- Ensure docker image exisits ---- #
+# ------------------------------------------------------------------------------
+#
+# Get docker container image
+#
+# ------------------------------------------------------------------------------
 
 Ensure ansible-lint docker image exists:
   stage: startup
@@ -43,7 +51,11 @@ Ensure golint docker image exists:
       - ansible/roles/go/files/ocspResponder.go
       - ansible/roles/go/files/archiving.go
 
-# --- Get shellcheck version ---- #
+# ------------------------------------------------------------------------------
+#
+# Check shellcheck version
+#
+# ------------------------------------------------------------------------------
 
 Ensure shellcheck has correct version:
   stage: startup
@@ -62,7 +74,11 @@ Ensure shellcheck has correct version:
       - ansible/roles/management/files/twctl
       - ansible/roles/management/files/motd.sh
 
-# --- ANSIBLE LINT TEST ---- #
+# ------------------------------------------------------------------------------
+#
+# ansible-lint test
+#
+# ------------------------------------------------------------------------------
 
 Single server test:
   stage: ansible-lint
@@ -88,7 +104,11 @@ Roles dir test:
   extends: .ansible-changes
   needs: ['Ensure ansible-lint docker image exists']
 
-# ---SHELL CHECK TEST ---- #
+# ------------------------------------------------------------------------------
+#
+# shellcheck Scripts
+#
+# ------------------------------------------------------------------------------
 
 Packer Build vmware test:
   stage: shellcheck
@@ -179,11 +199,11 @@ Login banner test:
       - ansible/roles/management/files/motd.sh
   needs: ['Ensure shellcheck has correct version']
 
-###############################################################################################
-#                                                                                             #
-# GO LINT TEST                                                                                #
-#                                                                                             #
-###############################################################################################
+# ------------------------------------------------------------------------------
+#
+# GO LINT TEST
+#
+# ------------------------------------------------------------------------------
 
 OcspResonder test:
   stage: Golint
