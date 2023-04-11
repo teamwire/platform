@@ -57,7 +57,6 @@ Ensure shellcheck has correct version:
       - packer/scripts/make-unique.sh
       - packer/scripts/vm-guest-tools.sh
       - ansible/roles/frontend/files/ocsp.sh
-      - ansible/roles/management/files/gitwrapper.sh
       - ansible/roles/db/files/backup_restore_db.sh
       - packer/scripts/prepare-offline-installation.sh
       - ansible/roles/management/files/twctl
@@ -145,14 +144,6 @@ OCSP wrapper test:
   only:
     changes:
       - ansible/roles/frontend/files/ocsp.sh
-  needs: ['Ensure shellcheck has correct version']
-
-GIT wrapper test:
-  stage: shellcheck
-  script: shellcheck --format=tty --color=always ./ansible/roles/management/files/gitwrapper.sh
-  only:
-    changes:
-      - ansible/roles/management/files/gitwrapper.sh
   needs: ['Ensure shellcheck has correct version']
 
 Backup / Restore test:
