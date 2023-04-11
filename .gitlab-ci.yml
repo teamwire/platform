@@ -60,6 +60,7 @@ Ensure shellcheck has correct version:
       - ansible/roles/db/files/backup_restore_db.sh
       - packer/scripts/prepare-offline-installation.sh
       - ansible/roles/management/files/twctl
+      - ansible/roles/management/files/motd.sh
 
 # --- ANSIBLE LINT TEST ---- #
 
@@ -170,7 +171,19 @@ TWCTL test:
       - ansible/roles/management/files/twctl
   needs: ['Ensure shellcheck has correct version']
 
-# --- GO LINT TEST --- #
+Login banner test:
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/management/files/motd.sh
+  only:
+    changes:
+      - ansible/roles/management/files/motd.sh
+  needs: ['Ensure shellcheck has correct version']
+
+###############################################################################################
+#                                                                                             #
+# GO LINT TEST                                                                                #
+#                                                                                             #
+###############################################################################################
 
 OcspResonder test:
   stage: Golint
