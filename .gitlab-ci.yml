@@ -1,135 +1,222 @@
 ---
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 stages:
-  - Ansible lint
-  - Shell check
+  - startup
+  - ansible-lint
+  - shellcheck
   - Golint
 
-.global-tags: &runner-tags
+default:
   tags:
-    - lint
-    - platform
+    - desktop
+    - linux
 
-# --- ANSIBLE LINT TEST ---- #
+variables:
+  ANSIBLE_LINT_IMAGE: "cytopia/ansible-lint:6-0.12"
+  ANSIBLE_LINT_CMD: "docker run --rm -v $(pwd):/data $ANSIBLE_LINT_IMAGE"
+  SHELLCHECK_VERSION: "0.7.1"
+  GOLINT_IMAGE: "cytopia/golint:latest-0.3"
+  GOLINT_CMD: "docker run --rm -v $(pwd):/data $GOLINT_IMAGE"
+
+# ------------------------------------------------------------------------------
+#
+# Rules declaration
+#
+# ------------------------------------------------------------------------------
+
+.ansible-changes:
+  only:
+    changes:
+      - ansible/*
+
+# ------------------------------------------------------------------------------
+#
+# Get docker container image
+#
+# ------------------------------------------------------------------------------
+
+Ensure ansible-lint docker image exists:
+  stage: startup
+  script: docker pull $ANSIBLE_LINT_IMAGE
+  extends: .ansible-changes
+
+Ensure golint docker image exists:
+  stage: startup
+  script: docker pull $GOLINT_IMAGE
+  only:
+    changes:
+      - ansible/roles/go/files/ocspResponder.go
+      - ansible/roles/go/files/archiving.go
+
+# ------------------------------------------------------------------------------
+#
+# Check shellcheck version
+#
+# ------------------------------------------------------------------------------
+
+Ensure shellcheck has correct version:
+  stage: startup
+  script: dpkg -l | grep "ii  shellcheck" | grep $SHELLCHECK_VERSION
+  only:
+    changes:
+      - packer/build-vmware.sh
+      - packer/scripts/fix-network.sh
+      - packer/scripts/shrink-image.sh
+      - prepare-offline-installation.sh
+      - packer/scripts/make-unique.sh
+      - packer/scripts/vm-guest-tools.sh
+      - ansible/roles/frontend/files/ocsp.sh
+      - ansible/roles/db/files/backup_restore_db.sh
+      - packer/scripts/prepare-offline-installation.sh
+      - ansible/roles/management/files/twctl
+      - ansible/roles/management/files/motd.sh
+
+# ------------------------------------------------------------------------------
+#
+# ansible-lint test
+#
+# ------------------------------------------------------------------------------
 
 Single server test:
-  <<: *runner-tags
-  stage: Ansible lint
-  script:
-    - ansible-lint ./ansible/site.yml -x 301 --force-color
-  allow_failure: true
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/site.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
 Cluster server test:
-  <<: *runner-tags
-  stage: Ansible lint
-  script:
-    - ansible-lint ./ansible/playbooks/cluster.yml -x 301 --force-color
-  allow_failure: true
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/cluster.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
 Procedure test:
-  <<: *runner-tags
-  stage: Ansible lint
-  script:
-    - ansible-lint ansible/playbooks/procedures/*.yml -x 301        --force-color
-  allow_failure: true
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/procedures/*.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
 Roles dir test:
-  <<: *runner-tags
-  stage: Ansible lint
-  script:
-    - ansible-lint ./ansible/playbooks/roles/*.yml -x 301 --force-color
-  allow_failure: true
+  stage: ansible-lint
+  script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/roles/*.yml -x 301 --force-color"
+  extends: .ansible-changes
+  needs: ['Ensure ansible-lint docker image exists']
 
-# ---SHELL CHECK TEST ---- #
+# ------------------------------------------------------------------------------
+#
+# shellcheck Scripts
+#
+# ------------------------------------------------------------------------------
 
 Packer Build vmware test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/build-vmware.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/build-vmware.sh
+  only:
+    changes:
+      - packer/build-vmware.sh
+  needs: ['Ensure shellcheck has correct version']
+
 
 Packer network fix script test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/fix-network.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/fix-network.sh
+  only:
+    changes:
+      - packer/scripts/fix-network.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer shrink test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/shrink-image.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/shrink-image.sh
+  only:
+    changes:
+      - packer/scripts/shrink-image.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer offline image test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./prepare-offline-installation.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always prepare-offline-installation.sh
+  only:
+    changes:
+      - prepare-offline-installation.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer unique test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/make-unique.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/make-unique.sh
+  only:
+    changes:
+      - packer/scripts/make-unique.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Packer guest tools test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/vm-guest-tools.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/vm-guest-tools.sh
+  only:
+    changes:
+      - packer/scripts/vm-guest-tools.sh
+  needs: ['Ensure shellcheck has correct version']
 
 OCSP wrapper test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/frontend/files/ocsp.sh
-  allow_failure: true
-
-GIT wrapper test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/management/files/gitwrapper.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/frontend/files/ocsp.sh
+  only:
+    changes:
+      - ansible/roles/frontend/files/ocsp.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Backup / Restore test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/db/files/backup_restore_db.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/db/files/backup_restore_db.sh
+  only:
+    changes:
+      - ansible/roles/db/files/backup_restore_db.sh
+  needs: ['Ensure shellcheck has correct version']
 
 Offline installation test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./packer/scripts/prepare-offline-installation.sh
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always packer/scripts/prepare-offline-installation.sh
+  only:
+    changes:
+      - packer/scripts/prepare-offline-installation.sh
+  needs: ['Ensure shellcheck has correct version']
 
 TWCTL test:
-  <<: *runner-tags
-  stage: Shell check
-  script:
-    - shellcheck --format=tty --color=always ./ansible/roles/management/files/twctl
-  allow_failure: true
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/management/files/twctl
+  only:
+    changes:
+      - ansible/roles/management/files/twctl
+  needs: ['Ensure shellcheck has correct version']
 
-# --- GO LINT TEST --- #
+Login banner test:
+  stage: shellcheck
+  script: shellcheck --format=tty --color=always ansible/roles/management/files/motd.sh
+  only:
+    changes:
+      - ansible/roles/management/files/motd.sh
+  needs: ['Ensure shellcheck has correct version']
+
+# ------------------------------------------------------------------------------
+#
+# GO LINT TEST
+#
+# ------------------------------------------------------------------------------
 
 OcspResonder test:
-  <<: *runner-tags
   stage: Golint
-  script:
-    - golint ./ansible/roles/go/files/ocspResponder.go
-  allow_failure: true
+  script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/ocspResponder.go"
+  only:
+    changes:
+      - ansible/roles/go/files/ocspResponder.go
+  needs: ['Ensure golint docker image exists']
 
 Archiving test:
-  <<: *runner-tags
   stage: Golint
-  script:
-    - golint ./ansible/roles/go/files/archiving.go
-  allow_failure: true
+  script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/archiving.go"
+  only:
+    changes:
+      - ansible/roles/go/files/archiving.go
+  needs: ['Ensure golint docker image exists']
