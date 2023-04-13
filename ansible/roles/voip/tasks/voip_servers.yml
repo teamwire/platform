@@ -29,9 +29,9 @@
     - inventory_hostname in groups["video_servers"]
 
 - name: Copy tw_prosodyctl script.
-  ansible.builtin.copy:
-    src: tw_prosodyctl
-    dest: "/usr/local/bin/tw_prosodyctl"
+  ansible.builtin.template:
+    src: tw_prosodyctl.j2
+    dest: /usr/local/bin/tw_prosodyctl
     mode: 0755
     owner: root
     group: root
