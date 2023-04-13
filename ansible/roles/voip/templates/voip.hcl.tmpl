@@ -31,7 +31,7 @@ job "voip" {
         change_mode = "restart"
     }
 
-    group "webs" {
+    group "voip-webs" {
         count = 1
 
         constraint {
@@ -113,7 +113,7 @@ job "voip" {
         }
     }
 
-    group "voipProsodys" {
+    group "voip-prosodys" {
         count = 1
 
         constraint {
@@ -138,7 +138,7 @@ job "voip" {
             mode = "host"
         }
 
-        task "prosody" {
+        task "voipProsody" {
             driver = "docker"
 
             config {
@@ -232,7 +232,7 @@ job "voip" {
         }
     }
 
-    group "voipJicofos" {
+    group "voip-jicofos" {
         count = 1
 
         constraint {
@@ -257,7 +257,7 @@ job "voip" {
             mode = "host"
         }
 
-        task "voipCofo" {
+        task "voipJicofo" {
             driver = "docker"
 
             config {
@@ -325,7 +325,7 @@ job "voip" {
         }
     }
 
-    group "voipVideo" {
+    group "voip-videos" {
         count = "{{ video_servers_count }}"
         constraint {
             attribute = "${meta.groups}"
@@ -360,7 +360,7 @@ job "voip" {
 
             config {
                 command = "sh"
-                args    = ["-c", "while [ $(nslookup voipCofo.service.consul 2>&1 >/dev/null) ]; do sleep 2; done"]
+                args    = ["-c", "while [ $(nslookup voipJicofo.service.consul 2>&1 >/dev/null) ]; do sleep 2; done"]
             }
         }
 
@@ -441,7 +441,7 @@ job "voip" {
     }
 
 {% if enable_stun is defined  and enable_stun |lower == "true" %}
-    group "turn" {
+    group "voip-turn" {
 
         count = 1
 
@@ -470,7 +470,7 @@ job "voip" {
             }
         }
 
-        task "coturn" {
+        task "voipTurn" {
             driver = "docker"
 
             config {
