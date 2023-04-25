@@ -8,3 +8,7 @@
 
 # Remove unneeded packages
 - include_tasks: apt_packages.yml
+
+# Remove docker process list
+- name: Clean docker processes.
+  include_tasks: clean_docker_process_list.yml
