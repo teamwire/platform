@@ -32,10 +32,10 @@
 - include: roles/housekeeping.yml
 - include: roles/security.yml
 
-- name: Set current tag (COMPLETE) in /etc/platform_version
-  hosts: all
+- hosts: all
   tasks:
-  - copy:
+  - name: Set current tag (COMPLETE) in /etc/platform_version
+    copy:
       dest: /etc/platform_version
       content: "{{ current_local_tag }}"
       owner: root

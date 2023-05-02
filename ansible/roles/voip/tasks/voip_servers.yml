@@ -1,27 +1,36 @@
 - name: Allow voip video bridge port in voip_servers.
-  ufw:
+  community.general.ufw:
     rule: allow
     port: "10000"
     proto: any
-  when: enable_jvb_cluster | string() | lower != 'true' or enable_jvb_cluster is not defined and inventory_hostname in groups["voip_servers"]
+  when:
+    - enable_jvb_cluster is not defined or enable_jvb_cluster | lower != 'true'
+    - inventory_hostname in groups["voip_servers"]
 
 - name: Allow voip video bridge port in backend_servers.
-  ufw:
+  community.general.ufw:
     rule: allow
     port: "10000"
     proto: any
-  when: enable_jvb_cluster | string() | lower == 'true' and enable_jvb_cluster is defined and inventory_hostname in groups["backend_servers"]
+  when:
+    - enable_jvb_cluster is defined
+    - enable_jvb_cluster | lower == 'true'
+    - inventory_hostname in groups["backend_servers"]
 
 - name: Allow voip video bridge port in video_servers.
-  ufw:
+  community.general.ufw:
     rule: allow
     port: "10000"
     proto: any
-  when: enable_jvb_cluster | string() | lower == 'true' and enable_jvb_cluster is defined and groups["video_servers"] is defined and inventory_hostname in groups["video_servers"]
+  when:
+    - enable_jvb_cluster is defined
+    - enable_jvb_cluster | lower == 'true'
+    - groups["video_servers"] is defined
+    - inventory_hostname in groups["video_servers"]
 
 - name: Copy tw_prosodyctl script.
-  copy:
-    src: ../files/tw_prosodyctl
+  ansible.builtin.copy:
+    src: tw_prosodyctl
     dest: "/usr/local/bin/tw_prosodyctl"
     mode: 0755
     owner: root
@@ -29,10 +38,10 @@
   when: groups['all'] | length > 1
 
 - name: Add turns Firewall Rule allow 5349
-  ufw:
-    rule=allow
-    port=5349
-    proto=any
+  community.general.ufw:
+    rule: allow
+    port: "5349"
+    proto: any
   when:
     - enable_stun is defined
     - enable_stun | string() == 'true'
