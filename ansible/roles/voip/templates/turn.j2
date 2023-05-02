@@ -11,13 +11,16 @@ fingerprint
 # External IP-Address of the TURN server
 external-ip={{ ansible_default_ipv4.address }}
 # Main listening port
-#listening-port=3478
+{% if ssl_server_certificate is defined and ssl_keyfile is defined %}
 tls-listening-port=5349
 
 # Certificate file.
 cert=/data/teamwire.server.crt
 # Private key file.
 pkey=/data/teamwire-backend.key
+{% else %}
+listening-port=3478
+{% endif %}
 
 # Further ports that are open for communication
 min-port=10000
