@@ -15,13 +15,10 @@
     - role: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname)  }}/roles/voip" # noqa internal-error
       when: enable_voip is defined and enable_voip | string() == 'true'
   tasks:
-    - name: Copy tw_prosodyctl script to management server.
-      copy:
-        src: ../../roles/voip/files/tw_prosodyctl
-        dest: "/usr/local/bin/tw_prosodyctl"
-        mode: 0755
-        owner: root
-        group: root
+    - name: Include voip_servers for management_server
+      include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
+        tasks_from: voip_servers.yml
       when:
         - groups['all'] | length > 1
         - "'video_servers' not in group_names"
