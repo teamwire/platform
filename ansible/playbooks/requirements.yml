@@ -359,18 +359,18 @@
     - name: Check APNS certificate validity
       block:
         - name: Check APNS certificate validity
-          openssl_certificate_info:
+          community.crypto.x509_certificate_info:
             path: "{{ apns_certificate }}"
             valid_at:
               next_month: "+30d"
           register: __apns_certificate_validity
         - name: Assert APNS certificate doesn't expire within the next month
-          assert:
+          ansible.builtin.assert:
             that:
               - __apns_certificate_validity.valid_at.next_month
       rescue:
         - name: Check APNS certificate validity
-          debug:
+          ansible.builtin.debug:
             msg: 'Please change your APNS-Certificate immediately'
       when:
         - config_done is defined
@@ -380,25 +380,25 @@
       become: false
 
     - name: Ensure the secondary APNS certificate is configured correctly
-      fail:
+      ansible.builtin.fail:
         msg: "The secondary APNS certificate is not configured correctly."
       when: apns_certificate_2 is defined and apns_appid_2 is not defined or apns_appid_2 is defined and apns_certificate_2 is not defined
 
     - name: Check secondary APNS certificate validity
       block:
         - name: Check secondary APNS certificate validity
-          openssl_certificate_info:
+          community.crypto.x509_certificate_info:
             path: "{{ apns_certificate_2 }}"
             valid_at:
               next_month: "+30d"
           register: __apns_certificate_validity
         - name: Assert secondary APNS certificate doesn't expire within the next month
-          assert:
+          ansible.builtin.assert:
             that:
               - __apns_certificate_validity.valid_at.next_month
       rescue:
         - name: Check secondary APNS certificate validity
-          debug:
+          ansible.builtin.debug:
             msg: 'Please change your secondary APNS-Certificate immediately'
       when:
         - config_done is defined
@@ -408,25 +408,25 @@
       become: false
 
     - name: Ensure the tertiary APNS certificate is configured correctly
-      fail:
+      ansible.builtin.fail:
         msg: "The tertiary APNS certificate is not configured correctly."
       when: apns_certificate_3 is defined and apns_appid_3 is not defined or apns_appid_3 is defined and apns_certificate_3 is not defined
 
     - name: Check tertiary APNS certificate validity
       block:
         - name: Check tertiary APNS certificate validity
-          openssl_certificate_info:
+          community.crypto.x509_certificate_info:
             path: "{{ apns_certificate_3 }}"
             valid_at:
               next_month: "+30d"
           register: __apns_certificate_validity
         - name: Assert tertiary APNS certificate doesn't expire within the next month
-          assert:
+          ansible.builtin.assert:
             that:
               - __apns_certificate_validity.valid_at.next_month
       rescue:
         - name: Check tertiary APNS certificate validity
-          debug:
+          ansible.builtin.debug:
             msg: 'Please change your tertiary APNS-Certificate immediately'
       when:
         - config_done is defined
