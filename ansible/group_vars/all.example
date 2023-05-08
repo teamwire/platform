@@ -97,17 +97,17 @@ external_hostname: ""
 
 # VIDEO
 # To enable video in cluster mode,you must uncomment the enable_jvb_cluster line.
-# You have to ensure that the value is inside quotes! All other values are ignored. 
+# You have to ensure that the value is inside quotes! All other values are ignored.
 # This variable needs to be used in conjection with enable_voip:
 #   - If you want voip feature with a video cluster, set to true.
-#   - If you want voip feature with a configurable video cluster, set to true and add 
+#   - If you want voip feature with a configurable video cluster, set to true and add
 #    the necessary section [video_servers].
 # This variable only works with voip enabled.
 # enable_jvb_cluster: "true"
 
 # TURN/STUN
-# To run a own turn server, enable_voip must be enabled. Further a DNS entry must 
-# be created e.g. stun.yourdomain.com which points to the public Ip of the Voip server. 
+# To run a own turn server, enable_voip must be enabled. Further a DNS entry must
+# be created e.g. stun.yourdomain.com which points to the public Ip of the Voip server.
 # Then the next two lines can be commented out.
 # stun_hostname: "stun.yourdomain.com"
 # enable_stun: "true"
@@ -132,12 +132,11 @@ allow_unknown_users: "no"
 # organisations; the default configuration can be changed by an administrator.
 allow_user_query: "no"
 
-# You've received a certificate file with your other credentials. Copy
-# the file to this virtual machine and give the full path to it here,
-# e.g. "/home/teamwire/example.pem".
-# When you have resigned the app with your corporate certificate, use
-# the matching APNS certificate instead.
-apns_certificate: ""
+# When provided, the application will use a APNS certificate to communicate with
+# the Apple services. The APNS certificate can either be provided by teamwire
+# or you could use your own certificate.
+# To use the certificate you have to enter the full path below.
+# apns_certificate: "/home/teamwire/example.pem"
 
 # When you have resigned the app with your corporate certificate, enter the
 # new app id below and uncomment the line.
@@ -299,7 +298,7 @@ system_email_recipient:
 # workers: ""
 
 # Define expiry time for group channels
-# This variable default value is 86400, to change this value, uncomment the 
+# This variable default value is 86400, to change this value, uncomment the
 # variable and define the value that is wanted.
 # channel_group_expiry: "86400"
 
@@ -317,7 +316,7 @@ system_email_recipient:
 # Permit root_login
 # Root access to the server is strictly prohibited. However, if this is required,
 # you can turn it on with the permit_root_login switch with "yes". The variable
-# is set to "prohibit-password" by default. Only "yes","no" and "prohibit-password" 
+# is set to "prohibit-password" by default. Only "yes","no" and "prohibit-password"
 # are valid values for the variable. Otherwise "prohibit-password" is always inserted.
 # permit_root_login: "prohibit-password"
 

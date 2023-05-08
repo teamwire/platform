@@ -370,8 +370,8 @@
               - __apns_certificate_validity.valid_at.next_month
       rescue:
         - name: Check APNS certificate validity
-          ansible.builtin.debug:
-            msg: 'Please change your APNS-Certificate immediately'
+          debug:
+            msg: 'Please change your APNS-Certificate immediately or remove the Certificate from the group_vars/all File'
       when:
         - config_done is defined
         - apns_certificate is defined
@@ -398,8 +398,8 @@
               - __apns_certificate_validity.valid_at.next_month
       rescue:
         - name: Check secondary APNS certificate validity
-          ansible.builtin.debug:
-            msg: 'Please change your secondary APNS-Certificate immediately'
+          debug:
+            msg: 'Please change your secondary APNS-Certificate immediately or remove the Certificate from the group_vars/all File'
       when:
         - config_done is defined
         - apns_certificate_2 is defined
@@ -426,8 +426,8 @@
               - __apns_certificate_validity.valid_at.next_month
       rescue:
         - name: Check tertiary APNS certificate validity
-          ansible.builtin.debug:
-            msg: 'Please change your tertiary APNS-Certificate immediately'
+          debug:
+            msg: 'Please change your tertiary APNS-Certificate immediately or remove the Certificate from the group_vars/all File'
       when:
         - config_done is defined
         - apns_certificate_3 is defined
