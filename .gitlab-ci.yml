@@ -11,8 +11,8 @@ stages:
 
 default:
   tags:
-    - desktop
-    - linux
+    - platform
+    - lint
 
 variables:
   ANSIBLE_LINT_IMAGE: "cytopia/ansible-lint:6-0.12"
