@@ -21,6 +21,8 @@
         tasks_from: voip_servers.yml
       when:
         - groups['all'] | length > 1
+        - enable_voip is defined
+        - enable_voip | lower == 'true'
         - "'video_servers' not in group_names"
 
 - hosts: voip_servers
