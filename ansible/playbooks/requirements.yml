@@ -153,19 +153,19 @@
           Ensure to remove the option from group_vars/all file.
       when: groups['all'] | length() == 1
 
-    - name: Ensure stun_hostname is set, when enable_stun is activated
+    - name: Ensure that stun_hostname is set only if enable_stun is also set to true
       ansible.builtin.assert:
         that:
+          - enable_stun is defined
+          - enable_stun | lower == "true"
           - stun_hostname is defined
           - stun_hostname is string
+          - stun_hostname | length >= 1
         msg: >-
-          Ensure stun_hostname is set to a non empty string and its a resolveable hostname which points to the Voip Servers public ip
+          Please ensure that the 'enable_stun' parameter is set to 'true' and that the 'stun_hostname' parameter is set to a resolvable hostname pointing to the public IP of the VoIP Server.
+          Please note that the 'stun_hostname' should never be left empty.
       run_once: true
-      when:
-        - enable_stun is defined
-        - enable_stun | lower == "true"
-        - enable_voip is defined
-        - enable_voip |lower == "true"
+      when: enable_stun is defined or stun_hostname is defined
 
     - name: Ensure valid configuration combination
       block:
