@@ -634,6 +634,24 @@ create_report() {
     exec > >(tee -i "$RUNTIME_REPORT_OF_SCRIPT")
     exec 2>&1
 
+    # Gather SSL Certificate information
+    if [[ $(_get_config_value ssl_server_certificate) && $(_get_config_value ssl_intermediate_certificate) && $(_get_config_value ssl_root_certificate) && $(_get_config_value ssl_keyfile) ]]; then
+        CHECK_SSL=true
+        SSL_CERTIFICATE=$(_get_config_value ssl_server_certificate)
+        SSL_INTERMEDIATE=$(_get_config_value ssl_intermediate_certificate)
+        SSL_ROOT=$(_get_config_value ssl_root_certificate)
+        SSL_KEYFILE=$(_get_config_value ssl_keyfile)
+
+        # Get Values to compare keyfile and server certificate
+        SSL_KEYFILE_SHA=$(openssl pkey -in ${SSL_KEYFILE} -pubout -outform pem | sha256sum)
+        SSL_CERTIFICATE_SHA=$(openssl x509 -in ${SSL_CERTIFICATE} -pubkey -noout -outform pem | sha256sum)
+        if [ "${SSL_KEYFILE_SHA}" == "${SSL_CERTIFICATE_SHA}" ]; then
+            SSL_SHA_MSG="are matching"
+        else
+            SSL_SHA_MSG="does not match"
+        fi
+    fi
+
     declare -A report_map            # Array contains all collected information. This array will be looped and written to a report file
 
     # Gather systeminformation
@@ -652,6 +670,10 @@ create_report() {
         report_map["Show last 15 consul messages"]="$(sudo journalctl -u consul --lines 30)"
         report_map["Show last 15 nomad messages"]="$(sudo journalctl -u nomad --lines 30)"
 
+        if [ ! -z ${CHECK_SSL} ]; then
+            report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; ansible frontend_servers -i "${ANSIBLE_DIR}/cluster_hosts" -m shell -a "timeout 10 openssl s_client -quiet -connect localhost:443 -servername ${name} -verify_return_error 2>&1"; done)
+        fi
+
         # Retrieve logs from loghost and add them to the report
         LOG_SERVER=$(ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -m setup -a "filter=ansible_hostname" | grep ansible_hostname | awk '{print $2}' | tr -d '",')
         LOG_FILES=$(ssh "teamwire@${LOG_SERVER}" "find /var/log/cluster -name \"*.log"\" | awk -F/ '{print $NF}')
@@ -665,6 +687,10 @@ create_report() {
         report_map["Show uptime"]=$(uptime)
         report_map["Show running docker container"]="$(docker ps -a)"
         report_map["Show debian version"]=$(cat /etc/debian_version)
+
+        if [ ! -z ${CHECK_SSL} ]; then
+            report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; timeout 10 openssl s_client -quiet -connect localhost:443 -servername ${name} -verify_return_error 2>&1 ; done)
+        fi
 
     fi
 
@@ -684,6 +710,11 @@ create_report() {
     report_map["Show network configuration"]="$(ip a)"
     report_map["Show current kernel messages(dmesg)"]="$(sudo dmesg | egrep -v 'apt-daily|UFW BLOCK' | tail -n 50)"
     report_map["Show twctl connectivity output"]=$(twctl connectivity 2>&1)
+
+    if [ ! -z ${CHECK_SSL} ]; then
+      report_map["Validate certificates locally"]=$(openssl verify -CAfile ${SSL_ROOT} ${SSL_INTERMEDIATE} ${SSL_CERTIFICATE})
+      report_map["Compare keyfile and certificate SHASUM"]=$(echo -e "Key: $SSL_KEYFILE_SHA \nCertificate: $SSL_CERTIFICATE_SHA \nKey and Certificate $SSL_SHA_MSG")
+    fi
 
     for key in "${!report_map[@]}"; do
 
