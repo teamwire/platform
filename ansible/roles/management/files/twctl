@@ -763,7 +763,7 @@ pull_images_base() {
             for VOIPIMG in ${VOIPIMAGES}; do
                 docker pull "${PRFX}$VOIPIMG":"$TAG" || exit 1;
             done
-        fi    
+        fi
     fi
 }
 
