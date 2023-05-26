@@ -68,6 +68,15 @@
       run_once: true
       when: workers is defined
 
+    - name: Assert that worker_gunicorn_max_requests is an integer
+      ansible.builtin.assert:
+        that:
+          - worker_gunicorn_max_requests is integer
+        msg: >-
+          Please make sure that worker_gunicorn_max_requests is an unquoted integer.
+      run_once: true
+      when: worker_gunicorn_max_requests is defined
+
     - name: Assert channel_group_expiry variable is valid.
       assert:
         that:
