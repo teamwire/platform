@@ -672,6 +672,7 @@ create_report() {
     report_map["Show docker info"]="$(docker info)"
     report_map["Show network configuration"]="$(ip a)"
     report_map["Show current kernel messages(dmesg)"]="$(sudo dmesg | egrep -v 'apt-daily|UFW BLOCK' | tail -n 50)"
+    report_map["Show twctl connectivity output"]=$(twctl connectivity 2>&1)
 
     for key in "${!report_map[@]}"; do
 
