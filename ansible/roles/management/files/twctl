@@ -251,6 +251,17 @@ _get_config_value() {
     awk '/^'${ENTRY}':/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE" 2> /dev/null
 }
 
+_get_config_value_array() {
+    local ENTRY="$1"
+    ANSIBLE_HOST_FILE="${ANSIBLE_DIR}/hosts"
+
+    if [ "$INSTALLATION" = "cluster" ]; then
+        local ANSIBLE_HOST_FILE="${ANSIBLE_DIR}/cluster_hosts"
+    fi
+
+    ansible localhost -i "${ANSIBLE_HOST_FILE}" -m shell -a "echo '{{ ${ENTRY} }}' | sed -e 's/\[//' -e 's/\]//' -e 's/,//'" | grep -v 'localhost'
+}
+
 check_tag() {
     local TAG=$1
     check_registry
