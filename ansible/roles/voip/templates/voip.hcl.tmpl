@@ -352,7 +352,7 @@ job "voip" {
         }
 
         task "waitfor-jicofo" {
-            driver = "exec"
+            driver = "raw_exec"
 
             lifecycle {
                 hook = "prestart"

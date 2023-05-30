@@ -57,3 +57,26 @@ plugin "docker" {
 		}
 	}
 }
+
+# raw_exec plugin configuration
+plugin "raw_exec" {
+  config {
+{% if enable_jvb_cluster is defined and enable_jvb_cluster | lower == 'true' %}
+  {% if groups['video_servers'] is defined and inventory_hostname in groups['video_servers'] %}
+    enabled = true
+  {% elif inventory_hostname in groups['backend_servers'] %}
+    enabled = true
+  {% else %}
+    enabled = false
+  {% endif %}
+{% elif enable_voip is defined and ( enable_jvb_cluster is undefined or enable_jvb_cluster | lower != 'true' ) %}
+  {% if inventory_hostname in groups['voip_servers'] %}
+    enabled = true
+  {% else %}
+    enabled = false
+  {% endif %}
+{% else %}
+    enabled = false
+{% endif %}
+  }
+}
