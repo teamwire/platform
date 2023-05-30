@@ -37,10 +37,10 @@
     group: root
   when: groups['all'] | length > 1
 
-- name: Add turns Firewall Rule allow 5349
+- name: "Add turns Firewall Rule allow {{ voip_turn_port }}"
   community.general.ufw:
     rule: allow
-    port: "5349"
+    port: "{{ voip_turn_port }}"
     proto: any
   when:
     - enable_stun is defined

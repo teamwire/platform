@@ -225,14 +225,17 @@
   ufw: rule=allow port=10000 proto=any
   when: groups.all | length == 1 and enable_voip is defined and enable_voip | string() == 'true'
 
-- name: Add Firewall Rule allow 5349
-  ufw: rule=allow port=5349 proto=any
-  when: 
-    - groups.all | length == 1 
+- name: "Add Firewall Rule allow {{ voip_turn_port }}"
+  community.general.ufw:
+    rule: allow
+    port: "{{ voip_turn_port }}"
+    proto: any
+  when:
+    - groups.all | length == 1
     - enable_voip is defined
-    - enable_voip | string() == 'true'
-    - enable_stun is defined 
-    - enable_stun | string() == 'true'
+    - enable_voip | lower == 'true'
+    - enable_stun is defined
+    - enable_stun | lower == 'true'
 
 - name: Re-use sockets in TIME_WAIT state for new connections
   sysctl:

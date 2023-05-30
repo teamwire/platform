@@ -34,6 +34,8 @@
         - enable_voip | string() == 'true'
         - enable_stun is defined
         - enable_stun | string() == 'true'
+        - ssl_server_certificate is defined
+        - ssl_keyfile is defined
         - groups['all'] | length > 1
 
 - hosts: voip_servers

@@ -221,7 +221,7 @@ job "voip" {
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
                 {% if enable_stun is defined and enable_stun | lower == "true" -%}
                 TURNS_HOST                      = "{{ stun_hostname }}"
-                TURNS_PORT                      = 5349
+                TURNS_PORT                      = "{{ voip_turn_port }}"
                 {% endif %}
             }
 
@@ -419,7 +419,7 @@ job "voip" {
                 JVB_TCP_PORT                    = "4443"
                 JVB_TCP_MAPPED_PORT             = "4443"
 {% if enable_stun is defined  and enable_stun |lower == "true" %}
-                JVB_STUN_SERVERS                = "{{ stun_hostname }}:5349"
+                JVB_STUN_SERVERS                = "{{ stun_hostname }}:{{ voip_turn_port }}"
 {% else %}
                 JVB_STUN_SERVERS                = "meet-jit-si-turnrelay.jitsi.net:443"
 {% endif %}
@@ -466,7 +466,7 @@ job "voip" {
 
         network {
             port "stun" {
-            static = "5349"
+            static = "{{ voip_turn_port }}"
             }
         }
 
