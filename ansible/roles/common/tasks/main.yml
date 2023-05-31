@@ -33,10 +33,10 @@
     dest: /etc/rc.local
     owner: root
 
-- name: Check if installing offline
-  stat:
-    path: /etc/offline_installation
-  register: offline_mode
+- name: Import check offline installation task
+  ansible.builtin.import_role:
+    name: "{{ ansible_inventory_sources[0] | dirname  }}/roles/common"
+    tasks_from: check_offline_installation
 
 - name: apt-get update
   apt:

@@ -1,3 +1,13 @@
+---
+
+- name: Include offline installation check
+  hosts: local:management_servers
+  tasks:
+    - name: Import check offline installation task
+      ansible.builtin.import_role:
+        name: "{{ ansible_inventory_sources[0] | dirname  }}/roles/common"
+        tasks_from: check_offline_installation
+
 - hosts: local:management_servers
   roles:
   - role: ../../roles/management
