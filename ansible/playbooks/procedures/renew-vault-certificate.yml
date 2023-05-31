@@ -17,29 +17,28 @@
 
     - name: Issue a TLS certificate for Vault to use
       ansible.builtin.command: vault write -tls-skip-verify pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['hashi_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['hashi_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json
-      run_once: true
       register: issue_info
-      when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['hashi_servers']
+      when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname == groups['hashi_servers'][0]
 
     - name: Set certificate fact
-      run_once: true
       ansible.builtin.set_fact:
         vault_certificate: "{{ issue_info.stdout | from_json }}"
+      when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname == groups['hashi_servers'][0]
 
     - name: Install Vault root CA, tls certificate and private key
       ansible.builtin.copy:
         content: "{{ item.content }}"
         dest: "{{ item.dest }}"
-        user: root
+        owner: root
         group: root
         mode: '0644'
       with_items:
         - {
-            content: "{{ vault_certificate.data.certificate }}",
+            content: "{{ hostvars[groups['hashi_servers'][0]].vault_certificate.data.certificate if groups['all'] | length() > 1 else vault_certificate.data.certificate }}",
             dest: "/var/lib/vault/ssl/vault.crt",
           }
         - {
-            content: "{{ vault_certificate.data.private_key }}",
+            content: "{{ hostvars[groups['hashi_servers'][0]].vault_certificate.data.private_key if groups['all'] | length() > 1 else vault_certificate.data.private_key }}",
             dest: "/var/lib/vault/ssl/vault.pem",
           }
       become: true
