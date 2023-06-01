@@ -1,5 +1,15 @@
 ---
 
+# This task will check if Vault has been initialized and read the secrets from there if so
+- name: Vault Status check
+  hosts: local:hashi_servers
+  tasks:
+    - name: Include vault role
+      include_role:
+        name: ../../roles/vault
+        tasks_from: secrets
+      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+
 - name: Include offline installation check
   hosts: local:management_servers
   tasks:
