@@ -143,7 +143,7 @@ frontend https-in
     {%endif%}acl IS_ADMIN hdr_beg(host) -i admin
 
     # Backends redirect
-    use_backend notifications  if { path_beg -i /notifications }
+    use_backend notifications  if { path_beg -i /notifications } IS_EXTERNAL_HOSTNAME
     {% if websockets_enabled | string() == 'true' %}use_backend teamwire-backend-websockets if { path_beg -i /ws } IS_EXTERNAL_HOSTNAME
 {%endif%}
     use_backend teamwire-backend if IS_EXTERNAL_HOSTNAME || IS_ADMIN
