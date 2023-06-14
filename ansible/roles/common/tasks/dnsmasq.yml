@@ -24,7 +24,9 @@
   template:
     src: 01-address.j2
     dest: /etc/dnsmasq.d/01-address
-  when: dns_servers is defined
+  when:
+    - dns_servers is defined
+    - inventory_hostname not in groups['voip_servers']
   notify: restart dnsmasq
 
 - name: Resolve DNS using dnsmasq

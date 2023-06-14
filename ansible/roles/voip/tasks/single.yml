@@ -1,19 +1,4 @@
 ---
-- name: Ensure voip DNS can be resolved
-  ansible.builtin.lineinfile:
-    path: "/etc/hosts"
-    insertafter: EOF
-    state: present
-    line: "127.0.0.1    {{ item }}"
-  with_items:
-    - xmpp.meet.jitsi
-    - meet.jitsi
-    - auth.meet.jitsi
-    - muc.meet.jitsi
-    - internal-muc.meet.jitsi
-    - guest.meet.jitsi
-    - recorder.meet.jitsi
-
 - name: Run the Teamwire voip web container
   community.docker.docker_container:
     name: teamwire_web
