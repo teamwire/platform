@@ -75,10 +75,34 @@
     groups: docker
     append: true
 
+
+- name: Create systemd drop-in directory for docker
+  ansible.builtin.file:
+    name: /etc/systemd/system/docker.service.d
+    state: directory
+
 - name: Configure Docker daemon parameters
   template:
     src: docker.conf.j2
     dest: /etc/systemd/system/docker.service.d/docker.conf
+  notify:
+    - reload systemd
+    - restart docker
+
+- name: Configure proxy for docker
+  ansible.builtin.template:
+    src: http-proxy.conf.j2
+    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+  when: http_proxy is defined
+  notify:
+    - reload systemd
+    - restart docker
+
+- name: Disable proxy for docker when no proxy is configured
+  ansible.builtin.file:
+    name: /etc/systemd/system/docker.service.d/http-proxy.conf
+    state: absent
+  when: http_proxy is not defined
   notify:
     - reload systemd
     - restart docker

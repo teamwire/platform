@@ -50,9 +50,3 @@
 
 - name: reload systemd
   command: systemctl daemon-reload # noqa command-instead-of-module
-
-- name: restart docker
-  systemd:
-    name: docker
-    state: restarted
-    daemon_reload: true
