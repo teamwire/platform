@@ -1,0 +1,31 @@
+127.0.0.1 localhost
+127.0.1.1 localhost.localdomain   localhost
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+{% if groups['all'] |length() == 1 %}
+127.0.0.1 {{ external_hostname | join(' ') if external_hostname|type_debug == 'list' else external_hostname }}
+{% if  enable_voip is defined and enable_voip == 'true'%}
+127.0.0.1 xmpp.meet.jitsi
+127.0.0.1 meet.jitsi
+127.0.0.1 auth.meet.jitsi
+127.0.0.1 muc.meet.jitsi
+127.0.0.1 internal-muc.meet.jitsi
+127.0.0.1 guest.meet.jitsi
+127.0.0.1 recorder.meet.jitsi
+{% endif %}
+{% else %}
+
+{% for host in groups['all'] %}
+{{ hostvars[host].private_ip }} {{ host }}
+{%- if host in groups['frontend_servers']|first %}
+{% if loadbalancer_external_ip is defined %}
+
+{{ loadbalancer_external_ip }}{% endif %}
+ {{ external_hostname | join(' ') if external_hostname|type_debug == 'list' else external_hostname }}{% endif %}
+
+{% endfor %}
+{% endif %}

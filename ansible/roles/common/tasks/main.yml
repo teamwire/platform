@@ -167,12 +167,14 @@
   hostname:
     name: "{{ inventory_hostname if inventory_hostname not in ignore_hostnames else (external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname) }}" # noqa line-length
 
-- name: Add hostname to localhost
+- name: Add hosts file via template
   when: config_done is defined
-  lineinfile:
+  template:
+    src: hosts.j2
     dest: /etc/hosts
-    regexp: ^127\.0\.0\.1\s+localhost
-    line: "127.0.0.1 localhost {{ external_hostname | join(' ') if external_hostname|type_debug == 'list' else external_hostname }}"
+    mode: 0644
+    owner: root
+    group: root
 
 # send outgoing mail over smarthost
 - include: postfix.yml
