@@ -242,6 +242,16 @@
           - "Please refer to the cluster_example_hosts file for an example."
       run_once: true
       when: groups['all'] | length() > 1
+    
+    - name: Ensure APNS certificate path exists.
+      ansible.builtin.assert:
+        that:
+          - apns_certificate is exists
+        msg: >-
+          Please ensure the APNS certificate path is correct.
+      when: apns_certificate is defined
+      run_once: true
+      delegate_to: localhost
 
     - name: Get current git tag
       command: "git describe --always --tags" # noqa command-instead-of-module
