@@ -26,6 +26,7 @@
     dest: /etc/dnsmasq.d/01-address
   when:
     - dns_servers is defined
+    - enable_voip is defined and enable_voip | string() == 'true'
     - inventory_hostname not in groups['voip_servers']
   notify: restart dnsmasq
 
