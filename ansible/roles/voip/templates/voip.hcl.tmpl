@@ -388,9 +388,6 @@ job "voip" {
                         syslog-facility = "local6"
                     }
                 }
-                volumes = [
-                    "{{ VOIP_ROOT_PATH }}/jvb${NOMAD_ALLOC_INDEX}:/config:Z"
-                ]
             }
 {% raw %}
             template {

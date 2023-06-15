@@ -112,8 +112,6 @@
     state: started
     restart_policy: always
     network_mode: host
-    volumes:
-      - "{{ VOIP_ROOT_PATH }}/jvb:/config:Z"
     log_driver: "syslog"
     log_opt:
       tag: teamwire-jvb
