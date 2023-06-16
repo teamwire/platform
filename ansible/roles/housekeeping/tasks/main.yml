@@ -12,3 +12,7 @@
 # Remove docker process list
 - name: Clean docker processes.
   include_tasks: clean_docker_process_list.yml
+
+# Clean JVB folders content
+- name: Clean JVB folders content.
+  include_tasks: clean_jvb_folders.yml

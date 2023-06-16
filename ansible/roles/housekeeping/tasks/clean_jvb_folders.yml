@@ -1,0 +1,30 @@
+---
+- name: Clean jvb.conf file.
+  ansible.builtin.file:
+    path: "{{ VOIP_ROOT_PATH }}/jvb{{ item }}/jvb.conf"
+    state: absent
+  with_sequence: start=0 end="{{ end_at }}"
+  vars:
+    end_at: "{{ groups['video_servers'] | count | int - 1 if groups['video_servers'] is defined else groups['backend_servers'] | count | int - 1 if groups['backend_servers'] is defined else 0 }}"
+  when:
+    - enable_voip is defined
+    - enable_voip | lower == 'true'
+
+- name: Clean logging.properties file.
+  ansible.builtin.file:
+    path: "{{ VOIP_ROOT_PATH }}/jvb{{ item }}/logging.properties"
+    state: absent
+  with_sequence: start=0 end="{{ end_at }}"
+  vars:
+    end_at: "{{ groups['video_servers'] | count | int - 1 if groups['video_servers'] is defined else groups['backend_servers'] | count | int - 1 if groups['backend_servers'] is defined else 0 }}"
+  when:
+    - enable_voip is defined
+    - enable_voip | lower == 'true'
+
+- name: Remove old JVB folder.
+  ansible.builtin.file:
+    path: "{{ VOIP_ROOT_PATH }}/jvb/"
+    state: absent
+  when:
+    - enable_voip is defined
+    - enable_voip | lower == 'true'
