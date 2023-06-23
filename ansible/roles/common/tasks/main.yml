@@ -131,29 +131,6 @@
     - no_proxy
   when: http_proxy is not defined
 
-- name: Create systemd drop-in directory for docker
-  file:
-    name: /etc/systemd/system/docker.service.d
-    state: directory
-
-- name: Configure proxy for docker
-  template:
-    src: http-proxy.conf.j2
-    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
-  when: http_proxy is defined
-  notify:
-    - reload systemd
-    - restart docker
-
-- name: Disable proxy for docker when no proxy is configured
-  when: http_proxy is not defined
-  file:
-    name: /etc/systemd/system/docker.service.d/http-proxy.conf
-    state: absent
-  notify:
-    - reload systemd
-    - restart docker
-
 - name: NPRX_18 Don't access localhost and local services via proxy
   lineinfile:
     dest: /etc/environment
