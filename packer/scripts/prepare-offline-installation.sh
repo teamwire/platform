@@ -110,13 +110,27 @@ sudo apt-get update -q
 sudo apt-get install -qy ${APT_3RD_PARTY_PREREQUISITES}
 
 # Add additional repo signing keys
-# https://docs.docker.com/engine/install/debian/#install-using-the-repository
-echo "Step 2: Import additional repo signing keys"
+echo "Step 2: Import additional repo signing keys / repositories"
 echo "==========================================="
 sudo apt-get update -q
+
+# Configure Docker Repository Key
+# https://docs.docker.com/engine/install/debian/#install-using-the-repository
 if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
 	sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
 	sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+fi
+
+# Configure Icinga2 Repository and Key
+# https://icinga.com/docs/icinga-2/latest/doc/02-installation/01-Debian/#debian-repository
+if [ ! -f /usr/share/keyrings/icinga-archive-keyring.key ]; then
+  sudo wget -q -O /usr/share/keyrings/icinga-archive-keyring.key https://packages.icinga.com/icinga.key
+  sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg /usr/share/keyrings/icinga-archive-keyring.key
+fi
+
+if [ ! -f /etc/apt/sources.list.d/icinga2.list ]; then
+  DIST=$(awk -F"[)(]+" '/VERSION=/ {print $2}' /etc/os-release)
+  echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.key] https://packages.icinga.com/debian icinga-${DIST} main" | sudo tee /etc/apt/sources.list.d/icinga2.list
 fi
 
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,
