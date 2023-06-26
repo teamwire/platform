@@ -1,4 +1,9 @@
-- name: Deploy and configure NFS server
-  hosts: storage_servers
-  roles:
-    - { role: ../../roles/storage, when: config_done is defined and external_storage_path is not defined }
+- hosts: storage_servers
+  tasks:
+    - name: Deploy and configure NFS server
+      ansible.builtin.import_role:
+        name: ../../roles/storage
+      when:
+        - groups['all'] | length() > 1
+        - config_done is defined
+        - external_storage_path is not defined

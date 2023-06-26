@@ -10,5 +10,9 @@
 
 - hosts: hashi_servers:backend_servers:management_servers:voip_servers
   serial: 1
-  roles:
-    - role: ../../roles/nomad
+  tasks:
+    - name: Deploy and configure the nomad role
+      ansible.builtin.import_role:
+        name: ../../roles/nomad
+      when:
+        - groups['all'] | length() > 1

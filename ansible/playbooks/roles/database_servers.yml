@@ -15,4 +15,7 @@
     - name: Include db role
       include_role:
         name: ../../roles/db
-      when: config_done is defined and mysql_host is not defined
+      when:
+        - config_done is defined
+        - mysql_host is not defined
+        - groups['all'] | length() > 1

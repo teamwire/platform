@@ -8,8 +8,11 @@
         tasks_from: secrets
       when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
 
-- name: Deploy and configure Redis database cluster
-  hosts: redis_servers
+- hosts: redis_servers
   serial: 1
-  roles:
-    - ../../roles/redis
+  tasks:
+    - name: Deploy and configure Redis database cluster
+      ansible.builtin.import_role:
+        name: ../../roles/redis
+      when:
+        - groups['all'] | length() > 1
