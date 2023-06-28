@@ -132,6 +132,9 @@ allow_unknown_users: "no"
 # organisations; the default configuration can be changed by an administrator.
 allow_user_query: "no"
 
+# Number of requests Gunicorn worker is handling before being restarted.
+# worker_gunicorn_max_requests: 500
+
 # When provided, the application will use a APNS certificate to communicate with
 # the Apple services. The APNS certificate can either be provided by teamwire
 # or you could use your own certificate.

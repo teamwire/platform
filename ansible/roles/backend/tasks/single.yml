@@ -73,6 +73,7 @@
       PROSODY_KEY: "{{ prosody_key }}"
       LOGLEVEL: "{{ backend_loglevel|default() }}"
       WORKERS: "{{ workers|default() }}"
+      GUNICORN_MAX_REQUESTS: "{{ worker_gunicorn_max_requests | default('500') }}"
       CHANNEL_GROUP_EXPIRY: "{{ channel_group_expiry|default('86400') }}"
 
 - name: Run the Teamwire backend worker container
