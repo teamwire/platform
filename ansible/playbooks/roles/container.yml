@@ -16,6 +16,7 @@
       include_role:
         name: ../../roles/backend
         tasks_from: single
+      when: groups['all'] | length() == 1
 
 # This play only applies to cluster installations
 - name: Write cluster configuration
@@ -25,6 +26,7 @@
       include_role:
         name: ../../roles/backend
         tasks_from: cluster
+      when: groups['all'] | length() > 1
 
 - name: Write Nomad job
   hosts: backend_servers
@@ -33,3 +35,4 @@
       include_role:
         name: ../../roles/nomad
         tasks_from: job
+      when: groups['all'] | length() > 1

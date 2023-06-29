@@ -1,4 +1,7 @@
-- name: Configure the logging server
-  hosts: loghost
-  roles:
-  - role: ../../roles/loghost
+- hosts: loghost
+  tasks:
+    - name: Configure the logging server
+      ansible.builtin.import_role:
+        name: ../../roles/loghost
+      when:
+        - groups['all'] | length() > 1

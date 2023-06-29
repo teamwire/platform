@@ -3,39 +3,83 @@
   hosts: hashi_servers
   tasks:
     - name: Include roles
-      include_role:
+      ansible.builtin.include_role:
         name: ../../roles/vault
         tasks_from: secrets
       when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
 
-- hosts: database_servers
+- name: Setup galera cluster
+  hosts: database_servers
   tasks:
-    - name: Stop MySQL on all cluster nodes
-      service: name=mysql state=stopped
+    - name: Assert Setup
+      ansible.builtin.assert:
+        that:
+          - groups['all'] | length() > 1
+          - mysql_host is undefined
+          - oracle_host is undefined
+        msg:
+          - "You can only bootstrap galera if your setup hits following requirement:"
+          - "  - It is a cluster setup"
+          - "  - It uses the mysql cluster installation from our Ansible Playbooks"
+      run_once: true
 
-    - name: fetch debian.cnf from first master
-      fetch: src=/etc/mysql/debian.cnf dest=debian.cnf flat=yes
+    - name: Check if galera cluster is already initialized
+      community.mysql.mysql_query:
+        query: "SHOW STATUS LIKE 'wsrep_cluster_size'"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
       when: inventory_hostname == groups['database_servers'] | first
+      register: show_galera_cluster_size
 
-    - name: copy debian.conf to other masters
-      copy:
+    - name: Check if galera is already initialized
+      ansible.builtin.assert:
+        that:
+          - item.Value == "0"
+        msg: "Your galera cluster is already initialized. Please carry on with the setup process."
+      with_items: "{{ hostvars[groups['database_servers'][0]].show_galera_cluster_size.query_result }}"
+      run_once: true
+
+    - name: Stop MySQL on all cluster nodes
+      ansible.builtin.service:
+        name: mysql
+        state: stopped
+
+    - name: Fetch debian.cnf from first master
+      ansible.builtin.fetch:
+        src: /etc/mysql/debian.cnf
+        dest: debian.cnf
+        flat: true
+      when:
+        - inventory_hostname == groups['database_servers'] | first
+
+    - name: Copy debian.conf to other masters
+      ansible.builtin.copy:
         src: debian.cnf
         dest: /etc/mysql/debian.cnf
-      when: inventory_hostname != groups['database_servers'] | first
+        owner: root
+        group: root
+        mode: '600'
+      when:
+        - inventory_hostname != groups['database_servers'] | first
 
-    - name: bootstrap database on first master
-      command: /usr/bin/galera_new_cluster
-      when: inventory_hostname == groups['database_servers'] | first
+    - name: Bootstrap database on first master
+      ansible.builtin.command: /usr/bin/galera_new_cluster
+      when:
+        - inventory_hostname == groups['database_servers'] | first
 
     - name: Delete root@first master user
-      mysql_user:
+      community.mysql.mysql_user:
         name: root
         host: "{{ inventory_hostname }}"
         state: absent
         login_user: root
         login_password: "{{ mysql_root_password }}"
-      when: inventory_hostname == groups['database_servers'] | first
+      when:
+        - inventory_hostname == groups['database_servers'] | first
 
-    - name: start service normally on other masters
-      service: name=mysql state=started
-      when: inventory_hostname != groups['database_servers'] | first
+    - name: Start service normally on other masters
+      ansible.builtin.service:
+        name: mysql
+        state: started
+      when:
+        - inventory_hostname != groups['database_servers'] | first

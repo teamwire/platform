@@ -1,4 +1,9 @@
-- name: Deploy and configure the load balancers
-  hosts: load_balancers
-  roles:
-  - role: ../../roles/load_balancer
+- hosts: load_balancers
+  tasks:
+    - name: Deploy and configure the load balancers
+      ansible.builtin.import_role:
+        name: ../../roles/load_balancer
+      when:
+        - groups['all'] | length() > 1
+        - loadbalancer_external_ip is defined
+        - loadbalancer_password is defined

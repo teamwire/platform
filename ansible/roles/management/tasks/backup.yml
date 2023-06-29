@@ -80,8 +80,8 @@
   become: false
   run_once: true
 
-- name: Backup Ansible log file # noqa ignore-errors
+- name: Backup Ansible log file
   command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
-  when: not TW_DEV_MODE
+  when:
+    - TW_DEV_MODE is undefined or TW_DEV_MODE | lower != "true"
   run_once: true
-  ignore_errors: true
