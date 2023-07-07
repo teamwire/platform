@@ -21,3 +21,7 @@ innodb_buffer_pool_size: 0
 
 # Maxscale GPG Key
 maxscale_gpg_key_id: "0xCE1A3DD5E3C94F49"
+
+# Set owner for ssl certificate path/files
+mysql_ssl_owner: "{{ 'mysql' if inventory_hostname in groups['database_servers'] else 'root' }}"
+mysql_ssl_group: "{{ 'mysql' if inventory_hostname in groups['database_servers'] else 'root' }}"

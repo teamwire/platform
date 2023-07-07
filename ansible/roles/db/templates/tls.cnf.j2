@@ -1,0 +1,11 @@
+[mariadb]
+require_secure_transport = on
+ssl-cert = /etc/mysql/ssl/server.pem
+ssl-key = /etc/mysql/ssl/private_key.pem
+ssl-ca = /etc/mysql/ssl/intermediate_and_root.pem
+ssl-cipher = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305
+tls_version = TLSv1.2,TLSv1.3
+
+[client-mariadb]
+ssl-ca = /etc/mysql/ssl/intermediate_and_root.pem
+ssl
