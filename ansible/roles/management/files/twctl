@@ -1012,14 +1012,14 @@ archiving() {
     case $OPTION in
             add)
                     if hash archiving 2>/dev/null; then
-                        sudo archiving -add -tag $TAG -file $FILENAME
+                        sudo archiving -add -tag "${TAG}" -file $FILENAME
                     else
                         echo "Archiving app not found"
                     fi
                     ;;
             remove)
                     if hash archiving 2>/dev/null; then
-                        sudo archiving -del -tag $TAG -file $FILENAME
+                        sudo archiving -del -tag "${TAG}" -file $FILENAME
                     else
                         echo "Archiving app not found"
                     fi
