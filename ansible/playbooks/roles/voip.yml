@@ -14,8 +14,8 @@
   hosts: local:management_servers:voip_servers:backend_servers:video_servers
   tasks:
     - name: Import check offline installation task
-      ansible.builtin.import_role:
-        name: "{{ ansible_inventory_sources[0] | dirname  }}/roles/common"
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname)  }}/roles/common"
         tasks_from: check_offline_installation
 
 # Please refer here: https://github.com/ansible/ansible/issues/30901 why `inventory_dir` is

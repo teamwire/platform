@@ -4,8 +4,8 @@
   hosts: frontend_servers:local
   tasks:
     - name: Import check offline installation task
-      ansible.builtin.import_role:
-        name: "{{ ansible_inventory_sources[0] | dirname  }}/roles/common"
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname)  }}/roles/common"
         tasks_from: check_offline_installation
 
 # This playbook applies to frontend cluster nodes and the single server installation
