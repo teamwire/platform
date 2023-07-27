@@ -80,8 +80,14 @@
   become: false
   run_once: true
 
+- name: Check if Ansible log file exists
+  ansible.builtin.stat:
+    path: "{{ inventory_dir }}/ansible.log"
+  register: log_file
+
 - name: Backup Ansible log file
   command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
   when:
+    - log_file.stat.exists
     - TW_DEV_MODE is undefined or TW_DEV_MODE | lower != "true"
   run_once: true
