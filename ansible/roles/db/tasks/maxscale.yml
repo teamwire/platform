@@ -1,0 +1,61 @@
+---
+
+- name: Get gpg key for maxscale repository
+  ansible.builtin.apt_key:
+    id: "{{ maxscale_gpg_key_id }}"
+    keyserver: keyserver.ubuntu.com
+    keyring: /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg
+  environment:
+    HTTP_PROXY: "{{ http_proxy | default() }}"
+    HTTPS_PROXY: "{{ http_proxy | default() }}"
+
+- name: Trigger handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Add maxscale repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64,arm64] https://dlm.mariadb.com/repo/maxscale/latest/apt {{ ansible_distribution_release }} main"
+    state: present
+    filename: mariadb-maxscale
+
+- name: Install maxscale
+  ansible.builtin.package:
+    name: maxscale
+    state: present
+
+- name: Install logrotate job for Maxscale logs
+  ansible.builtin.copy:
+    src: maxscale-log
+    dest: /etc/logrotate.d/maxscale_logrotate
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable and start maxscale service
+  ansible.builtin.service:
+    name: maxscale
+    enabled: true
+    state: started
+
+- name: Check if maxscale secret file exists
+  ansible.builtin.stat:
+    path: /var/lib/maxscale/.secrets
+  register: maxscale_secret_file
+
+- name: Initialize maxscale encryption for passwords
+  ansible.builtin.command: "maxkeys /var/lib/maxscale"
+  when: maxscale_secret_file.stat.exists is falsy
+  notify:
+    - Generate Password Hash if not defined
+    - Copy maxscale ansible facts
+    - Ansible_facts_reload
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Copy configuration file /etc/maxscale.cnf
+  ansible.builtin.template:
+    src: maxscale.cnf.j2
+    dest: /etc/maxscale.cnf
+    mode: 0644
+  notify: Maxscale_restart

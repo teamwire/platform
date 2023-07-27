@@ -1,0 +1,57 @@
+# MaxScale documentation:
+# https://mariadb.com/kb/en/mariadb-maxscale-6/
+
+# Global parameters
+#
+# Complete list of configuration options:
+# https://mariadb.com/kb/en/mariadb-maxscale-6-maiadb-maxscale-configuration-guide/
+
+[maxscale]
+threads=auto
+admin_enabled=false
+
+# ------------------------------------------------------------------------------
+# Server Definition
+# ------------------------------------------------------------------------------
+{% for host in groups['database_servers'] | sort %}
+[{{ host }}]
+type=server
+address={{ hostvars[host].private_ip }}
+port=3306
+protocol=MariaDBBackend
+
+{% endfor %}
+
+# ------------------------------------------------------------------------------
+# Monitor Definition
+# ------------------------------------------------------------------------------
+[monitor]
+type=monitor
+module=galeramon
+servers={% for host in groups['database_servers'] | sort %}{{ host }}{% if not loop.last %}, {% endif %}{% endfor %}
+
+user=maxscale
+password={{ ansible_local.maxscale.password_hash }}
+monitor_interval=2s
+
+# ------------------------------------------------------------------------------
+# Service Definition
+# ------------------------------------------------------------------------------
+[rw-service]
+type=service
+router=readwritesplit
+servers={% for host in groups['database_servers'] | sort %}{{ host }}{% if not loop.last %}, {% endif %}{% endfor %}
+
+user=maxscale
+password={{ ansible_local.maxscale.password_hash }}
+localhost_match_wildcard_host=true
+
+# ------------------------------------------------------------------------------
+# Listener Definition
+# ------------------------------------------------------------------------------
+[localhost-listener]
+type=listener
+service=rw-service
+protocol=MariaDBClient
+address=127.0.0.1
+port=3308
