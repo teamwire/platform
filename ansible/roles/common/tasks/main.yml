@@ -34,9 +34,7 @@
     owner: root
 
 - name: Import check offline installation task
-  ansible.builtin.import_role:
-    name: "{{ ansible_inventory_sources[0] | dirname  }}/roles/common"
-    tasks_from: check_offline_installation
+  ansible.builtin.include_tasks: check_offline_installation.yml
 
 - name: apt-get update
   apt:
