@@ -2,7 +2,7 @@
 Description=Nomad
 Documentation=https://nomadproject.io/docs/
 StartLimitIntervalSec=0
-After=consul.service
+After=consul.service docker.service
 
 [Service]
 ExecStart=/usr/local/bin/nomad agent -config /etc/nomad
