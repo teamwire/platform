@@ -22,7 +22,7 @@
     reload: true
 
 - name: Remove redis-cli history files
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -30,7 +30,7 @@
     - "/root/.rediscli_history"
 
 - name: Disable redis-cli history
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/environment
     line: "REDISCLI_HISTFILE=/dev/null"
 
