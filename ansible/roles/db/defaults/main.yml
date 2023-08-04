@@ -8,7 +8,7 @@ mysql_databases:
 optimizer_search_depth_value: 0
 
 # 50-server.cnf vars
-bind_address: "0.0.0.0"
+bind_address: "{{ private_ip if groups['all'] | length > 1 else '127.0.0.1' }}"
 # max_allowed_packet: Previously 64M but not active!
 max_allowed_packet: "1G"
 max_connections: 512
