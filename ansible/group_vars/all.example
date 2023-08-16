@@ -135,6 +135,10 @@ allow_user_query: "no"
 # Number of requests Gunicorn worker is handling before being restarted.
 # worker_gunicorn_max_requests: 500
 
+# The teamwire application is running a custom garbage collector task. If you
+# want to disable the custom config you can set the following value to true.
+# disable_gc_reconfiguration: "false"
+
 # When provided, the application will use a APNS certificate to communicate with
 # the Apple services. The APNS certificate can either be provided by teamwire
 # or you could use your own certificate.
