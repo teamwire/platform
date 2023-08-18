@@ -270,6 +270,14 @@
     mode: 0755
   register: vault_fact
 
+# ------------------------------------------------------------------------------
+# Sudoers config file
+# ------------------------------------------------------------------------------
+- name: Ensure /etc/sudoers.d/include-env-variables exists
+  ansible.builtin.copy:
+    content: "Defaults        env_file+=/etc/environment"
+    dest: /etc/sudoers.d/include-env-variables
+
 - name: Reload Ansible local facts to register custom fact
   setup:
     filter: ansible_local
