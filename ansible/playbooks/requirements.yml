@@ -87,6 +87,15 @@
       run_once: true
       when: channel_group_expiry is defined
 
+    - name: Assert that disable_gc_reconfiguration is true or false
+      ansible.builtin.assert:
+        that:
+          - disable_gc_reconfiguration | lower in [ "true", "false" ]
+        msg: >-
+          Please make sure that disable_gc_reconfiguration is either "false" or "true".
+      run_once: true
+      when: disable_gc_reconfiguration is defined
+
     - name: Ensure voip_server group has only one member
       assert:
         that:
@@ -251,7 +260,7 @@
           - "Please refer to the cluster_example_hosts file for an example."
       run_once: true
       when: groups['all'] | length() > 1
-    
+
     - name: Ensure APNS certificate path exists.
       ansible.builtin.assert:
         that:

@@ -75,6 +75,7 @@
       WORKERS: "{{ workers|default() }}"
       GUNICORN_MAX_REQUESTS: "{{ worker_gunicorn_max_requests | default('500') }}"
       CHANNEL_GROUP_EXPIRY: "{{ channel_group_expiry|default('86400') }}"
+      DISABLE_GC_RECONFIGURATION: "{{ disable_gc_reconfiguration | default('false') | lower }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
