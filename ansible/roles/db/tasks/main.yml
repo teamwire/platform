@@ -123,3 +123,19 @@
 
 - include_tasks: cluster.yml
   when: galera_cluster is defined
+
+# ------------------------------------------------------------------------------
+# Ensure mysql history is empty and disabled
+# ------------------------------------------------------------------------------
+- name: Remove mysql history files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/home/teamwire/.mysql_history"
+    - "/root/.mysql_history"
+
+- name: Disable mysql history
+  ansible.builtin.lineinfile:
+    dest: /etc/environment
+    line: "export MYSQL_HISTFILE=/dev/null"
