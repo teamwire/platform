@@ -132,7 +132,7 @@
 - name: NPRX_18 Don't access localhost and local services via proxy
   lineinfile:
     dest: /etc/environment
-    line: "no_proxy=127.0.0.1,{{ groups['all'] | map('extract', hostvars, ['private_ip']) | join(',') | sort if groups['all']| length() > 1 }}{{ ',' + groups['all'] | join(',') + ',localhost,.consul' if groups['all']| length() > 1 else 'localhost' }}{{ ',teamwire.vpn' if teamwire_platform_dir is defined }}" # noqa line-length var-spacing
+    line: "no_proxy=127.0.0.1,{{ groups['all'] | sort | map('extract', hostvars, 'private_ip') | join(',') if groups['all'] | length > 1 }}{{ ',' + groups['all'] | sort | join(',') + ',localhost,.consul' if groups['all'] | length > 1 else 'localhost' }}{{ ',teamwire.vpn' if teamwire_platform_dir is defined }}"
   when:
     - http_proxy is defined
     - nprx_18 | default(true)
