@@ -88,7 +88,7 @@ if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" != "false" && "$2" != "
     done
 fi
 
-if [ "$VAULT_INITIALIZED" == "true" ]; then
+if [ "$VAULT_INITIALIZED" == "true" ] && [ -f ~/.vault-token ]; then
     VAULT_TOKEN="$(< ~/.vault-token)"
 fi
 

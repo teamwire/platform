@@ -232,6 +232,13 @@
     line: "PasswordAuthentication yes"
   notify: reload sshd
 
+- name: Accept VAULT_TOKEN Variable from remote if defined
+  ansible.builtin.lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: ^AcceptEnv VAULT_TOKEN$
+    line: "AcceptEnv VAULT_TOKEN"
+  notify: reload sshd
+
 # Prepare tmate usage
 # It needs any ssh key for the calling user to function
 - name: Create SSH keys for the teamwire user
