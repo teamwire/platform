@@ -114,7 +114,6 @@
     host: "{{ item }}"
     priv: "*.*:ALL"
     login_user: root
-    login_password: "{{ mysql_root_password }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
   loop: "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') if groups['all'] | length > 1 else ['127.0.0.1'] }}"
   notify: mysql_root_user_update
@@ -127,7 +126,7 @@
     name: "{{ item.value.dbname }}"
     state: present
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
   no_log: true
   with_dict:
     - "{{ mysql_databases }}"
@@ -141,7 +140,7 @@
     priv: "{{ item.value.dbname }}.*:ALL/*.*:RELOAD"
     state: present
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
   no_log: true
   with_dict:
     - "{{ mysql_databases }}"
@@ -151,14 +150,17 @@
 
   # Ensure MariaDB UTC timezone definition is present
 - name: Count MariaDB UTC timezone definition
-  ansible.builtin.command: "mysql --defaults-file=/etc/mysql/debian.cnf -Bs -e 'SELECT COUNT(*) FROM time_zone_name WHERE name=\"UTC\";' mysql"
-  changed_when: false
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_db: mysql
+    query: SELECT COUNT(*) AS COUNT FROM time_zone_name WHERE name="UTC";
   register: mariadb_timezone_count
-  check_mode: false
 
 - name: Import MariaDB UTC timezone definition
-  ansible.builtin.shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --defaults-file=/etc/mysql/debian.cnf mysql"
-  when: mariadb_timezone_count.stdout == "0"
+  ansible.builtin.shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --protocol socket --defaults-file=/etc/mysql/debian.cnf mysql"
+  with_items: "{{ mariadb_timezone_count.query_result }}"
+  when: item.COUNT == "0"
 
 # Install database backup script
 - name: Install database backup script
@@ -182,4 +184,4 @@
 - name: Disable mysql history
   ansible.builtin.lineinfile:
     dest: /etc/environment
-    line: "MYSQL_HISTFILE=/dev/null"
+    line: "export MYSQL_HISTFILE=/dev/null"

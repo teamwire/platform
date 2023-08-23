@@ -192,7 +192,7 @@
     name: "{{ item }}"
     state: present
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
   no_log: true
   with_items:
     - "{{ monitoring_db_name }}"
@@ -208,7 +208,7 @@
     priv: "{{ item.db }}.*:ALL"
     state: present
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
     host: "%"
   no_log: true
   with_items:

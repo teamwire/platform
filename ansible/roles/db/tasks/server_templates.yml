@@ -14,21 +14,23 @@
 
   # Use command module instead of mysql_query for backward compatibility
 - name: Get optimal innodb buffer size
-  ansible.builtin.command: >
-    mysql -e "SELECT CEILING(Total_InnoDB_Bytes*1.6/POWER(1024,3)) RIBPS FROM
-    (SELECT SUM(data_length+index_length) Total_InnoDB_Bytes FROM information_schema.tables WHERE engine='InnoDB') A;"
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    query: SELECT CEILING(Total_InnoDB_Bytes*1.6/POWER(1024,3)) RIBPS FROM (SELECT SUM(data_length+index_length) Total_InnoDB_Bytes FROM information_schema.tables WHERE engine='InnoDB') A;
   register: innodb_buffer_size
   become: true
   when:
-    - "{{ innodb_buffer_pool_size == 0 }}"
+    - innodb_buffer_pool_size == 0
     - enable_auto_calculation_innodb
 
 - name: Set innodb buffer size
   ansible.builtin.set_fact:
-    innodb_buffer_pool_size: "{{ innodb_buffer_size.stdout_lines[1] | int }}"
-  notify: Running config
+    innodb_buffer_pool_size: "{{ item.RIBPS | int }}"
+  with_items: "{{ innodb_buffer_size.query_result }}"
+  notify: running config
   when:
-    - "{{ innodb_buffer_pool_size == 0 }}"
+    - innodb_buffer_pool_size == 0
     - enable_auto_calculation_innodb
 
 - name: Template MariaDB 50-server.cnf
