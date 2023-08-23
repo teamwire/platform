@@ -85,6 +85,14 @@
   notify: Restart MariaDB
   when: '"database_servers" not in groups'
 
+- name: Copy 50-client.cnf
+  ansible.builtin.copy:
+    src: 50-client.cnf
+    dest: /etc/mysql/mariadb.conf.d/50-client.cnf
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Start and enable MariaDB server
   ansible.builtin.service:
     name: mysql
@@ -96,21 +104,24 @@
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
-- name: Set password for root user on MariaDB interfaces
+# ------------------------------------------------------------------------------
+# MySQL root users
+# ------------------------------------------------------------------------------
+- name: Configure root for local ip on MariaDB interfaces
   community.mysql.mysql_user:
     name: root
     password: "{{ mysql_root_password }}"
     host: "{{ item }}"
+    priv: "*.*:ALL"
     login_user: root
+    login_password: "{{ mysql_root_password }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
-  when:
-    - mysql_root_password is defined
-    - (galera_cluster is not defined or inventory_hostname == groups['database_servers'][0])
-  with_items:
-    - 127.0.0.1
-    - ::1
-    - "{{ external_hostname | default() }}"
+  loop: "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') if groups['all'] | length > 1 else ['127.0.0.1'] }}"
+  notify: mysql_root_user_update
 
+# ------------------------------------------------------------------------------
+# MySQL teamwire user/database
+# ------------------------------------------------------------------------------
 - name: Create Teamwire database(s)
   community.mysql.mysql_db:
     name: "{{ item.value.dbname }}"

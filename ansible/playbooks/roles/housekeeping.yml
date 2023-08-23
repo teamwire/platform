@@ -8,3 +8,12 @@
   - name: Include housekeeping role
     ansible.builtin.include_role:
       name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
+
+- name: Clean up database users
+  hosts: local:database_servers
+  gather_facts: false
+  tasks:
+    - name: Cleanup mysql users
+      ansible.builtin.import_role:
+        name: "../../roles/housekeeping"
+        tasks_from: clean_mysql_users

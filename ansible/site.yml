@@ -75,6 +75,16 @@
     - role: housekeeping
       when: config_done is defined
 
+- name: Clean up database users
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Cleanup mysql users
+      ansible.builtin.import_role:
+        name: housekeeping
+        tasks_from: clean_mysql_users
+      when: config_done is defined
+
 - name: Set current tag (COMPLETE) in /etc/platform_version
   hosts: all
   tasks:
