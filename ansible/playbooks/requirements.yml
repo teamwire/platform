@@ -111,6 +111,7 @@
         - enable_voip is defined
         - enable_voip | lower == "true"
         - groups['all'] | length() > 1
+        - tw_environments is not defined
 
     - name: Ensure enable_voip is a string when enabled
       assert:
