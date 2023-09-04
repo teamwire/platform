@@ -242,12 +242,15 @@
   community.mysql.mysql_db:
     name: "{{ item.db }}"
     state: import
-    login_user: root
-    login_unix_socket: /var/run/mysqld/mysqld.sock
     target: "{{ item.target }}"
-  with_items:
-    - { db: '{{ monitoring_db_name }}', target: '/tmp/icinga2.sql'}
-    - { db: '{{ monitoring_db_web_name }}', target: '/tmp/icingaweb2.sql'}
+    login_user: root
+    login_host: "{{ hostvars[monitoring_db_host].private_ip if monitoring_db_host != 'localhost' else '127.0.0.1' }}"
+    login_password: "{{ mysql_root_password }}"
+  loop:
+    - { db: '{{ monitoring_db_name }}', target: '/tmp/icinga2.sql' }
+    - { db: '{{ monitoring_db_web_name }}', target: '/tmp/icingaweb2.sql' }
+  loop_control:
+    label: "{{ item.db }}"
   when: database_created.changed
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
