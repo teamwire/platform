@@ -806,7 +806,7 @@ backupdb() {
 
     /usr/local/bin/backup_restore_db.sh -t backup \
         -o "${FILENAME}" -h "${MYSQL_HOST}" \
-        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}"
+        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}" -P "${MYSQL_PORT}"
 }
 
 restoredb() {
@@ -827,7 +827,7 @@ restoredb() {
 
     /usr/local/bin/backup_restore_db.sh -t restore \
         -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}" \
-        -f -i "${FILENAME}" -h "${MYSQL_HOST}"
+        -f -i "${FILENAME}" -h "${MYSQL_HOST}" -P "${MYSQL_PORT}"
 }
 
 pull_images_base() {
