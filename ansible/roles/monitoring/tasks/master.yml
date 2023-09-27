@@ -15,7 +15,6 @@
   - icinga2-ido-mysql
   - icingaweb2
   - icingacli
-  - icingaweb2-module-monitoring
   - python3-mysqldb
   - mariadb-client
 
@@ -190,9 +189,9 @@
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Fetch the Icinga DB schemas # noqa no-handler
-  fetch: 
-    src: "{{ item.src }}" 
-    dest: "{{ item.dest }}" 
+  fetch:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     flat: yes
   with_items:
     - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: 'icinga2.sql'} # noqa braces

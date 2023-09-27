@@ -40,8 +40,22 @@
     update_cache: true
   when: not offline_mode.stat.exists
 
+- name: Pin Icinga version
+  ansible.builtin.copy:
+    src: tw_monitoring_pinning
+    dest: /etc/apt/preferences.d/tw_monitoring_pinning
+    owner: root
+    group: root
+    mode: 0644
+  notify: update apt
+
+- name: Flush handlers
+  meta: flush_handlers
+
 - name: Install Icinga2 and monitoring plugins
-  apt: name={{ item }} state=present
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
   with_items:
     - icinga2
     - monitoring-plugins
