@@ -20,7 +20,9 @@
 
 - name: Configure Icinga MySQL adapter
   template: src=ido-mysql-conf.j2 dest=/etc/icinga2/features-available/ido-mysql.conf mode=0640
-  notify: restart icinga2
+  notify:
+    - restart icinga2
+    - restart apache
 
 - name: Create Icinga Web 2 log directory
   file:
@@ -36,7 +38,9 @@
   with_items:
     - ido-mysql
     - command
-  notify: restart icinga2
+  notify:
+    - restart icinga2
+    - restart apache
 
 - name: Install icinga2 Web UI PHP/Apache requirements
   apt:
@@ -123,7 +127,9 @@
     regexp: "^const TicketSalt = \"\"$"
     line: "const TicketSalt = \"{{ icinga_salt }}\""
     backrefs: true
-  notify: restart icinga2
+  notify:
+    - restart icinga2
+    - restart apache
 
 - name: Create Icinga PKI
   command: /usr/sbin/icinga2 pki new-ca
@@ -269,7 +275,9 @@
 
 - name: Generate Icinga configuration files
   template: src={{ item }}.j2 dest=/etc/icinga2/conf.d/{{ item }}
-  notify: restart icinga2
+  notify:
+    - restart icinga2
+    - restart apache
   with_items:
     - api-users.conf
     - users.conf
@@ -282,7 +290,9 @@
   file:
     path: /etc/icinga2/conf.d/apt.conf
     state: absent
-  notify: restart icinga2
+  notify:
+    - restart icinga2
+    - restart apache
 
 - name: Enable monitoring module
   command: /usr/bin/icingacli module enable monitoring
@@ -313,11 +323,15 @@
   with_items:
     - { src: 'mail-host-notification.j2', dest: '/etc/icinga2/scripts/mail-host-notification.sh' } # noqa braces
     - { src: 'mail-service-notification.j2', dest: '/etc/icinga2/scripts/mail-service-notification.sh' } # noqa braces
-  notify: restart icinga2
+  notify:
+    - restart icinga2
+    - restart apache
 
 - name: Configure Icinga2 zones
   template: src=zones.conf.j2 dest=/etc/icinga2/zones.conf
-  notify: restart icinga2
+  notify:
+    - restart icinga2
+    - restart apache
 
 - name: Create new zone dir
   file:
