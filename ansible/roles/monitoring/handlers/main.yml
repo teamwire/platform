@@ -10,3 +10,4 @@
 - name: update apt
   ansible.builtin.apt:
     update_cache: yes
+  when: not offline_mode.stat.exists
