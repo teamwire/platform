@@ -138,4 +138,4 @@
 - name: Disable mysql history
   ansible.builtin.lineinfile:
     dest: /etc/environment
-    line: "export MYSQL_HISTFILE=/dev/null"
+    line: "MYSQL_HISTFILE=/dev/null"
