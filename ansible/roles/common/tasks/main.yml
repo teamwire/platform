@@ -282,8 +282,11 @@
 # ------------------------------------------------------------------------------
 - name: Ensure /etc/sudoers.d/include-env-variables exists
   ansible.builtin.copy:
-    content: 'Defaults        env_file="/etc/environment"'
+    content: |
+      Defaults        env_file="/etc/environment"
     dest: /etc/sudoers.d/include-env-variables
+    mode: 0440
+    validate: visudo -cf %s
 
 - name: Reload Ansible local facts to register custom fact
   setup:
