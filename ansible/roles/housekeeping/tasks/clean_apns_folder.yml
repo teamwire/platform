@@ -1,0 +1,19 @@
+---
+
+- name: Detect old APNS Files
+  ansible.builtin.find:
+    paths: /data/certs/apns
+  register: apns_files
+
+- name: Cleanup old APNS Files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ apns_files.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when:
+    - apns_files.matched > 0
+    - apns_certificate is not defined
+    - apns_certificate_2 is not defined
+    - apns_certificate_3 is not defined
