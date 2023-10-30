@@ -217,7 +217,7 @@
     name: "{{ item.db }}"
     state: import
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
     target: "{{ item.target }}"
   with_items:
     - { db: '{{ monitoring_db_name }}', target: '/tmp/icinga2.sql'} # noqa braces
