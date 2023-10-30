@@ -1,41 +1,43 @@
-# Teamwire Platform 2.0 upgrade procedure
-#
+---
 
+# Teamwire Platform 3.0 upgrade procedure
+#
 - name: Update Python and Ansible
   hosts: all
+  vars_files: ../../roles/common/vars/main.yml
 
   pre_tasks:
-    - name: Teamwire Platform 2.0 upgrade.
-      debug:
+    - name: Teamwire Platform 3.0 upgrade.
+      ansible.builtin.debug:
         msg:
           - It will determine if your system meets the requirements
           - and reconfigure it accordingly to be able to apply
-          - Teamwire Platform 2.0.
+          - Teamwire Platform 3.0.
 
     - name: Assert current Debian version is supported
-      assert:
+      ansible.builtin.assert:
         that:
-          - ansible_distribution_release == 'buster' or
-            ansible_distribution_release == 'bullseye'
-        fail_msg: You're using Debian {{ debian_version }}. Only Debian 10 (Buster) and 11 (Bullseye) are supported.
+          - ansible_distribution_release == 'bullseye' or
+            ansible_distribution_release == 'bookworm'
+        fail_msg: You're using Debian {{ debian_version }}. Only Debian 11 (Bullseye) and 12 (Bookworm) are supported.
         success_msg: Debian {{ debian_version }} is supported.
       vars:
         debian_version: "{{ ansible_distribution_version }} ({{ ansible_distribution_release | capitalize }})"
 
     - name: Check platform installation status
-      stat:
+      ansible.builtin.stat:
         path: /etc/platform_version
       register: platform_version_file
 
     - name: Determine applied platform version
       block:
         - name: Gather applied platform information
-          slurp:
+          ansible.builtin.slurp:
             src: /etc/platform_version
           register: platform_version_applied
 
         - name: Determine applied platform version
-          set_fact:
+          ansible.builtin.set_fact:
             # Content in /etc/platform_version could look like the following examples
             # We're interested in the x.y.z version number only
             # 1.18
@@ -47,7 +49,7 @@
             platform_version_content: "{{ platform_version_applied.content | b64decode | trim }}"
 
         - name: Assert previous platform version has been completely applied
-          assert:
+          ansible.builtin.assert:
             that:
               - not platform_version_is_incomplete
             fail_msg:
@@ -55,37 +57,37 @@
               - Please run 'git checkout tags/{{ platform_version_applied }}' to checkout the previous platform version.
             success_msg: Platform version {{ platform_version_applied }} is applied.
 
-        - name: Assert at least platform version 1.18 is applied
-          assert:
+        - name: Assert at least platform version 2.4.1 is applied
+          ansible.builtin.assert:
             that:
               - platform_version_applied is version(platform_v1_version_required, '>=')
             fail_msg:
               - Platform version {{ platform_version_applied }} is applied.
               - Platform version {{ platform_v1_version_required }} has to be applied in order to run this upgrade.
               - Please run 'git checkout tags/{{ platform_v1_version_required }}' to checkout the previous platform version.
-            success_msg: Platform version {{ platform_version_applied }} can be upgraded to Platform 2.0.
+            success_msg: Platform version {{ platform_version_applied }} can be upgraded to Platform 3.0.
           vars:
-            platform_v1_version_required: '1.18'
+            platform_v1_version_required: '2.4.1'
 
         - name: Assert upgrade hasn't been run already
-          assert:
+          ansible.builtin.assert:
             that:
-              - platform_version_applied is version('2.0', '<')
+              - platform_version_applied is version('3.0', '<')
             fail_msg: Upgrade has already been run. Nothing to do.
             success_msg: Upgrade hasn't been run yet.
 
       when: platform_version_file.stat.exists
 
     - name: Assert upgrade preparations haven't been run already
-      assert:
+      ansible.builtin.assert:
         that:
-          - ansible_python_version is version('3.0', '<')
+          - ansible_version.full is version('2.14.6', '<')
         fail_msg: Upgrade preparations have already been run. Nothing to do.
         success_msg: Upgrade preparations haven't been run yet.
 
   tasks:
     - name: Display success message
-      debug:
+      ansible.builtin.debug:
         msg:
           - Your system passed all checks.
           - Upgrade preparations start now.
@@ -93,7 +95,7 @@
     - name: Update Python and Ansible
       block:
         - name: Install Python 3
-          apt:
+          ansible.builtin.apt:
             name:
               - python3
               - python3-setuptools
@@ -101,62 +103,24 @@
               - python3-pip
             update_cache: true
         - name: Install Ansible
-          command: pip3 install {{ item }}
-          loop:
-            - pip==21.1.3
-            - cryptography==3.4.8
-            - ansible-core==2.11.3
-            - ansible==4.2.0
+          ansible.builtin.pip:
+            name:
+              - pip==23.1.2
+              - cryptography==3.4.8
+              - ansible-core==2.14.6
+              - ansible==7.6.0
           environment:
             HTTP_PROXY: "{{ http_proxy | default() }}"
             HTTPS_PROXY: "{{ http_proxy | default() }}"
 
     - name: Install twctl
-      copy:
+      ansible.builtin.copy:
         src: "{{ inventory_dir }}/roles/management/files/twctl"
         dest: /usr/local/bin/twctl
         mode: 0755
         owner: root
         group: root
 
-    - name: Housekeeping
-      block:
-        # Removing the Python interpreter that this procedure runs with is likely to cause warnings and/or errors
-        # Thus installing a shell script that will do the housekeeping afterwards
-        - name: Install housekeeping job
-          copy:
-            content: |-
-              #!/usr/bin/env bash
-              # Remove old Python version
-              apt-get -qq --assume-yes remove --purge python-minimal python2.7 2>&1 >/dev/null
-              apt-get -qq --assume-yes autoremove 2>&1 >/dev/null
-              # Update alternatives
-              update-alternatives --quiet --install /usr/bin/python python /usr/bin/python3 50
-              update-alternatives --quiet --install /usr/bin/pip pip /usr/local/bin/pip3 50
-              # Remove leftover files and directories
-              rm -rf /usr/local/lib/python2.7
-              rm -rf /usr/lib/python2.7
-              # Delete this housekeeping job
-              rm -f /etc/cron.d/upgrade-v2-housekeeping
-              rm -f /usr/local/bin/upgrade-v2-housekeeping.sh
-            dest: /usr/local/bin/upgrade-v2-housekeeping.sh
-            mode: 0755
-
-        # Install housekeeping as cron job that will run just a few seconds after
-        # Using pipe lookup rather than ansible_date_time variable as the latter
-        # is set during fact gathering phase at playbook start time
-        - name: Schedule housekeeping job
-          cron:
-            name: upgrade-v2-housekeeping
-            cron_file: upgrade-v2-housekeeping
-            job: /usr/local/bin/upgrade-v2-housekeeping.sh
-            minute: "{{ lookup('pipe', 'date -d 1min +%M') }}"
-            user: root
-
     - name: Display success message
-      debug:
-        msg: Upgrade preparations have been completed. Waiting for the housekeeping job to finish. Please be patient ...
-
-    - name: Waiting for the housekeeping job to finish
-      pause:
-        minutes: 2
+      ansible.builtin.debug:
+        msg: Upgrade preparations have been completed.

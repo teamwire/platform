@@ -84,14 +84,20 @@
       set_fact:
         php_version: "{{ ansible_facts.packages['php'][0].version | regex_search('\\d+:(\\d+\\.\\d+).*', '\\1') | first }}"
 
+- name: Check if mode php is enabled
+  stat:
+    path: /etc/apache2/mods-enabled/php{{ php_version }}.load
+  register: mod_php
+
 - name: Enable PHP module for Apache
-  apache2_module:
+  community.general.apache2_module:
     name: "php{{ php_version }}"
     state: present
     force: true
     identifier: php_module
     ignore_configcheck: true
-  notify: restart apache
+  notify: Restart apache
+  when: mod_php.stat.exists == False
 
 - name: Find out timezone
   slurp:

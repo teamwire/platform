@@ -11,9 +11,9 @@
         that: "ansible_version.full is version_compare('{{ required_ansible_version }}', '==')"
         fail_msg:
           - Ansible {{ required_ansible_version }} is required.
-          - Please run the Platform 2.0 upgrade preparation script.
-          - If running a single-server setup, run "ansible-playbook -i hosts playbooks/procedures/upgrade-v2.yml"
-          - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v2.yml"
+          - Please run the Platform 3.0 upgrade preparation script.
+          - If running a single-server setup, run "ansible-playbook -i hosts playbooks/procedures/upgrade-v3.yml"
+          - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v3.yml"
         success_msg: Ansible {{ ansible_version.full }} matches expected version.
 
 - name: Check overall requirements
