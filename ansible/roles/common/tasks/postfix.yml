@@ -51,6 +51,7 @@
     line: "database /etc/aliases.db is older than source file /etc/aliases"
     state: present
   notify: new aliases
+  when: packer_build_name is not defined
 
 - name: Ensure postfix virtualmap is absent
   file:
