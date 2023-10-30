@@ -89,6 +89,7 @@
     name: "php{{ php_version }}"
     state: present
     force: true
+    identifier: php_module
     ignore_configcheck: true
   notify: restart apache
 
