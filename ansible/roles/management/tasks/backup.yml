@@ -89,5 +89,5 @@
   command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
   when:
     - log_file.stat.exists
-    - TW_DEV_MODE is undefined or TW_DEV_MODE | lower != "true"
+    - tw_dev_mode is undefined or tw_dev_mode | lower != "true"
   run_once: true

@@ -88,7 +88,7 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_start(self, playbook):
         '''Returns the applied/checkout platform version on every playbook run'''
 
-        if not "TW_DEV_MODE" in os.environ :
+        if not "tw_dev_mode" in os.environ :
             self.check_current_user()
             self.playbook = playbook
             self.msg += "\nEntrypoint:\t\t\t" + self.playbook._file_name + "\n"

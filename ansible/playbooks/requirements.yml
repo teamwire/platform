@@ -50,7 +50,7 @@
 
     - name: Check if in developer mode
       ansible.builtin.set_fact:
-        TW_DEV_MODE: "{{ lookup('env', 'TW_DEV_MODE') | ternary(True, False) }}"
+        tw_dev_mode: "{{ lookup('env', 'tw_dev_mode') | ternary(True, False) }}"
       delegate_facts: true
       run_once: true
 
@@ -239,7 +239,7 @@
               - "WARNING: Incorrect configuration detected. Please ensure you are using the correct inventory file, playbook and variable config file."
               - "If you encounter any problems or have any concerns, please contact support@teamwire.eu"
       when:
-        - not TW_DEV_MODE
+        - not tw_dev_mode
         - packer_build_name is not defined
         - vagrant_mode is not defined
 
