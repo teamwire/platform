@@ -1,4 +1,17 @@
 ---
+
+# ------------------------------------------------------------------------------
+# List of Checks that should be skipped
+# ------------------------------------------------------------------------------
 skip_list:
-  - yaml[new-line-at-end-of-file]
-  - yaml[line-length]  
+  - yaml[line-length]                 # Don't split up lines so it's easier readable
+  - key-order[task]                   # No technical issue
+  - run_once[task]                    # No special strategy
+  - role-name[path]                   # Allow paths to roles
+  - risky-shell-pipe                  # If pipes are in shell commands ignore it
+
+# ------------------------------------------------------------------------------
+# Set extra variable for ansible-playbook --syntax-check
+# ------------------------------------------------------------------------------
+extra_vars:
+  teamwire_platform_dir: "../../"
