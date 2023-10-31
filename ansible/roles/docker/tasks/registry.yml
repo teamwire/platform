@@ -18,6 +18,17 @@
     name: docker-registry
   register: result
 
+- name: Check if docker-registry needs to be updated
+  debug:
+    msg: "Registry needs to be updated"
+  when:
+    - result.exists == true
+    - result.container.State.Running == true
+    - "result.container.Config.Image != registry_version"
+  changed_when:
+    - "result.container.Config.Image != registry_version"
+  notify: restart registry container
+  
 - name: Check if docker-registry is available and running
   debug:
     msg: "Container not available or running"
