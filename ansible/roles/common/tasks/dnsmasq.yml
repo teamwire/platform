@@ -1,49 +1,60 @@
 - name: Ensure dns_servers are configured before installing dnsmasq
-  fail:
+  ansible.builtin.fail:
     msg: "DNS servers are not defined. Please check the configuration file"
-  when: config_done is defined and dns_servers is not defined
+  when:
+    - config_done is defined
+    - dns_servers is not defined
 
 - name: Install dnsmasq
-  apt:
+  ansible.builtin.apt:
     pkg: dnsmasq
 
 - name: Ensure dnsmasq is started
-  service:
+  ansible.builtin.service:
     name: dnsmasq
     state: started
     enabled: true
 
 - name: Configure dnsmasq upstream DNS servers
-  template:
+  ansible.builtin.template:
     src: 20-upstream.j2
     dest: /etc/dnsmasq.d/20-upstream
+    mode: 0644
+    owner: root
+    group: root
   when: dns_servers is defined
-  notify: restart dnsmasq
+  notify: Restart dnsmasq
 
 - name: Configure dnsmasq to listen on private_ip and localhost
-  template:
+  ansible.builtin.template:
     src: 01-address.j2
     dest: /etc/dnsmasq.d/01-address
+    mode: 0644
+    owner: root
+    group: root
   when:
     - dns_servers is defined
     - enable_voip is defined and enable_voip | string() == 'true'
     - inventory_hostname not in groups['voip_servers']
-  notify: restart dnsmasq
+  notify: Restart dnsmasq
 
 - name: Resolve DNS using dnsmasq
-  copy:
+  ansible.builtin.copy:
     content: "nameserver 127.0.0.1\n"
     dest: /etc/resolv.conf
+    mode: 0644
+    owner: root
+    group: root
 
 - name: DHCP_6 Configure DHCP client to use local DNS server
-  lineinfile:
+  ansible.builtin.lineinfile:
     regexp: "^#+prepend domain-name-servers"
     backrefs: true
     line: "supersede domain-name-servers 127.0.0.1;"
     dest: /etc/dhcp/dhclient.conf
   when: dhcp_6 | default(true)
-  notify: reload dhclient
+  notify: Reload dhclient
 
 # Ensure we have a valid DNS configuration
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
