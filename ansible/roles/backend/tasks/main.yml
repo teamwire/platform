@@ -1,6 +1,6 @@
 ---
 - name: Create the backend storage directories
-  file:
+  ansible.builtin.file:
     path: "/data{{'/' + tw_environments[ (groups['backend_servers']|first) ] | default() if tw_environments is defined }}{{ '/' + item }}"
     owner: daemon
     mode: "{{ (item == 'archiving/gpg') | ternary('0700', '0750') }}" # sets file mode 0700 if the directory is archiving/gpg, else 0750
@@ -8,11 +8,11 @@
   when: config_done is defined
   run_once: true
   with_items:
-     - 'archiving'
-     - 'archiving/gpg'
-     - 'assets'
-     - 'website-screenshot-cache'
-     - 'beat'
+    - 'archiving'
+    - 'archiving/gpg'
+    - 'assets'
+    - 'website-screenshot-cache'
+    - 'beat'
 
 - name: Create the backend certificate storage directories
   ansible.builtin.file:
@@ -72,18 +72,28 @@
   register: apns3_source
 
 - name: Check if teamwire worker is running
-  ansible.builtin.command: docker ps
+  ansible.builtin.command: docker ps # noqa no-handler
   register: docker_procs
-  when: (apns_source.changed or apns2_source.changed or apns3_source.changed) and ansible_play_hosts | length() == 1
+  when:
+    - (apns_source.changed or apns2_source.changed or apns3_source.changed)
+    - ansible_play_hosts | length() == 1
 
 - name: Restart teamwire worker if APNS certificates have been updated and on single-setup
-  ansible.builtin.command: docker restart teamwire_worker
-  when: (apns_source.changed or apns2_source.changed or apns3_source.changed) and ansible_play_hosts | length() == 1 and 'teamwire_worker' in docker_procs.stdout # noqa line-length
+  ansible.builtin.command: docker restart teamwire_worker # noqa no-handler
+  when:
+    - (apns_source.changed or apns2_source.changed or apns3_source.changed)
+    - ansible_play_hosts | length() == 1
+    - "'teamwire_worker' in docker_procs.stdout"
 
-- include_tasks: "single.yml"
+- name: Include single server
+  ansible.builtin.include_tasks: "single.yml"
   when: "'backend_servers' not in groups"
 
-- include_tasks: "haproxy.yml"
-  when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
+- name: Include haproxy
+  ansible.builtin.include_tasks: "haproxy.yml"
+  when:
+    - mysql_host is not defined
+    - "'database_servers' in groups"
+    - groups['database_servers'] | length > 1
 
 # The cluster backend deployment is delegated to the nomad servers
