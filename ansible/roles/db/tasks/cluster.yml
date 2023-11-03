@@ -1,21 +1,22 @@
 ---
 - name: Ensure xtrabackup_password is configured before installing the Database
-  fail: msg="Database replication user password is not defined. Please check the configuration file"
+  ansible.builtin.fail:
+    msg: "Database replication user password is not defined. Please check the configuration file"
   when: xtrabackup_password is not defined or xtrabackup_password == None
 
 - name: Remove Percona XtraBackup
-  apt:
+  ansible.builtin.apt:
     name:
       - percona-xtrabackup-24
     state: absent
 
 - name: Remove Percona repository
-  file:
+  ansible.builtin.file:
     path: /etc/apt/sources.list.d/repo_percona_com_apt.list
     state: absent
 
 - name: Install Galera and requirements
-  apt:
+  ansible.builtin.apt:
     name:
       - galera-{{ '3' if ansible_distribution_release == 'buster' else '4' }}
       - libconfig-inifiles-perl
@@ -24,7 +25,7 @@
       - socat
 
 - name: Create database replication user
-  mysql_user:
+  community.mysql.mysql_user:
     host: localhost
     name: mariabackup
     password: "{{ xtrabackup_password }}"
@@ -34,13 +35,13 @@
   when: inventory_hostname == groups['database_servers'][0]
 
 - name: Write Galera cluster configuration
-  template:
+  ansible.builtin.template:
     src: cluster.conf.j2
     dest: /etc/mysql/conf.d/cluster.cnf
     mode: 0644
 
 - name: Create clustercheck database user
-  mysql_user:
+  community.mysql.mysql_user:
     name: clustercheck
     host: localhost
     password: "{{ clustercheck_password }}"
@@ -52,32 +53,41 @@
 # Clustercheck script from https://github.com/olafz/percona-clustercheck
 # Licensed under the BSD license
 - name: Install Galera cluster check script
-  copy: src=clustercheck dest=/usr/local/bin/clustercheck mode=0755
+  ansible.builtin.copy:
+    src: clustercheck
+    dest: /usr/local/bin/clustercheck
+    mode: 0755
 
 - name: Copy systemd clustercheck socket configuration
-  copy:
+  ansible.builtin.copy:
     src: clustercheck.socket
     dest: /etc/systemd/system/clustercheck.socket
     mode: 0640
   notify:
-    - reload systemd
+    - Reload systemd
 
 - name: Write systemd clustercheck service
-  template:
+  ansible.builtin.template:
     src: clustercheck@.service.j2
     dest: /etc/systemd/system/clustercheck@.service
     mode: 0644
   notify:
-    - reload systemd
+    - Reload systemd
 
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Enable the clustercheck service
-  service: name=clustercheck.socket state=started enabled=true
+  ansible.builtin.service:
+    name: clustercheck.socket
+    state: started
+    enabled: true
 
 - name: Register Galera servers with Consul
-  template:
+  ansible.builtin.template:
     src: consul-galera.hcl.j2
     dest: /etc/consul.d/galera.hcl
-  notify: restart consul
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart consul

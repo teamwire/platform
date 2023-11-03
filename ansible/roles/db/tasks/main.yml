@@ -1,15 +1,23 @@
 ---
 - name: Ensure mysql_root_password is configured before installing the Database
-  fail: msg="MySQL root password is not defined. Please check the configuration file"
-  when: config_done is defined and mysql_root_password is defined and mysql_root_password == None
+  ansible.builtin.fail:
+    msg: "MySQL root password is not defined. Please check the configuration file"
+  when:
+    - config_done is defined
+    - mysql_root_password is defined
+    - mysql_root_password == None
 
 - name: Check if installing a database cluster
-  set_fact:
+  ansible.builtin.set_fact:
     galera_cluster: true
-  when: '"database_servers" in groups and groups["database_servers"] | length > 1'
+  when:
+    - '"database_servers" in groups'
+    - groups["database_servers"] | length > 1
 
 - name: Install MariaDB
-  apt: name={{ item }} state=present
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
   with_items:
     - mariadb-server
     - mariadb-client
@@ -17,7 +25,7 @@
   register: mysql_initial_installation
 
 - name: Create MariaDB binlog directory
-  file:
+  ansible.builtin.file:
     dest: /var/lib/mysql-binlog
     owner: mysql
     group: mysql
@@ -28,62 +36,83 @@
 # Install MariaDB server templates
 # 50-server.cnf
 # 60-teamwire.cnf
-- include_tasks: server_templates.yml
+- name: Install MAriadb server templates
+  ansible.builtin.include_tasks: server_templates.yml
 
 - name: Set UTF8 as default character set
-  copy:
+  ansible.builtin.copy:
     src: utf8.cnf
     dest: /etc/mysql/conf.d/utf8.cnf
-  notify: restart MariaDB
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart MariaDB
 
 - name: Set UTC as default time zone
-  copy:
+  ansible.builtin.copy:
     src: timezone.cnf
     dest: /etc/mysql/conf.d/timezone.cnf
-  notify: restart MariaDB
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart MariaDB
 
 - name: Log slow queries
-  copy:
+  ansible.builtin.copy:
     src: slow_query_log.cnf
     dest: /etc/mysql/conf.d/slow_query_log.cnf
-  notify: restart MariaDB
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart MariaDB
 
 - name: Disable unsecure functionality
-  copy:
+  ansible.builtin.copy:
     src: security.cnf
     dest: /etc/mysql/conf.d/security.cnf
-  notify: restart MariaDB
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart MariaDB
 
 - name: Enable binary logs
-  template:
+  ansible.builtin.template:
     src: binlog.cnf.j2
     dest: /etc/mysql/conf.d/binlog.cnf
-  notify: restart MariaDB
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart MariaDB
   when: '"database_servers" not in groups'
 
 - name: Start and enable MariaDB server
-  service: name=mysql state=started enabled=yes
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: true
 
 # Make sure MariaDB is restarted before the database is created, otherwise
 # the configured defaults are not used.
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Set password for root user on MariaDB interfaces
-  mysql_user:
+  community.mysql.mysql_user:
     name: root
     password: "{{ mysql_root_password }}"
     host: "{{ item }}"
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
-  when: mysql_root_password is defined and (galera_cluster is not defined or inventory_hostname == groups['database_servers'][0])
+  when:
+    - mysql_root_password is defined
+    - (galera_cluster is not defined or inventory_hostname == groups['database_servers'][0])
   with_items:
     - 127.0.0.1
     - ::1
-    - "{{ external_hostname|default() }}" # noqa var-spacing
+    - "{{ external_hostname | default() }}"
 
 - name: Create Teamwire database(s)
-  mysql_db:
+  community.mysql.mysql_db:
     name: "{{ item.value.dbname }}"
     state: present
     login_user: root
@@ -94,7 +123,7 @@
   when: galera_cluster is not defined or inventory_hostname == groups['database_servers'][0]
 
 - name: Create Teamwire database user(s)
-  mysql_user:
+  community.mysql.mysql_user:
     name: "{{ item.value.username }}"
     host: "%"
     password: "{{ item.value.password }}"
@@ -105,23 +134,27 @@
   no_log: true
   with_dict:
     - "{{ mysql_databases }}"
-  when: config_done is defined and (galera_cluster is not defined or inventory_hostname == groups['database_servers'][0])
+  when:
+    - config_done is defined
+    - (galera_cluster is not defined or inventory_hostname == groups['database_servers'][0])
 
   # Ensure MariaDB UTC timezone definition is present
 - name: Count MariaDB UTC timezone definition
-  command: "mysql --defaults-file=/etc/mysql/debian.cnf -Bs -e 'SELECT COUNT(*) FROM time_zone_name WHERE name=\"UTC\";' mysql"
+  ansible.builtin.command: "mysql --defaults-file=/etc/mysql/debian.cnf -Bs -e 'SELECT COUNT(*) FROM time_zone_name WHERE name=\"UTC\";' mysql"
   changed_when: false
   register: mariadb_timezone_count
   check_mode: false
 
 - name: Import MariaDB UTC timezone definition
-  shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --defaults-file=/etc/mysql/debian.cnf mysql" # noqa risky-shell-pipe
+  ansible.builtin.shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo/UTC UTC | mysql --defaults-file=/etc/mysql/debian.cnf mysql"
   when: mariadb_timezone_count.stdout == "0"
 
 # Install database backup script
-- include_tasks: backupscript.yml
+- name: Install database backup script
+  ansible.builtin.include_tasks: backupscript.yml
 
-- include_tasks: cluster.yml
+- name: Include cluster
+  ansible.builtin.include_tasks: cluster.yml
   when: galera_cluster is defined
 
 # ------------------------------------------------------------------------------

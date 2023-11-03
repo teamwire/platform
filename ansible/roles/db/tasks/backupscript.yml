@@ -1,11 +1,12 @@
+---
 # Mydumper must be installed separatly when mydumper is installed on existing installations
 - name: Install mydumper independent from task install mariadb
-  apt:
+  ansible.builtin.apt:
     name: mydumper
     state: present
 
 - name: Implement Backup and Restorescript
-  copy:
+  ansible.builtin.copy:
     src: backup_restore_db.sh
     dest: /usr/local/bin/backup_restore_db.sh
     owner: root
