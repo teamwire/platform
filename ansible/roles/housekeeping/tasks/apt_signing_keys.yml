@@ -1,10 +1,11 @@
+---
 # Remove APT repository signing keys from global trust anchor
 # as otherwise those keys are unconditionally trusted
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 #
 
 - name: Remove repository signing keys from global trust anchor
-  command: gpg --batch --yes --no-default-keyring --keyring /etc/apt/trusted.gpg --delete-key {{ item.key_id }}
+  ansible.builtin.command: gpg --batch --yes --no-default-keyring --keyring /etc/apt/trusted.gpg --delete-key {{ item.key_id }}
   register: remove_signing_key
   changed_when: remove_signing_key.rc == 0
   # Return codes

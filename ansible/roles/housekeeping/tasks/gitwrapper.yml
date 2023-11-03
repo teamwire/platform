@@ -1,17 +1,17 @@
 ---
 - name: Remove gitwrapper
-  file:
+  ansible.builtin.file:
     path: /usr/local/src/gitwrapper.sh
     state: absent
 
 - name: Disable gitwrapper
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/profile
     line: 'source /usr/local/src/gitwrapper.sh'
     state: absent
 
 - name: Unset gitwrapper as default
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /home/teamwire/.profile
     line: 'export USE_TW_GIT=true'
     state: absent

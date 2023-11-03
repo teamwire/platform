@@ -1,18 +1,21 @@
 ---
 # Remove gitwrapper and git pinning feature
-- include_tasks: gitwrapper.yml
+- name: Remove gitwrapper and git pinning feature
+  ansible.builtin.include_tasks: gitwrapper.yml
   when: groups['all'] | length() == 1 or inventory_hostname in groups['management_servers']
 
 # Remove APT repository signing keys from global trust anchor
-- include_tasks: apt_signing_keys.yml
+- name: Remove APT repository signing keys from global trust anchor
+  ansible.builtin.include_tasks: apt_signing_keys.yml
 
 # Remove unneeded packages
-- include_tasks: apt_packages.yml
+- name: Remove unneeded packages
+  ansible.builtin.include_tasks: apt_packages.yml
 
 # Remove docker process list
 - name: Clean docker processes.
-  include_tasks: clean_docker_process_list.yml
+  ansible.builtin.include_tasks: clean_docker_process_list.yml
 
 # Clean JVB folders content
 - name: Clean JVB folders content.
-  include_tasks: clean_jvb_folders.yml
+  ansible.builtin.include_tasks: clean_jvb_folders.yml

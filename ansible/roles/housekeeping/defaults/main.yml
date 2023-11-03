@@ -1,1 +1,2 @@
-VOIP_ROOT_PATH: "/data/voip"
+---
+voip_root_path: "/data/voip"
