@@ -1,3 +1,4 @@
+---
 registry_version: "registry:2.8.2"
 hashui_container: "jippi/hashi-ui:v1.3.9"
 

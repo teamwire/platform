@@ -1,20 +1,21 @@
 ---
-- name: reload systemd
-  command: systemctl daemon-reload # noqa command-instead-of-module
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
 
-- name: restart docker
-  systemd:
+- name: Restart docker
+  ansible.builtin.systemd:
     name: docker
     state: restarted
-    daemon_reload: yes
+    daemon_reload: true
 
-- name: restart rsyslog
-  service:
+- name: Restart rsyslog
+  ansible.builtin.service:
     name: rsyslog
     state: restarted
 
-- name: restart registry container
-  docker_container:
+- name: Restart registry container
+  community.docker.docker_container:
     name: docker-registry
     image: "{{ registry_version }}"
     state: started
@@ -26,3 +27,6 @@
       tag: docker-registry
       syslog-facility: local6
     volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
+
+- name: Dearmor Docker repository key
+  ansible.builtin.command: gpg --dearmor -o {{ (docker_signing_key.dest | splitext)[0] }}.gpg {{ docker_signing_key.dest }}
