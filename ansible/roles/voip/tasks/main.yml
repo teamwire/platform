@@ -6,41 +6,41 @@
     owner: "{{ item.owner | default('root') }}"
     group: "{{ item.group | default('root') }}"
   with_items:
-    - "{{ VOIP_ROOT_PATH }}/transcripts"
+    - "{{ voip_root_path }}/transcripts"
     - {
-        path: "{{ VOIP_ROOT_PATH }}/prosody/config/",
-        owner: 101,
-        group: 101
-      }
+      path: "{{ voip_root_path }}/prosody/config/",
+      owner: 101,
+      group: 101
+    }
     - {
-        path: "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom",
-        owner: 101,
-        group: 101
-      }
+      path: "{{ voip_root_path }}/prosody/prosody-plugins-custom",
+      owner: 101,
+      group: 101
+    }
     - {
-        path: "{{ VOIP_ROOT_PATH }}/prosody/config/data/auth%2emeet%2ejitsi/accounts",
-        owner: 101,
-        group: 102
-      }
+      path: "{{ voip_root_path }}/prosody/config/data/auth%2emeet%2ejitsi/accounts",
+      owner: 101,
+      group: 102
+    }
     - {
-        path: "{{ VOIP_ROOT_PATH }}/jicofo",
-        owner: 999,
-        group: 1000
-      }
+      path: "{{ voip_root_path }}/jicofo",
+      owner: 999,
+      group: 1000
+    }
     - {
-        path: "{{ VOIP_ROOT_PATH }}/jvb0",
-        owner: 999,
-        group: 1000
-      }
-    - "{{ VOIP_ROOT_PATH }}/jigasi"
-    - "{{ VOIP_ROOT_PATH }}/jibri"
-    - "{{ VOIP_ROOT_PATH }}/turn/config"
+      path: "{{ voip_root_path }}/jvb0",
+      owner: 999,
+      group: 1000
+    }
+    - "{{ voip_root_path }}/jigasi"
+    - "{{ voip_root_path }}/jibri"
+    - "{{ voip_root_path }}/turn/config"
 
   run_once: true
 
 - name: Create JVB users for cluster environment.
   ansible.builtin.file:
-    path: "{{ VOIP_ROOT_PATH }}/jvb{{ item }}"
+    path: "{{ voip_root_path }}/jvb{{ item }}"
     state: directory
     mode: 0755
     owner: 999
@@ -56,7 +56,7 @@
 - name: Template Turnserver configuration to destination
   ansible.builtin.template:
     src: "turn.j2"
-    dest: "{{ VOIP_ROOT_PATH }}/turn/config/turnserver.conf"
+    dest: "{{ voip_root_path }}/turn/config/turnserver.conf"
     owner: root
     group: root
     mode: 0644
@@ -67,7 +67,7 @@
 
 - name: Register docker registry with harbor
   ansible.builtin.set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/"
+    local_registry: "{{ groups['docker_registry'] | first }}:5000/"
   when:
     - config_done is defined
     - groups.docker_registry is defined
@@ -75,7 +75,7 @@
 - name: VOIPHCL_5 Template voip nomad job file
   ansible.builtin.template:
     src: "voip.hcl.tmpl"
-    dest: "{{ VOIP_ROOT_PATH }}/voip.hcl"
+    dest: "{{ voip_root_path }}/voip.hcl"
     owner: root
     group: root
     mode: 0644
@@ -93,16 +93,16 @@
 
 - name: Pull VoIP Docker images
   community.docker.docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ voip_jitsi_version }}"
     source: pull
     state: present
   delegate_to: "{{ groups['management_servers'] | first() }}"
   loop:
-    - "{{ VOIP_CONTAINER_WEB }}"
-    - "{{ VOIP_CONTAINER_PROSODY }}"
-    - "{{ VOIP_CONTAINER_JICOFO }}"
-    - "{{ VOIP_CONTAINER_JVB }}"
-    - "{{ VOIP_CONTAINER_TURN }}"
+    - "{{ voip_container_web }}"
+    - "{{ voip_container_prosody }}"
+    - "{{ voip_container_jicofo }}"
+    - "{{ voip_container_jvb }}"
+    - "{{ voip_container_turn }}"
   when:
     - config_done is defined
     - not offline_mode.stat.exists
@@ -110,17 +110,17 @@
 
 - name: Push VoIP Docker images to local registry
   community.docker.docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ voip_jitsi_version }}"
     source: local
-    repository: "{{ LOCAL_REGISTRY }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ VOIP_JITSI_VERSION }}"
+    repository: "{{ local_registry }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ voip_jitsi_version }}"
     push: true
   delegate_to: "{{ groups['management_servers'] | first() }}"
   loop:
-    - "{{ VOIP_CONTAINER_WEB }}"
-    - "{{ VOIP_CONTAINER_PROSODY }}"
-    - "{{ VOIP_CONTAINER_JICOFO }}"
-    - "{{ VOIP_CONTAINER_JVB }}"
-    - "{{ VOIP_CONTAINER_TURN }}"
+    - "{{ voip_container_web }}"
+    - "{{ voip_container_prosody }}"
+    - "{{ voip_container_jicofo }}"
+    - "{{ voip_container_jvb }}"
+    - "{{ voip_container_turn }}"
   when:
     - config_done is defined
     - groups.docker_registry is defined
