@@ -1,12 +1,21 @@
 ---
-- name: reload systemd
-  command: systemctl daemon-reload # noqa command-instead-of-module
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
 
-- name: reload haproxy
-  service: name=haproxy state=reloaded
+- name: Reload haproxy
+  ansible.builtin.service:
+    name: haproxy
+    state: reloaded
 
-- name: restart haproxy
-  systemd: daemon_reload=yes name=haproxy state=restarted enabled=yes
+- name: Restart haproxy
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: haproxy
+    state: restarted
+    enabled: true
 
-- name: restart Consul Template
-  service: name=consul-template state=restarted
+- name: Restart Consul Template
+  ansible.builtin.service:
+    name: consul-template
+    state: restarted

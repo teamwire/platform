@@ -34,13 +34,13 @@
       ansible.builtin.assert:
         that: |-
           "
-          result.signature_algorithm == 'sha224WithRSAEncryption' or 
-          result.signature_algorithm == 'sha256WithRSAEncryption' or 
-          result.signature_algorithm == 'sha384WithRSAEncryption' or 
-          result.signature_algorithm == 'sha512WithRSAEncryption' or 
-          result.signature_algorithm == 'sha224WithECDSAEncryption' or 
-          result.signature_algorithm == 'sha256WithECDSAEncryption' or 
-          result.signature_algorithm == 'sha384WithECDSAEncryption' or 
+          result.signature_algorithm == 'sha224WithRSAEncryption' or
+          result.signature_algorithm == 'sha256WithRSAEncryption' or
+          result.signature_algorithm == 'sha384WithRSAEncryption' or
+          result.signature_algorithm == 'sha512WithRSAEncryption' or
+          result.signature_algorithm == 'sha224WithECDSAEncryption' or
+          result.signature_algorithm == 'sha256WithECDSAEncryption' or
+          result.signature_algorithm == 'sha384WithECDSAEncryption' or
           result.signature_algorithm == 'sha512WithECDSAEncryption'
           "
         fail_msg: Signature algorithms from certificate does not meet the requirement
@@ -61,7 +61,7 @@
         path: /etc/ssl/private/teamwire-backend.key
       register: result_privatekey
       run_once: true
-      
+
     - name: Get intermediate information
       community.crypto.x509_certificate_info:
         path: /etc/ssl/certs/server_and_intermediate_and_root.crt
@@ -77,24 +77,25 @@
     - name: Check if intermediate certificate is expired
       ansible.builtin.assert:
         that:
-          - not result_intermediate.expired        
+          - not result_intermediate.expired
         fail_msg: Intermediate ertificate is expired
         success_msg: Intermediate is not expired
     - name: Check if intermediate certificate has one of the following signature algorithms
       ansible.builtin.assert:
         that: |-
           "
-          result_intermediate.signature_algorithm == 'sha224WithRSAEncryption' or 
-          result_intermediate.signature_algorithm == 'sha256WithRSAEncryption' or 
-          result_intermediate.signature_algorithm == 'sha384WithRSAEncryption' or 
-          result_intermediate.signature_algorithm == 'sha512WithRSAEncryption' or 
-          result_intermediate.signature_algorithm == 'sha224WithECDSAEncryption' or 
-          result_intermediate.signature_algorithm == 'sha256WithECDSAEncryption' or 
-          result_intermediate.signature_algorithm == 'sha384WithECDSAEncryption' or 
+          result_intermediate.signature_algorithm == 'sha224WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha256WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha384WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha512WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha224WithECDSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha256WithECDSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha384WithECDSAEncryption' or
           result_intermediate.signature_algorithm == 'sha512WithECDSAEncryption'
           "
         fail_msg: Signature algorithms from Intermediate certificate does not meet the requirement
         success_msg: Signature algorithms from Intermediate certificate match the requrements
-  when: ssl_keyfile is defined and ssl_first_check is not defined
+  when:
+    - ssl_keyfile is defined
+    - ssl_first_check is not defined
   run_once: true
-  
