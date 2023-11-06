@@ -1,15 +1,23 @@
 ---
 # make rsyslog receiver
 - name: Ensure rsyslog is installed
-  apt: pkg=rsyslog
+  ansible.builtin.apt:
+    pkg:
+      - rsyslog
 
 - name: Load rsyslog tcp module
-  template:
+  ansible.builtin.template:
     src: 10-receive.conf.j2
     dest: /etc/rsyslog.d/10-receive.conf
-  notify: restart rsyslog
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart rsyslog
 
 - name: Install logrotate job for cluster logs
-  copy:
+  ansible.builtin.copy:
     src: cluster-log
     dest: /etc/logrotate.d/cluster-log
+    owner: root
+    group: root
+    mode: 0644
