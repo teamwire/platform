@@ -1,5 +1,6 @@
+---
 - name: Create config backup directory
-  file:
+  ansible.builtin.file:
     path: /data/config_backups
     state: directory
     owner: teamwire
@@ -8,7 +9,7 @@
   run_once: true
 
 - name: Create current configuration backup directory
-  file:
+  ansible.builtin.file:
     path: /data/config_backups/{{ ansible_date_time.iso8601 }}
     state: directory
     owner: teamwire
@@ -19,9 +20,12 @@
   check_mode: false
 
 - name: Backup the configuration files
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ backup_directory.path }}/"
+    owner: teamwire
+    group: teamwire
+    mode: 0750
   with_items:
     - "{{ inventory_dir }}/group_vars/all"
     - "{{ inventory_file }}"
@@ -29,9 +33,12 @@
   run_once: true
 
 - name: Backup SSL certificates and key
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ backup_directory.path }}/"
+    owner: teamwire
+    group: teamwire
+    mode: 0644
   with_items:
     - "{{ ssl_certfile }}"
     - "{{ ssl_keyfile }}"
@@ -40,9 +47,12 @@
   run_once: true
 
 - name: Backup SSL certificates and key (OSCP style)
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ backup_directory.path }}/"
+    owner: teamwire
+    group: teamwire
+    mode: 0644
   with_items:
     - "{{ ssl_server_certificate }}"
     - "{{ ssl_intermediate_certificate }}"
@@ -57,25 +67,34 @@
   run_once: true
 
 - name: Backup APNS certificate
-  copy:
+  ansible.builtin.copy:
     src: "{{ apns_certificate }}"
     dest: "{{ backup_directory.path }}/"
+    owner: teamwire
+    group: teamwire
+    mode: 0644
   when: apns_certificate is defined
   become: false
   run_once: true
 
 - name: Backup secondary APNS certificate
-  copy:
+  ansible.builtin.copy:
     src: "{{ apns_certificate_2 }}"
     dest: "{{ backup_directory.path }}/"
+    owner: root
+    group: root
+    mode: 0644
   when: apns_certificate_2 is defined
   become: false
   run_once: true
 
 - name: Backup third APNS certificate
-  copy:
+  ansible.builtin.copy:
     src: "{{ apns_certificate_3 }}"
     dest: "{{ backup_directory.path }}/"
+    owner: teamwire
+    group: teamwire
+    mode: 0644
   when: apns_certificate_3 is defined
   become: false
   run_once: true
@@ -86,7 +105,7 @@
   register: log_file
 
 - name: Backup Ansible log file
-  command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
+  ansible.builtin.command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
   when:
     - log_file.stat.exists
     - tw_dev_mode is undefined or tw_dev_mode | lower != "true"

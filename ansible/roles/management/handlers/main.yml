@@ -1,2 +1,7 @@
-- name: fix ownership of git checkout
-  file: path=/home/teamwire/platform owner=teamwire group=teamwire recurse=yes
+---
+- name: Fix ownership of git checkout
+  ansible.builtin.file:
+    path: /home/teamwire/platform
+    owner: teamwire
+    group: teamwire
+    recurse: true
