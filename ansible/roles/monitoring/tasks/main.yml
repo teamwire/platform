@@ -1,6 +1,6 @@
 ---
 - name: Ensure all required variables are defined before configuring the monitoring system
-  assert:
+  ansible.builtin.assert:
     that:
       - monitoring_email_addresses is defined
       - mysql_root_password is defined
@@ -18,7 +18,7 @@
 # Using `apt-key` to add third party signing keys is deprecated
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 - name: Get Icinga repository key
-  get_url:
+  ansible.builtin.get_url:
     url: https://packages.icinga.com/icinga.key
     dest: /usr/share/keyrings/icinga-archive-keyring.key
     mode: '0644'
@@ -29,11 +29,11 @@
   when: not offline_mode.stat.exists
 
 - name: Dearmor Icinga repository key # noqa no-handler
-  command: gpg --dearmor -o {{ (icinga_signing_key.dest | splitext)[0] }}.gpg {{ icinga_signing_key.dest }}
+  ansible.builtin.command: gpg --dearmor -o {{ (icinga_signing_key.dest | splitext)[0] }}.gpg {{ icinga_signing_key.dest }}
   when: icinga_signing_key.changed
 
 - name: Add Icinga repository
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: deb [signed-by={{ (icinga_signing_key.dest | splitext)[0] }}.gpg] https://packages.icinga.com/debian icinga-{{ ansible_distribution_release }} main
     state: present
     filename: icinga2
@@ -47,10 +47,10 @@
     owner: root
     group: root
     mode: 0644
-  notify: update apt
+  notify: Update apt
 
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Install Icinga2 and monitoring plugins
   ansible.builtin.apt:
@@ -69,13 +69,13 @@
 - name: Clear plugin directory
   block:
     - name: Determine plugin directory content
-      find:
+      ansible.builtin.find:
         path: /usr/share/icinga2/include/plugins-contrib.d
         file_type: any
         hidden: true
       register: plugin_dir_content
     - name: Delete plugin directory content
-      file:
+      ansible.builtin.file:
         path: "{{ item.path }}"
         state: absent
       loop: "{{ plugin_dir_content.files }}"
@@ -83,10 +83,13 @@
         label: "{{ item.path }}"
 
 - name: Enable and start the icinga2 daemon
-  service: name=icinga2 state=started enabled=true
+  ansible.builtin.service:
+    name: icinga2
+    state: started
+    enabled: true
 
 - name: Install additional icinga plugins
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: /usr/lib/nagios/plugins
     mode: 0755
@@ -94,62 +97,77 @@
     - "files/checks/*"
 
 - name: Ensure sudo is installed
-  apt:
+  ansible.builtin.apt:
     pkg: sudo
     state: present
 
 - name: Set sudo escalation for icinga plugins
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/sudoers
     line: "nagios ALL=(root) NOPASSWD: /usr/lib/nagios/plugins/"
     state: present
     validate: '/usr/sbin/visudo -cf %s'
 
 - name: Configure Icinga NodeName
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/icinga2/constants.conf
     regexp: "^//const NodeName = \"localhost\"$"
     line: "const NodeName = \"{{ inventory_hostname }}\""
     backrefs: true
-  notify: restart icinga2
+  notify: Restart icinga2
 
 - name: Fix Icinga PKI directory permissions
-  file: dest=/etc/icinga2/pki owner=nagios group=nagios mode=0750
+  ansible.builtin.file:
+    dest: /etc/icinga2/pki
+    owner: nagios
+    group: nagios
+    mode: 0750
 
 - name: Download Icinga check_ntp_time plugin
-  get_url:
+  ansible.builtin.get_url:
     url: https://repo.teamwire.eu/bin/icinga/check_ntp_time-{{ check_ntp_time_version }}
     dest: /var/cache/downloads/
     checksum: sha256:{{ check_ntp_time_checksum }}
+    owner: root
+    group: root
+    mode: 0644
   when: not offline_mode.stat.exists
   environment:
     https_proxy: "{{ http_proxy | default() }}"
 
 - name: Install Icinga check_ntp_time plugin
-  copy:
+  ansible.builtin.copy:
     src: /var/cache/downloads/check_ntp_time-{{ check_ntp_time_version }}
     dest: /usr/lib/nagios/plugins/check_ntp_time
+    owner: root
+    group: root
+    mode: 0755
     remote_src: true
 
 - name: Patch Icinga2 check_haproxy_stats plugin
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /usr/lib/nagios/plugins/check_haproxy_stats
     regexp: "^/usr/bin/perl"
     line: "#/usr/bin/perl"
     backrefs: true
 
-- include: "database-configuration.yml"
+- name: Include database-configurateion
+  ansible.builtin.include_tasks: "database-configuration.yml"
   when: mysql_root_password is defined
 
-- include: "master.yml"
+- name: Include master
+  ansible.builtin.include_tasks: "master.yml"
   when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
 
 # On Single installation or monitoring masters, configuration is placed into zones.d/
 # On monitoring agents of a cluster installation, configuration is placed into conf.d/
 - name: Configure Icinga2 commands
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ icinga2_config_target_dir | trim }}"
+    owner: nagios
+    group: nagios
+    mode: 0644
   loop:
     - commands.conf
     - commands.custom.conf
@@ -160,6 +178,7 @@
       {% else %}
         /etc/icinga2/conf.d/
       {% endif %}
-  notify: restart icinga2
+  notify: Restart icinga2
 
-- include: "client.yml"
+- name: Include client
+  ansible.builtin.include_tasks: "client.yml"

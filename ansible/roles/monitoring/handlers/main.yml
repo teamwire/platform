@@ -1,13 +1,19 @@
-- name: restart icinga2
-  service: name=icinga2 state=restarted
+- name: Restart icinga2
+  ansible.builtin.service:
+    name: icinga2
+    state: restarted
 
-- name: restart nagios-nrpe-server
-  service: name=nagios-nrpe-server state=restarted
+- name: Restart nagios-nrpe-server
+  ansible.builtin.service:
+    name: nagios-nrpe-server
+    state: restarted
 
-- name: restart apache
-  service: name=apache2 state=restarted
+- name: Restart apache
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
 
-- name: update apt
+- name: Update apt
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
   when: not offline_mode.stat.exists
