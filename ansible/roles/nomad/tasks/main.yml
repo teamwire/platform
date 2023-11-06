@@ -1,31 +1,32 @@
 - name: Check if Nomad is already installed
-  stat: path=/usr/local/bin/nomad
+  ansible.builtin.stat:
+    path: /usr/local/bin/nomad
   register: nomad_binary
 
 - name: Gather information about Nomad
   block:
     - name: Gather Nomad version information
-      command: nomad version
+      ansible.builtin.command: nomad version
       register: nomad_version_cmd
       changed_when: false
     - name: Parse Nomad information
-      set_fact:
+      ansible.builtin.set_fact:
         nomad_version_current: "{{ nomad_version_cmd.stdout | regex_search('\\d+\\.\\d+\\.\\d+') }}"
   when: nomad_binary.stat.exists
 
 - name: Download Nomad
-  get_url:
+  ansible.builtin.get_url:
     url: https://releases.hashicorp.com/nomad/{{ nomad_version }}/nomad_{{ nomad_version }}_linux_amd64.zip
     dest: /var/cache/downloads/nomad_{{ nomad_version }}_linux_amd64.zip
     checksum: sha256:{{ nomad_checksum }}
     mode: 0440
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}' # noqa var-spacing
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: nomad_downloaded
   environment:
-    https_proxy: "{{ http_proxy|default() }}"
+    https_proxy: "{{ http_proxy | default() }}"
 
 - name: Install/Update the Nomad binary
-  unarchive:
+  ansible.builtin.unarchive:
     src: /var/cache/downloads/nomad_{{ nomad_version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
@@ -34,51 +35,68 @@
   when: not nomad_binary.stat.exists or nomad_version_current is version(nomad_version, '<')
 
 - name: Create Nomad config firectory
-  file: dest=/etc/nomad state=directory mode=0755
+  ansible.builtin.file:
+    dest: /etc/nomad
+    state: directory
+    mode: 0755
 
 - name: Create Nomad data directory
-  file: dest=/var/lib/nomad state=directory mode=0755
+  ansible.builtin.file:
+    dest: /var/lib/nomad
+    state: directory
+    mode: 0755
 
 - name: Write Nomad config
-  template:
+  ansible.builtin.template:
     src: nomad.hcl.j2
     dest: /etc/nomad/nomad.hcl
+    owner: root
+    group: root
+    mode: 0644
   notify: Restart Nomad agent
 
 - name: Nomad systemd config
-  copy:
+  ansible.builtin.copy:
     src: nomad.service
     dest: /etc/systemd/system/nomad.service
+    owner: root
+    group: root
+    mode: 0644
   notify:
     - Restart Nomad agent
 
 - name: Enable the Nomad service
-  service: name=nomad state=started enabled=yes daemon_reload=yes
+  ansible.builtin.service:
+    name: nomad
+    state: started
+    enabled: true
+    daemon_reload: true
 
 # The new version will take effect as soon as Nomad process is restarted
 - name: Upgrade Nomad node
   block:
     - name: Restart Nomad
-      service:
+      ansible.builtin.service:
         name: nomad
         state: restarted
 
     - name: Gather version information about upgraded Nomad
-      command: nomad version
+      ansible.builtin.command: nomad version
       register: nomad_upgraded_version_cmd
       changed_when: false
 
     - name: Parse upgraded Nomad version information
-      set_fact:
+      ansible.builtin.set_fact:
         nomad_upgraded_version: "{{ nomad_upgraded_version_cmd.stdout_lines[0] | regex_search('\\d+\\.\\d+\\.\\d+') }}"
 
     - name: Verify upgrade succeeded
-      assert:
+      ansible.builtin.assert:
         that: nomad_upgraded_version is version(nomad_version, '==')
 
   when:
     - nomad_binary.stat.exists
     - nomad_version_current is version(nomad_version, '<')
 
-- include: vault-integration.yml
+- name: Include vault-integration
+  ansible.builtin.include_tasks: vault-integration.yml
   when: hostvars[groups['hashi_servers'][0]].ansible_local.vault.initialized == "true"

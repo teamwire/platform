@@ -1,5 +1,6 @@
+---
 - name: Check if Nomad-server policy exists for Vault
-  shell: vault policy read nomad-server || true
+  ansible.builtin.shell: vault policy read nomad-server || true # noqa no-changed-when
   register: policy_check
   run_once: true
   delegate_to: "{{ groups.hashi_servers | first }}"
@@ -7,21 +8,24 @@
 - name: Setup Nomad policy
   block:
     - name: Setup the Nomad policy for Vault if it doesn't exist
-      copy:
+      ansible.builtin.copy:
         src: "{{ role_path }}/../vault/files/{{ item }}"
         dest: /root/
+        owner: root
+        group: root
+        mode: 0644
       with_items:
         - nomad-server-policy.hcl
         - nomad-job-policy.hcl
         - nomad-cluster-role.json
     - name: Write nomad server policies
-      command: vault policy write nomad-server /root/nomad-server-policy.hcl
+      ansible.builtin.command: vault policy write nomad-server /root/nomad-server-policy.hcl # noqa no-changed-when
     - name: Write nomad job policies
-      command: vault policy write nomad-job /root/nomad-job-policy.hcl
+      ansible.builtin.command: vault policy write nomad-job /root/nomad-job-policy.hcl # noqa no-changed-when
     - name: Write nomad cluster role
-      command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json
+      ansible.builtin.command: vault write /auth/token/roles/nomad-cluster @/root/nomad-cluster-role.json # noqa no-changed-when
     - name: Remove nomad files
-      file:
+      ansible.builtin.file:
         dest: "/root/{{ item }}"
         state: absent
       with_items:
@@ -29,25 +33,35 @@
         - nomad-job-policy.hcl
         - nomad-cluster-role.json
   run_once: true
-  when: inventory_hostname == groups['hashi_servers'] | first  and (policy_check.stderr is defined and "No policy" in policy_check.stderr)
+  when:
+    - inventory_hostname == groups['hashi_servers'] | first
+    - (policy_check.stderr is defined and "No policy" in policy_check.stderr)
 
 - name: Check if the Vault config for Nomad exists
-  stat: path=/etc/nomad/vault.hcl
+  ansible.builtin.stat:
+    path: /etc/nomad/vault.hcl
   register: vault_config
 
 - name: Create Vault token for Nomad
-  command: vault token create -policy nomad-server -period 72h -orphan -format=json
-  when: inventory_hostname in groups['hashi_servers'] and not vault_config.stat.exists
+  ansible.builtin.command: vault token create -policy nomad-server -period 72h -orphan -format=json
+  when:
+    - inventory_hostname in groups['hashi_servers']
+    - not vault_config.stat.exists
   register: vault_nomad_token
 
 - name: Set token fact
-  set_fact:
+  ansible.builtin.set_fact:
     vault_nomad_token: "{{ vault_nomad_token.stdout | from_json }}"
-  when: inventory_hostname in groups['hashi_servers'] and not vault_config.stat.exists
+  when:
+    - inventory_hostname in groups['hashi_servers']
+    - not vault_config.stat.exists
 
 - name: Write Vault configuration for nomad
-  template:
+  ansible.builtin.template:
     src: "{{ role_path }}/../vault/templates/nomad-vault.hcl.j2"
     dest: /etc/nomad/vault.hcl
+    owner: root
+    group: root
+    mode: 0644
   notify: Restart Nomad agent
   when: not vault_config.stat.exists
