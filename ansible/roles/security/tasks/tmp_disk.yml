@@ -1,39 +1,39 @@
 ---
 - name: Check freespace on root partition
-  ansible.builtin.shell: 'df / --output\=avail | tail -1'
+  ansible.builtin.command: 'df / --output\=avail | tail -1'
   register: root_freespace
   changed_when: false
 
 - name: Check if /tmp dir is defined in fstab
-  ansible.builtin.shell: 'grep "/tmp" -q /etc/fstab'
+  ansible.builtin.command: 'grep "/tmp" -q /etc/fstab'
   register: in_fstab
   changed_when: false
   ignore_errors: true
 
 - name: Check if /tmp is mounted
-  ansible.builtin.shell: 'df /tmp | grep -q "loop"'
+  ansible.builtin.command: 'df /tmp | grep -q "loop"'
   register: is_mounted
   changed_when: false
   failed_when:
     - is_mounted.rc != 0
     - is_mounted.rc != 1
 
-- name: check if tmp file partition exists
-  ansible.builtin.shell: 'test -e /usr/local/share/tmp.disk'
+- name: Check if tmp file partition exists
+  ansible.builtin.command: 'test -e /usr/local/share/tmp.disk' # noqa no-changed-when
   register: tmp_file
 
 - name: Create tmp disk file
-  ansible.builtin.shell: "dd if=/dev/zero of=/usr/local/share/tmp.disk bs=1 count=0 seek=10G"
+  ansible.builtin.command: "dd if=/dev/zero of=/usr/local/share/tmp.disk bs=1 count=0 seek=10G"
   register: tmp_disk_file
   when:
     - tmp_file.rc == 1
     - root_freespace.stdout | float > 13631488
 
 - name: Create filesystem on tmp file
-  ansible.builtin.shell: sudo mkfs.ext4 /usr/local/share/tmp.disk
+  ansible.builtin.command: sudo mkfs.ext4 /usr/local/share/tmp.disk # noqa no-handler
   when: tmp_disk_file.changed
 
-- name: Add file partition to fstab
+- name: Add file partition to fstab # noqa no-handler
   ansible.posix.mount:
     name: "/tmp"
     src: "/usr/local/share/tmp.disk"
@@ -48,7 +48,7 @@
   notify: Permission handler
 
 - name: Ensure tmp file is mounted
-  shell: "mount -a"
+  ansible.builtin.command: "mount -a" # noqa command-instead-of-module
   when:
     - is_mounted.rc == 1
   notify: Permission handler
