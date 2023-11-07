@@ -1,20 +1,24 @@
+---
 # This task will check if Vault has been initialized and read the secrets from there if so
 - name: Vault Status check
   hosts: local:hashi_servers
   tasks:
     - name: Include vault role
-      include_role:
-        name: ../../roles/vault
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}roles/vault"
         tasks_from: secrets
-      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+      when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
+        - secrets_read is not defined
 
 - name: Deploy and configure MySQL database
   hosts: database_servers
   serial: 1
   tasks:
     - name: Include db role
-      include_role:
-        name: ../../roles/db
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db"
       when:
         - config_done is defined
         - mysql_host is not defined
