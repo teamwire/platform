@@ -1,19 +1,22 @@
+---
 - name: Check if the vault secret job token file exists
-  stat: path="/etc/ansible/job-read.token"
+  ansible.builtin.stat:
+    path: "/etc/ansible/job-read.token"
   register: vault_job_token_file
 
 - name: Set the executing host
-  debug: msg="{{ 'localhost' if groups['all'] | length() == 1 else groups.hashi_servers | first }}"
+  ansible.builtin.debug:
+    msg: "{{ 'localhost' if groups['all'] | length() == 1 else groups.hashi_servers | first }}"
   register: host_to_delegate
 
 - name: Check if Nomad-job policy exists for Vault
-  shell: vault policy read nomad-job || true
+  ansible.builtin.shell: vault policy read nomad-job || true # noqa no-changed-when
   register: policy_job_check
   run_once: true
   delegate_to: "{{ host_to_delegate.msg }}"
 
 - name: Delete possible outdated Nomad-job policy
-  shell: vault policy delete nomad-job # noqa command-instead-of-shell
+  ansible.builtin.shell: vault policy delete nomad-job # noqa command-instead-of-shell
   register: revoke_nomad_job_policy
   run_once: true
   delegate_to: "{{ host_to_delegate.msg }}"
@@ -21,40 +24,48 @@
 
 - name: Write/update new vault
   block:
-    - name: Write/Update new vault job policy
-      copy:
+    - name: Write/Update new vault job policy # noqa no-handler
+      ansible.builtin.copy:
         src: "{{ role_path }}/../vault/files/{{ item }}"
         dest: /root/
-      with_items: nomad-job-policy.hcl # noqa deprecated-bare-vars
+        owner: root
+        group: root
+        mode: 0644
+      with_items:
+        - nomad-job-policy.hcl
     - name: Write nomad policy
-      command: vault policy write nomad-job /root/nomad-job-policy.hcl
+      ansible.builtin.command: vault policy write nomad-job /root/nomad-job-policy.hcl # noqa no-changed-when
     - name: Remove file
-      file:
+      ansible.builtin.file:
         dest: "/root/{{ item }}"
         state: absent
-      with_items: nomad-job-policy.hcl # noqa deprecated-bare-vars
+      with_items:
+        - nomad-job-policy.hcl
   run_once: true
   when: revoke_nomad_job_policy.changed
   delegate_to: "{{ host_to_delegate.msg }}"
 
 - name: Create Vault read only token for container jobs
-  command: vault token create -policy nomad-job -orphan -format=json
+  ansible.builtin.command: vault token create -policy nomad-job -orphan -format=json
   when:
     - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
     - revoke_nomad_job_policy.changed
   register: vault_job_read_token
 
 - name: Set token fact
-  set_fact:
+  ansible.builtin.set_fact:
     vault_job_read_token: "{{ vault_job_read_token.stdout | from_json }}"
   when:
     - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
     - revoke_nomad_job_policy.changed
 
 - name: Publish vault job token into token file
-  copy:
+  ansible.builtin.copy:
     dest: "/etc/ansible/job-read.token"
     content: "{{ vault_job_read_token.auth.client_token }}"
+    owner: root
+    group: root
+    mode: 0644
   when:
     - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
     - revoke_nomad_job_policy.changed

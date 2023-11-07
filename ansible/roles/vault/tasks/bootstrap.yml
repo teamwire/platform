@@ -1,6 +1,6 @@
 ---
 - name: Initiate Vault
-  command: vault operator init -key-shares=6 -key-threshold=2 -format=json
+  ansible.builtin.command: vault operator init -key-shares=6 -key-threshold=2 -format=json # noqa no-changed-when
   register: vault_info
   run_once: true
   environment:
@@ -8,39 +8,42 @@
 
 - name: Extract Vault unseal keys and root token
   run_once: true
-  set_fact:
-    vault_unseal_keys: "{{ (vault_info.stdout|from_json)['unseal_keys_b64'] }}" # noqa var-spacing:
-    vault_token: "{{ (vault_info.stdout|from_json)['root_token'] }}" # noqa var-spacing
+  ansible.builtin.set_fact:
+    vault_unseal_keys: "{{ (vault_info.stdout | from_json)['unseal_keys_b64'] }}"
+    vault_token: "{{ (vault_info.stdout | from_json)['root_token'] }}"
   delegate_facts: true
   delegate_to: "{{ item }}"
   with_items: "{{ groups['all'] }}"
 
 - name: Create Vault credentials file
-  template:
+  ansible.builtin.template:
     src: ../../roles/vault/templates/credentials.j2
     dest: "{{ inventory_dir + '/vault-credentials' if vagrant_mode is not defined else '../ansible/vault-credentials' }}"
+    owner: teamwire
+    group: teamwire
+    mode: 0644
   run_once: true
   delegate_to: localhost
   become: false
 
 - name: Set temporary VAULT_TOKEN environment variable
-  shell: export VAULT_TOKEN="{{ vault_token }}" # noqa command-instead-of-shell
+  ansible.builtin.shell: export VAULT_TOKEN="{{ vault_token }}" # noqa no-changed-when command-instead-of-shell
 
 - name: Unseal Vault
-  command: vault operator unseal "{{ item }}"
+  ansible.builtin.command: vault operator unseal "{{ item }}" # noqa no-changed-when
   no_log: true
   loop: "{{ vault_unseal_keys[:2] }}"
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Wait for Vault to elect a leader
-  wait_for:
+  ansible.builtin.wait_for:
     host: active.vault.service.consul
     port: 8200
   when: groups['all'] | length() > 1
 
 - name: Authorize root user for Vault login
-  copy:
+  ansible.builtin.copy:
     content: "{{ vault_token }}"
     dest: /root/.vault-token
     mode: 0400
@@ -48,7 +51,7 @@
     group: root
 
 - name: Authorize teamwire user for Vault login
-  copy:
+  ansible.builtin.copy:
     content: "{{ vault_token }}"
     dest: /home/teamwire/.vault-token
     mode: 0400
@@ -56,13 +59,13 @@
     group: teamwire
 
 - name: Enable audit logging
-  command: vault audit enable file file_path=/var/log/vault_audit.log
+  ansible.builtin.command: vault audit enable file file_path=/var/log/vault_audit.log # noqa no-changed-when
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
   run_once: true
 
 - name: Enable Vault autocomplete
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/home/teamwire/.bashrc"
     insertafter: EOF
     line: complete -C /usr/local/bin/vault vault
@@ -72,45 +75,45 @@
   # Enable TLS
 
 - name: Enable PKI backend
-  command: vault secrets enable pki
+  ansible.builtin.command: vault secrets enable pki # noqa no-changed-when
   run_once: true
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Set max global SSL lease to 25 years
-  command: vault secrets tune -max-lease-ttl=219000h pki
+  ansible.builtin.command: vault secrets tune -max-lease-ttl=219000h pki # noqa no-changed-when
   run_once: true
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Generate Root CA certificate
-  command: vault write pki/root/generate/internal common_name="Vault Root CA" ttl=219000h
+  ansible.builtin.command: vault write pki/root/generate/internal common_name="Vault Root CA" ttl=219000h # noqa no-changed-when
   register: root_ca
   run_once: true
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Create certificate revocation list
-  command: vault write pki/config/urls issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
+  ansible.builtin.command: vault write pki/config/urls issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl" # noqa no-changed-when
   run_once: true
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Create role for issuing certificates
-  command: vault write pki/roles/tls allow_any_name=true allowed_domains=localhost allow_subdomains=true allow_ip_sans="true" max_ttl=26280h
+  ansible.builtin.command: vault write pki/roles/tls allow_any_name=true allowed_domains=localhost allow_subdomains=true allow_ip_sans="true" max_ttl=26280h # noqa no-changed-when
   run_once: true
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Issue a TLS certificate for Vault to use
-  command: vault write pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['hashi_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['hashi_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json # noqa line-length
+  ansible.builtin.command: vault write pki/issue/tls common_name="127.0.0.1" alt_names=""{{ groups['hashi_servers'] | map('extract', hostvars, ['inventory_hostname']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"localhost,*.node.dc1.consul,*.vault.service.dc1.consul,vault.service.consul" ip_sans=""{{ groups['hashi_servers'] | map('extract', hostvars, ['private_ip']) | join(',') + ',' if groups['all'] | length() > 1 else '' }}"127.0.0.1" ttl="{{ vault_certificate_ttl }}" --format=json # noqa no-changed-when
   run_once: true
   register: issue_info
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Set certificate fact
-  set_fact:
+  ansible.builtin.set_fact:
     vault_certificate: "{{ issue_info.stdout | from_json }}"
   run_once: true
   delegate_facts: true
@@ -118,36 +121,38 @@
   with_items: "{{ groups['all'] }}"
 
 - name: Install Vault root CA, tls certificate and private key
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.content }}"
     dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0644
   with_items:
-    - { content: '{{ vault_certificate.data.issuing_ca }}', dest: '/usr/local/share/ca-certificates/vault-rootCA.crt' } # noqa braces
-    - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' } # noqa braces
-    - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' } # noqa braces
-  become: true
+    - { content: '{{ vault_certificate.data.issuing_ca }}', dest: '/usr/local/share/ca-certificates/vault-rootCA.crt' }
+    - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' }
+    - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' }
 
 - name: Trust the Vault Root CA
-  command: update-ca-certificates
+  ansible.builtin.command: update-ca-certificates # noqa no-changed-when
 
 - name: Enable SSL in Vault configuration
-  replace:
+  ansible.builtin.replace:
     path: /etc/vault/vault.hcl
     regexp: 'tls_disable.*'
     replace: 'tls_disable = 0'
 
 - name: Restart Vault so that it uses TLS
-  service:
+  ansible.builtin.service:
     name: vault
     state: restarted
 
 - name: Unseal Vault
-  command: vault operator unseal "{{ item }}"
+  ansible.builtin.command: vault operator unseal "{{ item }}" # noqa no-changed-when
   no_log: true
   loop: "{{ vault_unseal_keys[:2] }}"
 
 - name: Wait for Vault to elect a leader
-  wait_for:
+  ansible.builtin.wait_for:
     host: active.vault.service.consul
     port: 8200
   delegate_to: "{{ groups.hashi_servers | first }}"
@@ -155,55 +160,56 @@
   when: groups['all'] | length() > 1
 
 - name: Load user-specified secrets
-  set_fact:
-    secrets: "{{ secrets|combine(user_secrets) }}" # noqa var-spacing
+  ansible.builtin.set_fact:
+    secrets: "{{ secrets | combine(user_secrets) }}"
   when: user_secrets is defined
 
 - name: Enable secrets engine
-  command: vault secrets enable -path secret kv
+  ansible.builtin.command: vault secrets enable -path secret kv # noqa no-changed-when
   run_once: true
 
 - name: Generate secret paths
-  command: vault write "{{ item.value.path }}" value=""
+  ansible.builtin.command: vault write "{{ item.value.path }}" value="" # noqa no-changed-when
   no_log: true
   with_dict: "{{ secrets }}"
   run_once: true
 
 - name: Reload Ansible local facts to register Vault status
-  setup: filter=ansible_local
+  ansible.builtin.setup:
+    filter: ansible_local
 
 - name: Write and migrate secrets
-  command: vault write secret/"{{ item.secret }}" value="{{ item.value }}"
+  ansible.builtin.command: vault write secret/"{{ item.secret }}" value="{{ item.value }}" # noqa no-changed-when
   no_log: true
   with_items:
-    - { secret: 'dockerhub/password', value: "{{ dockerhub_password | default('') }}" } # noqa braces
-    - { secret: 'keys/gcm', value: "{{ gcm_api_key | default('') }}" } # noqa braces
-    - { secret: 'database/password', value: "{{ teamwire_db_password | default('') }}" } # noqa braces
-    - { secret: 'database/aes_key', value: "{{ aes_key | default('') }}" } # noqa braces
-    - { secret: 'dbserver/mysql_root_password', value: "{{ mysql_root_password | default('') }}" } # noqa braces
-    - { secret: 'dbserver/clustercheck_password', value: "{{ clustercheck_password | default('') }}" } # noqa braces
-    - { secret: 'dbserver/xtrabackup_password', value: "{{ xtrabackup_password | default('') }}" } # noqa braces
-    - { secret: 'redis/password', value: "{{ redis_pass | default('') }}" } # noqa braces
-    - { secret: 'smtp/password', value: "{{ smtp_smartpass | default('') }}" } # noqa braces
-    - { secret: 'monitoring/db_password', value: "{{ monitoring_db_password | default('') }}" } # noqa braces
-    - { secret: 'monitoring/db_web_password', value: "{{ monitoring_db_web_password | default('') }}" } # noqa braces
-    - { secret: 'monitoring/icinga_admin_password', value: "{{ icinga_admin_password | default('') }}" } # noqa braces
-    - { secret: 'monitoring/icinga_salt', value: "{{ icinga_salt | default('') }}" } # noqa braces
-    - { secret: 'monitoring/icinga_api_password', value: "{{ icinga_api_password | default('') }}" } # noqa braces
-    - { secret: 'reportfile/password', value: "{{ reportfile_password | default('reportfile_password') }}" } # noqa braces
-    - { secret: 'voip/jibri_password', value: "{{ voip_jibri_password | default('') }}" } # noqa braces
-    - { secret: 'voip/jicofo_password', value: "{{ voip_jicofo_password | default('') }}" } # noqa braces
-    - { secret: 'voip/jvb_password', value: "{{ voip_jvb_password | default('') }}" } # noqa braces
-    - { secret: 'voip/jwt_app_secret', value: "{{ jwt_app_secret | default('') }}" } # noqa braces
-    - { secret: 'voip/prosody_key', value: "{{ prosody_key | default('') }}" } # noqa braces
-    - { secret: 'voip/stun_password', value: "{{ stun_password | default('') }}" } # noqa braces
+    - { secret: 'dockerhub/password', value: "{{ dockerhub_password | default('') }}" }
+    - { secret: 'keys/gcm', value: "{{ gcm_api_key | default('') }}" }
+    - { secret: 'database/password', value: "{{ teamwire_db_password | default('') }}" }
+    - { secret: 'database/aes_key', value: "{{ aes_key | default('') }}" }
+    - { secret: 'dbserver/mysql_root_password', value: "{{ mysql_root_password | default('') }}" }
+    - { secret: 'dbserver/clustercheck_password', value: "{{ clustercheck_password | default('') }}" }
+    - { secret: 'dbserver/xtrabackup_password', value: "{{ xtrabackup_password | default('') }}" }
+    - { secret: 'redis/password', value: "{{ redis_pass | default('') }}" }
+    - { secret: 'smtp/password', value: "{{ smtp_smartpass | default('') }}" }
+    - { secret: 'monitoring/db_password', value: "{{ monitoring_db_password | default('') }}" }
+    - { secret: 'monitoring/db_web_password', value: "{{ monitoring_db_web_password | default('') }}" }
+    - { secret: 'monitoring/icinga_admin_password', value: "{{ icinga_admin_password | default('') }}" }
+    - { secret: 'monitoring/icinga_salt', value: "{{ icinga_salt | default('') }}" }
+    - { secret: 'monitoring/icinga_api_password', value: "{{ icinga_api_password | default('') }}" }
+    - { secret: 'reportfile/password', value: "{{ reportfile_password | default('reportfile_password') }}" }
+    - { secret: 'voip/jibri_password', value: "{{ voip_jibri_password | default('') }}" }
+    - { secret: 'voip/jicofo_password', value: "{{ voip_jicofo_password | default('') }}" }
+    - { secret: 'voip/jvb_password', value: "{{ voip_jvb_password | default('') }}" }
+    - { secret: 'voip/jwt_app_secret', value: "{{ jwt_app_secret | default('') }}" }
+    - { secret: 'voip/prosody_key', value: "{{ prosody_key | default('') }}" }
+    - { secret: 'voip/stun_password', value: "{{ stun_password | default('') }}" }
   run_once: true
 
 - name: Include secrets var file so the defined secrets can be read
-  include_tasks: secrets.yml
+  ansible.builtin.include_tasks: secrets.yml
 
 - name: Generate and write internal secrets if empty
-  shell: >
+  ansible.builtin.shell: >
     generated_secret=$(pwgen -s 32 1) &&
     vault write "{{ item.value.path }}" value=$generated_secret
   when: hostvars[inventory_hostname][item.key] == "" and item.key != "smtp_smartpass"
@@ -212,10 +218,10 @@
   with_dict: "{{ secrets }}"
 
 - name: Reload secrets variables to recognise final changes
-  include_tasks: secrets.yml
+  ansible.builtin.include_tasks: secrets.yml
 
 - name: Register new Vault bootstrap
-  set_fact:
+  ansible.builtin.set_fact:
     new_vault_bootstrap: true
   run_once: true
   delegate_facts: true
@@ -224,5 +230,6 @@
     - "{{ groups['all'] }}"
 
 - name: Vault bootstrap status
-  debug: msg="Vault has now been bootstrapped, the Vault credentials have been stored in the main local Ansible directory."
+  ansible.builtin.debug:
+    msg: "Vault has now been bootstrapped, the Vault credentials have been stored in the main local Ansible directory."
   run_once: true

@@ -1,38 +1,38 @@
 ---
 - name: Gather information about Vault
-  import_tasks: gather_information.yml
+  ansible.builtin.import_tasks: gather_information.yml
 
 - name: Create 3rd party download directory
-  file:
+  ansible.builtin.file:
     dest: /var/cache/downloads
     state: directory
     mode: 0755
 
 - name: Download Vault
-  get_url:
-    url: https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip # noqa var-spacing
+  ansible.builtin.get_url:
+    url: https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip
     dest: /var/cache/downloads/vault_{{ vault_version }}_linux_amd64.zip
     checksum: sha256:{{ vault_checksum }}
     mode: 0440
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: vault_downloaded
   environment:
-    https_proxy: "{{ http_proxy|default() }}"
+    https_proxy: "{{ http_proxy | default() }}"
 
 - name: Install Vault
-  include_tasks: install.yml
+  ansible.builtin.include_tasks: install.yml
   when:
     - not vault_binary.stat.exists
 
 - name: Bootstrap Vault
-  include_tasks: bootstrap.yml
+  ansible.builtin.include_tasks: bootstrap.yml
   when:
     - config_done is defined
     - ansible_local.vault is defined
     - ansible_local.vault.initialized != "true"
 
 - name: Upgrade Vault
-  include_tasks: upgrade.yml
+  ansible.builtin.include_tasks: upgrade.yml
   when:
     - ansible_local.vault is defined
     - ansible_local.vault.initialized == "true"
@@ -40,7 +40,7 @@
     - vault_version is version(vault_version_current, '>')
 
 - name: Allow direct container connection to vault
-  include_tasks: container-connection.yml
+  ansible.builtin.include_tasks: container-connection.yml
   when:
     - config_done is defined
     - ansible_local.vault is defined
