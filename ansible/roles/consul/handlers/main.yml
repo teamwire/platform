@@ -1,8 +1,12 @@
-- name: restart consul
-  service: name=consul state=restarted
+- name: Restart consul
+  ansible.builtin.service:
+    name: consul
+    state: restarted
 
-- name: restart dnsmasq
-  service: name=dnsmasq state=restarted
+- name: Restart dnsmasq
+  ansible.builtin.service:
+    name: dnsmasq
+    state: restarted
 
-- name: run resolvconf
-  shell: resolvconf -u # noqa command-instead-of-shell
+- name: Run resolvconf
+  ansible.builtin.shell: resolvconf -u # noqa command-instead-of-shell

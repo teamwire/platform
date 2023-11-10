@@ -1,4 +1,5 @@
-registry_version: "registry:2.6.2"
-hashui_container: "jippi/hashi-ui:v1.1.0"
+---
+registry_version: "registry:2.8.2"
+hashui_container: "jippi/hashi-ui:v1.3.9"
 
 dockerhub_url: "https://registry-1.docker.io"

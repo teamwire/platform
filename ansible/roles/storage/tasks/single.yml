@@ -1,18 +1,26 @@
 ---
 - name: Install NFS server
-  apt: name={{ item }} state=present
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
   with_items:
-  - nfs-kernel-server
-  - rpcbind
-  notify: restart NFS server
+    - nfs-kernel-server
+    - rpcbind
+  notify: Restart NFS server
 
 - name: Create the NFS root directory
-  file:
+  ansible.builtin.file:
     name: /data
     state: directory
+    owner: root
+    group: root
+    mode: 0755
 
 - name: Write the NFS config
-  template:
+  ansible.builtin.template:
     src: exports.j2
     dest: /etc/exports
-  notify: reload NFS server
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reload NFS server

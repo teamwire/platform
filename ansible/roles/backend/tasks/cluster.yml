@@ -1,13 +1,19 @@
 ---
-- include_tasks: configuration.yml
+- name: Include configuration variables
+  ansible.builtin.include_tasks: configuration.yml
 
 - name: Create cluster config directory
-  file: dest=/data/cluster_config state=directory mode=0770 owner=root group=teamwire
+  ansible.builtin.file:
+    dest: /data/cluster_config
+    state: directory
+    mode: 0770
+    owner: root
+    group: teamwire
   run_once: true
 
 - name: Write cluster configuration file
   run_once: true
-  template:
+  ansible.builtin.template:
     src: ../../roles/backend/templates/cluster.conf.j2
     dest: /data/cluster_config/cluster.conf
     mode: 0640
@@ -15,7 +21,7 @@
     group: teamwire
 
 - name: Log into Harbor and force re-authorization
-  docker_login:
+  community.docker.docker_login:
     registry: harbor.teamwire.eu
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"

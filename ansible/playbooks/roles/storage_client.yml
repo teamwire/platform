@@ -1,4 +1,7 @@
+---
 - name: Mount cluster storage
   hosts: backend_servers:voip_servers:video_servers:hashi_servers:docker_registry:management_servers:local
-  roles:
-      - role: ../../roles/storage_client
+  tasks:
+    - name: Include storage_client role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/storage_client"

@@ -1,8 +1,10 @@
-- hosts: storage_servers
+---
+- name: Configure storage server(s)
+  hosts: storage_servers
   tasks:
     - name: Deploy and configure NFS server
       ansible.builtin.import_role:
-        name: ../../roles/storage
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/storage"
       when:
         - groups['all'] | length() > 1
         - config_done is defined

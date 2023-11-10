@@ -1,9 +1,14 @@
 ---
-- name: reload systemd
-  command: systemctl daemon-reload # noqa command-instead-of-module
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
 
-- name: restart redis
-  service: name=redis-server state=restarted
+- name: Restart redis
+  ansible.builtin.service:
+    name: redis-server
+    state: restarted
 
-- name: reload consul
-  command: consul reload
+- name: Reload consul
+  ansible.builtin.service:
+    name: consul
+    state: reloaded

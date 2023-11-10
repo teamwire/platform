@@ -4,8 +4,8 @@
 		"dockerhub_password": "",
 		"dockerhub_username": "",
 		"http_directory": "",
-		"iso_url": "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/debian-11.7.0-amd64-netinst.iso",
-		"iso_checksum": "4460ef6470f6d8ae193c268e213d33a6a5a0da90c2d30c1024784faa4e4473f0c9b546a41e2d34c43fbbd43542ae4fb93cfd5cb6ac9b88a476f1a6877c478674",
+		"iso_url": "https://cdimage.debian.org/cdimage/release/12.2.0/amd64/iso-cd/debian-12.2.0-amd64-netinst.iso",
+		"iso_checksum": "11d733d626d1c7d3b20cfcccc516caff2cbc57c81769d56434aab958d4d9b3af59106bc0796252aeefede8353e2582378e08c65e35a36769d5cf673c5444f80e",
 		"iso_checksum_type": "sha512",
 		"vm_name": "localhost",
 		"offline_installation": "",
@@ -158,7 +158,7 @@
 		},
 		{
 			"type": "ansible-local",
-			"command": "env TW_DEV_MODE=1 ansible-playbook",
+			"command": "env tw_dev_mode=1 ansible-playbook",
 			"playbook_file": "../ansible/site.yml",
 			"playbook_dir": "../ansible"
 		},

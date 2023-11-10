@@ -5,7 +5,7 @@
   hosts: all
   tasks:
     - name: Include vault vars yaml
-      ansible.builtin.include_vars: ../../roles/vault/defaults/main.yml
+      ansible.builtin.include_vars: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault/defaults/main.yml"
 
     - name: Include group vars
       ansible.builtin.include_vars: "{{ inventory_dir }}/group_vars/all"
@@ -35,13 +35,13 @@
         mode: '0644'
       with_items:
         - {
-            content: "{{ hostvars[groups['hashi_servers'][0]].vault_certificate.data.certificate if groups['all'] | length() > 1 else vault_certificate.data.certificate }}",
-            dest: "/var/lib/vault/ssl/vault.crt",
-          }
+          content: "{{ hostvars[groups['hashi_servers'][0]].vault_certificate.data.certificate if groups['all'] | length() > 1 else vault_certificate.data.certificate }}",
+          dest: "/var/lib/vault/ssl/vault.crt",
+        }
         - {
-            content: "{{ hostvars[groups['hashi_servers'][0]].vault_certificate.data.private_key if groups['all'] | length() > 1 else vault_certificate.data.private_key }}",
-            dest: "/var/lib/vault/ssl/vault.pem",
-          }
+          content: "{{ hostvars[groups['hashi_servers'][0]].vault_certificate.data.private_key if groups['all'] | length() > 1 else vault_certificate.data.private_key }}",
+          dest: "/var/lib/vault/ssl/vault.pem",
+        }
       become: true
 
     - name: Restart Nomad to recognise SSL renewal
@@ -61,6 +61,6 @@
         msg:
           - "The Vault SSL certificate has now been renewed and is valid for 2 years, this procedure may be re-run at any point"
           - "IMPORTANT: Vault must be unsealed via twctl secrets unseal"
-          - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the hashi_servers group" # noqa line-length
+          - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the hashi_servers group"
           - "If you encounter any issues, please email support@teamwire.eu"
       run_once: true

@@ -1,7 +1,7 @@
 ---
 - name: Clean jvb.conf file.
   ansible.builtin.file:
-    path: "{{ VOIP_ROOT_PATH }}/jvb{{ item }}/jvb.conf"
+    path: "{{ voip_root_path }}/jvb{{ item }}/jvb.conf"
     state: absent
   with_sequence: start=0 end="{{ end_at }}"
   vars:
@@ -12,7 +12,7 @@
 
 - name: Clean logging.properties file.
   ansible.builtin.file:
-    path: "{{ VOIP_ROOT_PATH }}/jvb{{ item }}/logging.properties"
+    path: "{{ voip_root_path }}/jvb{{ item }}/logging.properties"
     state: absent
   with_sequence: start=0 end="{{ end_at }}"
   vars:
@@ -23,7 +23,7 @@
 
 - name: Remove old JVB folder.
   ansible.builtin.file:
-    path: "{{ VOIP_ROOT_PATH }}/jvb/"
+    path: "{{ voip_root_path }}/jvb/"
     state: absent
   when:
     - enable_voip is defined

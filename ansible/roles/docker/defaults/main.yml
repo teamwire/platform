@@ -5,4 +5,4 @@ use_teamwire_registry: true
 
 # Set fixed version for docker because of known bug in docker version 23.0
 # See also https://docs.docker.com/engine/release-notes/23.0/#known-issues
-docker_ce_version: "5:20.10.20~3-0~debian-{{ ansible_lsb.codename }}"
+docker_ce_version: "5:24.0.1-1~debian.{{ '12' if ansible_distribution_release == 'bookworm' else '11' }}~{{ ansible_distribution_release }}"

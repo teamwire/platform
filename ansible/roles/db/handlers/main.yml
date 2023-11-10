@@ -1,17 +1,22 @@
 ---
-- name: reload systemd
-  command: systemctl daemon-reload # noqa command-instead-of-module
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
 
-- name: restart MariaDB
-  service: name=mysql state=restarted
+- name: Restart MariaDB
+  ansible.builtin.service:
+    name: mysql
+    state: restarted
 
-- name: restart consul
-  service: name=consul state=restarted
+- name: Restart consul
+  ansible.builtin.service:
+    name: consul
+    state: restarted
 
-- name: set innodb in runtime
-  command: mysql -e "SET GLOBAL innodb_buffer_pool_size=({{ innodb_buffer_pool_size }} * 1024 * 1024 * 1024);"
+- name: Set innodb in runtime
+  ansible.builtin.command: mysql -e "SET GLOBAL innodb_buffer_pool_size=({{ innodb_buffer_pool_size }} * 1024 * 1024 * 1024);"
   become: true
 
-- name: set optimizer in runtime
-  command: mysql -e "SET GLOBAL optimizer_search_depth={{ optimizer_search_depth_value }};"
+- name: Set optimizer in runtime
+  ansible.builtin.command: mysql -e "SET GLOBAL optimizer_search_depth={{ optimizer_search_depth_value }};"
   become: true

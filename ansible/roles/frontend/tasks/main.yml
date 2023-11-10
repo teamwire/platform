@@ -1,13 +1,14 @@
 ---
 - name: Retrieve package information
-  package_facts:
+  ansible.builtin.package_facts:
     manager: "apt"
 
-- include_tasks: remove_nginx.yml
+- name: Remove nginx
+  ansible.builtin.include_tasks: remove_nginx.yml
   when: "'nginx-light' in ansible_facts.packages"
 
 - name: Install HAproxy
-  apt:
+  ansible.builtin.apt:
     name: haproxy
     state: present
   register: ha_installed
@@ -18,157 +19,178 @@
 - name: Adapt HAproxy service to split-configuration setup
   block:
     - name: Create HAproxy drop-in override directory
-      file:
+      ansible.builtin.file:
         path: /etc/systemd/system/haproxy.service.d
         state: directory
+        owner: root
+        group: root
+        mode: 0755
       register: haproxy_systemd_service_unit_override
 
     - name: Adapt HAproxy service to split-configuration setup
-      template:
+      ansible.builtin.template:
         src: haproxy.service.conf.j2
         dest: "{{ haproxy_systemd_service_unit_override.path }}/haproxy.service.conf"
+        owner: root
+        group: root
+        mode: 0644
       notify:
-        - reload systemd
-        - restart haproxy
+        - Reload systemd
+        - Restart haproxy
 
     - name: Remove old HAproxy service file
-      file:
+      ansible.builtin.file:
         path: /etc/systemd/system/haproxy.service
         state: absent
       notify:
-        - reload systemd
-        - restart haproxy
+        - Reload systemd
+        - Restart haproxy
 
 - name: Start and enable HAProxy service
-  service: name=haproxy state=started enabled=true
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: true
 
 - name: Remove default HAproxy configs
-  file:
+  ansible.builtin.file:
     name: "{{ item }}"
     state: absent
   with_items:
     - /etc/haproxy/haproxy.cfg
     - /etc/haproxy/haproxy.cfg.bak
-  notify: reload haproxy
+  notify: Reload haproxy
 
 - name: Write HAProxy globals and frontend configuration files (Single server)
-  template:
+  ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     mode: 0664
     owner: haproxy
     group: haproxy
   with_items:
-    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' } # noqa braces
-    - { src: '{{ frontend_haproxy_template }}', dest: '/etc/haproxy/03-frontend.cfg' } # noqa braces
-  notify: restart haproxy
+    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
+    - { src: '{{ frontend_haproxy_template }}', dest: '/etc/haproxy/03-frontend.cfg' }
+  notify: Restart haproxy
   when: "'frontend_servers' not in groups and groups['all'] | length() == 1"
 
 - name: Write HAProxy globals configuration file (cluster servers)
-  template:
+  ansible.builtin.template:
     src: "{{ globals_haproxy_template }}"
     dest: "/etc/haproxy/01-globals.cfg"
     mode: 0664
     owner: haproxy
     group: haproxy
-  notify: restart haproxy
-  when: "'frontend_servers' in groups and groups['all'] | length() > 1"
+  notify: Restart haproxy
+  when:
+    - "'frontend_servers' in groups"
+    - groups['all'] | length() > 1
 
 - name: Collect all error template files
-  find:
+  ansible.builtin.find:
     paths: "/etc/haproxy/errors/"
     patterns: "*.http"
   register: errorfiles
 
 - name: Replace HTTP version in error files from 1.0 to 1.1
-  replace:
+  ansible.builtin.replace:
     path: "{{ item.path }}"
     regexp: 'HTTP\/1.0'
     replace: 'HTTP/1.1'
   with_items: "{{ errorfiles.files }}"
-  notify: reload haproxy
+  notify: Reload haproxy
 
 - name: Generate the SSL certificate
-  template:
+  ansible.builtin.template:
     src: haproxy_oldstyle_certificate.j2
     dest: /etc/ssl/certs/server_and_intermediate_and_root.crt
     mode: 0640
   when: ssl_certfile is defined
-  notify: reload haproxy
+  notify: Reload haproxy
 
 - name: Create the SSL certificate chain
-  template:
+  ansible.builtin.template:
     src: server_and_intermediate_and_root.crt.j2
     dest: /etc/ssl/certs/server_and_intermediate_and_root.crt
     mode: 0640
-  when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
-  notify: reload haproxy
+  when:
+    - ssl_server_certificate is defined
+    - ssl_intermediate_certificate is defined
+    - ssl_root_certificate is defined
+  notify: Reload haproxy
 
 - name: Create the SSL intermediate and root certificate file
-  template:
+  ansible.builtin.template:
     src: intermediate_and_root.crt.j2
     dest: /etc/ssl/certs/intermediate_and_root.crt
     mode: 0640
-  when: ssl_intermediate_certificate is defined and ssl_root_certificate is defined
-  notify: reload haproxy
+  when:
+    - ssl_intermediate_certificate is defined
+    - ssl_root_certificate is defined
+  notify: Reload haproxy
 
 - name: Copy the SSL key
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssl_keyfile }}"
     dest: /etc/ssl/private/teamwire-backend.key
     mode: 0640
   when: ssl_keyfile is defined
-  notify: reload haproxy
+  notify: Reload haproxy
 
 - name: Copy teamwire intermediate
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssl_intermediate_certificate }}"
     dest: "/etc/ssl/certs/teamwire.intermediate.crt"
     mode: 0640
   when: ssl_intermediate_certificate is defined
 
 - name: Copy teamwire certificate
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssl_server_certificate }}"
     dest: "/etc/ssl/certs/teamwire.server.crt"
     mode: 0640
   when: ssl_server_certificate is defined
 
 - name: Copy teamwire root certificate
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssl_root_certificate }}"
     dest: "/etc/ssl/certs/teamwire.root.crt"
     mode: 0600
   when: ssl_root_certificate is defined
 
 - name: Ensure socat is installed
-  apt:
+  ansible.builtin.apt:
     name: socat
     state: present
 
 - name: Copy precompiled ocspResponder
-  copy:
+  ansible.builtin.copy:
     src: "/usr/local/bin/ocspResponder"
     dest: "/usr/local/bin/ocspResponder"
     mode: 0755
     owner: root
     group: root
   when:
-    - ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+    - ssl_server_certificate is defined
+    - ssl_intermediate_certificate is defined
+    - ssl_root_certificate is defined
     - groups['all'] | length() > 1
     - "'management_servers' in groups"
 
 - name: Copy ocsp.sh to src dir
-  copy:
+  ansible.builtin.copy:
     src: ocsp.sh
     dest: "/usr/local/src/"
     mode: 0755
     owner: root
     group: root
-  when: ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+  when:
+    - ssl_server_certificate is defined
+    - ssl_intermediate_certificate is defined
+    - ssl_root_certificate is defined
 
 - name: Copy ocsp.sh to src dir on managment server
-  copy:
+  ansible.builtin.copy:
     src: ocsp.sh
     dest: "/usr/local/src/"
     mode: 0755
@@ -177,53 +199,81 @@
   delegate_to: localhost
   run_once: true
   when:
-    - ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+    - ssl_server_certificate is defined
+    - ssl_intermediate_certificate is defined
+    - ssl_root_certificate is defined
     - groups['all'] | length() > 1
     - "'management_servers' in groups"
 
-- name: stat ocsp file and register it
-  stat:
+- name: Stat ocsp file and register it
+  ansible.builtin.stat:
     path: "{{ ocspfile_path }}"
   register: stat_ocspfile
 
 - name: Add OCSP daily cron job
-  cron:
+  ansible.builtin.cron:
     name: "daily ocsp job to create ocsp file"
     special_time: daily
     job: "/usr/local/src/ocsp.sh > /dev/null 2>&1"
   ignore_errors: true # noqa ignore-errors
   when:
-    - ssl_server_certificate is defined and ssl_intermediate_certificate is defined and ssl_root_certificate is defined
+    - ssl_server_certificate is defined
+    - ssl_intermediate_certificate is defined
+    - ssl_root_certificate is defined
 
 - name: Generate a new Diffie-Hellman group
-  command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
+  ansible.builtin.command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
   when: ssl_keyfile is defined
   args:
     creates: /etc/ssl/private/dhparams.pem
 
 - name: Import SSL certificate check
-  import_tasks: ssl-check.yml
+  ansible.builtin.import_tasks: ssl-check.yml
 
 # open firewall ports for the web server
 - name: Add Firewall Rule allow 80
-  ufw: rule=allow port=80 proto=tcp
+  community.general.system.ufw:
+    rule: allow
+    port: 80
+    proto: tcp
   when: config_done is defined
 
 - name: Add Firewall Rule allow 443
-  ufw: rule=allow port=443 proto=tcp
+  community.general.system.ufw:
+    rule: allow
+    port: 443
+    proto: tcp
   when: ssl_keyfile is defined
 
 - name: Add Firewall Rule allow 8443
-  ufw: rule=allow port=8443 proto=tcp
-  when: ssl_keyfile is defined and enable_voip is defined and enable_voip | string() == 'true'
+  community.general.system.ufw:
+    rule: allow
+    port: 8443
+    proto: tcp
+  when:
+    - ssl_keyfile is defined
+    - enable_voip is defined
+    - enable_voip | string() == 'true'
 
 - name: Add Firewall Rule allow 4443
-  ufw: rule=allow port=4443 proto=tcp
-  when: ssl_keyfile is defined and enable_voip is defined and enable_voip | string() == 'true'
+  community.general.system.ufw:
+    rule: allow
+    port: 4443
+    proto: tcp
+  when:
+    - ssl_keyfile is defined
+    - enable_voip is defined
+    - enable_voip | string() == 'true'
 
 - name: Add Firewall Rule allow 10000
-  ufw: rule=allow port=10000 proto=any
-  when: groups.all | length == 1 and enable_voip is defined and enable_voip | string() == 'true'
+  community.general.system.ufw:
+    rule: allow
+    port: 10000
+    proto: any
+  when:
+    - groups.all | length == 1
+    - enable_voip is defined
+    - enable_voip | string() == 'true'
 
 - name: "Add Firewall Rule allow {{ voip_turn_port }}"
   community.general.ufw:
@@ -238,39 +288,42 @@
     - enable_stun | lower == 'true'
 
 - name: Re-use sockets in TIME_WAIT state for new connections
-  sysctl:
+  ansible.posix.sysctl:
     name: net.ipv4.tcp_tw_reuse
     value: "1"
     state: present
 
 - name: Ensure netfilter can handle a sufficient amount of connections
-  sysctl:
+  ansible.posix.sysctl:
     name: net.nf_conntrack_max
     value: "65536"
     state: present
 
 - name: Increase number of socket connection backlog
-  sysctl:
+  ansible.posix.sysctl:
     name: net.core.somaxconn
     value: "1024"
     state: present
     reload: true
 
 - name: Template voip reverse proxy config
-  template:
+  ansible.builtin.template:
     src: "20-voip.cfg.j2"
     dest: "/etc/haproxy/20-voip.cfg"
     mode: 0644
     owner: root
     group: root
-  notify: restart haproxy
+  notify: Restart haproxy
   when:
     - config_done is defined
     - groups['all'] | length == 1
-    - enable_voip is defined and enable_voip | string() == 'true'
+    - enable_voip is defined
+    - enable_voip | string() == 'true'
 
-- include_tasks: ocsp.yml
+- name: Include ocsp
+  ansible.builtin.include_tasks: ocsp.yml
   when: not offline_mode.stat.exists
 
-- include_tasks: cluster.yml
+- name: Include cluster
+  ansible.builtin.include_tasks: cluster.yml
   when: "'frontend_servers' in groups"

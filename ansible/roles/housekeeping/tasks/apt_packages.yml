@@ -1,8 +1,9 @@
+---
 # Remove APT packages that are no longer needed
 #
 
 - name: Remove unneeded packages
-  apt:
+  ansible.builtin.apt:
     name:
       - glances
       - gnupg1

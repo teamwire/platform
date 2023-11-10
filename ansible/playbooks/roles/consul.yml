@@ -1,16 +1,19 @@
+---
 # This playbook applies to backend cluster nodes, not the single server installation
 # The Hashi servers need to be run individually.
-- hosts: hashi_servers
+- name: Configure Consul on Hashi server nodes
+  hosts: hashi_servers
   serial: 1
   tasks:
     - name: Configure Consul on Hashi server nodes
-      ansible.builtin.import_role:
-        name: ../../roles/consul
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/consul"
       when: groups['all'] | length() > 1
 
-- hosts: all:!hashi_servers
+- name: Configure Consul on Consul member nodes
+  hosts: all:!hashi_servers
   tasks:
     - name: Configure Consul on Consul member nodes
-      ansible.builtin.import_role:
-        name: ../../roles/consul
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/consul"
       when: groups['all'] | length() > 1

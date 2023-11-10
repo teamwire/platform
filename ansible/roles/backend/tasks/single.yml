@@ -1,16 +1,17 @@
 ---
-- include_tasks: configuration.yml
+- name: Include configuration
+  ansible.builtin.include_tasks: configuration.yml
 
 - name: Login to the docker registry
-  docker_login:
+  community.docker.docker_login:
     registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
   when: not offline_mode.stat.exists
 
 - name: Retrieve the Teamwire backend main container
-  docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing
+  community.docker.docker_image:
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
     source: pull
     state: present
   when:
@@ -19,9 +20,9 @@
 
 - name: Run the Teamwire backend main container
   when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_backend
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing line-length
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -31,7 +32,7 @@
       tag: teamwire-backend
       syslog-facility: "local6"
     env:
-      AESKEY: "{{aes_key}}"
+      AESKEY: "{{ aes_key }}"
       ARCHIVING_CONFIG: "/archiving/archiving.conf"
       ARCHIVING_GPGHOME: "/archiving/gpg"
       BIND_HOST: "127.0.0.1"
@@ -39,10 +40,10 @@
       VAULT_TOKEN: "{{ VAULT_JOB_TOKEN | default() }}"
       VAULT_ADDR: "https://vault.service.consul:8200"
       VAULT_AES_SECRET_PATH: "secret/database/aes_key"
-      ORG_DEFAULT_ALLOW_USER_REG: "{{ allow_unknown_users|default('true') }}"
-      ORG_DEFAULT_ALLOW_USER_QUERY: "{{ allow_user_query|default('false') }}"
+      ORG_DEFAULT_ALLOW_USER_REG: "{{ allow_unknown_users | default('true') }}"
+      ORG_DEFAULT_ALLOW_USER_QUERY: "{{ allow_user_query | default('false') }}"
       MYSQL_HOST: "{{ mysql_host | default() }}"
-      MYSQL_PORT: "{{ mysql_port  | default() }}"
+      MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
       MYSQL_USER: "{{ teamwire_db_user if mysql_host is defined else '' }}"
       MYSQL_PASSWORD: "{{ teamwire_db_password if mysql_host is defined else '' }}"
@@ -52,36 +53,36 @@
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass|default() }}"
+      REDIS_PASSWORD: "{{ redis_pass | default() }}"
       EMAIL_HOST: "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
       BLOB_DIR: /assets
-      DEFAULT_FROM_EMAIL: "{{sender_address}}"
-      http_proxy: "{{http_proxy|default()}}"
-      https_proxy: "{{http_proxy|default()}}"
+      DEFAULT_FROM_EMAIL: "{{ sender_address }}"
+      http_proxy: "{{ http_proxy | default() }}"
+      https_proxy: "{{ http_proxy | default() }}"
       SERVICE_NAME: "backend"
       VERSION: "{{ version }}"
-      FAKE_PIN: "{{ fake_pin|default() }}"
-      FAKE_SMS: "{{ fake_sms|default() }}"
-      FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation|default() }}"
-      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
-      FAKE_VALIDATE_DOMAIN: "{{ fake_validate_domain|default() }}"
-      WEBSOCKETS_ENABLED: "{{ websockets_enabled | default('true')}}"
-      ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
-      USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
+      FAKE_PIN: "{{ fake_pin | default() }}"
+      FAKE_SMS: "{{ fake_sms | default() }}"
+      FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation | default() }}"
+      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption | default() }}"
+      FAKE_VALIDATE_DOMAIN: "{{ fake_validate_domain | default() }}"
+      WEBSOCKETS_ENABLED: "{{ websockets_enabled | default('true') }}"
+      ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false') }}"
+      USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false') }}"
       VOIP_URL: "http://localhost:7080"
       JWT_APP_SECRET: "{{ jwt_app_secret }}"
       PROSODY_KEY: "{{ prosody_key }}"
-      LOGLEVEL: "{{ backend_loglevel|default() }}"
-      WORKERS: "{{ workers|default() }}"
+      LOGLEVEL: "{{ backend_loglevel | default() }}"
+      WORKERS: "{{ workers | default() }}"
       GUNICORN_MAX_REQUESTS: "{{ worker_gunicorn_max_requests | default('500') }}"
-      CHANNEL_GROUP_EXPIRY: "{{ channel_group_expiry|default('86400') }}"
+      CHANNEL_GROUP_EXPIRY: "{{ channel_group_expiry | default('86400') }}"
       DISABLE_GC_RECONFIGURATION: "{{ disable_gc_reconfiguration | default('false') | lower }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_worker
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing line-length
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -92,14 +93,14 @@
       syslog-facility: "local6"
     env:
       MODE: worker
-      AESKEY: "{{aes_key}}"
+      AESKEY: "{{ aes_key }}"
       BIND_HOST: "127.0.0.1"
       BIND_PORT: "8082"
       VAULT_TOKEN: "{{ VAULT_JOB_TOKEN | default() }}"
       VAULT_ADDR: "https://vault.service.consul:8200"
       VAULT_AES_SECRET_PATH: "secret/database/aes_key"
       MYSQL_HOST: "{{ mysql_host | default() }}"
-      MYSQL_PORT: "{{ mysql_port  | default() }}"
+      MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
       MYSQL_USER: "{{ teamwire_db_user if mysql_host is defined else '' }}"
       MYSQL_PASSWORD: "{{ teamwire_db_password if mysql_host is defined else '' }}"
@@ -109,28 +110,28 @@
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass|default() }}"
+      REDIS_PASSWORD: "{{ redis_pass | default() }}"
       EMAIL_HOST: "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
       NOTIFICATION_SERVER_URL: "http://127.0.0.1:9081"
       BLOB_DIR: /assets
-      APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid|default('com.teamwire.messenger') }}"
-      APNS_CERT_2: "{% if apns_certificate_2 is defined %}/app/certs/apns/{{ apns_certificate_2 | basename }},{{ apns_certificate_type_2 | default('push_production') }},{{ apns_appid_2 }}{% endif %}" # noqa line-length
-      APNS_CERT_3: "{% if apns_certificate_3 is defined %}/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}{% endif %}" # noqa line-length
+      APNS_CERT_1: "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}"
+      APNS_CERT_2: "{% if apns_certificate_2 is defined %}/app/certs/apns/{{ apns_certificate_2 | basename }},{{ apns_certificate_type_2 | default('push_production') }},{{ apns_appid_2 }}{% endif %}"
+      APNS_CERT_3: "{% if apns_certificate_3 is defined %}/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}{% endif %}"
       GCM_API_KEY: "{{ gcm_api_key }}"
-      http_proxy: "{{http_proxy|default()}}"
-      https_proxy: "{{http_proxy|default()}}"
+      http_proxy: "{{ http_proxy | default() }}"
+      https_proxy: "{{ http_proxy | default() }}"
       SERVICE_NAME: "worker"
-      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
-      ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false')}}"
-      USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false')}}"
-      LOGLEVEL: "{{ worker_loglevel|default() }}"
-      DEFAULT_FROM_EMAIL: "{{sender_address}}"
+      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption | default() }}"
+      ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false') }}"
+      USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false') }}"
+      LOGLEVEL: "{{ worker_loglevel | default() }}"
+      DEFAULT_FROM_EMAIL: "{{ sender_address }}"
 
 - name: Run the Teamwire beat container
   when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_beat
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{version|default('prod')}}" # noqa var-spacing line-length
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -141,12 +142,12 @@
       syslog-facility: "local6"
     env:
       MODE: beat
-      AESKEY: "{{aes_key}}"
+      AESKEY: "{{ aes_key }}"
       VAULT_TOKEN: "{{ VAULT_JOB_TOKEN | default() }}"
       VAULT_ADDR: "https://vault.service.consul:8200"
       VAULT_AES_SECRET_PATH: "secret/database/aes_key"
       MYSQL_HOST: "{{ mysql_host | default() }}"
-      MYSQL_PORT: "{{ mysql_port  | default() }}"
+      MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
       MYSQL_USER: "{{ teamwire_db_user if mysql_host is defined else '' }}"
       MYSQL_PASSWORD: "{{ teamwire_db_password if mysql_host is defined else '' }}"
@@ -156,23 +157,23 @@
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
       ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass|default() }}"
+      REDIS_PASSWORD: "{{ redis_pass | default() }}"
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
-      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption|default() }}"
-      LOGLEVEL: "{{ beat_loglevel|default() }}"
+      FAKE_DB_ENCRYPTION: "{{ fake_db_encryption | default() }}"
+      LOGLEVEL: "{{ beat_loglevel | default() }}"
 
 - name: Retrieve the Teamwire notification server container
   when: config_done is defined
-  docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{version|default('prod')}}" # noqa var-spacing line-length
+  community.docker.docker_image:
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{ version | default('prod') }}"
     source: pull
     state: present
 
 - name: Run the Teamwire notification server container
   when: config_done is defined
-  docker_container:
+  community.docker.docker_container:
     name: teamwire_notification_server
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{version|default('prod')}}" # noqa var-spacing line-length
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{ version | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -182,5 +183,5 @@
       syslog-facility: "local6"
     env:
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass|default() }}"
-      LOGLEVEL: "{{ notification_loglevel|default() }}"
+      REDIS_PASSWORD: "{{ redis_pass | default() }}"
+      LOGLEVEL: "{{ notification_loglevel | default() }}"

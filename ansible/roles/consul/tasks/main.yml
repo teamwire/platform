@@ -1,104 +1,128 @@
+---
 - name: Create 3rd party download directory
-  file:
+  ansible.builtin.file:
     dest: /var/cache/downloads
     state: directory
     mode: 0755
 
 - name: Check if Consul is already installed
-  stat: path=/usr/local/bin/consul
+  ansible.builtin.stat:
+    path: /usr/local/bin/consul
   register: consul_binary
 
 - name: Gather information about Consul
   block:
     - name: Gather Consul version information
-      command: consul version
+      ansible.builtin.command: consul version
       register: consul_version_cmd
       changed_when: false
     - name: Parse Consul information
-      set_fact:
+      ansible.builtin.set_fact:
         consul_version_current: "{{ consul_version_cmd.stdout_lines[0] | regex_search('\\d+\\.\\d+\\.\\d+') }}"
   when: consul_binary.stat.exists
 
 - name: Download Consul
-  get_url:
+  ansible.builtin.get_url:
     url: https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_amd64.zip
     dest: /var/cache/downloads/consul_{{ consul_version }}_linux_amd64.zip
+    owner: root
+    group: root
+    mode: 0644
     checksum: "sha256:{{ consul_checksum }}"
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}' # noqa var-spacing
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: consul_downloaded
   environment:
-    https_proxy: "{{ http_proxy|default() }}"
+    https_proxy: "{{ http_proxy | default() }}"
 
 - name: Install/Update the Consul binary
-  unarchive:
+  ansible.builtin.unarchive:
     src: /var/cache/downloads/consul_{{ consul_version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
     copy: false
-  notify: restart consul
+  notify: Restart consul
   when: consul_downloaded.changed or not consul_binary.stat.exists # noqa no-handler
 
 - name: Create Consul config and scripts directories
-  file:
+  ansible.builtin.file:
     name: "{{ item }}"
     state: directory
+    owner: root
+    group: root
+    mode: 0755
   with_items:
     - "/etc/consul.d"
     - "/etc/consul.d/scripts/"
 
 - name: Write Consul server configuration file
-  template:
+  ansible.builtin.template:
     src: 10-server.json.j2
     dest: /etc/consul.d/10-server.json
+    owner: root
+    group: root
+    mode: 0644
   when: '"hashi_servers" in group_names'
-  notify: restart consul
+  notify: Restart consul
 
 - name: Write Consul agent configuration file
-  template:
+  ansible.builtin.template:
     src: 20-agent.json.j2
     dest: /etc/consul.d/20-agent.json
-  notify: restart consul
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart consul
 
 - name: Install Consul systemd config
-  copy:
+  ansible.builtin.copy:
     src: consul.service
     dest: /etc/systemd/system/consul.service
+    owner: root
+    group: root
+    mode: 0644
   notify:
-    - restart consul
+    - Restart consul
 
 # redirect DNS to consul
 - name: Add consul forwarding to dnsmasq
-  template:
+  ansible.builtin.template:
     src: 10-consul.j2
     dest: /etc/dnsmasq.d/10-consul
-  notify: restart dnsmasq
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart dnsmasq
 
 - name: Enable the Consul service
-  service: name=consul state=started enabled=yes daemon_reload=yes
+  ansible.builtin.service:
+    name: consul
+    state: started
+    enabled: true
+    daemon_reload: true
 
 # Upgraded binary has already been placed previously
 # The new version will take effect as soon as Consul process is restarted
 - name: Upgrade Consul node
   block:
     - name: Quit cluster
-      command: consul leave
+      ansible.builtin.command: consul leave # noqa no-changed-when
 
     - name: Restart Consul to re-join cluster
-      service:
+      ansible.builtin.service:
         name: consul
         state: restarted
 
     - name: Gather version information about upgraded Consul
-      command: consul version
+      ansible.builtin.command: consul version
       register: consul_upgraded_version_cmd
       changed_when: false
 
     - name: Parse upgraded Consul version information
-      set_fact:
+      ansible.builtin.set_fact:
         consul_upgraded_version: "{{ consul_upgraded_version_cmd.stdout_lines[0] | regex_search('\\d+\\.\\d+\\.\\d+') }}"
 
     - name: Verify upgrade succeeded
-      assert:
+      ansible.builtin.assert:
         that: consul_upgraded_version is version(consul_version, '==')
 
   when:

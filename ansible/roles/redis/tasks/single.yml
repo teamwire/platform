@@ -1,23 +1,23 @@
 ---
 - name: Configure Redis to listen on all interfaces
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/redis/redis.conf
     regexp: ^bind\s+127.0.0.1
     line: "bind 0.0.0.0"
     backrefs: true
-  notify: restart redis
+  notify: Restart redis
 
 - name: Configure password for Redis
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/redis/redis.conf
     regexp: ^(# )+requirepass
     line: "requirepass {{ redis_pass }}"
     backrefs: true
   when: redis_pass is defined
-  notify: restart redis
+  notify: Restart redis
 
 - name: Start and enable Redis server
-  service:
+  ansible.builtin.service:
     name: redis-server
     state: started
     enabled: true

@@ -5,7 +5,9 @@ global
     log /dev/log    local0
     log /dev/log    local1 notice
     daemon
+{% if ansible_distribution_release != 'bookworm'  %}
     nbproc {{ haproxy_proc_count }}
+{% endif %}  
     maxconn 10240
     spread-checks 3
     chroot /var/lib/haproxy

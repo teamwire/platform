@@ -1,44 +1,84 @@
 ---
 
 - name: Import requirements which needs to run first
-  import_playbook: requirements.yml
+  ansible.builtin.import_playbook: requirements.yml
 
 - name: Ask for additional information upfront
   hosts: hashi_servers:local
   tasks:
     - name: Ask for additional information
-      include_role:
+      ansible.builtin.include_role:
         name: "{{ inventory_dir }}/roles/vault"
         tasks_from: gather_information.yml
 
-- include: roles/common.yml
-- include: roles/management.yml
-- include: roles/consul.yml
-- include: roles/vault.yml
-- include: roles/storage_servers.yml
-- include: roles/storage_client.yml
-- include: roles/database_servers.yml
-- include: roles/docker.yml
-- include: roles/backend.yml
-- include: roles/nomad.yml
-- include: roles/container.yml
-- include: roles/loghost.yml
-- include: roles/voip.yml
-- include: roles/go.yml
-- include: roles/redis_servers.yml
-- include: roles/frontend.yml
-- include: roles/load_balancers.yml
-- include: roles/monitoring.yml
-- include: roles/housekeeping.yml
-- include: roles/security.yml
+- name: Include common.yml
+  ansible.builtin.import_playbook: roles/common.yml
 
-- hosts: all
+- name: Include management.yml
+  ansible.builtin.import_playbook: roles/management.yml
+
+- name: Include consul.yml
+  ansible.builtin.import_playbook: roles/consul.yml
+
+- name: Include vault.yml
+  ansible.builtin.import_playbook: roles/vault.yml
+
+- name: Include storage_servers.yml
+  ansible.builtin.import_playbook: roles/storage_servers.yml
+
+- name: Include storage_client.yml
+  ansible.builtin.import_playbook: roles/storage_client.yml
+
+- name: Include database_servers.yml
+  ansible.builtin.import_playbook: roles/database_servers.yml
+
+- name: Include backend.yml
+  ansible.builtin.import_playbook: roles/backend.yml
+
+- name: Include nomad.yml
+  ansible.builtin.import_playbook: roles/nomad.yml
+
+- name: Include container.yml
+  ansible.builtin.import_playbook: roles/container.yml
+
+- name: Include loghost.yml
+  ansible.builtin.import_playbook: roles/loghost.yml
+
+- name: Include docker.yml
+  ansible.builtin.import_playbook: roles/docker.yml
+
+- name: Include voip.yml
+  ansible.builtin.import_playbook: roles/voip.yml
+
+- name: Include go.yml
+  ansible.builtin.import_playbook: roles/go.yml
+
+- name: Include redis_server.yml
+  ansible.builtin.import_playbook: roles/redis_servers.yml
+
+- name: Include frontend.yml
+  ansible.builtin.import_playbook: roles/frontend.yml
+
+- name: Include load_balancers.yml
+  ansible.builtin.import_playbook: roles/load_balancers.yml
+
+- name: Include monitoring.yml
+  ansible.builtin.import_playbook: roles/monitoring.yml
+
+- name: Include housekeeping.yml
+  ansible.builtin.import_playbook: roles/housekeeping.yml
+
+- name: Include security.yml
+  ansible.builtin.import_playbook: roles/security.yml
+
+- name: Set complete tag
+  hosts: all
   tasks:
-  - name: Set current tag (COMPLETE) in /etc/platform_version
-    copy:
-      dest: /etc/platform_version
-      content: "{{ current_local_tag }}"
-      owner: root
-      group: root
-      mode: 0644
-    when: packer_build_name is not defined
+    - name: Set current tag (COMPLETE) in /etc/platform_version
+      ansible.builtin.copy:
+        dest: /etc/platform_version
+        content: "{{ current_local_tag }}"
+        owner: root
+        group: root
+        mode: 0644
+      when: packer_build_name is not defined

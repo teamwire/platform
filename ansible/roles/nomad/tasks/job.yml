@@ -1,44 +1,47 @@
 ---
-- include: ../../backend/tasks/configuration.yml
+- name: Include configuration
+  ansible.builtin.include_tasks: ../../backend/tasks/configuration.yml
 
 - name: Wait for nomad API port to start listening
-  wait_for:
+  ansible.builtin.wait_for:
     port: 4646
   run_once: true
 
 - name: Obtain total CPU compute power
-  shell: nomad node-status -self -json | awk -F'[^0-9]*' '/cpu.totalcompute/{print $2}' # noqa risky-shell-pipe
+  ansible.builtin.shell: nomad node-status -self -json | awk -F'[^0-9]*' '/cpu.totalcompute/{print $2}' # noqa risky-shell-pipe
   register: cpu_calculation
   run_once: true
   changed_when: false
   check_mode: false
 
 - name: Set facts for total CPU power (cores*frequency) on Nomad clients
-  set_fact:
+  ansible.builtin.set_fact:
     core_count: "{{ ansible_processor_vcpus }}"
     total_cpu_power: "{{ cpu_calculation.stdout }}"
 
 - name: Register docker registry with harbor
-  set_fact:
-    LOCAL_REGISTRY: "{{ groups['docker_registry'] | first }}:5000/"
+  ansible.builtin.set_fact:
+    local_registry: "{{ groups['docker_registry'] | first }}:5000/"
   when:
     - config_done is defined
     - groups.docker_registry is defined
 
-- name: fetch NOMAD_SERVER_VAULT_TOKEN
-  slurp:
+- name: Fetch nomad_server_vault_token
+  ansible.builtin.slurp:
     src: /etc/ansible/job-read.token
   register: remote_nomad_server_token
   delegate_to: "{{ 'localhost' if groups['all'] | length == 1 else groups.hashi_servers | first }}"
 
-- name: Register published NOMAD_SERVER_VAULT_TOKEN
-  set_fact:
-    VAULT_JOB_TOKEN: "{{ remote_nomad_server_token.content | b64decode }}"
+- name: Register published nomad_server_vault_token
+  ansible.builtin.set_fact:
+    vault_job_token: "{{ remote_nomad_server_token.content | b64decode }}"
 
 - name: Write Teamwire cluster nomad job
-  template:
+  ansible.builtin.template:
     src: teamwire.nomad.j2
     dest: /data/cluster_config/teamwire.nomad
     owner: teamwire
+    group: root
+    mode: 0644
   run_once: true
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"

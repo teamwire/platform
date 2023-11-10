@@ -6,7 +6,7 @@
   hosts: hashi_servers:local
   tasks:
     - name: Ask for additional information
-      include_role:
+      ansible.builtin.include_role:
         name: "{{ inventory_dir }}/roles/vault"
         tasks_from: gather_information.yml
 
@@ -19,48 +19,67 @@
 - name: Deploy and configure external storage client
   hosts: all
   roles:
-    - { role: storage_client, when external_storage_path is defined } # noqa braces
+    - role: storage_client
+      when: external_storage_path is defined
 
 - name: Deploy Vault secret system
   hosts: all
   roles:
-    - { role: vault, when: config_done is defined } # noqa braces
+    - role: vault
+      when: config_done is defined
 
 - name: Deploy and configure MySQL database
   hosts: all
   roles:
-    - { role: db, when: config_done is defined and mysql_host is not defined and oracle_host is not defined } # noqa braces
+    - role: db
+      when:
+        - config_done is defined
+        - mysql_host is not defined
+        - oracle_host is not defined
 
 - name: Deploy and configure Redis database
   hosts: all
   roles:
-    - { role: redis, when: config_done is defined } # noqa braces
+    - role: redis
+      when: config_done is defined
 
 - name: Deploy and configure the backend server
   hosts: all
   roles:
-    - docker
-    - { role: backend, when: config_done is defined } # noqa braces
-    - { role: voip, when: config_done is defined and enable_voip is defined and enable_voip | string() == 'true' } # noqa braces
-    - { role: go, when: config_done is defined } # noqa braces
-    - { role: frontend, when: config_done is defined } # noqa braces
+    - role: docker
+    - role: backend
+      when: config_done is defined
+    - role: voip
+      when:
+        - config_done is defined
+        - enable_voip is defined
+        - enable_voip | string() == 'true'
+    - role: go
+      when: config_done is defined
+    - role: frontend
+      when: config_done is defined
 
 - name: Deploy monitoring services
   hosts: all
   roles:
-    - { role: monitoring, when: config_done is defined and enable_monitoring is defined } # noqa braces
+    - role: monitoring
+      when:
+        - config_done is defined
+        - enable_monitoring is defined
 
 - name: Run security and housekeeping job to remove unused dependencies
   hosts: all
   roles:
-    - { role: security,     when: config_done is defined } # noqa braces
-    - { role: housekeeping, when: config_done is defined } # noqa braces
+    - role: security
+      when: config_done is defined
+    - role: housekeeping
+      when: config_done is defined
 
 - name: Set current tag (COMPLETE) in /etc/platform_version
   hosts: all
   tasks:
     - name: Set tag
-      copy:
+      ansible.builtin.copy:
         dest: /etc/platform_version
         content: '{{ current_local_tag }}'
         owner: root

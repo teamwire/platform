@@ -1,21 +1,23 @@
 ---
 - name: Install Redis
-  apt: name={{ item }} state=present
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
   with_items:
-  - redis-tools
-  - python3-redis
-  - redis-server
+    - redis-tools
+    - python3-redis
+    - redis-server
 
 # See http://redis.io/topics/faq for details
 - name: Enable vm.overcommit_memory for Redis
-  sysctl:
+  ansible.posix.sysctl:
     name: vm.overcommit_memory
     value: "1"
     state: present
     reload: true
 
 - name: Increase number of socket connection backlog
-  sysctl:
+  ansible.posix.sysctl:
     name: net.core.somaxconn
     value: "1024"
     state: present
@@ -34,8 +36,10 @@
     dest: /etc/environment
     line: "REDISCLI_HISTFILE=/dev/null"
 
-- include_tasks: single.yml
+- name: Include single
+  ansible.builtin.include_tasks: single.yml
   when: "'redis_servers' not in groups"
 
-- include_tasks: cluster.yml
+- name: Include cluster
+  ansible.builtin.include_tasks: cluster.yml
   when: "'redis_servers' in groups"

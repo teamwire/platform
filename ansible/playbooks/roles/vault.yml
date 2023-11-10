@@ -1,14 +1,18 @@
-- hosts: hashi_servers:local
-  roles:
-  - role: ../../roles/vault
+---
+- name: Configure vault for hashi server(s)
+  hosts: hashi_servers:local
+  tasks:
+    - name: Include vault role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
 
 - name: Run postfix tasks to configure email credentials after initial bootstrap
   hosts: all
   gather_facts: true
   tasks:
-    - name: include common role
-      include_role:
-        name: ../../roles/common
+    - name: Include common role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/common"
         tasks_from: postfix
       when: new_vault_bootstrap is defined
 
@@ -16,7 +20,7 @@
   hosts: all:!hashi_servers
   tasks:
     - name: Copy vault token
-      copy:
+      ansible.builtin.copy:
         content: "{{ vault_token }}"
         dest: "{{ item.dest }}"
         mode: 0400
@@ -33,15 +37,24 @@
     - name: Copy Vault SSL certificates
       block:
         - name: Create Vault SSL directory
-          file: path=/var/lib/vault/ssl mode=0750 state=directory
+          ansible.builtin.file:
+            path: /var/lib/vault/ssl
+            mode: 0750
+            state: directory
         - name: Install Vault root CA, tls certificate and private key
-          copy:
+          ansible.builtin.copy:
             content: "{{ item.content }}"
             dest: "{{ item.dest }}"
+            owner: root
+            group: root
+            mode: 0644
           with_items:
             - { content: '{{ vault_certificate.data.issuing_ca }}', dest: '/usr/local/share/ca-certificates/vault-rootCA.crt' }
             - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' }
             - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' }
         - name: Trust the Vault Root CA
-          command: update-ca-certificates
-      when: new_vault_bootstrap is defined and vault_certificate is defined and groups['all'] | length() > 1
+          ansible.builtin.command: update-ca-certificates # noqa no-changed-when
+      when:
+        - new_vault_bootstrap is defined
+        - vault_certificate is defined
+        - groups['all'] | length() > 1

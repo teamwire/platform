@@ -1,3 +1,4 @@
+---
 gluster_brick_dir: "/var/lib/cluster"
 gluster_volume: "data"
 glusterfs_peer_group: storage_servers

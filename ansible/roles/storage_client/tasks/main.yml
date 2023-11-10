@@ -1,22 +1,38 @@
 ---
 - name: Create local storage directory / NFS mount point
-  file: path=/data owner=root group=root mode=0755 state=directory
+  ansible.builtin.file:
+    path: /data
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
 
 # Mount external storage
 - name: Install NFS client
-  apt: pkg=nfs-common state=present
+  ansible.builtin.apt:
+    pkg: nfs-common
+    state: present
   when: external_storage_path is defined or ('storage_servers' in groups and groups['storage_servers'] | length == 1)
 
 - name: Install GlusterFS client
-  apt: pkg=glusterfs-client state=present
-  when: external_storage_path is not defined and 'storage_servers' in groups and groups['storage_servers'] | length > 1
+  ansible.builtin.apt:
+    pkg: glusterfs-client
+    state: present
+  when:
+    - external_storage_path is not defined
+    - "'storage_servers' in groups"
+    - groups['storage_servers'] | length > 1
 
 - name: Mount NFS share (external)
-  mount: name=/data fstype=nfs src="{{ external_storage_path }}" state=mounted
+  ansible.posix.mount:
+    name: /data
+    fstype: nfs
+    src: "{{ external_storage_path }}"
+    state: mounted
   when: external_storage_path is defined
 
 - name: Configure NFSv4 ID mapping domain
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/idmapd.conf
     regexp: '(# )?Domain = '
     line: 'Domain = {{ idmap_domain }}'
@@ -24,26 +40,35 @@
   when: external_storage_path is defined and idmap_domain is defined
 
 - name: Comment NFSv4 ID mapping domain
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/idmapd.conf
     regexp: '(# )?Domain = '
     line: '# Domain = localdomain'
     backrefs: true
-  when: external_storage_path is defined and idmap_domain is not defined
+  when:
+    - external_storage_path is defined
+    - idmap_domain is not defined
 
 - name: "Mount NFS share (cluster)"
-  mount:
+  ansible.posix.mount:
     name: /data
     fstype: nfs
     src: "{{ groups['storage_servers'] | first }}:/data"
     state: mounted
-  when: external_storage_path is not defined and 'storage_servers' in groups and groups['storage_servers'] | length == 1
+  when:
+    - external_storage_path is not defined
+    - "'storage_servers' in groups"
+    - groups['storage_servers'] | length == 1
 
 - name: Mount GlusterFS share (cluster)
-  mount:
+  ansible.posix.mount:
     name: /data
     fstype: glusterfs
-    src: "{{ groups['storage_servers'] | first }}:/data" # noqa var-spacing
-    opts: "{% for host in groups['storage_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable"
+    src: "{{ groups['storage_servers'] | first }}:/data"
+    opts: "{% for host in groups['storage_servers'][1:] %}backupvolfile-server={{ host }},{% endfor %}direct-io-mode=disable"
     state: mounted
-  when: external_storage_path is not defined and 'storage_servers' in groups and groups['storage_servers'] | length > 1 and not inventory_hostname in groups['storage_servers'] # noqa line-length
+  when:
+    - external_storage_path is not defined
+    - "'storage_servers' in groups"
+    - groups['storage_servers'] | length > 1
+    - not inventory_hostname in groups['storage_servers']

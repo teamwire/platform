@@ -1,11 +1,13 @@
 ---
 - name: Fail if system_email_recipient is not defined
-  fail:
+  ansible.builtin.fail:
     msg: The Variable 'system_email_recipient' must be defined in group_vars/all
-  when: config_done is defined and system_email_recipient is not defined
+  when:
+    - config_done is defined
+    - system_email_recipient is not defined
 
 - name: Set host mail name
-  template:
+  ansible.builtin.template:
     src: mailname.j2
     dest: /etc/mailname
     owner: root
@@ -14,46 +16,54 @@
   when: config_done is defined
 
 - name: Install Postfix
-  apt:
+  ansible.builtin.apt:
     pkg: postfix
 
 - name: PSTFX_4 Write the Postfix configuration file
-  template:
+  ansible.builtin.template:
     src: postfix-main.cf.j2
     dest: /etc/postfix/main.cf
+    mode: 0644
+    owner: root
+    group: root
   when:
     - config_done is defined
     - pstfx_4 | default(true)
-  notify: restart postfix
+  notify: Restart postfix
 
 - name: Write the Postfix password file
-  template:
+  ansible.builtin.template:
     src: postfix-passwd.j2
     dest: /etc/postfix/sasl/passwd
     mode: 0600
-  when: config_done is defined and smtp_smartpass is defined and smtp_smartuser is defined and smtp_smartuser !=""
-  notify: rebuild postfix passwd map
+  when:
+    - config_done is defined
+    - smtp_smartpass is defined
+    - smtp_smartuser is defined
+    - smtp_smartuser !=""
+  notify: Rebuild postfix passwd map
 
 - name: Setup e-mail aliases
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/aliases"
     regexp: "^root:"
-    line: "root{{':'}} {{ system_email_recipient | default() }}"
+    line: "root{{ ':' }} {{ system_email_recipient | default() }}"
     insertafter: EOF
     state: present
   notify:
-    - new aliases
-    - restart postfix
+    - New aliases
+    - Restart postfix
 
 - name: Test if e-mail alias.db is older then source file
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /var/log/mail.log
     line: "database /etc/aliases.db is older than source file /etc/aliases"
     state: present
-  notify: new aliases
+  notify: New aliases
+  when: packer_build_name is not defined
 
 - name: Ensure postfix virtualmap is absent
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -62,6 +72,6 @@
 
 - name: Give root a speaking name
   when: config_done is defined
-  user:
+  ansible.builtin.user:
     name: root
     comment: "root@{{ external_hostname }}"

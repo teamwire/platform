@@ -1,80 +1,108 @@
 ---
 - name: Ensure aes_key is configured before setting up containers
-  fail: msg="AES key is not defined. Please check the configuration file"
-  when: config_done is defined and aes_key is defined and aes_key == None
+  ansible.builtin.fail:
+    msg: "AES key is not defined. Please check the configuration file"
+  when:
+    - config_done is defined
+    - aes_key is defined and aes_key == None
 
 - name: Set Teamwire DB user from deprecated oracle_user config setting
-  set_fact:
+  ansible.builtin.set_fact:
     teamwire_db_user: "{{ oracle_user }}"
   when: oracle_user is defined
 
 - name: Check Oracle database user
-  debug: msg="Usage of oracle_user is deprecated, please set teamwire_db_user"
+  ansible.builtin.debug:
+    msg: "Usage of oracle_user is deprecated, please set teamwire_db_user"
   when: oracle_user is defined
 
 - name: Configure default Teamwire DB user name
-  set_fact:
+  ansible.builtin.set_fact:
     teamwire_db_user: teamwire
   when: teamwire_db_user is not defined
 
 - name: Set Teamwire DB name from deprecated oracle_database config setting
-  set_fact:
+  ansible.builtin.set_fact:
     teamwire_db_name: "{{ oracle_database }}"
   when: oracle_database is defined
 
 - name: Check Oracle database
-  debug: msg="Usage of oracle_database is deprecated, please set teamwire_db_name"
+  ansible.builtin.debug:
+    msg: "Usage of oracle_database is deprecated, please set teamwire_db_name"
   when: oracle_database is defined
 
 - name: Configure default Teamwire DB name
-  set_fact:
+  ansible.builtin.set_fact:
     teamwire_db_name: teamwire
   when: teamwire_db_name is not defined
 
 - name: Determine MariaDB host (local)
-  set_fact:
+  ansible.builtin.set_fact:
     mysql_host: "127.0.0.1"
-  when: mysql_host is not defined and 'database_servers' not in groups and oracle_host is not defined
+  when:
+    - mysql_host is not defined
+    - "'database_servers' not in groups"
+    - oracle_host is not defined
 
 - name: Determine MariaDB host (Single MariaDB server)
-  set_fact:
+  ansible.builtin.set_fact:
     mysql_host: "{{ hostvars[groups['database_servers'][0]].private_ip }}"
-  when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length == 1
+  when:
+    - mysql_host is not defined
+    - "'database_servers' in groups"
+    - groups['database_servers'] | length == 1
 
 - name: Determine MariaDB host (Galera cluster)
-  set_fact:
+  ansible.builtin.set_fact:
     mysql_host: "127.0.0.1"
-  when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
+  when:
+    - mysql_host is not defined
+    - "'database_servers' in groups"
+    - groups['database_servers'] | length > 1
 
 - name: Determine MariaDB port (local)
-  set_fact:
+  ansible.builtin.set_fact:
     mysql_port: 3306
-  when: mysql_port is not defined and 'database_servers' not in groups and oracle_host is not defined
+  when:
+    - mysql_port is not defined
+    - "'database_servers' not in groups"
+    - oracle_host is not defined
 
 - name: Determine MariaDB port (Single MariaDB server)
-  set_fact:
+  ansible.builtin.set_fact:
     mysql_port: 3306
-  when: mysql_port is not defined and 'database_servers' in groups and groups['database_servers'] | length == 1
+  when:
+    - mysql_port is not defined
+    - "'database_servers' in groups"
+    - groups['database_servers'] | length == 1
 
 - name: Determine MariaDB port (Galera cluster)
-  set_fact:
+  ansible.builtin.set_fact:
     mysql_port: 3307
-  when: mysql_port is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
+  when:
+    - mysql_port is not defined
+    - "'database_servers' in groups"
+    - groups['database_servers'] | length > 1
 
-- name: fetch VAULT_JOB_TOKEN
-  slurp:
+- name: Fetch VAULT_JOB_TOKEN
+  ansible.builtin.slurp:
     src: /etc/ansible/job-read.token
   register: remote_job_token
   delegate_to: "{{ 'localhost' if groups['all'] | length == 1 else groups.hashi_servers | first }}"
 
 - name: Register published VAULT_JOB_TOKEN
-  set_fact:
-    VAULT_JOB_TOKEN: "{{ remote_job_token.content | b64decode }}"
+  ansible.builtin.set_fact:
+    vault_job_token: "{{ remote_job_token.content | b64decode }}"
 
 - name: Check if installing offline
-  stat: path=/etc/offline_installation
+  ansible.builtin.stat:
+    path: /etc/offline_installation
   register: offline_mode
 
 - name: Ensure Redis servers are defined
-  fail: msg="Redis servers aren't defined. Please check the cluster_hosts file"
-  when: groups['all'] | length() > 1 and config_done is defined and 'redis_servers' not in groups
+  ansible.builtin.fail:
+    msg: "Redis servers aren't defined. Please check the cluster_hosts file"
+  when:
+    - groups['all'] | length() > 1
+    - config_done is defined
+    - "'redis_servers' not in groups"
