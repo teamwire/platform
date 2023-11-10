@@ -5,7 +5,7 @@
   tasks:
     - name: Include vault role
       ansible.builtin.include_role:
-        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}roles/vault"
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
         tasks_from: secrets
       when:
         - ansible_local.vault is defined
