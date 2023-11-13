@@ -32,6 +32,9 @@
 - name: Include database_servers.yml
   ansible.builtin.import_playbook: roles/database_servers.yml
 
+- name: Include docker.yml
+  ansible.builtin.import_playbook: roles/docker.yml
+
 - name: Include backend.yml
   ansible.builtin.import_playbook: roles/backend.yml
 
@@ -43,9 +46,6 @@
 
 - name: Include loghost.yml
   ansible.builtin.import_playbook: roles/loghost.yml
-
-- name: Include docker.yml
-  ansible.builtin.import_playbook: roles/docker.yml
 
 - name: Include voip.yml
   ansible.builtin.import_playbook: roles/voip.yml
