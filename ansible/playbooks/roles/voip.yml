@@ -5,28 +5,36 @@
   hosts: local:hashi_servers
   tasks:
     - name: Include roles/vault role
-      include_role:
-        name: ../../roles/vault
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
         tasks_from: secrets
-      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+      when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
+        - secrets_read is not defined
 
 - name: Include offline installation check
   hosts: local:management_servers:voip_servers:backend_servers:video_servers
   tasks:
     - name: Import check offline installation task
       ansible.builtin.include_role:
-        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname)  }}/roles/common"
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/common"
         tasks_from: check_offline_installation
 
 # Please refer here: https://github.com/ansible/ansible/issues/30901 why `inventory_dir` is
 # sometimes not possible to use
-- hosts: local:management_servers
-  roles:
-    - role: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname)  }}/roles/voip" # noqa internal-error
-      when: enable_voip is defined and enable_voip | string() == 'true'
+- name: Configure voip for management server(s)
+  hosts: local:management_servers
   tasks:
+    - name: Include voip main.yml for management_server
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true'
+
     - name: Include voip_servers for management_server
-      include_role:
+      ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
         tasks_from: voip_servers.yml
       when:
@@ -35,10 +43,11 @@
         - enable_voip | lower == 'true'
         - "'video_servers' not in group_names"
 
-- hosts: voip_servers
+- name: Configure turn volume for voip server(s)
+  hosts: voip_servers
   tasks:
     - name: Import tasks for turn volume creation
-      import_role:
+      ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
         tasks_from: turn_volume.yml
       when:
@@ -50,10 +59,11 @@
         - ssl_keyfile is defined
         - groups['all'] | length > 1
 
-- hosts: voip_servers
+- name: Configure voip for voip server(s)
+  hosts: voip_servers
   tasks:
     - name: Import voip_servers tasks for voip_servers
-      import_role:
+      ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
         tasks_from: voip_servers.yml
       when:
@@ -61,10 +71,11 @@
         - enable_voip | string() == 'true'
         - groups['all'] | length == 1
 
-- hosts: voip_servers
+- name: Configure voip for voip server(s)
+  hosts: voip_servers
   tasks:
     - name: Import voip_servers tasks for voip_servers
-      import_role:
+      ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
         tasks_from: voip_servers.yml
       when:
@@ -72,10 +83,11 @@
         - enable_voip | string() == 'true'
         - groups['all'] | length  > 1
 
-- hosts: backend_servers
+- name: Configure voip for backend server(s)
+  hosts: backend_servers
   tasks:
     - name: Import voip_servers tasks for backend servers
-      import_role:
+      ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
         tasks_from: voip_servers.yml
       when:
@@ -86,10 +98,11 @@
         - enable_jvb_cluster is defined
         - enable_jvb_cluster | string() == 'true'
 
-- hosts: video_servers
+- name: Configure voip for video server(s)
+  hosts: video_servers
   tasks:
     - name: Import voip_servers tasks for video_servers
-      import_role:
+      ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
         tasks_from: voip_servers.yml
       when:
@@ -99,20 +112,22 @@
         - enable_jvb_cluster is defined
         - enable_jvb_cluster | string() == 'true'
 
-- hosts: voip_servers
+- name: Configure additional hosts for voip server(s)
+  hosts: voip_servers
   tasks:
     - name: Import add_additional_host tasks for voip_servers
-      import_tasks: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend/tasks/add_additional_host.yml"
+      ansible.builtin.import_tasks: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend/tasks/add_additional_host.yml"
       when:
         - enable_voip is defined
         - enable_voip | string() == 'true'
         - groups['all'] | length == 1
         - groups['all'] | length > 1
 
-- hosts: video_servers
+- name: Configure additional hosts for video server(s)
+  hosts: video_servers
   tasks:
     - name: Import add_additional_host for video_servers
-      import_tasks: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend/tasks/add_additional_host.yml"
+      ansible.builtin.import_tasks: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend/tasks/add_additional_host.yml"
       when:
         - enable_voip is defined
         - enable_voip | string() == 'true'

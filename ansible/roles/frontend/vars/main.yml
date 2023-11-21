@@ -1,3 +1,4 @@
-consul_template_version: 0.20.0
-consul_template_checksum: 500fe023c89517f959175eb79e21c33df0acf7733d3f3681ec8c5238863caf86
+---
+consul_template_version: 0.32.0
+consul_template_checksum: eda83e12a4618929a3ec0a49b11a2823b6201c9ae64e5a15161fd63313caf88b
 ocspfile_path: /etc/ssl/certs/server_and_intermediate_and_root.crt.ocsp

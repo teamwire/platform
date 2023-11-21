@@ -1,6 +1,6 @@
 ---
 - name: Install HAproxy
-  apt:
+  ansible.builtin.apt:
     name: haproxy
     state: present
 
@@ -10,46 +10,52 @@
 - name: Adapt HAproxy service to split-configuration setup
   block:
     - name: Create HAproxy drop-in override directory
-      file:
+      ansible.builtin.file:
         path: /etc/systemd/system/haproxy.service.d
         state: directory
+        mode: 0755
+        owner: root
+        group: root
       register: haproxy_systemd_service_unit_override
 
     - name: Adapt HAproxy service to split-configuration setup
-      template:
+      ansible.builtin.template:
         src: haproxy.service.conf.j2
         dest: "{{ haproxy_systemd_service_unit_override.path }}/haproxy.service.conf"
-      notify: restart systemd Haproxy
+        mode: 0644
+        owner: root
+        group: root
+      notify: Restart systemd Haproxy
 
     - name: Remove old HAproxy service file
-      file:
+      ansible.builtin.file:
         path: /etc/systemd/system/haproxy.service
         state: absent
-      notify: restart systemd Haproxy
+      notify: Restart systemd Haproxy
 
 - name: Remove default HAproxy configs
-  file:
+  ansible.builtin.file:
     name: "{{ item }}"
     state: absent
   with_items:
     - /etc/haproxy/haproxy.cfg
     - /etc/haproxy/haproxy.cfg.bak
-  notify: reload HAProxy
+  notify: Reload HAProxy
 
 - name: Write HAProxy globals and galera configuration files
-  template:
+  ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     mode: 0664
     owner: haproxy
     group: haproxy
   with_items:
-    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' } # noqa braces
-    - { src: '{{ galera_haproxy_template }}', dest: '/etc/haproxy/02-galera.cfg' } # noqa braces
-  notify: restart haproxy
+    - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
+    - { src: '{{ galera_haproxy_template }}', dest: '/etc/haproxy/02-galera.cfg' }
+  notify: Restart haproxy
 
 - name: Generate a new Diffie-Hellman group
-  command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
+  ansible.builtin.command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
   when: ssl_keyfile is defined
   args:
     creates: /etc/ssl/private/dhparams.pem

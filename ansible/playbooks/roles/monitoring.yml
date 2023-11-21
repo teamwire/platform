@@ -4,24 +4,29 @@
 - name: Vault Status check
   hosts: local:hashi_servers
   tasks:
-    - name: include vault role
-      include_role:
-        name: ../../roles/vault
+    - name: Include vault role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
         tasks_from: secrets
-      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+      when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
+        - secrets_read is not defined
 
 - name: Include offline installation check
   hosts: all
   tasks:
     - name: Import check offline installation task
       ansible.builtin.include_role:
-        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname)  }}/roles/common"
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/common"
         tasks_from: check_offline_installation
 
 - name: Deploy Icinga monitoring system
   hosts: all
   tasks:
     - name: Include monitoring role
-      include_role:
-        name: ../../roles/monitoring
-      when: config_done is defined and enable_monitoring is defined
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/monitoring"
+      when:
+        - config_done is defined
+        - enable_monitoring is defined

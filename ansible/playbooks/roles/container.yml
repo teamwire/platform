@@ -1,20 +1,24 @@
+---
 # This task will check if Vault has been initialized and read the secrets from there if so
 - name: Vault Status check
   hosts: local:hashi_servers
   tasks:
-    - name: include vault role
-      include_role:
-        name: ../../roles/vault
+    - name: Include vault role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
         tasks_from: secrets
-      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+      when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
+         and secrets_read is not defined
 
 # This play only applies to the single server installation
 - name: Configure containers for single installations
   hosts: local
   tasks:
-    - name: include backend role
-      include_role:
-        name: ../../roles/backend
+    - name: Include backend role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend"
         tasks_from: single
       when: groups['all'] | length() == 1
 
@@ -23,8 +27,8 @@
   hosts: hashi_servers
   tasks:
     - name: Include backend role
-      include_role:
-        name: ../../roles/backend
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend"
         tasks_from: cluster
       when: groups['all'] | length() > 1
 
@@ -32,7 +36,7 @@
   hosts: backend_servers
   tasks:
     - name: Include nomad role
-      include_role:
-        name: ../../roles/nomad
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/nomad"
         tasks_from: job
       when: groups['all'] | length() > 1

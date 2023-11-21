@@ -1,35 +1,49 @@
 ---
 - name: Create Docker Registry storage directory
-  file:
+  ansible.builtin.file:
     name: "{{ registry_dir }}"
     state: directory
     mode: 0750
   run_once: true
 
 - name: Write Docker registry config file
-  template:
+  ansible.builtin.template:
     src: "{{ registry_config }}"
     dest: "{{ registry_dir }}/config.yml"
+    owner: root
+    group: root
+    mode: 0644
   run_once: true
-  notify: restart registry container
+  notify: Restart registry container
 
 - name: Get information about docker-registry
-  docker_container_info:
+  community.docker.docker_container_info:
     name: docker-registry
   register: result
 
+- name: Check if docker-registry needs to be updated
+  ansible.builtin.debug:
+    msg: "Registry needs to be updated"
+  when:
+    - result.exists
+    - result.container.State.Running is true
+    - "result.container.Config.Image != registry_version"
+  changed_when:
+    - true
+  notify: Restart registry container
+
 - name: Check if docker-registry is available and running
-  debug:
+  ansible.builtin.debug:
     msg: "Container not available or running"
   when:
-    - result.exists == false or result.container.State.Running == false
+    - result.exists is false or result.container.State.Running is false
   changed_when:
-    - result.exists == false or result.container.State.Running == false
-  notify: restart registry container
+    - true
+  notify: Restart registry container
 
 # Push all local images to the local registry
 - name: Copy the registry image helper tool
-  copy:
+  ansible.builtin.copy:
     src: twimg
     dest: /usr/local/bin/
     mode: 0755

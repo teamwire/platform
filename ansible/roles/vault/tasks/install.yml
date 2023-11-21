@@ -1,6 +1,6 @@
 ---
 - name: Create Vault user
-  user:
+  ansible.builtin.user:
     name: vault
     shell: /usr/sbin/nologin
     system: true
@@ -8,7 +8,7 @@
     state: present
 
 - name: Change audit log permission
-  file:
+  ansible.builtin.file:
     path: /var/log/vault_audit.log
     owner: vault
     group: vault
@@ -16,12 +16,15 @@
     mode: 0600
 
 - name: Install logrotate job for vault
-  copy:
+  ansible.builtin.copy:
     src: vault-log
     dest: /etc/logrotate.d/vault-log
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Install the Vault binary
-  unarchive:
+  ansible.builtin.unarchive:
     src: /var/cache/downloads/vault_{{ vault_version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
@@ -30,7 +33,7 @@
   when: vault_downloaded.changed or not vault_binary.stat.exists # noqa no-handler
 
 - name: Create Vault directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: 0750
@@ -45,33 +48,41 @@
 - name: Check if Vault certificates
   block:
     - name: Check if Vault certificates exist and are valid
-      openssl_certificate:
+      community.crypto.x509_certificate:
         path: /var/lib/vault/ssl/vault.crt
         provider: assertonly
         has_expired: false
   rescue:
     - name: Debugging SSL certificate
-      debug: msg="Generating SSL certificates for Vault"
-    - include: ssl-setup.yml
-  when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+      ansible.builtin.debug:
+        msg: "Generating SSL certificates for Vault"
+    - name: Include ssl-setup
+      ansible.builtin.include_tasks: ssl-setup.yml
+  when:
+    - ansible_local.vault is defined
+    - ansible_local.vault.initialized == "true"
 
 - name: Write Vault config
-  template:
+  ansible.builtin.template:
     src: vault.hcl.j2
     dest: /etc/vault/vault.hcl
     owner: vault
     group: vault
+    mode: 0644
   notify: Restart Vault
 
 - name: Vault systemd config
-  copy:
+  ansible.builtin.copy:
     src: vault.service
     dest: /etc/systemd/system/vault.service
+    owner: root
+    group: root
+    mode: 0644
   notify:
     - Restart Vault
 
 - name: Enable the Vault service
-  service:
+  ansible.builtin.service:
     name: vault
     state: started
     enabled: true
@@ -79,4 +90,4 @@
 
 # Handlers should be flushed before any possible bootstrapping
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers

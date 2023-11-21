@@ -1,48 +1,101 @@
 ---
 # This task runs only at the very beginning on playbook start, when site.yml or cluster.yml is
 # invoked.
-- name: FIRST - Check SSL certificate
+
+- name: Check certificate and Key
   block:
-    - name: Check SSL certificate
-      openssl_certificate:
+    - name: Get certificate information
+      community.crypto.x509_certificate_info:
         path: "{{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }}"
-        privatekey_path: "{{ ssl_keyfile }}"
-        provider: assertonly
-        signature_algorithms:
-          - sha224WithRSAEncryption
-          - sha256WithRSAEncryption
-          - sha384WithRSAEncryption
-          - sha512WithRSAEncryption
-          - sha224WithECDSAEncryption
-          - sha256WithECDSAEncryption
-          - sha384WithECDSAEncryption
-          - sha512WithECDSAEncryption
-        has_expired: false
-  rescue:
-    - name: Check SSL certificate
-      fail:
-        msg:
-          - SSL-Certificate is not valid! Check that
-          - key match certificate, certificate is not expired
-          - and valid. Also key and certificate must be a base64
-          - ascii encoded pem file!
+      register: result
+      run_once: true
+
+    - name: Get private key information
+      community.crypto.openssl_privatekey_info:
+        path: "{{ ssl_keyfile }}"
+      register: result_privatekey
+      run_once: true
+
+    - name: Check if private key match certificate
+      ansible.builtin.assert:
+        that:
+          - result.public_key == result_privatekey.public_key
+        fail_msg: Private key dont match to certificate
+        success_msg: Private key match to certificate
+
+    - name: Check if certificate is expired
+      ansible.builtin.assert:
+        that:
+          - not result.expired
+        fail_msg: Certificate is expired
+        success_msg: Certificate is not expired
+
+    - name: Check if certificate has one of the following signature algorithms
+      ansible.builtin.assert:
+        that: |-
+          "
+          result.signature_algorithm == 'sha224WithRSAEncryption' or
+          result.signature_algorithm == 'sha256WithRSAEncryption' or
+          result.signature_algorithm == 'sha384WithRSAEncryption' or
+          result.signature_algorithm == 'sha512WithRSAEncryption' or
+          result.signature_algorithm == 'sha224WithECDSAEncryption' or
+          result.signature_algorithm == 'sha256WithECDSAEncryption' or
+          result.signature_algorithm == 'sha384WithECDSAEncryption' or
+          result.signature_algorithm == 'sha512WithECDSAEncryption'
+          "
+        fail_msg: Signature algorithms from certificate does not meet the requirement
+        success_msg: Signature algorithms from certificate match the requrements
   when: ssl_keyfile is defined and ssl_first_check is defined
   run_once: true
 
-- name: Check SSL chain is valid (hasn't expired, modern algorithm and key matches certificate)
-  openssl_certificate:
-    path: /etc/ssl/certs/server_and_intermediate_and_root.crt
-    privatekey_path: /etc/ssl/private/teamwire-backend.key
-    provider: assertonly
-    signature_algorithms:
-      - sha224WithRSAEncryption
-      - sha256WithRSAEncryption
-      - sha384WithRSAEncryption
-      - sha512WithRSAEncryption
-      - sha224WithECDSAEncryption
-      - sha256WithECDSAEncryption
-      - sha384WithECDSAEncryption
-      - sha512WithECDSAEncryption
-    has_expired: false
-  when: ssl_keyfile is defined and ssl_first_check is not defined
+- name: Check intermediate certificate and Key
+  block:
+    - name: Get certificate information
+      community.crypto.x509_certificate_info:
+        path: /etc/ssl/certs/teamwire.server.crt
+      register: result
+      run_once: true
+
+    - name: Get private key information
+      community.crypto.openssl_privatekey_info:
+        path: /etc/ssl/private/teamwire-backend.key
+      register: result_privatekey
+      run_once: true
+
+    - name: Get intermediate information
+      community.crypto.x509_certificate_info:
+        path: /etc/ssl/certs/server_and_intermediate_and_root.crt
+      register: result_intermediate
+      run_once: true
+
+    - name: Check if public  key match intermediate_certificate
+      ansible.builtin.assert:
+        that:
+          - result.public_key == result_privatekey.public_key
+        fail_msg: Public key dont match to intermediate
+        success_msg: Public key match to intermediate
+    - name: Check if intermediate certificate is expired
+      ansible.builtin.assert:
+        that:
+          - not result_intermediate.expired
+        fail_msg: Intermediate ertificate is expired
+        success_msg: Intermediate is not expired
+    - name: Check if intermediate certificate has one of the following signature algorithms
+      ansible.builtin.assert:
+        that: |-
+          "
+          result_intermediate.signature_algorithm == 'sha224WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha256WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha384WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha512WithRSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha224WithECDSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha256WithECDSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha384WithECDSAEncryption' or
+          result_intermediate.signature_algorithm == 'sha512WithECDSAEncryption'
+          "
+        fail_msg: Signature algorithms from Intermediate certificate does not meet the requirement
+        success_msg: Signature algorithms from Intermediate certificate match the requrements
+  when:
+    - ssl_keyfile is defined
+    - ssl_first_check is not defined
   run_once: true

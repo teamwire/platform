@@ -1,12 +1,19 @@
 ---
 - name: Install keepalived
-  apt: pkg=keepalived
+  ansible.builtin.apt:
+    pkg:
+      - keepalived
 
 - name: Allow incoming keepalived multicast traffic
-  ufw: rule=allow src=224.0.0.18
+  community.general.system.ufw:
+    rule: allow
+    src: 224.0.0.18
 
 - name: Write keepalived configuration file
-  template:
-   src: keepalived.conf.j2
-   dest: /etc/keepalived/keepalived.conf
-  notify: restart keepalived
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart keepalived

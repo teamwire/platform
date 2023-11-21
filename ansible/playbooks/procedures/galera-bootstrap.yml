@@ -1,12 +1,15 @@
+---
 # This task will check if Vault has been initialized and read the secrets from there if so
 - name: Vault Status check
   hosts: hashi_servers
   tasks:
     - name: Include roles
       ansible.builtin.include_role:
-        name: ../../roles/vault
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
         tasks_from: secrets
-      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+      when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
 
 - name: Setup galera cluster
   hosts: database_servers

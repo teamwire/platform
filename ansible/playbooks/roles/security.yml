@@ -1,8 +1,14 @@
 ---
-- hosts: hashi_servers:local
-  roles:
-  - role: ../../roles/vault
+- name: Vault Status check
+  hosts: hashi_servers:local
+  tasks:
+    - name: Include vault role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
 
-- hosts: all
-  roles:
-  - role: ../../roles/security
+- name: Configure security tasks
+  hosts: all
+  tasks:
+    - name: Include security role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/security"

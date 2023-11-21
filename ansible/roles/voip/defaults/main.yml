@@ -1,15 +1,16 @@
-NGINX_HTTP_PORT: 7080
-NGINX_HTTPS_PORT: 7443
+---
+nginx_http_port: 7080
+nginx_https_port: 7443
 
-VOIP_ROOT_PATH: "/data/voip"
-VOIP_JITSI_VERSION: "{{ version }}"
+voip_root_path: "/data/voip"
+voip_jitsi_version: "{{ version }}"
 
 
-VOIP_CONTAINER_WEB: "teamwire/web2"
-VOIP_CONTAINER_PROSODY: "teamwire/prosody"
-VOIP_CONTAINER_JICOFO: "teamwire/jicofo"
-VOIP_CONTAINER_JVB: "teamwire/jvb"
-VOIP_CONTAINER_TURN: "teamwire/turn"
+voip_container_web: "teamwire/web2"
+voip_container_prosody: "teamwire/prosody"
+voip_container_jicofo: "teamwire/jicofo"
+voip_container_jvb: "teamwire/jvb"
+voip_container_turn: "teamwire/turn"
 
 nomad_health_voip_interval: 15
 nomald_health_voip_timeout: 2

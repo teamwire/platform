@@ -1,9 +1,10 @@
+---
 - name: Remove platform from unrequired hosts
-  file:
+  ansible.builtin.file:
     state: absent
     path: /home/teamwire/platform/
 
 - name: Remove twctl from unrequired hosts
-  file:
+  ansible.builtin.file:
     state: absent
     path: /usr/local/bin/twctl

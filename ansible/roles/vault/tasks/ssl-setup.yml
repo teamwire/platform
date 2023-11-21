@@ -1,5 +1,5 @@
 - name: Unseal Vault
-  command: vault operator unseal "{{ item }}"
+  ansible.builtin.command: vault operator unseal "{{ item }}" # noqa no-changed-when
   no_log: true
   with_items:
     - "{{ unseal_key1 }}"
@@ -8,7 +8,7 @@
     VAULT_ADDR: "http://127.0.0.1:8200"
 
 - name: Issue a TLS certificate for Vault to use
-  command: vault write pki/issue/tls common_name=127.0.0.1 ip_sans="127.0.0.1" --format=json
+  ansible.builtin.command: vault write pki/issue/tls common_name=127.0.0.1 ip_sans="127.0.0.1" --format=json # noqa no-changed-when
   run_once: true
   register: issue_info
   environment:
@@ -16,19 +16,22 @@
 
 - name: Set certificate fact
   run_once: true
-  set_fact:
+  ansible.builtin.set_fact:
     vault_certificate: "{{ issue_info.stdout | from_json }}"
 
 - name: Install Vault tls certificate and private key
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.content }}"
     dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0644
   with_items:
-    - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' } # noqa braces
-    - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' } # noqa braces
+    - { content: '{{ vault_certificate.data.certificate }}', dest: '/var/lib/vault/ssl/vault.crt' }
+    - { content: '{{ vault_certificate.data.private_key }}', dest: '/var/lib/vault/ssl/vault.pem' }
   become: true
 
 - name: Restart Vault so that it uses TLS
-  service:
+  ansible.builtin.service:
     name: vault
     state: restarted

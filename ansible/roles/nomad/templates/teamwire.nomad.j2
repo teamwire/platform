@@ -68,7 +68,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -133,7 +133,7 @@ job "teamwire" {
 			env {
 				ARCHIVING_CONFIG = "/archiving/archiving.conf"
 				ARCHIVING_GPGHOME = "/archiving/gpg"
-				VAULT_TOKEN = "{{ NOMAD_SERVER_VAULT_TOKEN | default() }}"
+				VAULT_TOKEN = "{{ nomad_server_vault_token | default() }}"
 				VAULT_ADDR = "https://vault.service.consul:8200"
 				VAULT_AES_SECRET_PATH = "secret/database/aes_key"
 				ORG_DEFAULT_ALLOW_USER_REG = "{{ allow_unknown_users|default('true') }}"
@@ -203,7 +203,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -259,7 +259,7 @@ job "teamwire" {
 {% endraw %}
 			env {
 				MODE = "worker"
-                VAULT_TOKEN = "{{ NOMAD_SERVER_VAULT_TOKEN | default() }}"
+                VAULT_TOKEN = "{{ nomad_server_vault_token | default() }}"
                 VAULT_ADDR = "https://vault.service.consul:8200"
                 VAULT_AES_SECRET_PATH = "secret/database/aes_key"
 				MYSQL_HOST = "{{ mysql_host | default() }}"
@@ -309,7 +309,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"
@@ -355,7 +355,7 @@ job "teamwire" {
 {% endraw %}
 			env {
 				MODE = "beat"
-				VAULT_TOKEN = "{{ NOMAD_SERVER_VAULT_TOKEN | default() }}"
+				VAULT_TOKEN = "{{ nomad_server_vault_token | default() }}"
                 VAULT_ADDR = "https://vault.service.consul:8200"
                 VAULT_AES_SECRET_PATH = "secret/database/aes_key"
 				MYSQL_HOST = "{{ mysql_host | default() }}"
@@ -395,7 +395,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/notification-server:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/notification-server:{{ version }}"
 {% if not "docker_registry" in groups %}
 				auth {
 					username = "{{ dockerhub_username }}"

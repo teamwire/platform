@@ -1,8 +1,8 @@
 job "voip" {
 
     meta {
-        JITSI_VERSION = "{{ VOIP_JITSI_VERSION }}"
-        ROOT_PATH     = "{{ VOIP_ROOT_PATH }}"
+        jitsi_version = "{{ voip_jitsi_version }}"
+        root_path     = "{{ voip_root_path }}"
     }
 
     # Specify the datacenters within the region this job can run in.
@@ -55,7 +55,7 @@ job "voip" {
         network {
             mode = "host"
             port "http" {
-                static = "{{ NGINX_HTTP_PORT }}"
+                static = "{{ nginx_http_port }}"
             }
         }
 
@@ -63,7 +63,7 @@ job "voip" {
             driver = "docker"
 
             config {
-                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
+                image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_web }}:{{ voip_jitsi_version }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"
@@ -142,7 +142,7 @@ job "voip" {
             driver = "docker"
 
             config {
-                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
+                image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_prosody }}:{{ voip_jitsi_version }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"
@@ -163,8 +163,8 @@ job "voip" {
                     }
                 }
                 volumes      = [
-                    "{{ VOIP_ROOT_PATH }}/prosody/config:/config:Z",
-                    "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
+                    "{{ voip_root_path }}/prosody/config:/config:Z",
+                    "{{ voip_root_path }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
                 ]
             }
 
@@ -261,7 +261,7 @@ job "voip" {
             driver = "docker"
 
             config {
-                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
+                image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jicofo }}:{{ voip_jitsi_version }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"
@@ -282,7 +282,7 @@ job "voip" {
                     }
                 }
                 volumes = [
-                    "{{ VOIP_ROOT_PATH }}/jicofo:/config:Z"
+                    "{{ voip_root_path }}/jicofo:/config:Z"
                 ]
             }
 
@@ -368,7 +368,7 @@ job "voip" {
             driver = "docker"
 
             config {
-                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
+                image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jvb }}:{{ voip_jitsi_version }}"
 {% if not "docker_registry" in groups %}
                 auth {
                     username = "{{ dockerhub_username }}"
@@ -471,7 +471,7 @@ job "voip" {
             driver = "docker"
 
             config {
-                image = "{{ LOCAL_REGISTRY | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_TURN }}:{{ VOIP_JITSI_VERSION }}"
+                image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_turn }}:{{ voip_jitsi_version }}"
 
                 network_mode = "host"
 

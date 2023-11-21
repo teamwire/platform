@@ -2,7 +2,7 @@
 - name: Hardening sshd
   block:
     - name: Editing sshd config
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: "/etc/ssh/sshd_config"
         regexp: "{{ item.regexp | default(omit) }}"
         line: "{{ item.line }}"
@@ -32,7 +32,7 @@
           line: "AllowTcpForwarding no"
         # DEFAULT BY TEAMWIRE COMPLIANCE
         - regexp: "^PermitRootLogin\ "
-          line: "PermitRootLogin {{ permit_root_login|lower if permit_root_login|lower == 'yes' or permit_root_login|lower == 'no' else 'prohibit-password' }}"
+          line: "PermitRootLogin {{ permit_root_login | lower if permit_root_login | lower == 'yes' or permit_root_login | lower == 'no' else 'prohibit-password' }}"
           when: permit_root_login != 'default'
         # DEFAULT BY TEAMWIRE COMPLIANCE
         - regexp: "^PermitEmptyPasswords\ "
@@ -51,4 +51,3 @@
 
         # CIS - BENCHMARK ID: 2661 cis: 5.2.19 -> not compliant with teamwire
         # CIS - BENCHMARK ID: 2664 cis: 5.2.22 -> not compliant with teamwire
-

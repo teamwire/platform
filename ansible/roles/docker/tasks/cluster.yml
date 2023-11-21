@@ -1,14 +1,14 @@
 ---
 - name: Retrieve the hashi-ui container
   when: (private_ip is defined and 'management_servers' in group_names)
-  docker_image:
+  community.docker.docker_image:
     name: "{{ hashui_container }}"
     source: pull
     state: present
 
 - name: Run hashi-ui in clustered setups
   when: (private_ip is defined and 'management_servers' in group_names)
-  docker_container:
+  community.docker.docker_container:
     name: hashi-ui
     image: "{{ hashui_container }}"
     state: started

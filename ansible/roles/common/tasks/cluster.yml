@@ -1,17 +1,19 @@
 ---
 - name: Ensure private IP address in configured
-  fail:
+  ansible.builtin.fail:
     msg: "private_ip is not configured. Please check your inventory file"
   when: private_ip is not defined
 
 - name: Ensure private IP address is valid
-  fail:
+  ansible.builtin.fail:
     msg: "Defined private_ip is not configured on the system. Please check your config."
   when: private_ip not in ansible_all_ipv4_addresses
 
 - name: Allow all access from other cluster nodes
-  ufw:
+  community.general.system.ufw:
     rule: allow
     src: "{{ hostvars[item]['private_ip'] }}"
   with_items: "{{ groups['all'] | default([]) }}"
-  when: item != inventory_hostname and disable_private_connection is not defined
+  when:
+    - item != inventory_hostname
+    - disable_private_connection is not defined

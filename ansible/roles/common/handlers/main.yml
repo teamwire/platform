@@ -1,52 +1,52 @@
 ---
-- name: update timezone
-  command: dpkg-reconfigure --frontend noninteractive tzdata
+- name: Update timezone
+  ansible.builtin.command: dpkg-reconfigure --frontend noninteractive tzdata
 
-- name: restart NTP
-  service:
+- name: Restart NTP
+  ansible.builtin.service:
     name: ntp
     state: restarted
 
-- name: reload sshd
-  service:
+- name: Reload sshd
+  ansible.builtin.service:
     name: ssh
     state: reloaded
 
-- name: rebuild postfix passwd map
-  command: postmap /etc/postfix/sasl/passwd
+- name: Rebuild postfix passwd map
+  ansible.builtin.command: postmap /etc/postfix/sasl/passwd
 
-- name: rebuild postfix generic map
-  command: postmap /etc/postfix/generic
+- name: Rebuild postfix generic map
+  ansible.builtin.command: postmap /etc/postfix/generic
 
-- name: restart postfix
-  service:
+- name: Restart postfix
+  ansible.builtin.service:
     name: postfix
     state: restarted
 
-- name: restart dnsmasq
-  service:
+- name: Restart dnsmasq
+  ansible.builtin.service:
     name: dnsmasq
     state: restarted
 
-- name: restart rsyslog
-  service:
+- name: Restart rsyslog
+  ansible.builtin.service:
     name: rsyslog
     state: restarted
 
-- name: new aliases
-  command: newaliases
+- name: New aliases
+  ansible.builtin.command: newaliases
 
-- name: rebuild postfix domain map
-  command: postmap /etc/postfix/virtual
+- name: Rebuild postfix domain map
+  ansible.builtin.command: postmap /etc/postfix/virtual
 
-- name: reload dhclient
-  command: pkill dhclient
+- name: Reload dhclient
+  ansible.builtin.command: pkill dhclient
   ignore_errors: true # noqa ignore-errors
-  notify: reload dhclient step 2
+  notify: Reload dhclient step 2
 
-- name: reload dhclient step 2
-  command: dhclient
+- name: Reload dhclient step 2
+  ansible.builtin.command: dhclient
   ignore_errors: true # noqa ignore-errors
 
-- name: reload systemd
-  command: systemctl daemon-reload # noqa command-instead-of-module
+- name: Reload systemd
+  ansible.builtin.command: systemctl daemon-reload # noqa command-instead-of-module

@@ -1,3 +1,5 @@
 ---
-- name: restart keepalived
-  service: name=keepalived state=restarted
+- name: Restart keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: restarted

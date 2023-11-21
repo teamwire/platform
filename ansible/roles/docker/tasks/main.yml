@@ -1,59 +1,70 @@
 ---
 - name: Ensure rsyslog is installed
-  apt:
+  ansible.builtin.apt:
     pkg: rsyslog
 
 - name: Configure rsyslog for Docker containers
   block:
     - name: Configure rsyslog for Docker containers
-      copy:
+      ansible.builtin.copy:
         src: 10-docker.conf
         dest: /etc/rsyslog.d/10-docker.conf
-      notify: restart rsyslog
+        owner: root
+        group: root
+        mode: 0644
+      notify: Restart rsyslog
     - name: Prevent Docker logs in default syslog
-      copy:
+      ansible.builtin.copy:
         src: 99-docker-no-syslog.conf
         dest: /etc/rsyslog.d/99-docker-no-syslog.conf
-      notify: restart rsyslog
+        owner: root
+        group: root
+        mode: 0644
+      notify: Restart rsyslog
 
 - name: Install logrotate job for cluster logs
-  copy:
+  ansible.builtin.copy:
     src: container-log
     dest: /etc/logrotate.d/container-log
+    owner: root
+    group: root
+    mode: 0644
 
 # Install and configure docker
 # Using `apt-key` to add third party signing keys is deprecated
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 - name: Get Docker repository signing key
-  get_url:
+  ansible.builtin.get_url:
     url: https://download.docker.com/linux/debian/gpg
     dest: /usr/share/keyrings/docker-archive-keyring.key
-    mode: '0644'
+    owner: root
+    group: root
+    mode: 0644
   environment:
     HTTP_PROXY: "{{ http_proxy | default() }}"
     HTTPS_PROXY: "{{ http_proxy | default() }}"
   register: docker_signing_key
+  notify: Dearmor Docker repository key
   when: not offline_mode.stat.exists
 
-- name: Dearmor Docker repository key
-  command: gpg --dearmor -o {{ (docker_signing_key.dest | splitext)[0] }}.gpg {{ docker_signing_key.dest }}
-  when: docker_signing_key.changed # noqa no-handler
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Add docker repository
-  apt_repository:
-    repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} stable # noqa line-length var-spacing
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
     state: present
     update_cache: true
   when: not offline_mode.stat.exists
 
 - name: Install Docker
-  apt:
+  ansible.builtin.apt:
     pkg: "docker-ce={{ docker_ce_version }}"
     state: present
     force: true
 
 - name: Install python3-docker
-  apt:
+  ansible.builtin.apt:
     pkg: python3-docker
     state: present
 
@@ -61,16 +72,16 @@
 # ISSUE 315 python-docker bug - Debian bug 910822
 # https://github.com/docker/docker-credential-helpers/issues/105#issuecomment-584764909
 - name: "CHECK IF BUG FILE EXISTS"
-  stat:
+  ansible.builtin.stat:
     path: "/usr/bin/docker-credential-secretservice"
   register: bug_file
 
 - name: "FIX BUG PLATFORM MR-315-python-docker"
-  command: "mv /usr/bin/docker-credential-secretservice /usr/bin/docker-credential-secretservice.broken"
-  when: bug_file.stat.exists == true # noqa literal-compare
+  ansible.builtin.command: "mv /usr/bin/docker-credential-secretservice /usr/bin/docker-credential-secretservice.broken"
+  when: bug_file.stat.exists is true
 
 - name: Add user 'teamwire' to the docker group
-  user:
+  ansible.builtin.user:
     name: teamwire
     groups: docker
     append: true
@@ -80,23 +91,32 @@
   ansible.builtin.file:
     name: /etc/systemd/system/docker.service.d
     state: directory
+    owner: root
+    group: root
+    mode: 0755
 
 - name: Configure Docker daemon parameters
-  template:
+  ansible.builtin.template:
     src: docker.conf.j2
     dest: /etc/systemd/system/docker.service.d/docker.conf
+    owner: root
+    group: root
+    mode: 0644
   notify:
-    - reload systemd
-    - restart docker
+    - Reload systemd
+    - Restart docker
 
 - name: Configure proxy for docker
   ansible.builtin.template:
     src: http-proxy.conf.j2
     dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+    owner: root
+    group: root
+    mode: 0644
   when: http_proxy is defined
   notify:
-    - reload systemd
-    - restart docker
+    - Reload systemd
+    - Restart docker
 
 - name: Disable proxy for docker when no proxy is configured
   ansible.builtin.file:
@@ -104,31 +124,36 @@
     state: absent
   when: http_proxy is not defined
   notify:
-    - reload systemd
-    - restart docker
+    - Reload systemd
+    - Restart docker
 
 - name: Start Docker after mounting NFS shares
-  copy:
+  ansible.builtin.copy:
     src: wait_for_nfs.conf
     dest: /etc/systemd/system/docker.service.d/wait_for_nfs.conf
+    owner: root
+    group: root
+    mode: 0644
   notify:
-    - reload systemd
-    - restart docker
+    - Reload systemd
+    - Restart docker
 
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
 # following step, otherwise the login would fail when a proxy is configured.
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Check if installing offline
-  stat:
+  ansible.builtin.stat:
     path: /etc/offline_installation
   register: offline_mode
 
 - name: Install Docker Registry on configured host
-  include_tasks: registry.yml
-  when: config_done is defined and 'docker_registry' in group_names
+  ansible.builtin.include_tasks: registry.yml
+  when:
+    - config_done is defined
+    - "'docker_registry' in group_names"
 
 - name: Log in on docker registry
   when:
@@ -137,10 +162,11 @@
     - not offline_mode.stat.exists
   become: true
   become_user: teamwire
-  docker_login:
+  community.docker.docker_login:
     registry_url: "{{ 'harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
 
-- include_tasks: cluster.yml
+- name: Include cluster
+  ansible.builtin.include_tasks: cluster.yml
   when: groups['all'] | length() > 1

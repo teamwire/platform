@@ -8,26 +8,26 @@
     owner: root
     group: root
   notify:
-    - unload fs modules
+    - Unload fs modules
     - Restart kernel modules systemd
 
 # CIS - BENCHMARK ID: 2676 cis: 5.4.5
 - name: Harden bash
   block:
-    - name: set TMOUT in /etc/profile
-      lineinfile:
+    - name: Set TMOUT in /etc/profile
+      ansible.builtin.lineinfile:
         dest: "/etc/profile"
         line: "readonly TMOUT=900 ; export TMOUT"
         state: present
-    - name: set TMOUT in /etc/bash.bashrc
-      lineinfile:
+    - name: Set TMOUT in /etc/bash.bashrc
+      ansible.builtin.lineinfile:
         dest: "/etc/bash.bashrc"
         line: "readonly TMOUT=900 ; export TMOUT"
         state: present
 
 # CIS - BENCHMARK ID: 2682 cis: 6.1.6
 - name: Harden passwd-
-  file:
+  ansible.builtin.file:
     name: /etc/passwd-
     owner: root
     group: root
@@ -35,7 +35,7 @@
 
 # CIS - BENCHMARK ID: 2684 cis: 6.1.8
 - name: Harden group-
-  file:
+  ansible.builtin.file:
     name: /etc/group-
     owner: root
     group: root
@@ -47,9 +47,12 @@
 
 
 # CIS - BENCHMARK tmp disk
-- include: tmp_disk.yml
+- name: Include tmp_disk
+  ansible.builtin.include_tasks: tmp_disk.yml
   when: enable_tmp_mount | default(false) | bool
 # CIS - BENCHMARK sshd hardening
-- include: sshd-hardening.yml
+- name: Include sshd-hardening
+  ansible.builtin.include_tasks: sshd-hardening.yml
 # CIS - BENCHMARK cronjobs
-- include: cronjob.yml
+- name: Include cronjob
+  ansible.builtin.include_tasks: cronjob.yml

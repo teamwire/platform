@@ -1,41 +1,53 @@
 ---
 - name: Create 3rd party download directory
-  file: dest=/var/cache/downloads state=directory mode=0755
+  ansible.builtin.file:
+    dest: /var/cache/downloads
+    state: directory
+    mode: 0755
 
 - name: Check if Consul Template is already installed
-  stat: path=/usr/local/sbin/consul-template
+  ansible.builtin.stat:
+    path: /usr/local/sbin/consul-template
   register: consul_template_binary
 
 - name: Download Consul Template
-  get_url:
+  ansible.builtin.get_url:
     url: https://releases.hashicorp.com/consul-template/{{ consul_template_version }}/consul-template_{{ consul_template_version }}_linux_amd64.zip
     dest: /var/cache/downloads/consul-template_{{ consul_template_version }}_linux_amd64.zip
     checksum: "sha256:{{ consul_template_checksum }}"
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}' # noqa var-spacing
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+    owner: root
+    group: root
+    mode: 0644
   register: consul_template_downloaded
   environment:
-    https_proxy: "{{ http_proxy|default() }}"
+    https_proxy: "{{ http_proxy | default() }}"
 
 - name: Install the Consul Template binary
-  unarchive:
+  ansible.builtin.unarchive:
     src: /var/cache/downloads/consul-template_{{ consul_template_version }}_linux_amd64.zip
     dest: /usr/local/sbin
     mode: 0755
     copy: false
-  notify: restart Consul Template
-  when: consul_template_downloaded.changed or not consul_template_binary.stat.exists # noqa no-handler
+  notify: Restart Consul Template
+  when: consul_template_downloaded.changed or not consul_template_binary.stat.exists # noqa no-changed-when no-handler
 
 - name: Install Consul Template systemd config
-  copy:
+  ansible.builtin.copy:
     src: consul-template.service
     dest: /etc/systemd/system/consul-template.service
-  notify: reload systemd
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reload systemd
 
 - name: Enable the Consul Template service
-  service: name=consul-template enabled=yes
+  ansible.builtin.service:
+    name: consul-template
+    enabled: true
 
 - name: Create Consul Template directories
-  file:
+  ansible.builtin.file:
     name: "{{ item }}"
     state: directory
     mode: 0750
@@ -47,50 +59,64 @@
 - name: Write general Consul Template configuration and templates
   block:
     - name: Copy Consul Template configuration files
-      copy:
+      ansible.builtin.copy:
         src: "{{ item }}"
         dest: /etc/consul-template/config
-      notify: restart Consul Template
+        owner: root
+        group: root
+        mode: 0644
+      notify: Restart Consul Template
       with_items:
         - 01-base.hcl
         - 10-backend.hcl
 
     - name: Write Consul Template haproxy frontend templates
-      template:
+      ansible.builtin.template:
         src: "{{ frontend_haproxy_template }}"
         dest: /etc/consul-template/templates/teamwire-backend.tmpl
-      notify: restart Consul Template
+        owner: root
+        group: root
+        mode: 0644
+      notify: Restart Consul Template
 
 - name: Write VoIP Consul Template configuration and templates
   block:
     - name: Copy VoIP Consul Template configuration files
-      copy:
+      ansible.builtin.copy:
         src: 20-voip.hcl
         dest: /etc/consul-template/config
-      notify: restart Consul Template
+        owner: root
+        group: root
+        mode: 0644
+      notify: Restart Consul Template
 
     - name: Render VoIP backend template
-      template:
+      ansible.builtin.template:
         src: 20-voip.cfg.j2
         dest: /etc/consul-template/templates/teamwire-voip.tmpl
-      notify: restart Consul Template
-  when: enable_voip is defined and enable_voip | string() == 'true'
+        owner: root
+        group: root
+        mode: 0644
+      notify: Restart Consul Template
+  when:
+    - enable_voip is defined
+    - enable_voip | string() == 'true'
 
 - name: Remove VoIP Consul Template configuration and templates
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:
     - /etc/consul-template/config/20-voip.hcl
     - /etc/consul-template/templates/teamwire-voip.tmpl
-  notify: restart Consul Template
+  notify: Restart Consul Template
   when: enable_voip is not defined or enable_voip | string() == 'false'
 
 - name: Remove default HAproxy configs
-  file:
+  ansible.builtin.file:
     name: "{{ item }}"
     state: absent
   with_items:
     - /etc/haproxy/haproxy.cfg
     - /etc/haproxy/haproxy.cfg.bak
-  notify: reload haproxy
+  notify: Reload haproxy

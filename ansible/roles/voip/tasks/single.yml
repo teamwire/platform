@@ -2,7 +2,7 @@
 - name: Run the Teamwire voip web container
   community.docker.docker_container:
     name: teamwire_web
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_WEB }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_web }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -28,13 +28,13 @@
 - name: Run the Teamwire voip prosody container
   community.docker.docker_container:
     name: teamwire_prosody
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_PROSODY }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_prosody }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
     network_mode: host
     volumes:
-      - "{{ VOIP_ROOT_PATH }}/prosody/config:/config:Z"
-      - "{{ VOIP_ROOT_PATH }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
+      - "{{ voip_root_path }}/prosody/config:/config:Z"
+      - "{{ voip_root_path }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
     log_driver: "syslog"
     log_opt:
       tag: teamwire-prosody
@@ -75,12 +75,12 @@
 - name: Run the Teamwire voip jicofo container
   community.docker.docker_container:
     name: teamwire_jicofo
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JICOFO }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jicofo }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
     network_mode: host
     volumes:
-      - "{{ VOIP_ROOT_PATH }}/jicofo:/config:Z"
+      - "{{ voip_root_path }}/jicofo:/config:Z"
     log_driver: "syslog"
     log_opt:
       tag: teamwire-jicofo
@@ -108,7 +108,7 @@
 - name: Run the Teamwire voip video bridge container
   community.docker.docker_container:
     name: teamwire_jvb
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_JVB }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jvb }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -139,12 +139,12 @@
 - name: Run the Teamwire turn container
   community.docker.docker_container:
     name: teamwire_turn
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ VOIP_CONTAINER_TURN }}:{{ VOIP_JITSI_VERSION }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_turn }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
     network_mode: host
     volumes:
-      - "{{ VOIP_ROOT_PATH }}/turn/config:/etc/coturn:Z"
+      - "{{ voip_root_path }}/turn/config:/etc/coturn:Z"
       - "turnvol:/data"
     log_driver: "syslog"
     log_opt:

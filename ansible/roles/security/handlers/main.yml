@@ -1,5 +1,5 @@
 ---
-- name: unload fs modules
+- name: Unload fs modules
   ansible.builtin.command: "/sbin/modprobe -n -v {{ item }}"
   with_items:
     - freevxfs
@@ -16,7 +16,7 @@
     state: restarted
 
 - name: Permission handler
-  ansible.builtin.shell: "chmod 1777 /tmp"
+  ansible.builtin.command: "chmod 1777 /tmp" # noqa deprecated-command-syntax
 
 - name: Restart sshd
   ansible.builtin.systemd:

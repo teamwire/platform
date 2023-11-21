@@ -1,21 +1,26 @@
+---
 # Keep track of the plattform repository
 - name: Install git
-  apt: pkg=git state=present
+  ansible.builtin.apt:
+    pkg:
+      - git
+    state: present
 
 - name: Check out the teamwire/platform git repository
-  git: # noqa git-latest
+  ansible.builtin.git: # noqa latest[git]
     repo: https://github.com/teamwire/platform.git
     depth: 1
     dest: /home/teamwire/platform
     update: false
-  notify: fix ownership of git checkout
+  notify: Fix ownership of git checkout
 
 - name: Check config file status
-  stat: path=/home/teamwire/platform/ansible/group_vars/all
+  ansible.builtin.stat:
+    path: /home/teamwire/platform/ansible/group_vars/all
   register: config_file
 
 - name: Secure permissions of Ansible configuration file
-  file:
+  ansible.builtin.file:
     path: /home/teamwire/platform/ansible/group_vars/all
     state: file
     mode: 0600
@@ -24,10 +29,15 @@
   when: config_file.stat.exists
 
 - name: Install the container helper tool
-  copy: src=../../roles/management/files/twctl dest=/usr/local/bin/twctl mode=0755 owner=root group=root
+  ansible.builtin.copy:
+    src: ../../roles/management/files/twctl
+    dest: /usr/local/bin/twctl
+    mode: 0755
+    owner: root
+    group: root
 
 - name: Install new motd
-  copy:
+  ansible.builtin.copy:
     src: motd.sh
     dest: /etc/motd.sh
     owner: root
@@ -35,40 +45,41 @@
     mode: 0755
   when:
     - not offline_mode.stat.exists
-    - enableMOTD
+    - enablemotd
 
-- name: stat original motd
-  stat:
+- name: Stat original motd
+  ansible.builtin.stat:
     path: /etc/motd
   register: motd_stat
 
 - name: Deactivate old motd
-  command: mv /etc/motd /etc/motd.deactivate
+  ansible.builtin.command: mv /etc/motd /etc/motd.deactivate
   when: motd_stat.stat.exists
 
 - name: Test if line motd exists in global profile
-  shell: grep '/etc/motd.sh' /etc/profile # noqa command-instead-of-shell
+  ansible.builtin.shell: grep '/etc/motd.sh' /etc/profile # noqa command-instead-of-shell
   register: grep_motd
   failed_when: grep_motd.rc >= 2
   when: not offline_mode.stat.exists
 
 - name: Activate new motd when not exists
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/profile
     line: "/etc/motd.sh"
   when:
     - not offline_mode.stat.exists
     - grep_motd.rc == 1
-    - enableMOTD
+    - enablemotd
 
 - name: Deactivate new motd if not enabled
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/profile
     line: "/etc/motd.sh"
     state: absent
   when:
     - not offline_mode.stat.exists
-    - not enableMOTD
+    - not enablemotd
 
-- include: backup.yml
+- name: Include backup
+  ansible.builtin.include_tasks: backup.yml
   when: config_done is defined

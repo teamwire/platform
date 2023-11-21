@@ -1,12 +1,15 @@
 ---
 - name: Configure proxy for apt
-  template:
+  ansible.builtin.template:
     src: apt.proxy.conf.j2
     dest: /etc/apt/apt.conf.d/01proxy
+    mode: 0644
+    owner: root
+    group: root
   when: http_proxy is defined
 
 - name: Remove apt proxy configuration when no proxy is configured
-  file:
+  ansible.builtin.file:
     dest: /etc/apt/apt.conf.d/01proxy
     state: absent
   when: http_proxy is not defined
@@ -16,63 +19,77 @@
 # DNS configuration. Hence we write a temporary resolv.conf that gets
 # overwritten as soon as dnsmasq is configured.
 - name: Check if dnsmasq is already installed (cluster only)
-  stat:
+  ansible.builtin.stat:
     path: /etc/dnsmasq.d/20-upstream
   register: dnsmasq_configuration
   when: '"hashi_servers" in groups'
 
 - name: Configure DNS servers
-  template:
+  ansible.builtin.template:
     src: resolv.conf.j2
     dest: /etc/resolv.conf
-  when: dns_servers is defined and ("hashi_servers" not in groups or not dnsmasq_configuration.stat.exists)
+    mode: 0644
+    owner: root
+    group: root
+  when:
+    - dns_servers is defined
+    - ("hashi_servers" not in groups or not dnsmasq_configuration.stat.exists)
 
 - name: Create rc.local for Debian
-  template:
+  ansible.builtin.template:
     src: rc.local.j2
     dest: /etc/rc.local
+    mode: '1375'
     owner: root
+    group: root
 
 - name: Import check offline installation task
   ansible.builtin.include_tasks: check_offline_installation.yml
 
-- name: apt-get update
-  apt:
-    update_cache: yes
+- name: Apt-get update
+  ansible.builtin.apt:
+    update_cache: true
   when: not offline_mode.stat.exists
 
   # Clusters: set up DNS with local dnsmasq
 - name: Install dnsmasq (cluster only)
-  include_tasks: dnsmasq.yml
-  when: config_done is defined and "hashi_servers" in groups
+  ansible.builtin.include_tasks: dnsmasq.yml
+  when:
+    - config_done is defined
+    - '"hashi_servers" in groups'
 
 # do security upgrades
 - name: Install unattended-upgrades
-  apt:
+  ansible.builtin.apt:
     pkg: unattended-upgrades
     state: present
 
 - name: Mail root on unattended-upgrades
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/apt/apt.conf.d/50unattended-upgrades
     regexp: '^//Unattended-Upgrade::Mail "root";'
     line: 'Unattended-Upgrade::Mail "root";'
     backrefs: true
 
 - name: Configure unattended-upgrade
-  copy:
+  ansible.builtin.copy:
     src: 02periodic
     dest: /etc/apt/apt.conf.d/02periodic
-  when: config_done is defined and not offline_mode.stat.exists
+    mode: 0644
+    owner: root
+    group: root
+  when:
+    - config_done is defined
+    - not offline_mode.stat.exists
 
 - name: Automatically remove obsolete packages
-  copy:
+  ansible.builtin.copy:
     src: apt-autoremove
     dest: /etc/cron.daily/apt-autoremove
     mode: 0755
 
 - name: Install useful tools
-  apt:
+  ansible.builtin.apt:
     name:
       - htop
       - sysstat
@@ -95,7 +112,7 @@
       - sshpass
 
 - name: Install pip
-  apt:
+  ansible.builtin.apt:
     name:
       - python3-pip
       - python3-wheel
@@ -103,14 +120,14 @@
       - python3-docker
 
 - name: Remove unneeded packages
-  apt:
+  ansible.builtin.apt:
     name: mlocate # sucks IO heavily
     state: absent
     purge: true
 
 # Configure system-wide proxy
 - name: Enable system-wide proxy
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/environment
     line: "{{ item }}={{ http_proxy }}"
   with_items:
@@ -119,7 +136,7 @@
   when: http_proxy is defined
 
 - name: Disable system-wide proxy when no proxy is configured
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/environment
     regexp: "^{{ item }}="
     state: absent
@@ -130,7 +147,7 @@
   when: http_proxy is not defined
 
 - name: NPRX_18 Don't access localhost and local services via proxy
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/environment
     line: "no_proxy=127.0.0.1,{{ groups['all'] | sort | map('extract', hostvars, 'private_ip') | join(',') if groups['all'] | length > 1 }}{{ ',' + groups['all'] | sort | join(',') + ',localhost,.consul' if groups['all'] | length > 1 else 'localhost' }}{{ ',teamwire.vpn' if teamwire_platform_dir is defined }}"
   when:
@@ -139,12 +156,12 @@
 
 - name: Set hostname
   when: config_done is defined or inventory_hostname not in ignore_hostnames
-  hostname:
-    name: "{{ inventory_hostname if inventory_hostname not in ignore_hostnames else (external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname) }}" # noqa line-length
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname if inventory_hostname not in ignore_hostnames else (external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname) }}"
 
 - name: Add hosts file via template
   when: config_done is defined
-  template:
+  ansible.builtin.template:
     src: hosts.j2
     dest: /etc/hosts
     mode: 0644
@@ -152,38 +169,45 @@
     group: root
 
 # send outgoing mail over smarthost
-- include: postfix.yml
+- name: Include postfix
+  ansible.builtin.include_tasks: postfix.yml
 
 # install ntp and set timezone to UTC
 - name: Set timezone to UTC
-  copy:
+  ansible.builtin.copy:
     content: "Etc/UTC\n"
     dest: /etc/timezone
-  notify: update timezone
+    mode: 0644
+    owner: root
+    group: root
+  notify: Update timezone
 
 - name: Install the NTP daemon
-  apt:
+  ansible.builtin.apt:
     pkg: ntp
 
 - name: Enable and start the NTP daemon
-  service:
+  ansible.builtin.service:
     name: ntp
     state: started
     enabled: true
 
 - name: Write NTP configuration file
-  template:
+  ansible.builtin.template:
     src: ntp.conf.j2
     dest: /etc/ntp.conf
-  notify: restart NTP
+    mode: 0644
+    owner: root
+    group: root
+  notify: Restart NTP
 
 - name: Check that teamwire home dir exists
-  stat:
+  ansible.builtin.stat:
     path: /home/teamwire
   register: teamwire_homedir
 
 - name: Allow copy and paste in vim
-  copy:
+  ansible.builtin.copy:
     src: vimrc
     dest: /home/teamwire/.vimrc
     owner: teamwire
@@ -193,23 +217,23 @@
 
 # general firewall rules
 - name: Install the UFW firewall
-  apt:
+  ansible.builtin.apt:
     pkg: ufw
     state: present
 
 - name: Allow incoming SSH access
-  ufw:
+  community.general.system.ufw:
     rule: allow
     name: OpenSSH
 
 - name: Configure default firewall policy
-  ufw:
+  community.general.system.ufw:
     state: enabled
     policy: reject
 
 # TCP timestamps can be used to calculate server uptime
 - name: Disable TCP timestamps
-  sysctl:
+  ansible.posix.sysctl:
     name: net.ipv4.tcp_timestamps
     value: "0"
     state: present
@@ -218,60 +242,63 @@
 # SSH
 - name: Disable SSH password logins
   when: ssh_disable_passwords is defined and ssh_disable_passwords
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
     regexp: ^#?PasswordAuthentication
     line: "PasswordAuthentication no"
-  notify: reload sshd
+  notify: Reload sshd
 
 - name: Enable SSH password logins
   when: ssh_disable_passwords is not defined or not ssh_disable_passwords
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
     regexp: ^#?PasswordAuthentication
     line: "PasswordAuthentication yes"
-  notify: reload sshd
+  notify: Reload sshd
 
 - name: Accept VAULT_TOKEN Variable from remote if defined
   ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
     regexp: ^AcceptEnv VAULT_TOKEN$
     line: "AcceptEnv VAULT_TOKEN"
-  notify: reload sshd
+  notify: Reload sshd
 
 # Prepare tmate usage
 # It needs any ssh key for the calling user to function
 - name: Create SSH keys for the teamwire user
-  user:
+  ansible.builtin.user:
     name: teamwire
     generate_ssh_key: true
   when: config_done is defined
 
 # Install tmate
 - name: Install tmate
-  apt:
+  ansible.builtin.apt:
     pkg: tmate
 
 - name: Ensure rsyslog is installed
-  apt:
+  ansible.builtin.apt:
     pkg: rsyslog
 
 - name: Send all logs to loghost or remote syslog servers
   when: "'loghost' in groups or syslog_servers is defined"
-  template:
+  ansible.builtin.template:
     src: 30-remote-logging.conf.j2
     dest: /etc/rsyslog.d/30-remote-logging.conf
+    mode: 0644
+    owner: root
+    group: root
   notify:
-    - restart rsyslog
+    - Restart rsyslog
 
 - name: Create directory for custom facts
-  file:
+  ansible.builtin.file:
     path: /etc/ansible/facts.d
     state: directory
     recurse: true
 
 - name: Write Vault fact
-  template:
+  ansible.builtin.template:
     src: vault.fact.j2
     dest: /etc/ansible/facts.d/vault.fact
     mode: 0755
@@ -289,9 +316,12 @@
     validate: visudo -cf %s
 
 - name: Reload Ansible local facts to register custom fact
-  setup:
+  ansible.builtin.setup:
     filter: ansible_local
   when: vault_fact.changed # noqa no-handler
 
-- include_tasks: cluster.yml
-  when: groups['all'] | length() > 1 and (skip_private_if is not defined or skip_private_if)
+- name: Include cluster
+  ansible.builtin.include_tasks: cluster.yml
+  when:
+    - groups['all'] | length() > 1
+    - (skip_private_if is not defined or skip_private_if)

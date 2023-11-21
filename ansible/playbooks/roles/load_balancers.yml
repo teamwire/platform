@@ -1,8 +1,10 @@
-- hosts: load_balancers
+---
+- name: Configure load_balancer for frontend server(s)
+  hosts: load_balancers
   tasks:
     - name: Deploy and configure the load balancers
       ansible.builtin.import_role:
-        name: ../../roles/load_balancer
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/load_balancer"
       when:
         - groups['all'] | length() > 1
         - loadbalancer_external_ip is defined
