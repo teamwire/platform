@@ -22,6 +22,22 @@ Package: icingaweb2-common
 Pin: version 2.12.0-1*
 Pin-Priority: 1000
 
+Package: icingacli
+Pin: version 2.12.0-1*
+Pin-Priority: 1000
+
 Package: php-icinga
+Pin: version 2.12.0-1*
+Pin-Priority: 1000
+
+Package: icinga-php-library
+Pin: version 0.13.1-1*
+Pin-Priority: 1000
+
+Package: icinga-php-thirdparty
+Pin: version 0.12.0-1*
+Pin-Priority: 1000
+
+Package: icingaweb2
 Pin: version 2.12.0-1*
 Pin-Priority: 1000
