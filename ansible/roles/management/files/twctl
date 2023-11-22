@@ -301,6 +301,18 @@ voip_start_single() {
     done
 }
 
+voip_restart_cluster() {
+    $NOMAD job restart -on-error=fail voip
+}
+
+voip_restart_single() {
+    is_stun_Enabled
+    for CONTAINER in $VOIP_CONTAINERS; do
+        c=$(docker restart ${CONTAINER})
+        printf "${c:0:15}\t...${GRN}restart [done]${NOC}\n"
+    done
+}
+
 voip_stop_cluster() {
     $NOMAD job stop voip
 }
@@ -353,8 +365,7 @@ voip() {
             voip_stop_$INSTALLATION
             ;;
         restart)
-            voip_stop_$INSTALLATION
-            voip_start_$INSTALLATION
+            voip_restart_$INSTALLATION
             ;;
         status)
             "voip_status_${INSTALLATION}"
@@ -921,12 +932,13 @@ start_containers_cluster() {
 }
 
 restart_containers_single() {
-    stop_containers_single
-    start_containers_single
+    for CONTAINER in $CONTAINERS; do
+        docker restart "$CONTAINER"
+    done
 }
+
 restart_containers_cluster() {
-    stop_containers_cluster
-    start_containers_cluster
+    $NOMAD job restart -on-error=fail $(_get_nomad_environment)
 }
 
 setup_containers_base() {
