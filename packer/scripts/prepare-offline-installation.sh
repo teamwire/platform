@@ -87,7 +87,9 @@ harbor.teamwire.eu/teamwire/web2:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/prosody:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jicofo:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jvb:${BACKEND_RELEASE}
-$(awk '{ gsub("\"",""); print $2 } NR==2 {exit}' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+harbor.teamwire.eu/teamwire/turn:${BACKEND_RELEASE}
+$(awk '/^registry_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+$(awk '/^hashui_container:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 "
 
 # File URL and SHA256 checksum separated by a semicolon
