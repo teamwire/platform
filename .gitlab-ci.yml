@@ -8,6 +8,7 @@ stages:
   - ansible-lint
   - shellcheck
   - Golint
+  - release
 
 default:
   tags:
@@ -220,3 +221,20 @@ Archiving test:
     changes:
       - ansible/roles/go/files/archiving.go
   needs: ['Ensure golint docker image exists']
+
+release:
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
+      when: manual
+    - if: $CI_COMMIT_TAG
+      when: never
+  script:
+    - ls -la
+    - git remote add github https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/teamwire/platform.git
+    - git push github $CI_COMMIT_TAG
+    - git fetch
+    - git checkout master
+    - git push github master
+  after_script:
+    - rm -rf .git
