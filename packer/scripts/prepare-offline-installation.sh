@@ -41,11 +41,17 @@ patch
 python3-docker
 mlock
 libcap2-bin
-icinga2
-icinga2-ido-mysql
-icingacli
-icingaweb2
-icingaweb2-module-monitoring
+icinga2=2.14.0-1*
+icinga2-bin=2.14.0-1*
+icinga2-common=2.14.0-1*
+icinga2-doc=2.14.0-1*
+icinga2-ido-mysql=2.14.0-1*
+icingaweb2-common=2.12.0-1*
+icingacli=2.12.0-1*
+php-icinga=2.12.0-1*
+icinga-php-library=0.13.1-1*
+icinga-php-thirdparty=0.12.0-1*
+icingaweb2=2.12.0-1*
 monitoring-plugins
 nagios-plugins-contrib
 libredis-perl
@@ -81,7 +87,9 @@ harbor.teamwire.eu/teamwire/web2:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/prosody:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jicofo:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jvb:${BACKEND_RELEASE}
-$(awk '{ gsub("\"",""); print $2 } NR==2 {exit}' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+harbor.teamwire.eu/teamwire/turn:${BACKEND_RELEASE}
+$(awk '/^registry_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+$(awk '/^hashui_container:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 "
 
 # File URL and SHA256 checksum separated by a semicolon
@@ -131,6 +139,11 @@ fi
 if [ ! -f /etc/apt/sources.list.d/icinga2.list ]; then
   DIST=$(awk -F"[)(]+" '/VERSION=/ {print $2}' /etc/os-release)
   echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.key] https://packages.icinga.com/debian icinga-${DIST} main" | sudo tee /etc/apt/sources.list.d/icinga2.list
+fi
+
+if [ ! -f /etc/apt/preferences.d/tw_monitoring_pinning ]; then
+  cd ~/platform/ansible
+  sudo cp roles/monitoring/files/tw_monitoring_pinning /etc/apt/preferences.d/tw_monitoring_pinning
 fi
 
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,
