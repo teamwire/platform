@@ -36,6 +36,14 @@
     dest: /etc/environment
     line: "REDISCLI_HISTFILE=/dev/null"
 
+- name: Install logrotate job for redis-server logs
+  ansible.builtin.copy:
+    src: redis-server-log
+    dest: /etc/logrotate.d/redis-server
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Include single
   ansible.builtin.include_tasks: single.yml
   when: "'redis_servers' not in groups"

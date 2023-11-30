@@ -1,0 +1,6 @@
+/var/log/redis/redis-sentinel*.log {
+        weekly
+        missingok
+        rotate 8
+        compress
+}
