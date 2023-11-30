@@ -4,7 +4,7 @@
         rotate 31
         compress
         postrotate
-		/usr/bin/systemctl reload vault 2> /dev/null || true
+            /usr/bin/systemctl reload vault 2> /dev/null || true
         endscript
         create 0600 vault vault
 }
