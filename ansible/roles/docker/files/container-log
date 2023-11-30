@@ -3,7 +3,6 @@
         missingok
         rotate 31
         compress
-        notifempty
         delaycompress
         postrotate
           /usr/lib/rsyslog/rsyslog-rotate
