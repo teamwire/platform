@@ -274,7 +274,9 @@ job "teamwire" {
 				EMAIL_HOST = "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
 				NOTIFICATION_SERVER_URL = "http://notification-server-9081.service.consul:9081"
 				BLOB_DIR = "/assets"
+{% if apns_certificate is defined %}
 				APNS_CERT_1 = "/app/certs/apns/aps-production.pem,push_production,{{ apns_appid | default('com.teamwire.messenger') }}"
+{% endif %}
 {% if apns_certificate_2 is defined %}
 				APNS_CERT_2 = "/app/certs/apns/{{ apns_certificate_2 | basename }},{{ apns_certificate_type_2 | default('push_production') }},{{ apns_appid_2 }}"
 {% endif %}

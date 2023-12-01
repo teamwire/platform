@@ -19,3 +19,7 @@
 # Clean JVB folders content
 - name: Clean JVB folders content.
   ansible.builtin.include_tasks: clean_jvb_folders.yml
+
+# Clean APNS Folder
+- name: Clean APNS Folder
+  ansible.builtin.include_tasks: clean_apns_folder.yml

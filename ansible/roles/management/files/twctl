@@ -587,10 +587,12 @@ connectivity_test() {
                             "Check Google FCM connectivity"
         test_server_condition_for_preflight_check    "echo | timeout 10s openssl s_client $PROXY_MODE -connect api.push.apple.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Apple'" \
                             "Check Apple APNS connectivity"
-        test_server_condition_for_preflight_check    "sudo bash -c '/usr/bin/test -e /data/certs/apns/aps-production.pem'" \
-                            "Check if APNS certificate is installed"
-        test_server_condition_for_preflight_check    "" \
-                            "Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
+        if sudo bash -c '[ -f "/data/certs/apns/aps-production.pem" ]' ; then
+            test_server_condition_for_preflight_check    "sudo bash -c '/usr/bin/test -e /data/certs/apns/aps-production.pem'" \
+                        "Check if APNS certificate is installed"
+            test_server_condition_for_preflight_check    "" \
+                        "Check APNS certificate: $(sudo openssl x509 -noout -in /data/certs/apns/aps-production.pem -enddate)"
+        fi
         test_server_condition_for_preflight_check    "[ -e /usr/local/src/ocsp.sh ] && sudo /usr/local/src/ocsp.sh DO NOT UPDATE" \
                             "Check OCSP response"
 
@@ -711,7 +713,7 @@ create_report() {
     report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
     report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
     report_map["Show status of vault"]="$(vault_status_${INSTALLATION})" &&
-    report_map["Check if APNS certificate is valid"]=$(sudo bash -c "for file in /data/certs/apns/*.pem;do echo \$file && openssl x509 -startdate -enddate  -noout -in \$file 2>&1 ;done")
+    report_map["Check if APNS certificate is valid"]=$(sudo bash -c "for file in $(sudo find /data/certs/apns -type f -name '*.pem'); do echo \$file && openssl x509 -startdate -enddate -noout -in \$file 2>&1; done")
     report_map["Test if APNS is reachable"]="$(echo | timeout 10s openssl s_client $PROXY_MODE -connect api.push.apple.com:2197 2>&1 | grep 'depth=1')"
     report_map["Test if FCM is reachable"]="$(echo | timeout 10s openssl s_client $PROXY_MODE -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1')"
     report_map["Show vault certificate enddate"]="$(sudo openssl x509 -in /var/lib/vault/ssl/vault.crt -noout -enddate)"
