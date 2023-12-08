@@ -180,5 +180,13 @@
       {% endif %}
   notify: Restart icinga2
 
+- name: Install logrotate job for icinga2 logs
+  ansible.builtin.copy:
+    src: icinga2-log
+    dest: /etc/logrotate.d/icinga2
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Include client
   ansible.builtin.include_tasks: "client.yml"

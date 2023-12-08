@@ -1,0 +1,20 @@
+/var/log/icinga2/icinga2.log /var/log/icinga2/debug.log {
+  daily
+  rotate 7
+  compress
+  delaycompress
+  missingok
+  create 644 nagios nagios
+  postrotate
+    /bin/kill -USR1 $(cat /run/icinga2/icinga2.pid 2> /dev/null) 2> /dev/null || true
+  endscript
+}
+
+/var/log/icinga2/error.log {
+  daily
+  rotate 60
+  compress
+  delaycompress
+  missingok
+  create 644 nagios nagios
+}

@@ -113,3 +113,11 @@
     login_password: "{{ redis_instances[item].password if redis_instances[item].password else omit }}"
   when: inventory_hostname != groups['redis_servers'] | first and redis_configuration.changed
   with_items: "{{ redis_instances }}"
+
+- name: Install logrotate job for redis-sentinel logs
+  ansible.builtin.copy:
+    src: redis-sentinel-log
+    dest: /etc/logrotate.d/redis-sentinel
+    owner: root
+    group: root
+    mode: 0644
