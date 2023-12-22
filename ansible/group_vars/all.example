@@ -112,6 +112,12 @@ external_hostname: ""
 # stun_hostname: "stun.yourdomain.com"
 # enable_stun: "true"
 
+# VOIP_VIDEO_RAM
+# Here you can lower the memory limit of voip containers on your own responsibility.
+# The recommended value is 3584, but a value between 1024 and 3584 is permitted.
+# Uncomment the following line and set your value.
+# VOIP_VIDEO_RAM: 3584
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################
