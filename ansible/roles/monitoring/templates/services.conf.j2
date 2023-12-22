@@ -38,8 +38,8 @@ apply Service "check-memory" {
   import "generic-service"
   check_command = "memory"
 
-  vars.warning_threshold= "15%"
-  vars.critical_threshold = "10%"
+  vars.warning_threshold= "{{ '85' if ansible_distribution_release == 'bookworm' else '15' }}%"
+  vars.critical_threshold = "{{ '90' if ansible_distribution_release == 'bookworm' else '10' }}%"
 
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux" && host.vars.client_endpoint
