@@ -114,7 +114,7 @@ external_hostname: ""
 
 # VOIP_VIDEO_RAM
 # Here you can lower the memory limit of voip containers on your own responsibility.
-# The recommended value is 3584, but a value between 1024 and 3584 is permitted.
+# The recommended value is 3584, but a value between 256 and 3584 is permitted.
 # Uncomment the following line and set your value.
 # VOIP_VIDEO_RAM: 3584
 
