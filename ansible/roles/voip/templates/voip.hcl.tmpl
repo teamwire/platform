@@ -432,7 +432,7 @@ job "voip" {
 
             resources {
                 cpu    = 900 #900
-                memory = {{ VOIP_VIDEO_RAM if VOIP_VIDEO_RAM is defined and VOIP_VIDEO_RAM is integer and VOIP_VIDEO_RAM | int <= 3584 else 3584}}    
+                memory = {{ VOIP_VIDEO_RAM if VOIP_VIDEO_RAM is defined and VOIP_VIDEO_RAM is integer and VOIP_VIDEO_RAM | int <= 3584 else 400}}
             }
         }
     }
