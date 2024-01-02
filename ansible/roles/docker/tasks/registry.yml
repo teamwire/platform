@@ -28,8 +28,7 @@
     - result.exists
     - result.container.State.Running is true
     - "result.container.Config.Image != registry_version"
-  changed_when:
-    - true
+  changed_when: true
   notify: Restart registry container
 
 - name: Check if docker-registry is available and running
@@ -37,8 +36,7 @@
     msg: "Container not available or running"
   when:
     - result.exists is false or result.container.State.Running is false
-  changed_when:
-    - true
+  changed_when: true
   notify: Restart registry container
 
 # Push all local images to the local registry

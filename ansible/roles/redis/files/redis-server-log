@@ -1,0 +1,6 @@
+/var/log/redis/redis-server*.log {
+        weekly
+        missingok
+        rotate 8
+        compress
+}

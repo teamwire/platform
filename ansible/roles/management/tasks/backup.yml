@@ -81,8 +81,8 @@
   ansible.builtin.copy:
     src: "{{ apns_certificate_2 }}"
     dest: "{{ backup_directory.path }}/"
-    owner: root
-    group: root
+    owner: teamwire
+    group: teamwire
     mode: 0644
   when: apns_certificate_2 is defined
   become: false

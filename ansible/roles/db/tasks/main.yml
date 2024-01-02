@@ -184,4 +184,12 @@
 - name: Disable mysql history
   ansible.builtin.lineinfile:
     dest: /etc/environment
-    line: "export MYSQL_HISTFILE=/dev/null"
+    line: "MYSQL_HISTFILE=/dev/null"
+
+- name: Install logrotate job for mariadb logs
+  ansible.builtin.copy:
+    src: mariadb-log
+    dest: /etc/logrotate.d/mariadb
+    owner: root
+    group: root
+    mode: 0644

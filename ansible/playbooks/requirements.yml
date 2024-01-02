@@ -198,6 +198,17 @@
       run_once: true
       when: enable_stun is defined or stun_hostname is defined
 
+    - name: Assert that VOIP_VIDEO_RAM is an integer and has value between 256 and 3584
+      ansible.builtin.assert:
+        that:
+          - VOIP_VIDEO_RAM is integer
+          - VOIP_VIDEO_RAM|int <= 3584
+          - VOIP_VIDEO_RAM|int >= 256
+        msg: >-
+          Please make sure that VOIP_VIDEO_RAM is an unquoted integer and the value is between 256 and 3584
+      run_once: true
+      when: VOIP_VIDEO_RAM is defined
+
     - name: Ensure valid configuration combination
       block:
         - name: Retrieve name of playbook file

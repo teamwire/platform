@@ -1,0 +1,10 @@
+/var/log/haproxy.log {
+    daily
+    rotate 52
+    missingok
+    compress
+    delaycompress
+    postrotate
+        /usr/lib/rsyslog/rsyslog-rotate
+    endscript
+}

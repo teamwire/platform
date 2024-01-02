@@ -320,6 +320,14 @@
     - enable_voip is defined
     - enable_voip | string() == 'true'
 
+- name: Install logrotate job for haproxy logs
+  ansible.builtin.copy:
+    src: haproxy-log
+    dest: /etc/logrotate.d/haproxy
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Include ocsp
   ansible.builtin.include_tasks: ocsp.yml
   when: not offline_mode.stat.exists

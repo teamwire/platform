@@ -39,3 +39,11 @@
     opts: defaults,_netdev,backupvolfile-server={{ groups[glusterfs_peer_group] | difference([inventory_hostname]) | first }}
     state: mounted
   when: inventory_hostname in groups[glusterfs_peer_group]
+
+- name: Install logrotate job for glusterfs-common logs
+  ansible.builtin.copy:
+    src: glusterfs-common-log
+    dest: /etc/logrotate.d/glusterfs-common
+    owner: root
+    group: root
+    mode: 0644
