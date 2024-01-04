@@ -14,9 +14,31 @@
     state: restarted
 
 - name: Set innodb in runtime
-  ansible.builtin.command: mysql -e "SET GLOBAL innodb_buffer_pool_size=({{ innodb_buffer_pool_size }} * 1024 * 1024 * 1024);"
-  become: true
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    query: "SET GLOBAL innodb_buffer_pool_size=({{ innodb_buffer_pool_size }} * 1024 * 1024 * 1024);"
 
 - name: Set optimizer in runtime
-  ansible.builtin.command: mysql -e "SET GLOBAL optimizer_search_depth={{ optimizer_search_depth_value }};"
-  become: true
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    query: "SET GLOBAL optimizer_search_depth={{ optimizer_search_depth_value }};"
+
+- name: Get password hash for root@127.0.0.1
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_db: mysql
+    query: SELECT password from user where user like 'root' and host like '127.0.0.1';
+  register: mysql_root_password_hash
+  listen: mysql_root_user_update
+
+- name: Set password hash for root@localhost
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_db: mysql
+    query: "SET PASSWORD FOR root@localhost = '{{ item.Password }}'"
+  with_items: "{{ mysql_root_password_hash.query_result }}"
+  listen: mysql_root_user_update

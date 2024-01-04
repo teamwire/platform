@@ -30,7 +30,7 @@
       community.mysql.mysql_query:
         query: "SHOW STATUS LIKE 'wsrep_cluster_size'"
         login_user: root
-        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
       when: inventory_hostname == groups['database_servers'] | first
       register: show_galera_cluster_size
 
@@ -76,7 +76,7 @@
         host: "{{ inventory_hostname }}"
         state: absent
         login_user: root
-        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
       when:
         - inventory_hostname == groups['database_servers'] | first
 

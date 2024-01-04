@@ -1,0 +1,41 @@
+---
+
+- name: Get all existing users from database
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_db: mysql
+    query: select user,host from user;
+  register: mysql_user_data
+
+# ------------------------------------------------------------------------------
+# Cleanup root User
+# ------------------------------------------------------------------------------
+- name: Cleanup available root users - Single Server
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  throttle: 1
+  with_items: "{{ mysql_user_data.query_result }}"
+  when:
+    - groups['all'] | length == 1
+    - item.User == "root"
+    - item.Host not in [ "localhost", "127.0.0.1" ]
+
+- name: Cleanup available root users - Cluster
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  throttle: 1
+  with_items: "{{ mysql_user_data.query_result }}"
+  when:
+    - groups['all'] | length > 1
+    - item.User == "root"
+    - item.Host != "localhost"
+    - item.Host not in groups['all'] | map('extract', hostvars, 'private_ip')
