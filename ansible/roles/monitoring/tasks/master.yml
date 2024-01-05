@@ -201,21 +201,33 @@
   when: isfirstextinstallion.changed == false # noqa literal-compare
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
-- name: Create Icinga database users and assign privileges # noqa no-handler
+- name: "Create Icinga database user {{ monitoring_db_user }}"
   community.mysql.mysql_user:
-    name: "{{ item.user }}"
-    password: "{{ item.password }}"
-    priv: "{{ item.db }}.*:ALL"
+    name: "{{ monitoring_db_user }}"
+    password: "{{ monitoring_db_password }}"
+    host: "{{ item }}"
+    priv: "{{ monitoring_db_name }}.*:ALL"
     state: present
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
-    host: "%"
   no_log: true
   with_items:
-    - { user: '{{ monitoring_db_user }}', password: '{{ monitoring_db_password }}', db: '{{ monitoring_db_name }}' }
-    - { user: '{{ monitoring_db_web_user }}', password: '{{ monitoring_db_web_password }}', db: '{{ monitoring_db_web_name }}' }
-  when: database_created.changed
-  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
+    - "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
+    - "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
+  delegate_to: "{{ monitoring_db_host }}"
+
+- name: "Create Icingaweb database user {{ monitoring_db_web_user }}"
+  community.mysql.mysql_user:
+    name: "{{ monitoring_db_web_user }}"
+    password: "{{ monitoring_db_web_password }}"
+    host: "{{ item }}"
+    priv: "{{ monitoring_db_web_name }}.*:ALL"
+    state: present
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
+  with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
+  delegate_to: "{{ monitoring_db_host }}"
 
 - name: Fetch the Icinga DB schemas # noqa no-handler
   ansible.builtin.fetch:

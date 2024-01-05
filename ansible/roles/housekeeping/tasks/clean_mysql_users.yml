@@ -39,3 +39,90 @@
     - item.User == "root"
     - item.Host != "localhost"
     - item.Host not in groups['all'] | map('extract', hostvars, 'private_ip')
+
+# ------------------------------------------------------------------------------
+# Cleanup available teamwire users
+# ------------------------------------------------------------------------------
+- name: Register mysql_database values in extra variable
+  ansible.builtin.set_fact:
+    db_username: "{{ item.value.username }}"
+    db_host: "{{ item.value.hosts }}"
+  loop: "{{ mysql_databases | dict2items }}"
+  loop_control:
+    label: "{{ item.value.username }}"
+
+- name: Cleanup existing teamwire database users
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  throttle: 1
+  with_items: "{{ mysql_user_data.query_result }}"
+  when:
+    - item.User == db_username
+    - "item.Host not in db_host"
+
+# ------------------------------------------------------------------------------
+# Cleanup available monitoring users
+# ------------------------------------------------------------------------------
+- name: Cleanup monitoring db users - Single Server
+  block:
+    - name: "Cleanup available users {{ monitoring_db_user }}"
+      community.mysql.mysql_user:
+        login_user: root
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: "{{ item.User }}"
+        host: "{{ item.Host }}"
+        state: absent
+      with_items: "{{ mysql_user_data.query_result }}"
+      when:
+        - item.User == monitoring_db_user
+        - item.Host != "localhost"
+
+    - name: "Cleanup available users {{ monitoring_db_web_user }}"
+      community.mysql.mysql_user:
+        login_user: root
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: "{{ item.User }}"
+        host: "{{ item.Host }}"
+        state: absent
+      with_items: "{{ mysql_user_data.query_result }}"
+      when:
+        - item.User == monitoring_db_web_user
+        - item.Host != "localhost"
+  when:
+    - enable_monitoring is defined
+    - groups['all'] | length == 1
+
+- name: Cleanup monitoring db users - Cluster
+  block:
+    - name: "Cleanup available users {{ monitoring_db_user }}"
+      community.mysql.mysql_user:
+        login_user: root
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: "{{ item.User }}"
+        host: "{{ item.Host }}"
+        state: absent
+      throttle: 1
+      with_items: "{{ mysql_user_data.query_result }}"
+      when:
+        - item.User == monitoring_db_user
+        - not ( item.Host in groups['monitoring'] | map('extract',hostvars,'private_ip') or item.Host in groups['database_servers'] | map('extract',hostvars,'private_ip') )
+
+    - name: "Cleanup available users {{ monitoring_db_web_user }}"
+      community.mysql.mysql_user:
+        login_user: root
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: "{{ item.User }}"
+        host: "{{ item.Host }}"
+        state: absent
+      throttle: 1
+      with_items: "{{ mysql_user_data.query_result }}"
+      when:
+        - item.User == monitoring_db_web_user
+        - item.Host not in groups['monitoring'] | map('extract',hostvars,'private_ip')
+  when:
+    - enable_monitoring is defined
+    - groups['all'] | length > 1

@@ -76,9 +76,18 @@
       when: config_done is defined
 
 - name: Clean up database users
-  hosts: local
+  hosts: all
   gather_facts: false
   tasks:
+    - name: Get variables for teamwire db users
+      ansible.builtin.include_vars:
+        file: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db/defaults/main.yml"
+
+    - name: Get variables for monitoring db users
+      ansible.builtin.import_role:
+        name: monitoring
+        tasks_from: database-configuration
+
     - name: Cleanup mysql users
       ansible.builtin.import_role:
         name: housekeeping

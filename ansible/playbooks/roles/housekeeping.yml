@@ -9,10 +9,28 @@
     ansible.builtin.include_role:
       name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
 
+- name: Vault Status check
+  hosts: local:hashi_servers
+  tasks:
+    - name: Include vault role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
+        tasks_from: secrets
+      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true" and secrets_read is not defined
+
 - name: Clean up database users
   hosts: local:database_servers
   gather_facts: false
   tasks:
+    - name: Get variables for teamwire db users
+      ansible.builtin.include_vars:
+        file: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db/defaults/main.yml"
+
+    - name: Get variables for monitoring db users
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/monitoring"
+        tasks_from: database-configuration
+
     - name: Cleanup mysql users
       ansible.builtin.import_role:
         name: "../../roles/housekeeping"
