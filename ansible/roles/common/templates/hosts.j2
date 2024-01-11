@@ -19,9 +19,9 @@ ff02::2 ip6-allrouters
 {% endif %}
 {% else %}
 
-{% for host in groups['all'] %}
+{% for host in groups['all']|sort %}
 {{ hostvars[host].private_ip }} {{ host }}
-{%- if host in groups['frontend_servers']|first %}
+{%- if host in groups['frontend_servers']|sort|first %}
 {% if loadbalancer_external_ip is defined %}
 
 {{ loadbalancer_external_ip }}{% endif %}
