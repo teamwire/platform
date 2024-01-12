@@ -7,7 +7,7 @@ OCSPFILE="/etc/ssl/certs/server_and_intermediate_and_root.crt.ocsp"
 if [ -e /usr/local/bin/ocspResponder ]; then
     if [ "$#" == 0 ];then
         /usr/local/bin/ocspResponder && \
-                echo "set ssl ocsp-response $(/usr/bin/base64 -w 10000 $OCSPFILE)" | socat stdio unix-connect:/run/haproxy/admin.sock
+                echo "set ssl ocsp-response $(/usr/bin/base64 -w 10000 ${OCSPFILE})" | socat stdio unix-connect:/run/haproxy/admin.sock
     else
         /usr/local/bin/ocspResponder -debug
         exit $?
