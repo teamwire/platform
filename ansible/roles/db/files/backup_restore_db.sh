@@ -19,23 +19,27 @@ IN_FILE=''                              # Dump to recover
 VAULT_SECRET_PATH="database/password"   # Path in secretstore
 VAULT_ADDR="127.0.0.1"                  # Vault IP
 PID=$$                                  # Own PID
-TMPFILE_PATH="$HOME/.my.cnf"
+TMPFILE_PATH="${HOME}/.my.cnf"
 
 # -----------------------------------------------------------------------------
 # The following script variables should not set
 # by hand.
 # -----------------------------------------------------------------------------
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+SCRIPT_NAME=$(basename "$0")
+MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
+
 declare -r FALSE=1
 declare -r TRUE=0
-declare -r DATE=$(date +"%Y-%m-%d_%H-%M-%S")
-declare -r SCRIPT_NAME=$(basename "$0")
-declare -r MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
+declare -r DATE
+declare -r SCRIPT_NAME
+declare -r MAX_THREADS
 
 TMP_ARCHIVE=""
-isVaultUsed=$FALSE
-isPassEnabled=$FALSE
-FORCE=$FALSE             # Force to override a database table if true ( on recovery )
-VAULT=$FALSE
+isVaultUsed=${FALSE}
+isPassEnabled=${FALSE}
+FORCE=${FALSE}             # Force to override a database table if true ( on recovery )
+VAULT=${FALSE}
 
 # -----------------------------------------------------------------------------
 # Catch "[cntrl] + c" user input. See func ctrl_c
@@ -65,7 +69,7 @@ fi
 # -----------------------------------------------------------------------------
 helpme() {
 
-  echo "usage: $SCRIPT_NAME -t|--task <operation> [-d |--database <dbname>][-h|--host <hostname>][-u|--user <username>]
+  echo "usage: ${SCRIPT_NAME} -t|--task <operation> [-d |--database <dbname>][-h|--host <hostname>][-u|--user <username>]
   [-p|--pass][-o|--outputdir <path>][-n|--nfs-path <path>][-m|--max-backups <number>]
   [-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--vault]
 
@@ -107,25 +111,25 @@ helpme() {
   -------------------------------
 
   Backup:
-    $SCRIPT_NAME -t backup -p
+    ${SCRIPT_NAME} -t backup -p
 
   Backup with path:
-    $SCRIPT_NAME -t backup -o /path/to/dest -p
+    ${SCRIPT_NAME} -t backup -o /path/to/dest -p
 
   Restore:
-    $SCRIPT_NAME -t restore -p -i /path/to/dump
+    ${SCRIPT_NAME} -t restore -p -i /path/to/dump
 
   Restore (drop existing tables)
-    $SCRIPT_NAME -t restore -p -i /path/to/dump -f -d test_db
+    ${SCRIPT_NAME} -t restore -p -i /path/to/dump -f -d test_db
 
   Secret path is set without a leading slash:
     --secret-path my/path
 
   Use secret from vault:
-    $SCRIPT_NAME -t backup --vault -s path/to/secret
+    ${SCRIPT_NAME} -t backup --vault -s path/to/secret
 
   Use secret from vault and set ip:
-    $SCRIPT_NAME -t backup --vault --vault-addr 10.0.0.10 -s path/to/secret
+    ${SCRIPT_NAME} -t backup --vault --vault-addr 10.0.0.10 -s path/to/secret
   "
 }
 
@@ -143,26 +147,26 @@ helpme() {
 backup_db() {
 
   # Check if password is set. If pass is not set exit script
-  if [ -z "$PASS" ] && [ ! -e "$HOME/.my.cnf" ];then
+  if [ -z "${PASS}" ] && [ ! -e "${HOME}/.my.cnf" ];then
     echo "Pass not set!"
     exit_on_failure
-  elif [ ! -z "$PASS" ];then
+  elif [ -n "${PASS}" ];then
     create_temp_conf
   fi
 
   # Test that backup directory exists. Otherwise create it.
-  local SRC="$OUTDIR/tmp"
-  [ ! -e $SRC ] && mkdir -p $SRC
+  local SRC="${OUTDIR}/tmp"
+  [ ! -e ${SRC} ] && mkdir -p ${SRC}
 
-  echo "Start dumping DB $DB..."
+  echo "Start dumping DB ${DB}..."
 
   # Run mydumper with maximum available threads and with user
   # defined option.
-  mydumper $DEFAULTS_FILE \
-    --database=$DB \
-    --host=$HOST \
-    --outputdir="$OUTDIR/tmp" \
-    --threads="$MAX_THREADS"
+  mydumper ${DEFAULTS_FILE} \
+    --database=${DB} \
+    --host=${HOST} \
+    --outputdir="${OUTDIR}/tmp" \
+    --threads="${MAX_THREADS}"
 
   check_prev_exitcode $? "Error while backup"
 
@@ -173,51 +177,51 @@ backup_db() {
   echo "Run archiving..."
 
   local EXTENS="_dump.tar.gz"
-  local TAR_ARCHIVE="$OUTDIR/${DATE}_${DB}_${HOST}_$EXTENS"
-  TMP_ARCHIVE=$TAR_ARCHIVE
+  local TAR_ARCHIVE="${OUTDIR}/${DATE}_${DB}_${HOST}_${EXTENS}"
+  TMP_ARCHIVE=${TAR_ARCHIVE}
 
-  tar Pcfz "$TAR_ARCHIVE" -C $SRC .
+  tar Pcfz "${TAR_ARCHIVE}" -C ${SRC} .
 
   check_prev_exitcode $? "Error while archiving"
 
-  if [ ! -z $NFS_PATH ]; then
-    cp "$TAR_ARCHIVE" $NFS_PATH;
+  if [ -n "${NFS_PATH}" ]; then
+    cp "${TAR_ARCHIVE}" "${NFS_PATH}";
     check_prev_exitcode $? "Error while backup to NFS share"
   fi &&
 
-  rm -rf "$OUTDIR/tmp"
+  rm -rf "${OUTDIR}/tmp"
 
   # If the previous process exit on failure we want also quit this script
   # with a failure.
   check_prev_exitcode $? "Error while remove tmp dir"
 
   # Count current backups. Rest should be self explained :-)
-  CURR_BACKUPS=$(ls $OUTDIR | wc -l)
+  CURR_BACKUPS=$(ls ${OUTDIR} | wc -l)
   check_prev_exitcode $? "Cant count backups"
 
-  if [ "$MAX_BACKUPS" != "" ];then
+  if [ "${MAX_BACKUPS}" != "" ];then
     while (( CURR_BACKUPS > MAX_BACKUPS ));do
 
-      echo "Maximum number of backups reached($CURR_BACKUPS/$MAX_BACKUPS)."
-      OLDEST_BACKUP=$(find "$OUTDIR" -type f -printf '%T+ %p\n' | sort | head -n 1 | awk '{print $2}')
+      echo "Maximum number of backups reached(${CURR_BACKUPS}/${MAX_BACKUPS})."
+      OLDEST_BACKUP=$(find "${OUTDIR}" -type f -printf '%T+ %p\n' | sort | head -n 1 | awk '{print $2}')
       check_prev_exitcode $? "Cant find oldest backup"
 
-      echo "Delete oldest Backup: $OLDEST_BACKUP"
-      rm "$OLDEST_BACKUP"
+      echo "Delete oldest Backup: ${OLDEST_BACKUP}"
+      rm "${OLDEST_BACKUP}"
       check_prev_exitcode $? "Cant delete oldest backup"
 
-      CURR_BACKUPS=$(ls $OUTDIR | wc -l)
+      CURR_BACKUPS=$(ls ${OUTDIR} | wc -l)
       check_prev_exitcode $? "Cant count backups"
 
     done
   fi
-  echo "Current number of backups $CURR_BACKUPS/$MAX_BACKUPS"
+  echo "Current number of backups ${CURR_BACKUPS}/${MAX_BACKUPS}"
 
   # CREATE LATEST
-  rm -f "$OUTDIR/LATEST.dump"
-  ln -s "$TAR_ARCHIVE" "$OUTDIR/LATEST.dump"
+  rm -f "${OUTDIR}/LATEST.dump"
+  ln -s "${TAR_ARCHIVE}" "${OUTDIR}/LATEST.dump"
 
-  rm -f "$HOME/.my.cnf"
+  rm -f "${HOME}/.my.cnf"
 
 }
 
@@ -231,53 +235,53 @@ backup_db() {
 restore_db() {
 
   # Check if password is set. If pass is not set exit script
-  [ -z "$PASS" ] && echo "Pass not set!" && exit_on_failure
+  [ -z "${PASS}" ] && echo "Pass not set!" && exit_on_failure
 
-  if [ -z $IN_FILE ];then
+  if [ -z "${IN_FILE}" ];then
     echo "You have to specify a path to the dumpfile to recover"
     exit_on_failure
   fi
 
   # Create temp structure
-  DUMPFILE=$IN_FILE
-  DIR_DUMP=$(dirname $DUMPFILE)
+  DUMPFILE=${IN_FILE}
+  DIR_DUMP=$(dirname "${DUMPFILE}")
   DIR_TMP="/tmp/recv"
   DIR_CURR=$(pwd)
 
-  mkdir -p $DIR_TMP; cd $DIR_TMP || exit_on_failure
+  mkdir -p ${DIR_TMP}; cd ${DIR_TMP} || exit_on_failure
   check_prev_exitcode $? "Could not create tmp dir!"
 
-  tar xfvz $DUMPFILE
+  tar xfvz "${DUMPFILE}"
   check_prev_exitcode $? "Error while extracting archive"
 
-  echo "DEBUG FORCE: $FORCE"
-  if [ $FORCE -eq $TRUE ]; then
-    myloader $DEFAULTS_FILE \
-    --database=$DB \
-    --host=$HOST \
-    --user=$USER \
-    --password="$PASS" \
-    --directory="$DIR_TMP" \
-    --threads="$MAX_THREADS" \
+  echo "DEBUG FORCE: ${FORCE}"
+  if [ ${FORCE} -eq ${TRUE} ]; then
+    myloader ${DEFAULTS_FILE} \
+    --database=${DB} \
+    --host=${HOST} \
+    --user="${USER}" \
+    --password="${PASS}" \
+    --directory="${DIR_TMP}" \
+    --threads="${MAX_THREADS}" \
     --overwrite-tables \
     --verbose=3
   else
-    myloader $DEFAULTS_FILE \
-    --database=$DB \
-    --host=$HOST \
-    --user=$USER \
-    --password="$PASS" \
-    --directory="$DIR_TMP" \
-    --threads="$MAX_THREADS" \
+    myloader ${DEFAULTS_FILE} \
+    --database=${DB} \
+    --host=${HOST} \
+    --user="${USER}" \
+    --password="${PASS}" \
+    --directory="${DIR_TMP}" \
+    --threads="${MAX_THREADS}" \
     --verbose=3
   fi
   check_prev_exitcode $? "Error while recovering (dumps) into database"
 
   # Housekeeping
-  cd "$DIR_CURR" || exit_on_failure
+  cd "${DIR_CURR}" || exit_on_failure
 
-  rm -rf $DIR_TMP
-  rm -f "$HOME/.my.cnf"
+  rm -rf ${DIR_TMP}
+  rm -f "${HOME}/.my.cnf"
 
   check_prev_exitcode $? "Error on Housekeeping jobs after recovery"
 
@@ -294,12 +298,12 @@ restore_db() {
 # -----------------------------------------------------------------------------
 create_temp_conf() {
 
-  TMPFILE="$TMPFILE_PATH"
-  touch "$TMPFILE"
-  chmod 0600 "$TMPFILE"
+  TMPFILE="${TMPFILE_PATH}"
+  touch "${TMPFILE}"
+  chmod 0600 "${TMPFILE}"
 
-  echo "TEMPFILE   $TMPFILE"
-  echo -e "[mydumper]\nuser=$USER\npassword=$PASS" > "$TMPFILE"
+  echo "TEMPFILE   ${TMPFILE}"
+  echo -e "[mydumper]\nuser=${USER}\npassword=${PASS}" > "${TMPFILE}"
 
 }
 
@@ -316,17 +320,17 @@ ask_pass() {
 
   # If no vault is set to be used and no password is set, then prompt
   # for a password. This is an interactive-mode
-  if [ "$isVaultUsed" == "$FALSE" ] && [ "$isPassEnabled" == "$FALSE" ] && [ "$PASS" == "" ];then
+  if [ "${isVaultUsed}" == "${FALSE}" ] && [ "${isPassEnabled}" == "${FALSE}" ] && [ "${PASS}" == "" ];then
     read -r -s -p "Please enter DB pass: " PASS;echo;
   fi
   # If both is set password and vault, then exit with a failure. Only
   # one method is possible.
-  if [ "$isVaultUsed" == "$TRUE" ] && [ "$isPassEnabled" == "$TRUE" ];then
+  if [ "${isVaultUsed}" == "${TRUE}" ] && [ "{${isPassEnabled}}" == "${TRUE}" ];then
     echo "ERROR: You can use Vault option together with password option."
     exit_on_failure
   fi
   # If Vault is set then curl the password from vault secret store.
-  if [ "$isVaultUsed" == "$TRUE" ];then
+  if [ "${isVaultUsed}" == "${TRUE}" ];then
     vault_read_pass
     check_prev_exitcode $? "Error while reading Vault pass"
   fi
@@ -348,8 +352,8 @@ ask_pass() {
 check_prev_exitcode() {
   local exitCode=$1
   local message=$2
-  if [ "$exitCode" -ne 0 ];then
-    echo "$message"
+  if [ "${exitCode}" -ne 0 ];then
+    echo "${message}"
     exit_on_failure
   fi
 }
@@ -377,16 +381,16 @@ housekeeping() {
 
   # Remove lockfile, so that the script
   # can be executed
-  rm "$LOCKFILE"
+  rm "${LOCKFILE}"
 
   # Remove temporary created files
-  rm -rf "$OUTDIR/tmp"
+  rm -rf "${OUTDIR}/tmp"
 
   # Remove temp recover dir
   rm -rf /tmp/recv/
 
   # Remove temp mysql config file
-  rm -f "$HOME/.my.cnf"
+  rm -f "${HOME}/.my.cnf"
 }
 # -----------------------------------------------------------------------------
 # FUNCTION:     exit_on_failure
@@ -401,7 +405,7 @@ exit_on_failure() {
     # by MAX_BACKUPS. If the script would keep
     # broken backup files, the number of backups
     # would grow without having consistent backups.
-    [ ! -z "$TMP_ARCHIVE" ] && rm -f "$TMP_ARCHIVE"
+    [ -n "${TMP_ARCHIVE}" ] && rm -f "${TMP_ARCHIVE}"
 
   # Execute housekeeping job
   housekeeping
@@ -419,14 +423,14 @@ exit_on_failure() {
 #
 # -----------------------------------------------------------------------------
 vault_read_pass() {
-  if [ -z  "$VAULT_TOKEN" ];then
+  if [ -z  "${VAULT_TOKEN}" ];then
     echo "No Vault token set! Exit now"
     exit_on_failure
   fi
   PASS=$(curl -s \
-       -H "X-Vault-Token: $VAULT_TOKEN" \
+       -H "X-Vault-Token: ${VAULT_TOKEN}" \
        -X GET \
-       https://$VAULT_ADDR:8200/v1/$VAULT_SECRET_PATH | \
+       https://${VAULT_ADDR}:8200/v1/${VAULT_SECRET_PATH} | \
        jq -r '.data.value')
 }
 
@@ -442,7 +446,7 @@ while [ $# -gt 0 ]; do
       USER="$2"
       ;;
     -p|--pass)
-      isPassEnabled=$TRUE
+      isPassEnabled=${TRUE}
       PASS="$2"
       ;;
     -t|--task)
@@ -461,7 +465,7 @@ while [ $# -gt 0 ]; do
       IN_FILE="$2"
       ;;
     -f|--force)
-      FORCE=$TRUE
+      FORCE=${TRUE}
       ;;
     -s|--secret-path)
       VAULT_SECRET_PATH="$2"
@@ -470,7 +474,7 @@ while [ $# -gt 0 ]; do
       TASK="helpme";
       ;;
     --vault)
-      isVaultUsed=$TRUE
+      isVaultUsed=${TRUE}
       ;;
     --vault-addr)
       VAULT_ADDR="$2"
@@ -492,23 +496,23 @@ LOCKFILE="/tmp/${SCRIPT_NAME}-${DB}.lock"
 # the SCRIPT_NAME var. Otherwise the PID is occupied by a new process. This
 # could happen on systems that are heavily used.
 # -----------------------------------------------------------------------------
-if [ -e "$LOCKFILE" ]; then
-  old_pid="$(< $LOCKFILE)"
-  if [[ "$(ps -p $old_pid -o comm=)" =~ "backup_restore_" ]]; then
+if [ -e "${LOCKFILE}" ]; then
+  old_pid=$(< "${LOCKFILE}")
+  if [[ $(ps -p "${old_pid}" -o comm=) =~ "backup_restore_" ]]; then
     echo "An process of this script is already running. Quit now"
     exit  1
   else
-    echo "$PID" > "$LOCKFILE"
+    echo "${PID}" > "${LOCKFILE}"
   fi
 else
-  echo "$PID" > "$LOCKFILE"
+  echo "${PID}" > "${LOCKFILE}"
 fi
 
 # mydumper defaults file
-DEFAULTS_FILE="--defaults-file=$TMPFILE_PATH \\"
+DEFAULTS_FILE="--defaults-file=${TMPFILE_PATH} \\"
 
 # Executes password func
-if [ $TASK != "helpme" ]; then
+if [ ${TASK} != "helpme" ]; then
   ask_pass
 fi
 # Catch task (user input) case insensitive
@@ -522,7 +526,6 @@ elif [ "${TASK,,}" = "helpme" ]
 then
   helpme
 else
-  echo "Unknown task \"$TASK\". Use --help for further informations"
+  echo "Unknown task \"${TASK}\". Use --help for further informations"
   exit_on_failure
 fi
-
