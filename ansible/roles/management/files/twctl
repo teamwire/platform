@@ -10,9 +10,9 @@ YLW='\033[0;33m'
 NOC='\033[0m'
 
 # Find Ansible configuration
-if [ -d ~/platform/ansible ] ; then
+if [ -d ~/platform/ansible ]; then
     ANSIBLE_DIR=~/platform/ansible
-elif [ -d ~teamwire/platform/ansible ] ; then
+elif [ -d ~teamwire/platform/ansible ]; then
     ANSIBLE_DIR=~teamwire/platform/ansible
 else
     echo "Cannot find platform directory."
@@ -26,13 +26,13 @@ DFLT_TMOUT=10
 # Set http proxy for the OpenSSL client if one is set
 PROXY_CHECK=$(apt-config dump Acquire::http::Proxy | awk '{print $2}' | tr -d \;\")
 
-if [ -z "$PROXY_CHECK" ] ; then
+if [ -z "${PROXY_CHECK}" ]; then
     PROXY_MODE=""
 else
     PROXY_MODE="-proxy ${PROXY_CHECK#"http://"}"
 fi
 
-if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
+if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
     # Clustered setup
     INSTALLATION=cluster
     VAULT_ADDR="https://vault.service.consul:8200"
@@ -43,9 +43,9 @@ if [ -d "$CLUSTER_CONFIG_DIR" ] ; then
     VAULT_INITIALIZED=$(curl -m ${DFLT_TMOUT} -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.initialized')
     VAULT_SEALED=$(curl -m ${DFLT_TMOUT} -s "https://${VAULT_1ST_SERVER}:8200/v1/sys/health" | jq '.sealed')
 
-    if [ "$UID" != "0" ] && [ ! -r "$CLUSTER_CONFIG_DIR" ] ; then
+    if [ "${UID}" != "0" ] && [ ! -r "${CLUSTER_CONFIG_DIR}" ]; then
         # Try to grant read permissions to the required files
-        sudo chgrp -R teamwire "$CLUSTER_CONFIG_DIR"
+        sudo chgrp -R teamwire "${CLUSTER_CONFIG_DIR}"
     fi
 
     NOMAD_JOB="${CLUSTER_CONFIG_DIR}/teamwire.nomad"
@@ -57,7 +57,7 @@ else
     VAULT_INITIALIZED=$(curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
     VAULT_SEALED=$(curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
 
-    if [ ! -f "$CONFIG_FILE" ]; then
+    if [ ! -f "${CONFIG_FILE}" ]; then
         echo "ERROR: Missing configuration file ${CONFIG_FILE}!"
         echo "       Please configure the server before using this tool."
         exit 1
@@ -71,7 +71,7 @@ IMAGES="teamwire/backend teamwire/notification-server"
 VOIPIMAGES="teamwire/web2 teamwire/prosody teamwire/jicofo teamwire/jvb"
 
 
-if [ "$VAULT_INITIALIZED" != "true" ]; then
+if [ "${VAULT_INITIALIZED}" != "true" ]; then
     VAULT_INITIALIZED=false
 fi
 
@@ -79,50 +79,54 @@ BLACKLIST=("show-tags" "pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "
 
 WHITELIST_ENV=("development" "development3" "master" "staging" "production")
 
-if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" != "false" && "$2" != "unseal" ]]; then
+if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" != "false" && "$2" != "unseal" ]]; then
+    REQUEST_PARAMETERS="$*"
     for task in "${BLACKLIST[@]}"; do
-        if [[ "$@" == *"$task"* ]]; then
+        if [[ "${REQUEST_PARAMETERS}" == *"${task}"* ]]; then
             echo "Vault must be unsealed. Please run twctl secrets unseal."
             exit 1
         fi
     done
 fi
 
-if [ "$VAULT_INITIALIZED" == "true" ] && [ -f ~/.vault-token ]; then
+if [ "${VAULT_INITIALIZED}" == "true" ] && [ -f ~/.vault-token ]; then
     VAULT_TOKEN="$(< ~/.vault-token)"
 fi
 
-if [[ "$VAULT_INITIALIZED" == "true"  && "$VAULT_SEALED" == "false" ]]; then
-    VAULT_AUTH_CHECK="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret | jq -r .errors[])"
-    if [ "$VAULT_AUTH_CHECK" == "permission denied" ]; then
+if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" == "false" ]]; then
+    VAULT_AUTH_CHECK="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/secret | jq -r .errors[])"
+    if [ "${VAULT_AUTH_CHECK}" == "permission denied" ]; then
         echo "Invalid Vault token, please check the contents of ~/.vault-token."
         exit 1
     fi
 fi
 
 vault_read_secrets() {
-    local secret_path=$1
-    local secret="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/$secret_path | jq -r '.data| .[]')"
-    echo "$secret"
+    local secret_path
+    secret_path=$1
+    local secret
+    secret="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/${secret_path}" | jq -r '.data| .[]')"
+    echo "${secret}"
 }
 
 # `vault_list` is just a wrapper function needed
 # for `get_vault_secret_recursive` function to make
 # the code more readable.
 vault_list() {
-    echo "curl -m ${DFLT_TMOUT} -s --header \"X-Vault-Token: $VAULT_TOKEN\" --request LIST $VAULT_ADDR/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
+    echo "curl -m ${DFLT_TMOUT} -s --header \"X-Vault-Token: ${VAULT_TOKEN}\" --request LIST ${VAULT_ADDR}/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
 }
 
 get_vault_secret_recursive() {
-    declare -a vault_secr="$(curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: $VAULT_TOKEN" --request LIST $VAULT_ADDR/v1/secret/ | jq -r '.data.keys | .[]')"
+    declare -a vault_secr
+    vault_secr="$(curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: ${VAULT_TOKEN}" --request LIST "${VAULT_ADDR}/v1/secret/" | jq -r '.data.keys | .[]')"
     for toplevel in ${vault_secr[@]}
     do
-        sub="$(vault_list $toplevel)"
-        sublevel=`eval "$sub | sed ':a;N;$!ba;s/\n//g'"`
-        key=`echo "$sublevel" | sed 's|-\s|  |gm'`
+        sub="$(vault_list "${toplevel}")"
+        sublevel=$(eval "${sub} | sed ':a;N;$!ba;s/\n//g'")
+        key=$(echo "${sublevel}" | sed 's|-\s|  |gm')
         for k in ${key[@]}
         do
-            echo "$toplevel$k"
+            echo "{$toplevel}${k}"
         done
     done
 }
@@ -131,61 +135,61 @@ vault_status_single() {
     echo "======================================"
     echo "Vault Status"
     echo "--------------------------------------"
-    curl -m ${DFLT_TMOUT} -s $VAULT_ADDR/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+    curl -m ${DFLT_TMOUT} -s ${VAULT_ADDR}/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
         | awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
 }
 
 vault_status_cluster() {
-    for VAULT_SERVER_IP in $VAULT_SERVERS; do
-        VAULT_SERVER_NAME="$(dig -x ${VAULT_SERVER_IP} +short | sed '$s/.$//')"
+    for VAULT_SERVER_IP in ${VAULT_SERVERS}; do
+        VAULT_SERVER_NAME="$(dig -x "${VAULT_SERVER_IP}" +short | sed '$s/.$//')"
         echo "======================================"
         echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Status"
         echo "--------------------------------------"
-        curl -m ${DFLT_TMOUT} -s https://"$VAULT_SERVER_IP":8200/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+        curl -m ${DFLT_TMOUT} -s https://"${VAULT_SERVER_IP}":8200/v1/sys/seal-status | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
             | awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
     done
 }
 
 vault_seal() {
-        curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: $VAULT_TOKEN" --request PUT \
-            $VAULT_ADDR/v1/sys/seal | jq -r '.errors | .[]'
+        curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: ${VAULT_TOKEN}" --request PUT \
+            ${VAULT_ADDR}/v1/sys/seal | jq -r '.errors | .[]'
 }
 
 vault_unseal_single() {
-    if [ "$VAULT_SEALED" = "false" ];then
+    if [ "${VAULT_SEALED}" = "false" ]; then
         echo "Vault is already unsealed"
     else
-        read -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
+        read -r -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
         echo "======================================"
         echo "Vault Seal Status"
         echo "--------------------------------------"
-        curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" $VAULT_ADDR/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+        curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"${vault_unseal_key}\"}" ${VAULT_ADDR}/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
                 | awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
     fi
 }
 
 vault_unseal_cluster() {
-    read -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
-    if [ -n "$INPUT" ];then
-        VAULT_SERVERS="$INPUT"
+    read -r -s -p "Unseal Key (will be hidden):"$'\n' vault_unseal_key
+    if [ -n "${INPUT}" ]; then
+        VAULT_SERVERS="${INPUT}"
     fi
-    for VAULT_SERVER_IP in $VAULT_SERVERS; do
-        VAULT_SERVER_NAME="$(dig -x ${VAULT_SERVER_IP} +short | sed '$s/.$//')"
-        VAULT_SERVER_SEAL=$(curl -m ${DFLT_TMOUT} -s "https://$VAULT_SERVER_IP:8200/v1/sys/health" | jq '.sealed')
-        if [ "$VAULT_SERVER_SEAL" = "false" ];then
+    for VAULT_SERVER_IP in ${VAULT_SERVERS}; do
+        VAULT_SERVER_NAME="$(dig -x "${VAULT_SERVER_IP}" +short | sed '$s/.$//')"
+        VAULT_SERVER_SEAL=$(curl -m ${DFLT_TMOUT} -s "https://${VAULT_SERVER_IP}:8200/v1/sys/health" | jq '.sealed')
+        if [ "${VAULT_SERVER_SEAL}" = "false" ]; then
             echo "Vault on ${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] is already unsealed"
         else
             echo "======================================"
             echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Seal Status"
             echo "--------------------------------------"
-            curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"$vault_unseal_key\"}" https://"$VAULT_SERVER_IP":8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+            curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"${vault_unseal_key}\"}" https://"${VAULT_SERVER_IP}":8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
                 | awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
         fi
     done
 }
 
 vault_backup_cluster() {
-    if [ -n "$FILENAME" ]; then
+    if [ -n "${FILENAME}" ]; then
         consul snapshot save "${FILENAME}"
         echo "Backup complete and stored at ${FILENAME}."
     else
@@ -197,8 +201,8 @@ vault_backup_cluster() {
 
 vault_backup_single() {
     sudo systemctl stop vault
-    if [ -n "$FILENAME" ]; then
-        sudo tar -zcf "$FILENAME" -C /var/lib/vault/ store/
+    if [ -n "${FILENAME}" ]; then
+        sudo tar -zcf "${FILENAME}" -C /var/lib/vault/ store/
         echo "Backup complete and stored at ${FILENAME}. You must now unseal the secrets system."
     else
         STAMP=$(date +"%Y%m%d%H%M")
@@ -209,15 +213,17 @@ vault_backup_single() {
 }
 
 vault_restore_cluster() {
-    if [ -z "$INPUT" ] || [ ! -f "$INPUT" ] ; then
+    if [ -z "${INPUT}" ] || [ ! -f "${INPUT}" ]; then
         echo "ERROR: Mission valid backup file path, please specify a backup file to restore from."
         exit 1
     else
         consul snapshot restore "${INPUT}"
-        if [ $? -eq 0 ] ; then
-            echo "Successfully restored $INPUT"
+        CONSUL_SNAPSHOT_RESTORE_EXIT_CODE=$?
+
+        if [ ${CONSUL_SNAPSHOT_RESTORE_EXIT_CODE} -eq 0 ]; then
+            echo "Successfully restored ${INPUT}"
         else
-            echo "Error: $INPUT is an invalid backup file."
+            echo "Error: ${INPUT} is an invalid backup file."
             exit 1
         fi
     fi
@@ -225,7 +231,7 @@ vault_restore_cluster() {
 
 vault_restore_single() {
     STAMP=$(date +"%Y%m%d%H%M")
-    if [ -z "$INPUT" ] || [ ! -f "$INPUT" ] ; then
+    if [ -z "${INPUT}" ] || [ ! -f "${INPUT}" ]; then
         echo "ERROR: Mission valid backup file path, please specify a backup file to restore from."
         exit 1
     else
@@ -242,20 +248,20 @@ vault_restore_single() {
             echo "ERROR: unable to start the Vault service."
             exit 1
         fi
-        echo "Successfully restored $INPUT, you must now unseal the secrets system."
+        echo "Successfully restored ${INPUT}, you must now unseal the secrets system."
     fi
 }
 
 _get_config_value() {
     local ENTRY="$1"
-    awk '/^'${ENTRY}':/ { gsub("(^\"|\"$)","", $2); print $2 }' "$CONFIG_FILE" 2> /dev/null
+    awk '/^'"${ENTRY}"':/ { gsub("(^\"|\"$)","", $2); print $2 }' "${CONFIG_FILE}" 2> /dev/null
 }
 
 _get_config_value_array() {
     local ENTRY="$1"
     ANSIBLE_HOST_FILE="${ANSIBLE_DIR}/hosts"
 
-    if [ "$INSTALLATION" = "cluster" ]; then
+    if [ "${INSTALLATION}" = "cluster" ]; then
         local ANSIBLE_HOST_FILE="${ANSIBLE_DIR}/cluster_hosts"
     fi
 
@@ -265,8 +271,8 @@ _get_config_value_array() {
 check_tag() {
     local TAG=$1
     check_registry
-    for IMAGE in $IMAGES ; do
-        if ! docker images "${PRFX}${IMAGE}" | grep -q "$TAG" ; then
+    for IMAGE in ${IMAGES}; do
+        if ! docker images "${PRFX}${IMAGE}" | grep -q "${TAG}"; then
             # Required image not found for given tag
             echo "ERROR: Containers for the requested tag could not be found."
             echo "       Please pull the containers first using the pull action."
@@ -274,15 +280,18 @@ check_tag() {
         fi
     done
 }
+
 is_voip_Enabled() {
-    local enabled="$(_get_config_value enable_voip)"
-    if [ ${enabled} != "true" ]; then
+    local enabled
+    enabled="$(_get_config_value enable_voip)"
+    if [ "${enabled}" != "true" ]; then
         exit 1
     fi
 }
 
 is_stun_Enabled() {
-    local enabled="$(_get_config_value enable_stun)"
+    local enabled
+    enabled="$(_get_config_value enable_stun)"
     if [ "${enabled}" == "true" ]; then
         VOIP_CONTAINERS="${VOIP_CONTAINERS} teamwire_turn"
         VOIPIMAGES="${VOIPIMAGES} teamwire/turn"
@@ -290,82 +299,86 @@ is_stun_Enabled() {
 }
 
 voip_start_cluster() {
-    $NOMAD run /data/voip/voip.hcl
+    ${NOMAD} run /data/voip/voip.hcl
 }
 
 voip_start_single() {
     is_stun_Enabled
-    for CONTAINER in $VOIP_CONTAINERS; do
-        c=$(docker start ${CONTAINER})
+    for CONTAINER in ${VOIP_CONTAINERS}; do
+        c=$(docker start "${CONTAINER}")
         printf "${c:0:15}\t...${GRN}start [done]${NOC}\n"
     done
 }
 
 voip_restart_cluster() {
-    $NOMAD job restart -on-error=fail voip
+    ${NOMAD} job restart -on-error=fail voip
 }
 
 voip_restart_single() {
     is_stun_Enabled
-    for CONTAINER in $VOIP_CONTAINERS; do
-        c=$(docker restart ${CONTAINER})
+    for CONTAINER in ${VOIP_CONTAINERS}; do
+        c=$(docker restart "${CONTAINER}")
         printf "${c:0:15}\t...${GRN}restart [done]${NOC}\n"
     done
 }
 
 voip_stop_cluster() {
-    $NOMAD job stop voip
+    ${NOMAD} job stop voip
 }
+
 voip_stop_single() {
     is_stun_Enabled
-    for CONTAINER in $VOIP_CONTAINERS; do
-        c=$(docker stop ${CONTAINER})
+    for CONTAINER in ${VOIP_CONTAINERS}; do
+        c=$(docker stop "${CONTAINER}")
         printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
     done
 }
+
 voip_remove_single() {
     is_stun_Enabled
-    for CONTAINER in $VOIP_CONTAINERS; do
-        c=$(docker stop ${CONTAINER})
-        docker rm ${CONTAINER}
+    for CONTAINER in ${VOIP_CONTAINERS}; do
+        c=$(docker stop "${CONTAINER}")
+        docker rm "${CONTAINER}"
         printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
     done
 }
 
 voip_status_cluster() {
-    $NOMAD status voip
+    ${NOMAD} status voip
 }
+
 voip_status_single() {
     is_stun_Enabled
     FILTER=()
-    for CONTAINER in $VOIP_CONTAINERS; do
-        FILTER+="-f name=$CONTAINER "
+    for CONTAINER in ${VOIP_CONTAINERS}; do
+        FILTER+=("-f name=${CONTAINER} ")
     done
-    docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}" $FILTER
+    docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}" "${FILTER[@]}"
 }
 
 voip_jvb_register() {
     JVB_AUTH_PASSWORD="$(vault_read_secrets voip/jvb_password)"
     for JVB_USER in `ls /data/voip/ | grep -x 'jvb[0-9]*'`; do
-        /usr/local/bin/tw_prosodyctl register $JVB_USER auth.meet.jitsi $JVB_AUTH_PASSWORD
+        /usr/local/bin/tw_prosodyctl register "${JVB_USER}" auth.meet.jitsi "${JVB_AUTH_PASSWORD}"
     done
 }
 
 voip() {
-    local enabled="$(_get_config_value enable_voip)"
+    local enabled
+    enabled="$(_get_config_value enable_voip)"
     if [ "${enabled,,}" != "true" ]; then
         echo "VOIP is not enabled. Please enable voip in group_vars/all file"
         exit
     fi
-    case $OPTION in
+    case ${OPTION} in
         start)
-            voip_start_$INSTALLATION
+            voip_start_${INSTALLATION}
             ;;
         stop)
-            voip_stop_$INSTALLATION
+            voip_stop_${INSTALLATION}
             ;;
         restart)
-            voip_restart_$INSTALLATION
+            voip_restart_${INSTALLATION}
             ;;
         status)
             "voip_status_${INSTALLATION}"
@@ -386,15 +399,15 @@ get_database_configuration() {
     DB_PASSWORD="$(vault_read_secrets database/password)"
     REDIS_PASSWORD="$(vault_read_secrets redis/password)"
 
-    if [ -z "$DB_PASSWORD" ] || [ -z "$AESKEY" ] ; then
+    if [ -z "${DB_PASSWORD}" ] || [ -z "${AESKEY}" ]; then
         echo "ERROR: Cannot read required parameters from Vault."
         echo "       Please ensure Vault is running and unsealed."
         exit 1
     fi
 
-    if [ "$INSTALLATION" == "cluster" ] ; then
+    if [ "${INSTALLATION}" == "cluster" ]; then
         . "${CLUSTER_CONFIG_DIR}/cluster.conf"
-        if [ -z "$MYSQL_HOST" ] && [ -z "$ORA_HOST" ]; then
+        if [ -z "${MYSQL_HOST}" ] && [ -z "${ORA_HOST}" ]; then
             MYSQL_HOST=galera.service.consul
         fi
     else
@@ -407,58 +420,58 @@ get_database_configuration() {
         ORA_DATABASE="$(_get_config_value teamwire_db_name)"
         ORA_USER="$(_get_config_value teamwire_db_user)"
 
-        if [ -z "$MYSQL_HOST" ] && [ -z "$ORA_HOST" ]; then
+        if [ -z "${MYSQL_HOST}" ] && [ -z "${ORA_HOST}" ]; then
             MYSQL_HOST=127.0.0.1
         fi
 
-        if [ -z "$MYSQL_PORT" ] && [ -z "$ORA_PORT" ]; then
+        if [ -z "${MYSQL_PORT}" ] && [ -z "${ORA_PORT}" ]; then
             MYSQL_PORT=3306
         fi
 
-        if [ -z "$MYSQL_DATABASE" ] && [ -z "$ORA_DATABASE" ]; then
+        if [ -z "${MYSQL_DATABASE}" ] && [ -z "${ORA_DATABASE}" ]; then
             MYSQL_DATABASE=teamwire
         fi
 
-        if [ -z "$MYSQL_USER" ] && [ -z "$ORA_USER" ]; then
+        if [ -z "${MYSQL_USER}" ] && [ -z "${ORA_USER}" ]; then
             MYSQL_USER=teamwire
         fi
     fi
 
-    if [ -n "$MYSQL_HOST" ]; then
-        MYSQL_PASS="$DB_PASSWORD"
-    elif [ -n "$ORA_HOST" ]; then
-        ORA_PASSWORD="$DB_PASSWORD"
+    if [ -n "${MYSQL_HOST}" ]; then
+        MYSQL_PASS="${DB_PASSWORD}"
+    elif [ -n "${ORA_HOST}" ]; then
+        ORA_PASSWORD="${DB_PASSWORD}"
     fi
 }
 
 secrets() {
-case $OPTION in
+case ${OPTION} in
         read)
-                vault_read_secrets "$INPUT"
+                vault_read_secrets "${INPUT}"
                 ;;
         write)
-                if [ -z "$INPUT" ] ; then
+                if [ -z "${INPUT}" ]; then
                  echo "ERROR: A secret must be specified, use 'twctl secrets list' for information on current secret paths."
                  echo
                  exit 1
                 fi
 
                 echo Setting "${INPUT}"
-                read -s -p "Secret: " ENTRY; echo
-                read -s -p "Confirm Secret: " ENTRYCONFIRM; echo
+                read -r -s -p "Secret: " ENTRY; echo
+                read -r -s -p "Confirm Secret: " ENTRYCONFIRM; echo
 
                 if [[ "${ENTRY}" != "${ENTRYCONFIRM}" ]]; then
                  echo "Entries do not match, exiting"
                  exit 1
                 else
-                 curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request POST --data "{\"value\":\"$ENTRY\"}" $VAULT_ADDR/v1/secret/"$INPUT"
+                 curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" --request POST --data "{\"value\":\"${ENTRY}\"}" ${VAULT_ADDR}/v1/secret/"${INPUT}"
                 fi
                 ;;
         list)
                 get_vault_secret_recursive
                 ;;
         delete)
-                curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: $VAULT_TOKEN" --request DELETE $VAULT_ADDR/v1/secret/"$INPUT"
+                curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" --request DELETE ${VAULT_ADDR}/v1/secret/"${INPUT}"
                 ;;
         unseal)
                 "vault_unseal_${INSTALLATION}"
@@ -529,26 +542,29 @@ test_server_condition_for_preflight_check() {
         INFO='\033[0;34m'
         ENDMSG='\033[0m'
 
-        eval $1
-        local condition_to_test=$?
-        local return_message=$2
+        eval "$1"
+        local condition_to_test
+        condition_to_test=$?
+        local return_message
+        return_message=$2
 
-        if [ "$condition_to_test" == 0 ]; then
-            echo -e "${OK}[+]......${ENDMSG}  $return_message"
-        elif [ "$condition_to_test" == 1 ]; then
-            echo -e "${WARN}[!]......  $return_message${ENDMSG}"
+        if [ "${condition_to_test}" == 0 ]; then
+            echo -e "${OK}[+]......${ENDMSG}  ${return_message}"
+        elif [ "${condition_to_test}" == 1 ]; then
+            echo -e "${WARN}[!]......  ${return_message}${ENDMSG}"
         else
-            echo -e "${INFO}[*]......${ENDMSG}  $return_message"
+            echo -e "${INFO}[*]......${ENDMSG}  ${return_message}"
         fi
 }
 
 raw_smtp_connect() {
-        local mail_recipient=$1
-        echo "Debug $mail_recipient"
+        local mail_recipient
+        mail_recipient=$1
+        echo "Debug ${mail_recipient}"
         (\
         echo "helo localhost";\
         echo "mail from: root";\
-        echo "rcpt to: <$mail_recipient>";\
+        echo "rcpt to: <${mail_recipient}>";\
         echo "data";\
         echo "Subject: test connectivity";\
         echo "test";\
@@ -570,24 +586,28 @@ connectivity_test() {
                             "Check second(Twilio) SMS service reachability"
         test_server_condition_for_preflight_check    "" \
                             "Check your outgoing IP: $(wget --timeout=10 -qO - http://ipinfo.io/ip)"
-        local mail_recipient="$(_get_config_value system_email_recipient)"
-        if [ -n "$mail_recipient" ] ; then
-            local mail_test_response="$(raw_smtp_connect $mail_recipient | tail -n 2 | head -n 1)"
-            local mail_message_id="$(echo $mail_test_response |  awk -v RS='\r\n' '{print $6}')"
-            local mail_message_status="$(sleep 2 && sudo grep $mail_message_id /var/log/mail.log | grep -oP 'status=\K.*')"
+        local mail_recipient
+        mail_recipient="$(_get_config_value system_email_recipient)"
+        if [ -n "${mail_recipient}" ]; then
+            local mail_test_response
+            mail_test_response="$(raw_smtp_connect "${mail_recipient}" | tail -n 2 | head -n 1)"
+            local mail_message_id
+            mail_message_id="$(echo "${mail_test_response}" |  awk -v RS='\r\n' '{print $6}')"
+            local mail_message_status
+            mail_message_status="$(sleep 2 && sudo grep "${mail_message_id}" /var/log/mail.log | grep -oP 'status=\K.*')"
             test_server_condition_for_preflight_check    "" \
-                                "Local mail test 1/2: $mail_test_response"
+                                "Local mail test 1/2: ${mail_test_response}"
             test_server_condition_for_preflight_check    "" \
-                                "Local mail test 2/2: $mail_message_status"
+                                "Local mail test 2/2: ${mail_message_status}"
         else
             test_server_condition_for_preflight_check    "/bin/false" \
-                                "Local mail test: Fail. Please define 'system_email_recipient' in $CONFIG_FILE"
+                                "Local mail test: Fail. Please define 'system_email_recipient' in ${CONFIG_FILE}"
         fi
-        test_server_condition_for_preflight_check    "echo | timeout 10s openssl s_client $PROXY_MODE -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'Google'" \
+        test_server_condition_for_preflight_check    "echo | timeout 10s openssl s_client ${PROXY_MODE} -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1' | grep -q 'Google'" \
                             "Check Google FCM connectivity"
-        test_server_condition_for_preflight_check    "echo | timeout 10s openssl s_client $PROXY_MODE -connect api.push.apple.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Apple'" \
+        test_server_condition_for_preflight_check    "echo | timeout 10s openssl s_client ${PROXY_MODE} -connect api.push.apple.com:443 2>&1 | grep 'depth=1' | grep -q 'CN = Apple'" \
                             "Check Apple APNS connectivity"
-        if sudo bash -c '[ -f "/data/certs/apns/aps-production.pem" ]' ; then
+        if sudo bash -c '[ -f "/data/certs/apns/aps-production.pem" ]'; then
             test_server_condition_for_preflight_check    "sudo bash -c '/usr/bin/test -e /data/certs/apns/aps-production.pem'" \
                         "Check if APNS certificate is installed"
             test_server_condition_for_preflight_check    "" \
@@ -613,14 +633,19 @@ show-tags() {
     check_registry
   echo "***** Backend version: *****"
     if [ "${USE_TEAMWIRE_REGISTRY}" == "false" ]; then
-        local USER="$(_get_config_value dockerhub_username)"
-        local PASS="$(vault_read_secrets dockerhub/password)"
+        local USER
+        USER="$(_get_config_value dockerhub_username)"
+        local PASS
+        PASS="$(vault_read_secrets dockerhub/password)"
 
-        local TOKEN=$(curl -m ${DFLT_TMOUT} -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+        local TOKEN
+        TOKEN=$(curl -m ${DFLT_TMOUT} -s -H "Content-Type: application/json" -X POST -d '{"username": "'"${USER}"'", "password": "'"${PASS}"'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
         curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" "https://registry.hub.docker.com/v2/repositories/teamwire/backend/tags/?name=prod&page_size=100" | jq -r '.results[].name'
     else
-        local USER="$(_get_config_value dockerhub_username)"
-        local PASS="$(vault_read_secrets dockerhub/password)"
+        local USER
+        USER="$(_get_config_value dockerhub_username)"
+        local PASS
+        PASS="$(vault_read_secrets dockerhub/password)"
         curl -m ${DFLT_TMOUT} -s -u "${USER}:${PASS}" -H "Content-Type: application/json" -X GET "https://harbor.teamwire.eu/api/v2.0/projects/teamwire/repositories/backend/artifacts?q=tags%3D~prod-&page=1&page_size=20" -H "accept: application/json" |jq -r  '.[].tags[].name' |sort -r
     fi
 }
@@ -628,15 +653,15 @@ show-tags() {
 create_report() {
     echo "Generating report. Please wait..."
 
-    PLATFORM_HOME="$HOME/platform"    # Path to platform dir
+    PLATFORM_HOME="${HOME}/platform"    # Path to platform dir
     TMPDIR=$(mktemp -d)                # A temporary directory to collect all information that will later be stored in a tar archive.
 
     FILE="${TMPDIR}/report"            # Path to report file. All collected informations are stored here.
-    if [ -z "$FILENAME" ]; then
+    if [ -z "${FILENAME}" ]; then
         REPORT="tw_report.$(date +%y_%m_%d_%s).tar.xz"     # Name/Path of the tar archive
     else
-        if [[ "$FILENAME" == *"tar.xz" ]]; then
-            REPORT="$FILENAME"
+        if [[ "${FILENAME}" == *"tar.xz" ]]; then
+            REPORT="${FILENAME}"
         else
             echo 'ERROR: Filename must end with ".tar.xz" !'
             exit 1
@@ -644,7 +669,7 @@ create_report() {
     fi
     RUNTIME_REPORT_OF_SCRIPT="${TMPDIR}/runtime_report" # All outputs from twctl (STDOUT/STDERR) are collected here. See line below
 
-    exec > >(tee -i "$RUNTIME_REPORT_OF_SCRIPT")
+    exec > >(tee -i "${RUNTIME_REPORT_OF_SCRIPT}")
     exec 2>&1
 
     # Gather SSL Certificate information
@@ -656,8 +681,8 @@ create_report() {
         SSL_KEYFILE=$(_get_config_value ssl_keyfile)
 
         # Get Values to compare keyfile and server certificate
-        SSL_KEYFILE_SHA=$(openssl pkey -in ${SSL_KEYFILE} -pubout -outform pem | sha256sum)
-        SSL_CERTIFICATE_SHA=$(openssl x509 -in ${SSL_CERTIFICATE} -pubkey -noout -outform pem | sha256sum)
+        SSL_KEYFILE_SHA=$(openssl pkey -in "${SSL_KEYFILE}" -pubout -outform pem | sha256sum)
+        SSL_CERTIFICATE_SHA=$(openssl x509 -in "${SSL_CERTIFICATE}" -pubkey -noout -outform pem | sha256sum)
         if [ "${SSL_KEYFILE_SHA}" == "${SSL_CERTIFICATE_SHA}" ]; then
             SSL_SHA_MSG="are matching"
         else
@@ -669,7 +694,7 @@ create_report() {
 
     # Gather systeminformation
 
-    if [ "$INSTALLATION" = "cluster" ]; then
+    if [ "${INSTALLATION}" = "cluster" ]; then
 
         report_map["Show cluster uptime"]=$(ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -m command -a uptime) &&
         report_map["Show nomad status"]="$(nomad status)" &&
@@ -683,17 +708,17 @@ create_report() {
         report_map["Show last 15 consul messages"]="$(sudo journalctl -u consul --lines 30)"
         report_map["Show last 15 nomad messages"]="$(sudo journalctl -u nomad --lines 30)"
 
-        if [ ! -z ${CHECK_SSL} ]; then
+        if [ -n "${CHECK_SSL}" ]; then
             report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; ansible frontend_servers -i "${ANSIBLE_DIR}/cluster_hosts" -m shell -a "timeout 10 openssl s_client -quiet -connect localhost:443 -servername ${name} -verify_return_error 2>&1"; done)
         fi
 
         # Retrieve logs from loghost and add them to the report
         LOG_SERVER=$(ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -m setup -a "filter=ansible_hostname" | grep ansible_hostname | awk '{print $2}' | tr -d '",')
         LOG_FILES=$(ssh "teamwire@${LOG_SERVER}" "find /var/log/cluster -name \"*.log"\" | awk -F/ '{print $NF}')
-        for LOG_FILE in $LOG_FILES; do
-            ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/$LOG_FILE dest=$TMPDIR/ flat=yes" > /dev/null 2>&1
+        for LOG_FILE in ${LOG_FILES}; do
+            ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/${LOG_FILE} dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
         done
-        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/var/log/haproxy.log dest=$TMPDIR/ flat=yes" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/var/log/haproxy.log dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
 
     else
 
@@ -701,8 +726,8 @@ create_report() {
         report_map["Show running docker container"]="$(docker ps -a)"
         report_map["Show debian version"]=$(cat /etc/debian_version)
 
-        if [ ! -z ${CHECK_SSL} ]; then
-            report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; timeout 10 openssl s_client -quiet -connect localhost:443 -servername ${name} -verify_return_error 2>&1 ; done)
+        if [ -n "${CHECK_SSL}" ]; then
+            report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; timeout 10 openssl s_client -quiet -connect localhost:443 -servername "${name}" -verify_return_error 2>&1 ; done)
         fi
 
     fi
@@ -710,114 +735,115 @@ create_report() {
     report_map["Check if self signed cert is defined"]="$(grep 'ssl_certfile' ${ANSIBLE_DIR}/group_vars/all || echo 'NOT DEFINED')"
     report_map["Show platform version(checkout)"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)"
     report_map["Show platform version(applied)"]="$(cat /etc/platform_version)"
-    report_map["Show git diff command"]="$(cd $PLATFORM_HOME && git diff)"
-    report_map["Show git logs"]="$(cd $PLATFORM_HOME && git log --oneline -n 15 )" &&
+    report_map["Show git diff command"]="$(cd "${PLATFORM_HOME}" && git diff)"
+    report_map["Show git logs"]="$(cd "${PLATFORM_HOME}" && git log --oneline -n 15 )" &&
     report_map["Show status of vault"]="$(vault_status_${INSTALLATION})" &&
     report_map["Check if APNS certificate is valid"]=$(sudo bash -c "for file in $(sudo find /data/certs/apns -type f -name '*.pem'); do echo \$file && openssl x509 -startdate -enddate -noout -in \$file 2>&1; done")
-    report_map["Test if APNS is reachable"]="$(echo | timeout 10s openssl s_client $PROXY_MODE -connect api.push.apple.com:2197 2>&1 | grep 'depth=1')"
-    report_map["Test if FCM is reachable"]="$(echo | timeout 10s openssl s_client $PROXY_MODE -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1')"
+    report_map["Test if APNS is reachable"]="$(echo | timeout 10s openssl s_client "${PROXY_MODE}" -connect api.push.apple.com:2197 2>&1 | grep 'depth=1')"
+    report_map["Test if FCM is reachable"]="$(echo | timeout 10s openssl s_client "${PROXY_MODE}" -connect fcm.googleapis.com:443 2>&1 | grep 'depth=1')"
     report_map["Show vault certificate enddate"]="$(sudo openssl x509 -in /var/lib/vault/ssl/vault.crt -noout -enddate)"
     report_map["Show RAM"]="$(free -h )"
     report_map["Show HDD free space"]="$(df -h)"
     report_map["Show docker info"]="$(docker info)"
     report_map["Show network configuration"]="$(ip a)"
-    report_map["Show current kernel messages(dmesg)"]="$(sudo dmesg | egrep -v 'apt-daily|UFW BLOCK' | tail -n 50)"
+    report_map["Show current kernel messages(dmesg)"]="$(sudo dmesg | grep -Ev 'apt-daily|UFW BLOCK' | tail -n 50)"
     report_map["Show twctl connectivity output"]=$(twctl connectivity 2>&1)
 
-    if [ ! -z ${CHECK_SSL} ]; then
-      report_map["Validate certificates locally"]=$(openssl verify -CAfile ${SSL_ROOT} ${SSL_INTERMEDIATE} ${SSL_CERTIFICATE})
-      report_map["Compare keyfile and certificate SHASUM"]=$(echo -e "Key: $SSL_KEYFILE_SHA \nCertificate: $SSL_CERTIFICATE_SHA \nKey and Certificate $SSL_SHA_MSG")
+    if [ -n "${CHECK_SSL}" ]; then
+      report_map["Validate certificates locally"]=$(openssl verify -CAfile "${SSL_ROOT}" "${SSL_INTERMEDIATE}" "${SSL_CERTIFICATE}")
+      report_map["Compare keyfile and certificate SHASUM"]=$(echo -e "Key: ${SSL_KEYFILE_SHA} \nCertificate: ${SSL_CERTIFICATE_SHA} \nKey and Certificate ${SSL_SHA_MSG}")
     fi
 
     for key in "${!report_map[@]}"; do
 
-        printf "============ $key ============ \n %s\n\n"  "${report_map[$key]}" >> "$FILE"
+        printf "============ ${key} ============ \n %s\n\n"  "${report_map[${key}]}" >> "${FILE}"
 
     done
 
     # Retrieve docker logs on single installations and management servers
-    find /var/log/docker/ -name *.log -exec sudo cp {} "$TMPDIR" \;
-    find /var/log/* -maxdepth 0 -type f -name haproxy.log  -exec sudo cp {} "$TMPDIR" \;
+    find /var/log/docker/ -name "*.log" -exec sudo cp {} "${TMPDIR}" \;
+    find /var/log/* -maxdepth 0 -type f -name haproxy.log  -exec sudo cp {} "${TMPDIR}" \;
 
     # copy ansible config
-    cp -f "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/group_vars/all" "$TMPDIR" 2>/dev/null
+    cp -f "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/group_vars/all" "${TMPDIR}" 2>/dev/null
 
     REPORT_PASS=$(vault_read_secrets reportfile/password)
-    if [ ${REPORT_PASS} != "reportfile_password" ]; then
+    if [ "${REPORT_PASS}" != "reportfile_password" ]; then
         REPORT="${REPORT}.enc"
         if [[ ! $(</etc/debian_version) =~ ^[9] ]];then
-            sudo tar JcP -C "$TMPDIR" . | openssl enc -e -aes-256-cbc -iter 1000000 -out "${REPORT}" -k "${REPORT_PASS}"
+            sudo tar JcP -C "${TMPDIR}" . | openssl enc -e -aes-256-cbc -iter 1000000 -out "${REPORT}" -k "${REPORT_PASS}"
         else
-            sudo tar JcP -C "$TMPDIR" . | openssl enc -e -aes-256-cbc -out "${REPORT}" -k "${REPORT_PASS}"
+            sudo tar JcP -C "${TMPDIR}" . | openssl enc -e -aes-256-cbc -out "${REPORT}" -k "${REPORT_PASS}"
         fi
     else
-       sudo tar JcfP "$REPORT" -C "$TMPDIR" .
+       sudo tar JcfP "${REPORT}" -C "${TMPDIR}" .
     fi
 
-    rm -rf "$TMPDIR"
+    rm -rf "${TMPDIR}"
 
-    if [ -z "$FILENAME" ]; then
-        echo "The report was generated and saved as $REPORT in the current directory."
+    if [ -z "${FILENAME}" ]; then
+        echo "The report was generated and saved as ${REPORT} in the current directory."
     else
-        echo "The report was generated and saved as $REPORT"
+        echo "The report was generated and saved as ${REPORT}"
     fi
     echo
 }
 
 backupdb() {
-    if [ -f "$FILENAME" ] ; then
-        echo "$FILENAME exists, please specify a name that doesn't exist!"
+    if [ -f "${FILENAME}" ]; then
+        echo "${FILENAME} exists, please specify a name that doesn't exist!"
         exit 1
     fi
 
     get_database_configuration
 
-    if [ -n "$ORA_HOST" ]; then
+    if [ -n "${ORA_HOST}" ]; then
         echo "Backing up of Oracle databases is not supported."
         exit 1
     fi
 
     # Inject PASS environment var
-    export PASS=$MYSQL_PASS
+    export PASS=${MYSQL_PASS}
 
     /usr/local/bin/backup_restore_db.sh -t backup \
-        -o "$FILENAME" -h "$MYSQL_HOST" \
-        -u "$MYSQL_USER" -d "$MYSQL_DATABASE"
+        -o "${FILENAME}" -h "${MYSQL_HOST}" \
+        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}"
 }
 
 restoredb() {
-    if [ ! -f "$FILENAME" ] ; then
-        echo "$FILENAME does not exist, please specify a name that exists!"
+    if [ ! -f "${FILENAME}" ]; then
+        echo "${FILENAME} does not exist, please specify a name that exists!"
         exit 1
     fi
 
     get_database_configuration
 
-    if [ -n "$ORA_HOST" ]; then
+    if [ -n "${ORA_HOST}" ]; then
         echo "Restoration of Oracle databases is not supported."
         exit 1
     fi
 
     # Inject PASS environment var
-    export PASS=$MYSQL_PASS
+    export PASS=${MYSQL_PASS}
 
     /usr/local/bin/backup_restore_db.sh -t restore \
-        -u "$MYSQL_USER" -d "$MYSQL_DATABASE" \
-        -f -i "$FILENAME" -h "$MYSQL_HOST"
+        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}" \
+        -f -i "${FILENAME}" -h "${MYSQL_HOST}"
 }
 
 pull_images_base() {
-    local enabled="$(_get_config_value enable_voip)"
+    local enabled
+    enabled="$(_get_config_value enable_voip)"
     if [ ! -e /etc/offline_installation ]; then
-        echo "Pulling Teamwire container images for version $TAG"
+        echo "Pulling Teamwire container images for version ${TAG}"
         echo
         check_registry
-        for IMAGE in $IMAGES; do
-            docker pull "${PRFX}$IMAGE":"$TAG"
+        for IMAGE in ${IMAGES}; do
+            docker pull "${PRFX}${IMAGE}:${TAG}"
         done
-        if [ ! -z ${enabled} ] && [ ${enabled} = "true" ]; then
+        if [ -n "${enabled}" ] && [ "${enabled}" = "true" ]; then
             for VOIPIMG in ${VOIPIMAGES}; do
-                docker pull "${PRFX}$VOIPIMG":"$TAG" || exit 1;
+                docker pull "${PRFX}${VOIPIMG}:${TAG}" || exit 1;
             done
         fi
     fi
@@ -831,16 +857,16 @@ pull_images_cluster() {
     pull_images_base
 
     . "${CLUSTER_CONFIG_DIR}/cluster.conf"
-    if [ -n "$REGISTRY" ] && [ -x /usr/local/bin/twimg ] ; then
+    if [ -n "${REGISTRY}" ] && [ -x /usr/local/bin/twimg ]; then
         echo
         echo "Pushing images to registry"
-        /usr/local/bin/twimg --registry "$REGISTRY" push
+        /usr/local/bin/twimg --registry "${REGISTRY}" push
     fi
 }
 
 remove_containers_single() {
-    for CONTAINER in $CONTAINERS; do
-        docker rm "$CONTAINER"
+    for CONTAINER in ${CONTAINERS}; do
+        docker rm "${CONTAINER}"
     done
 }
 
@@ -850,19 +876,19 @@ remove_containers_cluster() {
 }
 
 run_migrations_base() {
-    check_tag "$TAG"
+    check_tag "${TAG}"
     get_database_configuration
     check_registry
     echo "Running database migrations"
     echo
     docker run --rm --network host -e MODE=migration --name teamwire-migrations \
         --log-driver syslog --log-opt syslog-facility=local6 --log-opt tag=teamwire-migrations \
-        -e MYSQL_HOST="$MYSQL_HOST" -e MYSQL_PORT="$MYSQL_PORT" -e MYSQL_DATABASE="$MYSQL_DATABASE" \
-        -e MYSQL_USER="$MYSQL_USER" -e MYSQL_PASSWORD="$MYSQL_PASS" \
-        -e ORA_HOST="$ORA_HOST" -e ORA_PORT="$ORA_PORT" -e ORA_DATABASE="$ORA_DATABASE" \
-        -e ORA_USER="$ORA_USER" -e ORA_PASSWORD="$ORA_PASSWORD" \
-        -e REDIS_URI="$REDIS_URI" -e REDIS_PASSWORD="$REDIS_PASSWORD"\
-        -e AESKEY="$AESKEY" "${PRFX}teamwire/backend:${TAG}" 2>&1
+        -e MYSQL_HOST="${MYSQL_HOST}" -e MYSQL_PORT="${MYSQL_PORT}" -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
+        -e MYSQL_USER="${MYSQL_USER}" -e MYSQL_PASSWORD="${MYSQL_PASS}" \
+        -e ORA_HOST="${ORA_HOST}" -e ORA_PORT="${ORA_PORT}" -e ORA_DATABASE="${ORA_DATABASE}" \
+        -e ORA_USER="${ORA_USER}" -e ORA_PASSWORD="${ORA_PASSWORD}" \
+        -e REDIS_URI="${REDIS_URI}" -e REDIS_PASSWORD="${REDIS_PASSWORD}"\
+        -e AESKEY="${AESKEY}" "${PRFX}teamwire/backend:${TAG}" 2>&1
 
 }
 
@@ -881,7 +907,7 @@ status_single() {
 }
 
 _get_nomad_environment() {
-    if [ ! -z "${TAG}" ];then
+    if [ -n "${TAG}" ];then
         for allowedENV in "${WHITELIST_ENV[@]}"; do
             if [[ "${TAG}" == *"${allowedENV}"* ]]; then
                 echo "${TAG}"
@@ -897,31 +923,31 @@ _get_nomad_environment() {
     [ "${NOT_ALLOWED}" == "true" ] && echo "UNKNOWN_TAG"
 }
 status_cluster() {
-    if [ "$OPTION" = "--clean" ]; then
+    if [ "${OPTION}" = "--clean" ]; then
         curl -m ${DFLT_TMOUT} -XPUT http://127.0.0.1:4646/v1/system/gc
         echo "Container history cleaned"
     else
-        $NOMAD status $(_get_nomad_environment) && \
+        ${NOMAD} status "$(_get_nomad_environment)" && \
         echo && \
-        $NOMAD node status
+        ${NOMAD} node status
     fi
 }
 
 stop_containers_single() {
-    for CONTAINER in $CONTAINERS; do
-        if docker ps -qf name="$CONTAINER" | grep -Eq '^.+$' ; then
-            docker stop "$CONTAINER"
+    for CONTAINER in ${CONTAINERS}; do
+        if docker ps -qf name="${CONTAINER}" | grep -Eq '^.+$'; then
+            docker stop "${CONTAINER}"
         fi
     done
 }
 
 stop_containers_cluster() {
-    $NOMAD stop $(_get_nomad_environment)
+    ${NOMAD} stop "$(_get_nomad_environment)"
 }
 
 start_containers_single() {
-    for CONTAINER in $CONTAINERS; do
-        docker start "$CONTAINER"
+    for CONTAINER in ${CONTAINERS}; do
+        docker start "${CONTAINER}"
     done
 }
 
@@ -930,72 +956,79 @@ start_containers_cluster() {
         NOMAD_JOB_PATH="/data/$(_get_nomad_environment)/cluster_config/teamwire.nomad"
         [ -e "${NOMAD_JOB_PATH}" ] && NOMAD_JOB="${NOMAD_JOB_PATH}"
     fi
-    $NOMAD run "$NOMAD_JOB"
+    ${NOMAD} run "${NOMAD_JOB}"
 }
 
 restart_containers_single() {
-    for CONTAINER in $CONTAINERS; do
-        docker restart "$CONTAINER"
+    for CONTAINER in ${CONTAINERS}; do
+        docker restart "${CONTAINER}"
     done
 }
 
 restart_containers_cluster() {
-    $NOMAD job restart -on-error=fail $(_get_nomad_environment)
+    ${NOMAD} job restart -on-error=fail "$(_get_nomad_environment)"
 }
 
 setup_containers_base() {
-    check_tag "$TAG"
+    check_tag "${TAG}"
 
-    if [ -z "$(_get_config_value version)" ] ; then
+    if [ -z "$(_get_config_value version)" ]; then
         echo "ERROR: Please update the configuration file ${CONFIG_FILE}"
         echo "       from the provided example before using this action. "
         exit 1
     fi
 
     # Write given tag into config file
-    sed -i -e 's/^\(version: \).*$/\1'"$TAG"'/' $CONFIG_FILE
+    sed -i -e 's/^\(version: \).*$/\1'"${TAG}"'/' ${CONFIG_FILE}
 }
 
 setup_containers_single() {
-    local enabled="$(_get_config_value enable_voip)"
+    local enabled
+    enabled="$(_get_config_value enable_voip)"
     setup_containers_base
 
     ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
-    if [ -z ${enabled} ]; then
+    if [ -z "${enabled}" ]; then
             :
-    elif [ ${enabled} = "true" ]; then
+    elif [ "${enabled}" = "true" ]; then
     voip_remove_single
-    ansible-playbook -i "${ANSIBLE_DIR}/hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
+    ansible-playbook -i "${ANSIBLE_DIR}/hosts" --extra-vars '{"offline_mode": {"stat": {"exists": 0}}}' ${ANSIBLE_DIR}/playbooks/roles/voip.yml
     fi
 }
 
 setup_containers_cluster() {
-    local enabled="$(_get_config_value enable_voip)"
+    local enabled
+    enabled="$(_get_config_value enable_voip)"
     setup_containers_base
 
     ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
-    $NOMAD run "$NOMAD_JOB"
-    if [ -z ${enabled} ]; then
+    ${NOMAD} run "${NOMAD_JOB}"
+    if [ -z "${enabled}" ]; then
             :
-    elif [ ${enabled} = "true" ]; then
-    ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
-    $NOMAD run /data/voip/voip.hcl
+    elif [ "${enabled}" = "true" ]; then
+    ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars '{"offline_mode": {"stat": {"exists": 0}}}' ${ANSIBLE_DIR}/playbooks/roles/voip.yml
+    ${NOMAD} run /data/voip/voip.hcl
     voip_jvb_register
     fi
 }
 
 ha-log() {
-    local LOG_FILE="/var/log/haproxy.log"
+    local LOG_FILE
+    LOG_FILE="/var/log/haproxy.log"
     sudo cat "${LOG_FILE}" | grep --line-buffered -o -P '(?<=LIMSTART).*(?=LIMEND)' | jq . -C
 }
 
 get_latest_tag() {
-  local latestFile="/etc/latest_remote_github_version"
+  local latestFile
+  latestFile="/etc/latest_remote_github_version"
 
   if [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]];then
-     local HEAD=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep 'HEAD' | awk '{print $1}')
-     local LATEST=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep "${HEAD}" | grep -v -i 'HEAD' | awk '{print $2}')
-     sudo bash -c "echo $(grep -oP '[0-9]+\.[0-9]+' <<<${LATEST}) > ${latestFile}"
+     local HEAD
+     HEAD=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep 'HEAD' | awk '{print $1}')
+     local LATEST
+     LATEST=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep "${HEAD}" | grep -v -i 'HEAD' | awk '{print $2}')
+
+     sudo bash -c "echo $(grep -oP '[0-9]+\.[0-9]+' <<< "${LATEST}") > ${latestFile}"
      sudo chmod 0644 "${latestFile}"
   fi
 }
@@ -1009,31 +1042,34 @@ Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $(</etc/latest_remote_github_version)
 Ansible: $(ANSIBLE_DEPRECATION_WARNINGS=false ansible --version | grep -oPm 1 '(\d+\.\d+\.\d+)')"
-[ "${USE_TEAMWIRE_REGISTRY}" == "true" ] || [ -z "${USE_TEAMWIRE_REGISTRY}" ] && echo "
-Harbor check IP: $(curl -m ${DFLT_TMOUT} -s https://harbor.teamwire.eu:8000/loopback | jq . )" || true
+if [ "${USE_TEAMWIRE_REGISTRY}" == "true" ] || [ -z "${USE_TEAMWIRE_REGISTRY}" ]; then
+  echo -e "\nHarbor check IP: $(curl -m ${DFLT_TMOUT} -s https://harbor.teamwire.eu:8000/loopback | jq . )"
+fi
 }
 
 
 archiving() {
     if [ ! -f "/data/archiving/archiving.conf" ]; then
         sudo touch /data/archiving/archiving.conf
-        if [ $? != 0 ]; then
+        ARCHIVING_DIR_CREATE_EXIT_CODE=$?
+
+        if [ ${ARCHIVING_DIR_CREATE_EXIT_CODE} != 0 ]; then
             echo "archiving.conf does not exist and could not be created! Exit now"
             exit 1
         fi
     fi
 
-    case $OPTION in
+    case ${OPTION} in
             add)
                     if hash archiving 2>/dev/null; then
-                        sudo archiving -add -tag "${TAG}" -file $FILENAME
+                        sudo bash -c "archiving -add -tag ${TAG} -file ${FILENAME}"
                     else
                         echo "Archiving app not found"
                     fi
                     ;;
             remove)
                     if hash archiving 2>/dev/null; then
-                        sudo archiving -del -tag "${TAG}" -file $FILENAME
+                        sudo bash -c "archiving -del -tag ${TAG} -file ${FILENAME}"
                     else
                         echo "Archiving app not found"
                     fi
@@ -1042,12 +1078,12 @@ archiving() {
                     echo "Managing organisation archiving"
                     echo "Usage: twctl archiving {add|remove|list}"
                     echo
-                    echo "--tag TAG     set organisation name"
+                    echo "--tag TAG      set organisation name"
                     echo "--file NAME    path to user public key"
                     echo;echo
-                    echo "    add:    adds a new user to organisation for archiving"
+                    echo "    add:       adds a new user to organisation for archiving"
                     echo "    remove:    removes a user from organisation"
-                    echo "    list:    show current archiving user/orgs as ini file"
+                    echo "    list:      show current archiving user/orgs as ini file"
                     echo "    *:         displays this message"
                     ;;
     esac
@@ -1055,7 +1091,7 @@ archiving() {
 
 TAG=""
 TASK=""
-while [ $# -gt 0 ] ; do
+while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help)
             help
@@ -1123,7 +1159,7 @@ while [ $# -gt 0 ] ; do
             TASK="connectivity_test"
             ;;
         archiving)
-            if [ $2 == "list" ];then
+            if [ "$2" == "list" ];then
                 sudo cat /data/archiving/archiving.conf
                 exit 0
             else
@@ -1145,29 +1181,29 @@ while [ $# -gt 0 ] ; do
     shift
 done
 
-if [ -z "$TASK" ] ; then
+if [ -z "${TASK}" ]; then
     echo "ERROR: Mission action"
     echo
     help
     exit 1
 fi
 
-if [ "$TAG_REQUIRED" = "yes" ] && [ -z "$TAG" ] ; then
+if [ "${TAG_REQUIRED}" = "yes" ] && [ -z "${TAG}" ]; then
     echo "ERROR: Please specify a release tag!"
     echo
     help
     exit 1
 fi
 
-if [ "$FILENAME_REQUIRED" = "yes" ] && [ -z "$FILENAME" ] ; then
+if [ "${FILENAME_REQUIRED}" = "yes" ] && [ -z "${FILENAME}" ]; then
     echo "ERROR: Please specify a file name!"
     echo
     help
     exit 1
 fi
 
-if type -t "$TASK" | grep -q "function$" ; then
-    "$TASK"
+if type -t "${TASK}" | grep -q "function$"; then
+    "${TASK}"
 else
     "${TASK}_${INSTALLATION}"
 fi
