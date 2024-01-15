@@ -162,7 +162,7 @@ backup_db() {
 
   # Run mydumper with maximum available threads and with user
   # defined option.
-  mydumper ${DEFAULTS_FILE} \
+  mydumper --defaults-file="${TMPFILE_PATH}" \
     --database=${DB} \
     --host=${HOST} \
     --outputdir="${OUTDIR}/tmp" \
@@ -196,7 +196,7 @@ backup_db() {
   check_prev_exitcode $? "Error while remove tmp dir"
 
   # Count current backups. Rest should be self explained :-)
-  CURR_BACKUPS=$(ls ${OUTDIR} | wc -l)
+  CURR_BACKUPS=$(find ${OUTDIR} -maxdepth 1 -type f | wc -l)
   check_prev_exitcode $? "Cant count backups"
 
   if [ "${MAX_BACKUPS}" != "" ];then
@@ -210,7 +210,7 @@ backup_db() {
       rm "${OLDEST_BACKUP}"
       check_prev_exitcode $? "Cant delete oldest backup"
 
-      CURR_BACKUPS=$(ls ${OUTDIR} | wc -l)
+      CURR_BACKUPS=$(find ${OUTDIR} -maxdepth 1 -type f | wc -l)
       check_prev_exitcode $? "Cant count backups"
 
     done
@@ -256,7 +256,7 @@ restore_db() {
 
   echo "DEBUG FORCE: ${FORCE}"
   if [ ${FORCE} -eq ${TRUE} ]; then
-    myloader ${DEFAULTS_FILE} \
+    myloader --defaults-file="${TMPFILE_PATH}" \
     --database=${DB} \
     --host=${HOST} \
     --user="${USER}" \
@@ -266,7 +266,7 @@ restore_db() {
     --overwrite-tables \
     --verbose=3
   else
-    myloader ${DEFAULTS_FILE} \
+    myloader --defaults-file="${TMPFILE_PATH}" \
     --database=${DB} \
     --host=${HOST} \
     --user="${USER}" \
@@ -507,9 +507,6 @@ if [ -e "${LOCKFILE}" ]; then
 else
   echo "${PID}" > "${LOCKFILE}"
 fi
-
-# mydumper defaults file
-DEFAULTS_FILE="--defaults-file=${TMPFILE_PATH} \\"
 
 # Executes password func
 if [ ${TASK} != "helpme" ]; then
