@@ -345,10 +345,10 @@ voip_status_single() {
 }
 
 voip_jvb_register() {
-	JVB_AUTH_PASSWORD="$(vault_read_secrets voip/jvb_password)"
-	for JVB_USER in `ls /data/voip/ | grep -x 'jvb[0-9]*'`; do
-		/usr/local/bin/tw_prosodyctl register $JVB_USER auth.meet.jitsi $JVB_AUTH_PASSWORD
-	done
+    JVB_AUTH_PASSWORD="$(vault_read_secrets voip/jvb_password)"
+    for JVB_USER in `ls /data/voip/ | grep -x 'jvb[0-9]*'`; do
+        /usr/local/bin/tw_prosodyctl register $JVB_USER auth.meet.jitsi $JVB_AUTH_PASSWORD
+    done
 }
 
 voip() {
@@ -973,15 +973,15 @@ setup_containers_cluster() {
     local enabled="$(_get_config_value enable_voip)"
     setup_containers_base
 
-	ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
-	$NOMAD run "$NOMAD_JOB"
-	if [ -z ${enabled} ]; then
-	    	:
-	elif [ ${enabled} = "true" ]; then
-	ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
-	$NOMAD run /data/voip/voip.hcl
-	voip_jvb_register
-	fi
+    ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
+    $NOMAD run "$NOMAD_JOB"
+    if [ -z ${enabled} ]; then
+            :
+    elif [ ${enabled} = "true" ]; then
+    ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" --extra-vars "{"offline_mode": {"stat": {"exists": "0"}}}" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
+    $NOMAD run /data/voip/voip.hcl
+    voip_jvb_register
+    fi
 }
 
 ha-log() {
