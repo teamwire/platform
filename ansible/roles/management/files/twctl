@@ -117,16 +117,13 @@ vault_list() {
 }
 
 get_vault_secret_recursive() {
-    declare -a vault_secr
-    vault_secr="$(curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: ${VAULT_TOKEN}" --request LIST "${VAULT_ADDR}/v1/secret/" | jq -r '.data.keys | .[]')"
-    for toplevel in ${vault_secr[@]}
-    do
+    mapfile -t vault_secr < <(curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: ${VAULT_TOKEN}" --request LIST "${VAULT_ADDR}/v1/secret/" | jq -r '.data.keys | .[]')
+    for toplevel in "${vault_secr[@]}"; do
         sub="$(vault_list "${toplevel}")"
         sublevel=$(eval "${sub} | sed ':a;N;$!ba;s/\n//g'")
-        key=$(echo "${sublevel}" | sed 's|-\s|  |gm')
-        for k in ${key[@]}
-        do
-            echo "{$toplevel}${k}"
+        mapfile -t key < <( echo -n "${sublevel//- / }" | sed -e 's/^ //' -e '/^$/d' -e 's/ /\n/g' )
+        for k in "${key[@]}"; do
+            echo "${toplevel}${k}"
         done
     done
 }
