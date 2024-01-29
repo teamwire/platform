@@ -67,8 +67,8 @@ else
     VOIP_CONTAINERS="teamwire_web teamwire_prosody teamwire_jicofo teamwire_jvb"
 fi
 #####ImageNames - Mainifest
-IMAGES="teamwire/backend teamwire/notification-server"
-VOIPIMAGES="teamwire/web2 teamwire/prosody teamwire/jicofo teamwire/jvb"
+IMAGES=( "teamwire/backend" "teamwire/notification-server" )
+VOIPIMAGES=( "teamwire/web2" "teamwire/prosody" "teamwire/jicofo" "teamwire/jvb" )
 
 
 if [ "${VAULT_INITIALIZED}" != "true" ]; then
@@ -268,7 +268,7 @@ _get_config_value_array() {
 check_tag() {
     local TAG=$1
     check_registry
-    for IMAGE in ${IMAGES}; do
+    for IMAGE in "${IMAGES[@]}"; do
         if ! docker images "${PRFX}${IMAGE}" | grep -q "${TAG}"; then
             # Required image not found for given tag
             echo "ERROR: Containers for the requested tag could not be found."
@@ -291,7 +291,7 @@ is_stun_Enabled() {
     enabled="$(_get_config_value enable_stun)"
     if [ "${enabled}" == "true" ]; then
         VOIP_CONTAINERS="${VOIP_CONTAINERS} teamwire_turn"
-        VOIPIMAGES="${VOIPIMAGES} teamwire/turn"
+        VOIPIMAGES+=( "teamwire/turn" )
     fi
 }
 
@@ -836,11 +836,11 @@ pull_images_base() {
         echo "Pulling Teamwire container images for version ${TAG}"
         echo
         check_registry
-        for IMAGE in ${IMAGES}; do
+        for IMAGE in "${IMAGES[@]}"; do
             docker pull "${PRFX}${IMAGE}:${TAG}"
         done
         if [ -n "${enabled}" ] && [ "${enabled}" = "true" ]; then
-            for VOIPIMG in ${VOIPIMAGES}; do
+            for VOIPIMG in "${VOIPIMAGES[@]}"; do
                 docker pull "${PRFX}${VOIPIMG}:${TAG}" || exit 1;
             done
         fi
