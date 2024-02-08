@@ -69,12 +69,10 @@ job "teamwire" {
 
 			config {
 				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
-{% if not "docker_registry" in groups %}
 				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
+					username = "{{ docker_registry_username }}"
+					password = "{{ docker_registry_password }}"
 				}
-{%endif %}
 
 				# Although group-level networking is set to "host"
 				# Docker-specific networking setting is required
@@ -204,12 +202,10 @@ job "teamwire" {
 
 			config {
 				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
-{% if not "docker_registry" in groups %}
 				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
+					username = "{{ docker_registry_username }}"
+					password = "{{ docker_registry_password }}"
 				}
-{%endif %}
 
 				# Although group-level networking is set to "host"
 				# Docker-specific networking setting is required
@@ -312,12 +308,10 @@ job "teamwire" {
 
 			config {
 				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
-{% if not "docker_registry" in groups %}
 				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
+					username = "{{ docker_registry_username }}"
+					password = "{{ docker_registry_password }}"
 				}
-{%endif %}
 
 				# Although group-level networking is set to "host"
 				# Docker-specific networking setting is required
@@ -398,12 +392,10 @@ job "teamwire" {
 
 			config {
 				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/notification-server:{{ version }}"
-{% if not "docker_registry" in groups %}
 				auth {
-					username = "{{ dockerhub_username }}"
-					password = "{{ dockerhub_password }}"
+					username = "{{ docker_registry_username }}"
+					password = "{{ docker_registry_password }}"
 				}
-{% endif %}
 				ports = [ "http", "rest" ]
 
 				logging {

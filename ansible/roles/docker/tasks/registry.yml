@@ -6,6 +6,18 @@
     mode: 0750
   run_once: true
 
+- name: Install necessary package to create credentials
+  ansible.builtin.package:
+    name: apache2-utils
+    state: present
+
+- name: Stat local registry password file
+  ansible.builtin.stat:
+    path: "{{ registry_dir }}/htpasswd"
+  changed_when: not stat_local_registry_htpasswd.stat.exists
+  register: stat_local_registry_htpasswd
+  notify: Create local registry credentials
+
 - name: Write Docker registry config file
   ansible.builtin.template:
     src: "{{ registry_config }}"
@@ -28,6 +40,10 @@
       tag: docker-registry
       syslog-facility: local6
     volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
+    env:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      REGISTRY_AUTH_HTPASSWD_PATH: "/var/lib/registry/htpasswd"
 
 # Push all local images to the local registry
 - name: Copy the registry image helper tool

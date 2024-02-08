@@ -14,5 +14,9 @@
     name: rsyslog
     state: restarted
 
+- name: Create local registry credentials
+  ansible.builtin.command: "htpasswd -Bbc {{ registry_dir }}/htpasswd {{ local_registry_username }} {{ local_registry_password }}"
+  no_log: true
+
 - name: Dearmor Docker repository key
   ansible.builtin.command: gpg --dearmor -o {{ (docker_signing_key.dest | splitext)[0] }}.gpg {{ docker_signing_key.dest }}

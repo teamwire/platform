@@ -155,6 +155,9 @@
     - config_done is defined
     - "'docker_registry' in group_names"
 
+- name: Flush handlers to ensure local registry is running and credentials are created
+  ansible.builtin.meta: flush_handlers
+
 - name: Log in on docker registry
   when:
     - config_done is defined
@@ -166,6 +169,52 @@
     registry_url: "{{ 'harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
+
+- name: Ensure successfull local docker registry login
+  block:
+# Necessary for the nomad docker authentication fallback
+    - name: Log in on local docker registry - teamwire
+      become_user: teamwire
+      community.docker.docker_login:
+        registry_url: "{{ groups['docker_registry'] | first }}:5000/"
+        username: "{{ local_registry_username }}"
+        password: "{{ local_registry_password }}"
+
+# Necessary for the voip image pushes within roles/voip/tasks/main.yml
+    - name: Log in on local docker registry - root
+      community.docker.docker_login:
+        registry_url: "{{ groups['docker_registry'] | first }}:5000/"
+        username: "{{ local_registry_username }}"
+        password: "{{ local_registry_password }}"
+  rescue:
+    - name: Retrigger local registry credential creation
+      ansible.builtin.debug:
+        msg: "Retrigger credential creation for local docker registry"
+      changed_when: true
+      notify: Create local registry credentials
+      delegate_to: "{{ groups['docker_registry'] | first }}"
+
+    - name: Flush handlers to ensure local registry is running and credentials are created
+      ansible.builtin.meta: flush_handlers
+
+    - name: Force reauthorization on local docker registry - teamwire
+      become_user: teamwire
+      community.docker.docker_login:
+        registry_url: "{{ groups['docker_registry'] | first }}:5000/"
+        username: "{{ local_registry_username }}"
+        password: "{{ local_registry_password }}"
+        reauthorize: true
+
+    - name: Force reauthorization on local docker registry - root
+      community.docker.docker_login:
+        registry_url: "{{ groups['docker_registry'] | first }}:5000/"
+        username: "{{ local_registry_username }}"
+        password: "{{ local_registry_password }}"
+        reauthorize: true
+  when:
+    - groups['all'] | length() > 1
+    - groups.docker_registry is defined
+    - not offline_mode.stat.exists
 
 - name: Include cluster
   ansible.builtin.include_tasks: cluster.yml
