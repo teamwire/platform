@@ -76,7 +76,6 @@ CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-JITSI_VERSION=$(awk '/^VOIP_JITSI_VERSION:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/voip/defaults/main.yml)
 CHECK_NTP_TIME_VERSION=$(awk '/^check_ntp_time_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 
 DOCKER_IMAGES="
@@ -102,8 +101,8 @@ https://repo.teamwire.eu/bin/icinga/check_ntp_time-${CHECK_NTP_TIME_VERSION};$(a
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
-	echo "Not preparing for offline installation."
-	exit
+  echo "Not preparing for offline installation."
+  exit
 fi
 
 echo "Preparing for offline installation."
@@ -115,7 +114,9 @@ sudo touch /etc/offline_installation
 echo "Step 1: Install APT third-party prerequisites"
 echo "============================================="
 sudo apt-get update -q
-sudo apt-get install -qy ${APT_3RD_PARTY_PREREQUISITES}
+for pkg in ${APT_3RD_PARTY_PREREQUISITES}; do
+  sudo apt-get install -qyd "${pkg}"
+done
 
 # Add additional repo signing keys
 echo "Step 2: Import additional repo signing keys / repositories"
@@ -125,8 +126,8 @@ sudo apt-get update -q
 # Configure Docker Repository Key
 # https://docs.docker.com/engine/install/debian/#install-using-the-repository
 if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
-	sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
-	sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+  sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
+  sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
 fi
 
 # Configure Icinga2 Repository and Key
@@ -153,7 +154,7 @@ echo "Step 3: Caching packages"
 echo "========================"
 sudo apt-get update -q
 for pkg in ${REGULAR_PACKAGES}; do
-	sudo apt-get install -qyd $pkg
+  sudo apt-get install -qyd "${pkg}"
 done
 
 echo "Step 4: Getting Docker containers"
@@ -161,7 +162,7 @@ echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
 sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}" harbor.teamwire.eu
 for IMAGE in ${DOCKER_IMAGES} ; do
-	sudo docker pull "${IMAGE}"
+  sudo docker pull "${IMAGE}"
 done
 sudo rm -rf /root/.docker
 
@@ -172,17 +173,17 @@ sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
 echo "Step 5: Downloading 3rd party software"
 echo "======================================"
 if [ ! -d /var/cache/downloads ] ; then
-	sudo mkdir /var/cache/downloads
+  sudo mkdir /var/cache/downloads
 fi
 for DOWNLOAD in ${DOWNLOADS} ; do
-	# split line into URL and SHA256 checksum
-	UC=(${DOWNLOAD//;/ })
-	echo "Getting ${UC[0]}"
-	wget -q "${UC[0]}"
-	FILENAME="${UC[0]##*/}"
-	if [ "${UC[1]}" != "$(sha256sum "${FILENAME}" | cut -d' ' -f1)" ] ; then
-		echo "${FILENAME}: Checksum failure"
-		exit 1
-	fi
-	sudo mv "${FILENAME}" /var/cache/downloads
+  # split line into URL and SHA256 checksum
+  IFS=";" read -r -a UC <<< "${DOWNLOAD}"
+  echo "Getting ${UC[0]}"
+  wget -q "${UC[0]}"
+  FILENAME="${UC[0]##*/}"
+  if [ "${UC[1]}" != "$(sha256sum "${FILENAME}" | cut -d' ' -f1)" ] ; then
+    echo "${FILENAME}: Checksum failure"
+    exit 1
+  fi
+  sudo mv "${FILENAME}" /var/cache/downloads
 done
