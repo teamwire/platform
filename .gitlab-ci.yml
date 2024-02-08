@@ -90,7 +90,6 @@ Ensure shellcheck has correct version:
       - packer/build-vmware.sh
       - packer/scripts/fix-network.sh
       - packer/scripts/shrink-image.sh
-      - prepare-offline-installation.sh
       - packer/scripts/make-unique.sh
       - packer/scripts/vm-guest-tools.sh
       - ansible/roles/frontend/files/ocsp.sh
@@ -158,14 +157,6 @@ Packer shrink test:
   only:
     changes:
       - packer/scripts/shrink-image.sh
-  needs: ['Ensure shellcheck has correct version']
-
-Packer offline image test:
-  stage: shellcheck
-  script: shellcheck --format=tty --color=always prepare-offline-installation.sh
-  only:
-    changes:
-      - prepare-offline-installation.sh
   needs: ['Ensure shellcheck has correct version']
 
 Packer unique test:
