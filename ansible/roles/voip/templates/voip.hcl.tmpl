@@ -53,7 +53,6 @@ job "voip" {
         }
 
         network {
-            mode = "host"
             port "http" {
                 static = "{{ nginx_http_port }}"
             }
@@ -69,10 +68,9 @@ job "voip" {
                     password = "{{ docker_registry_password }}"
                 }
 
-                # Although group-level networking is set to "host"
-                # Docker-specific networking setting is required
-                # https://github.com/hashicorp/nomad/issues/8747
-                network_mode = "host"
+                network_mode = "voip"
+
+                ports = ["http"]
 
                 logging {
                     type = "syslog"
@@ -87,6 +85,7 @@ job "voip" {
                 name = "${TASK}"
                 tags = ["voip_servers","voip","${TASK}"]
                 port = "http"
+                address_mode = "host"
             }
 
             env {
@@ -133,7 +132,12 @@ job "voip" {
         }
 
         network {
-            mode = "host"
+            port "s2s" {
+                static = 5222
+            }
+            port "bosh" {
+                static = 5280
+            }
         }
 
         task "voipProsody" {
@@ -146,10 +150,9 @@ job "voip" {
                     password = "{{ docker_registry_password }}"
                 }
 
-                # Although group-level networking is set to "host"
-                # Docker-specific networking setting is required
-                # https://github.com/hashicorp/nomad/issues/8747
-                network_mode = "host"
+                network_mode = "voip"
+
+                ports = ["s2s", "bosh"]
 
                 logging {
                     type = "syslog"
@@ -167,6 +170,7 @@ job "voip" {
             service {
                 name = "${TASK}"
                 tags = ["voip_servers","voip","${TASK}"]
+                address_mode = "host"
             }
 {% raw %}
             template {
@@ -249,9 +253,6 @@ job "voip" {
             mode     = "delay"
         }
 
-        network {
-            mode = "host"
-        }
 
         task "voipJicofo" {
             driver = "docker"
@@ -263,10 +264,7 @@ job "voip" {
                     password = "{{ docker_registry_password }}"
                 }
 
-                # Although group-level networking is set to "host"
-                # Docker-specific networking setting is required
-                # https://github.com/hashicorp/nomad/issues/8747
-                network_mode = "host"
+                network_mode = "voip"
 
                 logging {
                     type = "syslog"
@@ -275,6 +273,7 @@ job "voip" {
                         syslog-facility = "local6"
                     }
                 }
+
                 volumes = [
                     "{{ voip_root_path }}/jicofo:/config:Z"
                 ]
@@ -283,6 +282,7 @@ job "voip" {
             service {
                 name = "${TASK}"
                 tags = ["voip_servers","voip","${TASK}"]
+                address_mode = "host"
             }
 {% raw %}
             template {
@@ -320,12 +320,15 @@ job "voip" {
     }
 
     group "voip-videos" {
+
         count = "{{ video_servers_count }}"
+
         constraint {
             attribute = "${meta.groups}"
             operator = "regexp"
             value = "{{ video_servers }}"
         }
+
         constraint {
             operator = "distinct_hosts"
             value    = "true"
@@ -339,9 +342,17 @@ job "voip" {
         }
 
         network {
-            mode = "host"
             port "jvb" {
                 static = "10000"
+{% if ansible_host != private_ip %}
+                host_network = "public"
+{% endif %}
+            }
+            port "voiptcp" {
+                static = 4443
+            }
+            port "websockets" {
+                static = "9090"
             }
         }
 
@@ -368,10 +379,9 @@ job "voip" {
                     password = "{{ docker_registry_password }}"
                 }
 
-                # Although group-level networking is set to "host"
-                # Docker-specific networking setting is required
-                # https://github.com/hashicorp/nomad/issues/8747
-                network_mode = "host"
+                network_mode = "voip"
+
+                ports = ["jvb", "voiptcp", "websockets"]
 
                 logging {
                     type = "syslog"
@@ -394,7 +404,8 @@ job "voip" {
             service {
                 name = "${TASK}${NOMAD_ALLOC_INDEX}"
                 tags = ["voip_servers","voip","${TASK}${NOMAD_ALLOC_INDEX}"]
-                port = "jvb"
+                port = "websockets"
+                address_mode = "host"
             }
 
             env {
@@ -469,7 +480,7 @@ job "voip" {
                     password = "{{ docker_registry_password }}"
                 }
 
-                network_mode = "host"
+                network_mode = "voip"
 
                 logging {
                     type = "syslog"
@@ -496,6 +507,7 @@ job "voip" {
                 name = "${TASK}"
                 tags = ["voip_servers","voip","${TASK}"]
                 port = "stun"
+                address_mode = "host"
             }
 
             resources {

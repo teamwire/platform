@@ -1,15 +1,35 @@
 ---
+- name: Create Jitsi Docker network
+  community.docker.docker_network:
+    name: voip
+    ipam_config:
+      - subnet: '172.18.0.0/24'
+
 - name: Run the Teamwire voip web container
   community.docker.docker_container:
     name: teamwire_web
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_web }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
-    network_mode: host
+    networks:
+      - name: voip
+        ipv4_address: 172.18.0.2
     log_driver: "syslog"
     log_opt:
       tag: teamwire-web
       syslog-facility: "local6"
+    ports:
+      - 127.0.0.1:7080:7080
+    etc_hosts: >
+      {
+        "xmpp.meet.jitsi": "172.18.0.3",
+        "meet.jitsi": "172.18.0.3",
+        "auth.meet.jitsi": "172.18.0.3",
+        "muc.meet.jitsi": "172.18.0.3",
+        "internal-muc.meet.jitsi": "172.18.0.3",
+        "guest.meet.jitsi": "172.18.0.3",
+        "recorder.meet.jitsi": "172.18.0.3"
+      }
     env:
       ENABLE_XMPP_WEBSOCKET: "0"
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
@@ -31,14 +51,29 @@
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_prosody }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
-    network_mode: host
+    networks:
+      - name: voip
+        ipv4_address: 172.18.0.3
     volumes:
       - "{{ voip_root_path }}/prosody/config:/config:Z"
       - "{{ voip_root_path }}/prosody/prosody-plugins-custom:/prosody-plugins-custom:Z"
+    etc_hosts: >
+      {
+        "xmpp.meet.jitsi": "172.18.0.3",
+        "meet.jitsi": "172.18.0.3",
+        "auth.meet.jitsi": "172.18.0.3",
+        "muc.meet.jitsi": "172.18.0.3",
+        "internal-muc.meet.jitsi": "172.18.0.3",
+        "guest.meet.jitsi": "172.18.0.3",
+        "recorder.meet.jitsi": "172.18.0.3"
+      }
     log_driver: "syslog"
     log_opt:
       tag: teamwire-prosody
       syslog-facility: "local6"
+    ports:
+      - 127.0.0.1:5222:5222
+      - 127.0.0.1:5280:5280
     env:
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
@@ -78,7 +113,19 @@
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jicofo }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
-    network_mode: host
+    networks:
+      - name: voip
+        ipv4_address: 172.18.0.4
+    etc_hosts: >
+      {
+        "xmpp.meet.jitsi": "172.18.0.3",
+        "meet.jitsi": "172.18.0.3",
+        "auth.meet.jitsi": "172.18.0.3",
+        "muc.meet.jitsi": "172.18.0.3",
+        "internal-muc.meet.jitsi": "172.18.0.3",
+        "guest.meet.jitsi": "172.18.0.3",
+        "recorder.meet.jitsi": "172.18.0.3"
+      }
     volumes:
       - "{{ voip_root_path }}/jicofo:/config:Z"
     log_driver: "syslog"
@@ -111,11 +158,28 @@
     image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jvb }}:{{ voip_jitsi_version }}"
     state: started
     restart_policy: always
-    network_mode: host
     log_driver: "syslog"
+    networks:
+      - name: voip
+        ipv4_address: 172.18.0.5
     log_opt:
       tag: teamwire-jvb
       syslog-facility: "local6"
+    ports:
+      - 10000:10000
+      - 127.0.0.1:8085:8085
+      - 127.0.0.1:9090:9090
+      - "{{ ansible_default_ipv4.address }}:4443:4443"
+    etc_hosts: >
+      {
+        "xmpp.meet.jitsi": "172.18.0.3",
+        "meet.jitsi": "172.18.0.3",
+        "auth.meet.jitsi": "172.18.0.3",
+        "muc.meet.jitsi": "172.18.0.3",
+        "internal-muc.meet.jitsi": "172.18.0.3",
+        "guest.meet.jitsi": "172.18.0.3",
+        "recorder.meet.jitsi": "172.18.0.3"
+      }
     env:
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
@@ -133,7 +197,7 @@
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
       ENABLE_COLIBRI_WEBSOCKET: "1"
       PUBLIC_URL: "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
-      JVB_WS_SERVER_ID: "127.0.0.1"
+      JVB_WS_SERVER_ID: "172.18.0.5"
   when: config_done is defined
 
 - name: Run the Teamwire turn container

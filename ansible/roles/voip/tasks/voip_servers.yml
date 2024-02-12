@@ -7,6 +7,12 @@
     - enable_jvb_cluster is not defined or enable_jvb_cluster | lower != 'true'
     - inventory_hostname in groups["voip_servers"]
 
+- name: Create voip docker network in voip_servers.
+  community.docker.docker_network:
+    name: voip
+  when:
+    - inventory_hostname in groups["voip_servers"]
+
 - name: Allow voip video bridge port in backend_servers.
   community.general.ufw:
     rule: allow
@@ -17,11 +23,28 @@
     - enable_jvb_cluster | lower == 'true'
     - inventory_hostname in groups["backend_servers"]
 
+- name: Create voip docker network in backend_servers.
+  community.docker.docker_network:
+    name: voip
+  when:
+    - enable_jvb_cluster is defined
+    - enable_jvb_cluster | lower == 'true'
+    - inventory_hostname in groups["backend_servers"]
+
 - name: Allow voip video bridge port in video_servers.
   community.general.ufw:
     rule: allow
     port: "10000"
     proto: any
+  when:
+    - enable_jvb_cluster is defined
+    - enable_jvb_cluster | lower == 'true'
+    - groups["video_servers"] is defined
+    - inventory_hostname in groups["video_servers"]
+
+- name: Create voip docker network in video_servers.
+  community.docker.docker_network:
+    name: voip
   when:
     - enable_jvb_cluster is defined
     - enable_jvb_cluster | lower == 'true'
