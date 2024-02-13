@@ -464,6 +464,10 @@ job "voip" {
 
             config {
                 image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_turn }}:{{ voip_jitsi_version }}"
+                auth {
+                    username = "{{ docker_registry_username }}"
+                    password = "{{ docker_registry_password }}"
+                }
 
                 network_mode = "host"
 
