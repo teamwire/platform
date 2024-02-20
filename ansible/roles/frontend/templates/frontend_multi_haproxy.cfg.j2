@@ -1,0 +1,229 @@
+# ----------------------------------------------------
+# DEFAULTS
+# ----------------------------------------------------
+defaults
+    # General
+    log global
+    mode http
+
+    # General Options
+    option dontlognull
+    option redispatch
+    option log-separate-errors
+    option tcp-smart-accept
+    option tcp-smart-connect
+    option http-server-close
+    option httplog
+
+    # Backends/Frontend Defaults
+    balance roundrobin
+    option http-server-close
+    option forwardfor
+
+    retries 3
+
+    timeout connect 5s
+    timeout client 1m
+    timeout server 120s
+    timeout check 3s
+    timeout queue 3s
+    timeout tunnel 3600s
+
+    timeout http-keep-alive  1s
+    timeout http-request    15s
+    timeout queue           30s
+    timeout tarpit          60s
+
+    # SECURITY: Infomation gathering phase only return 503
+    errorfile 400 /etc/haproxy/errors/503.http
+    errorfile 403 /etc/haproxy/errors/503.http
+    errorfile 408 /etc/haproxy/errors/503.http
+    errorfile 500 /etc/haproxy/errors/503.http
+    errorfile 502 /etc/haproxy/errors/503.http
+    errorfile 503 /etc/haproxy/errors/503.http
+    errorfile 504 /etc/haproxy/errors/503.http
+
+# ----------------------------------------------------
+# FRONTEND: STATS
+# ----------------------------------------------------
+frontend http-stats
+    mode http
+    bind *:3380
+
+    stats enable
+    stats auth teamwire:gt-login
+    stats uri /
+
+# ----------------------------------------------------
+# FRONTEND: TMATE
+# ----------------------------------------------------
+#frontend tmate-in
+#    bind *:2222
+#    use_backend tmate-backend
+
+# ----------------------------------------------------
+# FRONTEND: HTTP + HTTPS
+# ----------------------------------------------------
+frontend https-in
+    bind *:80
+    {% if ssl_cert is defined or ssl_certfile is defined or ssl_server_certificate is defined %}redirect scheme https code 301 if !{ ssl_fc }
+    bind *:443 ssl crt /etc/ssl/certs/server_and_intermediate_and_root.crt
+
+    # HSTS (15768000 seconds = 6 months)
+    http-response set-header Strict-Transport-Security max-age=15768000
+
+    tcp-request inspect-delay 5s
+    tcp-request content reject if { req.ssl_ver 3 }
+    tcp-request content accept if { req.ssl_hello_type 1 }
+    {% endif %}
+
+    timeout http-keep-alive 5m
+
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+
+    log-format %ID\ %ci:%cp\ [%t]\ %ft\ %b/%s\ %Tq/%Tw/%Tc/%Tr/%Tt\ %ST\ %B\ %CC\ %CS\ %tsc\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ %hr\ %hs\ %{+Q}r\ %sslv\ %sslc
+    unique-id-format %{+X}o\ %ci:%cp_%fi:%fp_%Ts_%rt:%pid
+    unique-id-header X-Request-ID
+
+    # Admin/Dashboard restricted by IPs
+    {% if admin_ip_ranges is defined %}{% for range in admin_ip_ranges %}acl adminpage_allowed src {{ range }}
+    {% endfor %}{% raw %}
+    acl admin_page path_beg,url_dec -m beg -i /dashboard /admin
+    http-request deny if admin_page !adminpage_allowed
+    {% endraw %}{% endif %}
+
+    # Webclient restricted by IPs
+    {% if webclient_ip_ranges is defined %}{% if webclient_ip_ranges is not none %}{% for range in webclient_ip_ranges %}acl webclient_allowed src {{ range }}
+    {% endfor %}acl webclient_page path_beg,url_dec -m reg -i  ^(/static)?/web-client/?
+    http-request deny if webclient_page !webclient_allowed
+    {% endif %}{% endif %}
+
+	# Header routes
+    {% raw %}{{range $tag,$_ := service "notification-server-9080" | byTag}}
+
+    # Notification header routes
+    {{- if ne $tag "tw_hub" }}
+    acl HOST_MATCH_NOTI-{{$tag}} hdr_beg(host) -i {{$tag}}-backend
+    acl PATH_MATCH_NOTI-{{$tag}} path_beg /notification
+    use_backend teamwire-notifications-{{$tag}} if HOST_MATCH_NOTI-{{$tag}} PATH_MATCH_NOTI-{{$tag}}
+    {{- end -}}
+    {{end}}{{range $tag,$_ := service "backend-websockets" | byTag}}
+
+    # Websockets header routes
+    {{- if ne $tag "tw_hub" }}
+    acl HOST_MATCH_BACK_WS-{{$tag}} hdr_beg(host) -i {{$tag}}-backend
+    acl PATH_MATCH_BACK_WS-{{$tag}} path_beg /ws
+    use_backend teamwire-{{$tag}}-websockets if HOST_MATCH_BACK_WS-{{$tag}} PATH_MATCH_BACK_WS-{{$tag}}
+    {{- end -}}
+    {{end}}{{range $tag,$_ := service "web-screenshot-server" | byTag}}
+
+    # Web screenshot server header routes
+    {{- if ne $tag "tw_hub" }}
+    acl HOST_MATCH_WEB-{{$tag}} hdr_beg(host) -i {{$tag}}-backend
+    acl PATH_MATCH_WEB-{{$tag}} path_beg /web-screenshot
+    use_backend teamwire-web-screenshot-{{$tag}} if HOST_MATCH_WEB-{{$tag}} PATH_MATCH_WEB-{{$tag}}
+    {{- end -}}
+    {{end}}{{range $tag,$_ := service "backend" | byTag}}
+
+    # Backend header routes
+    {{- if ne $tag "tw_hub" }}
+    acl HOST_MATCH_BACK-{{$tag}} hdr_beg(host) -i {{$tag}}-backend
+    use_backend teamwire-{{$tag}}-backend if HOST_MATCH_BACK-{{$tag}}
+    {{- end -}}
+    {{end}}{% endraw %}
+
+{%raw%}{{range $tag, $service := service "backend" | byTag}}
+{{if ne $tag "tw_hub" }}
+# ----------------------------------------------------
+# BACKEND DC TW_HUB: teamwire-{{$tag}}-backend
+# ----------------------------------------------------
+backend teamwire-{{$tag}}-backend
+    http-response del-header Server
+    http-response set-header Connection keep-alive{{- range $service}}
+    server teamwire-backend-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{end}}{{end}}{% endraw %}
+
+
+{%raw%}{{range $tag, $service := service "notification-server-9080" | byTag}}
+{{if ne $tag "tw_hub" }}
+# ----------------------------------------------------
+# BACKEND DC TW_HUB: teamwire-{{$tag}}-notifications
+# ----------------------------------------------------
+backend teamwire-notifications-{{$tag}}
+    acl hdr_connection_upgrade hdr(Connection)                 -i upgrade
+    acl hdr_upgrade_websocket  hdr(Upgrade)                    -i websocket
+    http-response del-header Server
+    http-request del-header   X-Powered-By {{- range $service}}
+    server teamwire-notifications-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{end}}{{end}}{% endraw %}
+
+{%raw%}{{range $tag, $service := service "backend-websockets" | byTag}}
+{{if ne $tag "tw_hub" }}
+# ----------------------------------------------------
+# BACKEND DC TW_HUB: teamwire-{{$tag}}-websockets
+# ----------------------------------------------------
+backend teamwire-{{$tag}}-websockets
+    acl hdr_connection_upgrade hdr(Connection)                 -i upgrade
+    acl hdr_upgrade_websocket  hdr(Upgrade)                    -i websocket
+    http-response del-header Server
+    http-request del-header   X-Powered-By {{- range $service}}
+    server teamwire-websockets-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{end}}{{end}}{% endraw %}
+
+{%raw%}{{range $tag, $service := service "web-screenshot-server" | byTag}}
+{{if ne $tag "tw_hub" }}
+# ----------------------------------------------------
+# BACKEND DC TW_HUB: teamwire-web-screenshot-{{$tag}}
+# ----------------------------------------------------
+backend teamwire-web-screenshot-{{$tag}}
+    reqrep ^([^\ :]*)\ /web-screenshot/(.*)     \1\ /\2{{- range $service}}
+    server teamwire-web-screenshot-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{end}}{{end}}{% endraw %}
+
+# ----------------------------------------------------
+# FRONTEND: VOIP WEB
+# ----------------------------------------------------
+frontend voip-web-in
+    bind *:8080
+    redirect scheme https code 301 if !{ ssl_fc }
+    bind *:8443 ssl crt /etc/ssl/certs/server_and_intermediate_and_root.crt
+
+    tcp-request inspect-delay 5s
+    tcp-request content reject if { req.ssl_ver 3 }
+    tcp-request content accept if { req.ssl_hello_type 1 }
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+
+    http-request capture req.hdr(host) len 32
+    http-request capture req.hdr(X-Forwarded-For) len 32
+    http-request capture req.hdr(User-Agent) len 32
+    http-request capture req.hdr(Connection) len 7
+    http-request capture req.hdr(Upgrade) len 9
+
+    log-format 'LIMSTART{ "DATE":"%t","ID":"%ID","STATUS":"%ST","SourceIP":"%ci:%cp","ROUTE":"%ft/%b","METRIC":"%Tq/%Tw/%Tc/%Tr/%Tt ","httpRequest":"%r","requestHeader":"%hr","CON":"%tsc  %ac %fc %bc %sc %rc ","TLS-PROTO":"%sslv","TLS_CIPHER":"%sslc"}LIMEND'
+    unique-id-format %{+X}o\ %ci:%cp_%fi:%fp_%Ts_%rt:%pid
+    unique-id-header X-Request-ID
+
+{%raw%}
+{{range $tag,$_ := service "voipWeb" | byTag}}
+
+    # voip header routes
+    acl HOST_MATCH_BACK-{{$tag}} hdr_beg(host) -i {{$tag}}-backend
+    use_backend voip-{{$tag}}-backend if HOST_MATCH_BACK-{{$tag}}
+    {{end}}
+
+
+{{range $tag,$service := service "voipWeb" | byTag}}
+# ----------------------------------------------------
+# VOIPBACKEND DC TW_HUB: teamwire-{{$tag}}-backend
+# ----------------------------------------------------
+
+backend voip-{{$tag}}-backend
+    acl hdr_connection_upgrade hdr(Connection)                 -i upgrade
+    acl hdr_upgrade_websocket  hdr(Upgrade)                    -i websocket
+    http-response del-header Server
+    http-request del-header   X-Powered-By {{- range $service}}
+    server teamwire-backend-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{end}}
+{%endraw%}
