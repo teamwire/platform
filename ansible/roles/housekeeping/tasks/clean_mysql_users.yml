@@ -109,7 +109,7 @@
       with_items: "{{ mysql_user_data.query_result }}"
       when:
         - item.User == monitoring_db_user
-        - not ( item.Host in groups['monitoring'] | map('extract',hostvars,'private_ip') or item.Host in groups['database_servers'] | map('extract',hostvars,'private_ip') )
+        - not ( item.Host in groups['monitoring'] | map('extract',hostvars,'private_ip') or item.Host in groups['database_servers'] | map('extract',hostvars,'private_ip') or item.Host == 'localhost' )
 
     - name: "Cleanup available users {{ monitoring_db_web_user }}"
       community.mysql.mysql_user:

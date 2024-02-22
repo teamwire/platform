@@ -213,7 +213,7 @@
   no_log: true
   with_items:
     - "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
-    - "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
+    - "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') | list + ['localhost'] if groups['all'] | length > 1 else 'localhost' }}"
   delegate_to: "{{ monitoring_db_host }}"
 
 - name: "Create Icingaweb database user {{ monitoring_db_web_user }}"
