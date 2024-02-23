@@ -3,7 +3,7 @@
 	"advertise_addr": "{{ private_ip }}",
 	"client_addr": "0.0.0.0",
 	"ui": true,
-	"retry_join": [ {% for srv in groups['hashi_servers'] %}"{{ srv }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
+	"retry_join": [ {% for srv in groups['hashi_servers'] | sort %}"{{ srv }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
 	"rejoin_after_leave": true,
 	"leave_on_terminate": false,
 	"dns_config": {
