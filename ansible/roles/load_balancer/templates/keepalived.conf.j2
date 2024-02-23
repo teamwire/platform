@@ -5,10 +5,10 @@ vrrp_script chk_haproxy {
 }
 
 vrrp_instance VI_1 {
-    state {{ 'MASTER' if inventory_hostname == groups['load_balancers'][0] else 'BACKUP' }}
+    state {{ 'MASTER' if inventory_hostname == groups['load_balancers'] | sort | first else 'BACKUP' }}
     interface {{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}
     virtual_router_id 51
-    priority {{ '101' if inventory_hostname == (groups.load_balancers | first) else '100' }}
+    priority {{ '101' if inventory_hostname == (groups.load_balancers | sort | first) else '100' }}
     advert_int 1
     authentication {
         auth_type PASS
