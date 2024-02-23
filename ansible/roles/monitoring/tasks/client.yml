@@ -7,7 +7,7 @@
     group: root
     mode: 0644
   notify: Restart icinga2
-  delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
@@ -15,7 +15,7 @@
 - name: Wait for Icinga client API port to start listening on master
   ansible.builtin.wait_for:
     port: 5665
-  delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
   run_once: true
 
 - name: Create client certificate
@@ -32,15 +32,15 @@
 
 - name: Generate Icinga API ticket
   ansible.builtin.command: /usr/sbin/icinga2 pki ticket --cn {{ inventory_hostname }} --salt "{{ icinga_salt }}" # noqa no-handler
-  delegate_to: "{{ groups.monitoring | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
   when: client_cert_created.changed
   register: pki_ticket
 
 - name: Request the certificate from the Icinga master
-  ansible.builtin.command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.crt
+  ansible.builtin.command: /usr/sbin/icinga2 pki request --host {{ groups.monitoring | sort | first }} --port 5665 --ticket {{ pki_ticket.stdout }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.crt
   args:
     creates: /etc/icinga2/pki/ca.crt
-  when: client_cert_created.changed and groups['all'] | length() > 1 and "inventory_hostname != groups['monitoring'] | first"
+  when: client_cert_created.changed and groups['all'] | length() > 1 and "inventory_hostname != groups['monitoring'] | sort | first"
 
 - name: Enable the Icinga2 API
   ansible.builtin.template:
@@ -55,7 +55,7 @@
   ansible.builtin.meta: flush_handlers
 
 - name: Setup Icinga node
-  ansible.builtin.command: /usr/sbin/icinga2 node setup --ticket {{ pki_ticket.stdout }} --endpoint {{ groups.monitoring | first }} --zone {{ inventory_hostname }} --master_host {{ groups.monitoring | first }} --trustedcert /etc/icinga2/pki/trusted-master.crt --cn {{ inventory_hostname }} # noqa no-handler
+  ansible.builtin.command: /usr/sbin/icinga2 node setup --ticket {{ pki_ticket.stdout }} --endpoint {{ groups.monitoring | sort | first }} --zone {{ inventory_hostname }} --master_host {{ groups.monitoring | first }} --trustedcert /etc/icinga2/pki/trusted-master.crt --cn {{ inventory_hostname }} # noqa no-handler
   when: client_cert_created.changed
   notify: Restart icinga2
   args:

@@ -9,14 +9,14 @@ object Endpoint NodeName {
 object Zone ZoneName {
   endpoints = [ NodeName ]
 {% if groups['all'] | length() > 1 %}  
-{% if inventory_hostname != groups.monitoring | first %}
-  parent = "{{ groups.monitoring | first }}"
+{% if inventory_hostname != groups.monitoring | sort | first %}
+  parent = "{{ groups.monitoring | sort | first }}"
 {% endif %}
 {% endif %}
 }
 
 {% if groups['all'] | length() > 1 %}  
-{% if inventory_hostname == groups.monitoring | first %}
+{% if inventory_hostname == groups.monitoring | sort | first %}
 {% for host in groups.all | difference([inventory_hostname]) %}
 object Endpoint "{{ host }}" {
   host = "{{ hostvars[host].private_ip }}"
@@ -24,17 +24,17 @@ object Endpoint "{{ host }}" {
 
 object Zone "{{ host }}" {
   endpoints = [ "{{ host }}" ]
-  parent = "{{ groups.monitoring | first }}"
+  parent = "{{ groups.monitoring | sort | first }}"
 }
 
 {% endfor %}
 {% else %}
-object Zone "{{ groups.monitoring | first }}" {
-  endpoints = [ "{{ groups.monitoring | first }}" ]
+object Zone "{{ groups.monitoring | sort |  first }}" {
+  endpoints = [ "{{ groups.monitoring |sort |  first }}" ]
 }
 
-object Endpoint "{{ groups.monitoring | first }}" {
-  host = "{{ hostvars[groups.monitoring | first].private_ip }}"
+object Endpoint "{{ groups.monitoring | sort | first }}" {
+  host = "{{ hostvars[groups.monitoring | sort | first].private_ip }}"
 }
 {% endif %}
 {% endif %}
