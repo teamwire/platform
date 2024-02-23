@@ -9,7 +9,7 @@ defaults
 	timeout client 120s
 
 peers backend-servers
-{% for server in groups['backend_servers'] %}
+{% for server in groups['backend_servers'] | sort %}
 	peer {{ server }} {{ hostvars[server]['private_ip'] }}:1024
 {% endfor %}
 
@@ -21,6 +21,6 @@ listen galera-cluster
 	option httpchk
 	balance leastconn
 	default-server port 9200 inter 2s downinter 5s rise 3 fall 2 slowstart 60s weight 100
-{% for server in groups['database_servers'] %}
+{% for server in groups['database_servers'] | sort %}
 	server {{ server }} {{ hostvars[server]['private_ip'] }}:3306 check
 {% endfor %}

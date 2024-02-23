@@ -1,7 +1,7 @@
 ---
 - name: Create the backend storage directories
   ansible.builtin.file:
-    path: "/data{{'/' + tw_environments[ (groups['backend_servers']|first) ] | default() if tw_environments is defined }}{{ '/' + item }}"
+    path: "/data{{'/' + tw_environments[ (groups['backend_servers']|sort |first) ] | default() if tw_environments is defined }}{{ '/' + item }}"
     owner: daemon
     mode: "{{ (item == 'archiving/gpg') | ternary('0700', '0750') }}" # sets file mode 0700 if the directory is archiving/gpg, else 0750
     state: directory
