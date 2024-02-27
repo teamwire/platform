@@ -31,7 +31,7 @@
         query: "SHOW STATUS LIKE 'wsrep_cluster_size'"
         login_user: root
         login_unix_socket: /var/run/mysqld/mysqld.sock
-      when: inventory_hostname == groups['database_servers'] | first
+      when: inventory_hostname == groups['database_servers'] | sort | first
       register: show_galera_cluster_size
 
     - name: Check if galera is already initialized
@@ -53,7 +53,7 @@
         dest: debian.cnf
         flat: true
       when:
-        - inventory_hostname == groups['database_servers'] | first
+        - inventory_hostname == groups['database_servers'] | sort | first
 
     - name: Copy debian.conf to other masters
       ansible.builtin.copy:
@@ -63,12 +63,12 @@
         group: root
         mode: '600'
       when:
-        - inventory_hostname != groups['database_servers'] | first
+        - inventory_hostname != groups['database_servers'] | sort | first
 
     - name: Bootstrap database on first master
       ansible.builtin.command: /usr/bin/galera_new_cluster
       when:
-        - inventory_hostname == groups['database_servers'] | first
+        - inventory_hostname == groups['database_servers'] | sort | first
 
     - name: Delete root@first master user
       community.mysql.mysql_user:
@@ -78,11 +78,11 @@
         login_user: root
         login_unix_socket: /var/run/mysqld/mysqld.sock
       when:
-        - inventory_hostname == groups['database_servers'] | first
+        - inventory_hostname == groups['database_servers'] | sort | first
 
     - name: Start service normally on other masters
       ansible.builtin.service:
         name: mysql
         state: started
       when:
-        - inventory_hostname != groups['database_servers'] | first
+        - inventory_hostname != groups['database_servers'] | sort | first
