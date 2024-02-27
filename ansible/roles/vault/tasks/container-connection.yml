@@ -6,7 +6,7 @@
 
 - name: Set the executing host
   ansible.builtin.debug:
-    msg: "{{ 'localhost' if groups['all'] | length() == 1 else groups.hashi_servers | first }}"
+    msg: "{{ 'localhost' if groups['all'] | length() == 1 else groups.hashi_servers | sort | first }}"
   register: host_to_delegate
 
 - name: Check if Nomad-job policy exists for Vault
