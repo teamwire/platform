@@ -21,7 +21,7 @@
 
 - name: Register docker registry with harbor
   ansible.builtin.set_fact:
-    local_registry: "{{ groups['docker_registry'] | first }}:5000/"
+    local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
   when:
     - config_done is defined
     - groups.docker_registry is defined
@@ -30,7 +30,7 @@
   ansible.builtin.slurp:
     src: /etc/ansible/job-read.token
   register: remote_nomad_server_token
-  delegate_to: "{{ 'localhost' if groups['all'] | length == 1 else groups.hashi_servers | first }}"
+  delegate_to: "{{ 'localhost' if groups['all'] | length == 1 else groups.hashi_servers | sort | first }}"
 
 - name: Register published nomad_server_vault_token
   ansible.builtin.set_fact:
