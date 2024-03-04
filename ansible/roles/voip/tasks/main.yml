@@ -67,7 +67,7 @@
 
 - name: Register docker registry with harbor
   ansible.builtin.set_fact:
-    local_registry: "{{ groups['docker_registry'] | first }}:5000/"
+    local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
   when:
     - config_done is defined
     - groups.docker_registry is defined
@@ -114,7 +114,7 @@
     source: local
     repository: "{{ local_registry }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ item }}:{{ voip_jitsi_version }}"
     push: true
-  delegate_to: "{{ groups['management_servers'] | first() }}"
+  delegate_to: "{{ groups['management_servers'] | sort | first() }}"
   loop:
     - "{{ voip_container_web }}"
     - "{{ voip_container_prosody }}"

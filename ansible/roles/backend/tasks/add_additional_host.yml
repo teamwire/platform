@@ -27,19 +27,19 @@
       ansible.builtin.slurp:
         src: "/usr/local/share/ca-certificates/vault-rootCA.crt"
       register: vault_rootca
-      delegate_to: "{{ groups.backend_servers | first }}"
+      delegate_to: "{{ groups.backend_servers | sort | first }}"
 
     - name: Register Vault certificate from first backend-node
       ansible.builtin.slurp:
         src: "/var/lib/vault/ssl/vault.crt"
       register: vault_crt
-      delegate_to: "{{ groups.backend_servers | first }}"
+      delegate_to: "{{ groups.backend_servers | sort | first }}"
 
     - name: Register Vault private key from first backend-node
       ansible.builtin.slurp:
         src: "/var/lib/vault/ssl/vault.pem"
       register: vault_pem
-      delegate_to: "{{ groups.backend_servers | first }}"
+      delegate_to: "{{ groups.backend_servers | sort | first }}"
 
     - name: Copy Vault Root CA to destination
       ansible.builtin.copy:

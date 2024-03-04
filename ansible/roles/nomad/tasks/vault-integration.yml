@@ -3,7 +3,7 @@
   ansible.builtin.shell: vault policy read nomad-server || true # noqa no-changed-when
   register: policy_check
   run_once: true
-  delegate_to: "{{ groups.hashi_servers | first }}"
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
 
 - name: Setup Nomad policy
   block:
@@ -34,7 +34,7 @@
         - nomad-cluster-role.json
   run_once: true
   when:
-    - inventory_hostname == groups['hashi_servers'] | first
+    - inventory_hostname == groups['hashi_servers'] |  sort | first
     - (policy_check.stderr is defined and "No policy" in policy_check.stderr)
 
 - name: Check if the Vault config for Nomad exists

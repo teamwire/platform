@@ -107,11 +107,11 @@
 - name: Connect other Redis servers to first Redis server
   community.general.database.misc.redis:
     command: slave
-    master_host: "{{ groups['redis_servers'] | first }}"
+    master_host: "{{ groups['redis_servers'] | sort |first }}"
     master_port: "{{ redis_instances[item].server_port }}"
     login_port: "{{ redis_instances[item].server_port }}"
     login_password: "{{ redis_instances[item].password if redis_instances[item].password else omit }}"
-  when: inventory_hostname != groups['redis_servers'] | first and redis_configuration.changed
+  when: inventory_hostname != groups['redis_servers'] | sort | first and redis_configuration.changed
   with_items: "{{ redis_instances }}"
 
 - name: Install logrotate job for redis-sentinel logs

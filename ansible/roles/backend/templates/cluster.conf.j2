@@ -1,6 +1,6 @@
-REGISTRY="{{ groups['docker_registry'] | first if 'docker_registry' in groups else '' }}{{ ':5000' if 'docker_registry' in groups else '' }}"
+REGISTRY="{{ groups['docker_registry'] | sort | first if 'docker_registry' in groups else '' }}{{ ':5000' if 'docker_registry' in groups else '' }}"
 {% if 'database_servers' in groups and groups['database_servers'] | length > 1 %}
-MYSQL_HOST="{{ hostvars[groups['database_servers'] | first].private_ip }}"
+MYSQL_HOST="{{ hostvars[groups['database_servers'] | sort | first].private_ip }}"
 MYSQL_PORT="3306"
 {% else %}
 MYSQL_HOST="{{ mysql_host | default() }}"
