@@ -57,11 +57,31 @@
     update_cache: true
   when: not offline_mode.stat.exists
 
-- name: Install Docker
+- name: Get checksum for docker version from repo.teamwire.eu
+  ansible.builtin.get_url:
+    url: "{{ docker_checksum_package_file_url }}"
+    dest: "{{ docker_checksum_file_path }}"
+    mode: 0444
+  when: not offline_mode.stat.exists
+  environment:
+    https_proxy: "{{ http_proxy | default() }}"
+
+- name: Get docker version from repo.teamwire.eu
+  ansible.builtin.get_url:
+    url: "{{ docker_package_file_url }}"
+    dest: "{{ docker_package_file_path }}"
+    mode: 0644
+    checksum: "sha256: {{ lookup('file', docker_checksum_file_path) }}"
+  when: not offline_mode.stat.exists
+  environment:
+    https_proxy: "{{ http_proxy | default() }}"
+
+- name: Install docker packages
   ansible.builtin.apt:
-    pkg: "docker-ce={{ docker_ce_version }}"
+    pkg: "{{ item }}"
     state: present
     force: true
+  with_items: "{{ lookup('ansible.builtin.template', docker_package_file_path) }}"
 
 - name: Install python3-docker
   ansible.builtin.apt:
