@@ -345,19 +345,6 @@ job "voip" {
             }
         }
 
-        task "waitfor-jicofo" {
-            driver = "raw_exec"
-
-            lifecycle {
-                hook = "prestart"
-            }
-
-            config {
-                command = "sh"
-                args    = ["-c", "while [ $(nslookup voipJicofo.service.consul 2>&1 >/dev/null) ]; do sleep 2; done"]
-            }
-        }
-
         task "voipVideo" {
             driver = "docker"
 
