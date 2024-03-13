@@ -1,3 +1,20 @@
 ---
 apache_ports_config: ports.conf
 apache_icinga_vhost_conf: apache.conf
+
+# Set repo url part to external/internal
+repo_url_part: "{{ 'internal' if use_internal_package_repository is defined and use_internal_package_repository is truthy else 'external' }}"
+
+# Set variables necessary to get the icinga package versions
+icinga_package_file_url: "https://repo.teamwire.eu/{{ repo_url_part }}/ftp/icinga_packages.txt"
+icinga_checksum_package_file_url: "https://repo.teamwire.eu/{{ repo_url_part }}/ftp/checksum_icinga_packages"
+icinga_package_file_path: "/var/cache/downloads/icinga_packages.txt"
+icinga_checksum_file_path: "/var/cache/downloads/checksum_icinga_packages"
+
+# Set variables necessary to get the check_ntp_time plugin
+icinga_check_ntp_time_file_url: "https://repo.teamwire.eu/{{ repo_url_part }}/ftp/check_ntp_time-latest"
+icinga_check_ntp_time_checksum_file_url: "https://repo.teamwire.eu/{{ repo_url_part }}/ftp/checksum_check_ntp_time-latest"
+icinga_check_ntp_time_checksum_file_path: "/var/cache/downloads/checksum_icinga_check_ntp_time"
+
+# Plugin check_ntp_time check delay
+check_delay: "2"

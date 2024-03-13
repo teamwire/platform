@@ -76,7 +76,6 @@ CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-CHECK_NTP_TIME_VERSION=$(awk '/^check_ntp_time_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 
 DOCKER_IMAGES="
 harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
@@ -97,7 +96,8 @@ https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}
 https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-https://repo.teamwire.eu/bin/icinga/check_ntp_time-${CHECK_NTP_TIME_VERSION};$(awk '/^check_ntp_time_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
+https://repo.teamwire.eu/external/ftp/icinga_packages.txt;$(curl -s https://repo.teamwire.eu/external/ftp/checksum_icinga_packages)
+https://repo.teamwire.eu/external/ftp/check_ntp_time-latest;$(curl -s https://repo.teamwire.eu/external/ftp/checksum_check_ntp_time-latest)
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
@@ -144,7 +144,7 @@ fi
 
 if [ ! -f /etc/apt/preferences.d/tw_monitoring_pinning ]; then
   cd ~/platform/ansible
-  sudo cp roles/monitoring/files/tw_monitoring_pinning /etc/apt/preferences.d/tw_monitoring_pinning
+  ansible localhost -i hosts -m template -b -a "src=roles/monitoring/templates/tw_monitoring_pinning.j2 dest=/etc/apt/preferences.d/tw_monitoring_pinning owner=root group=root mode=0644" -e @roles/monitoring/defaults/main.yml
 fi
 
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,

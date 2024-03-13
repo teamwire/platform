@@ -40,9 +40,28 @@
     update_cache: true
   when: not offline_mode.stat.exists
 
+- name: Get checksum for icinga versions from repo.teamwire.eu
+  ansible.builtin.get_url:
+    url: "{{ icinga_checksum_package_file_url }}"
+    dest: "{{ icinga_checksum_file_path }}"
+    mode: 0444
+  when: not offline_mode.stat.exists
+  environment:
+    https_proxy: "{{ http_proxy | default() }}"
+
+- name: Get icinga version from repo.teamwire.eu
+  ansible.builtin.get_url:
+    url: "{{ icinga_package_file_url }}"
+    dest: "{{ icinga_package_file_path }}"
+    mode: 0644
+    checksum: "sha256: {{ lookup('file', icinga_checksum_file_path) }}"
+  when: not offline_mode.stat.exists
+  environment:
+    https_proxy: "{{ http_proxy | default() }}"
+
 - name: Pin Icinga version
-  ansible.builtin.copy:
-    src: tw_monitoring_pinning
+  ansible.builtin.template:
+    src: tw_monitoring_pinning.j2
     dest: /etc/apt/preferences.d/tw_monitoring_pinning
     owner: root
     group: root
@@ -123,11 +142,21 @@
     group: nagios
     mode: 0750
 
-- name: Download Icinga check_ntp_time plugin
+- name: Get checksum for check_ntp_time plugin from repo.teamwire.eu
   ansible.builtin.get_url:
-    url: https://repo.teamwire.eu/bin/icinga/check_ntp_time-{{ check_ntp_time_version }}
-    dest: /var/cache/downloads/
-    checksum: sha256:{{ check_ntp_time_checksum }}
+    url: "{{ icinga_check_ntp_time_checksum_file_url }}"
+    dest: "{{ icinga_check_ntp_time_checksum_file_path }}"
+    mode: 0444
+  when: not offline_mode.stat.exists
+  environment:
+    https_proxy: "{{ http_proxy | default() }}"
+
+# We have to download the check file to /var/cache/download first cause of the offline image
+- name: Fetch Icinga check_ntp_time plugin from repo.teamwire.eu
+  ansible.builtin.get_url:
+    url: "{{ icinga_check_ntp_time_file_url }}"
+    dest: /var/cache/downloads/check_ntp_time-latest
+    checksum: "sha256: {{ lookup('file', icinga_check_ntp_time_checksum_file_path) }}"
     owner: root
     group: root
     mode: 0644
@@ -137,7 +166,7 @@
 
 - name: Install Icinga check_ntp_time plugin
   ansible.builtin.copy:
-    src: /var/cache/downloads/check_ntp_time-{{ check_ntp_time_version }}
+    src: /var/cache/downloads/check_ntp_time-latest
     dest: /usr/lib/nagios/plugins/check_ntp_time
     owner: root
     group: root
