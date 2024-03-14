@@ -64,12 +64,10 @@ job "voip" {
 
             config {
                 image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_web }}:{{ voip_jitsi_version }}"
-{% if not "docker_registry" in groups %}
                 auth {
-                    username = "{{ dockerhub_username }}"
-                    password = "{{ dockerhub_password }}"
+                    username = "{{ docker_registry_username }}"
+                    password = "{{ docker_registry_password }}"
                 }
-{%endif %}
 
                 # Although group-level networking is set to "host"
                 # Docker-specific networking setting is required
@@ -143,12 +141,10 @@ job "voip" {
 
             config {
                 image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_prosody }}:{{ voip_jitsi_version }}"
-{% if not "docker_registry" in groups %}
                 auth {
-                    username = "{{ dockerhub_username }}"
-                    password = "{{ dockerhub_password }}"
+                    username = "{{ docker_registry_username }}"
+                    password = "{{ docker_registry_password }}"
                 }
-{%endif %}
 
                 # Although group-level networking is set to "host"
                 # Docker-specific networking setting is required
@@ -262,12 +258,10 @@ job "voip" {
 
             config {
                 image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jicofo }}:{{ voip_jitsi_version }}"
-{% if not "docker_registry" in groups %}
                 auth {
-                    username = "{{ dockerhub_username }}"
-                    password = "{{ dockerhub_password }}"
+                    username = "{{ docker_registry_username }}"
+                    password = "{{ docker_registry_password }}"
                 }
-{%endif %}
 
                 # Although group-level networking is set to "host"
                 # Docker-specific networking setting is required
@@ -320,7 +314,7 @@ job "voip" {
 
             resources {
                 cpu    = 300
-                memory = 1024  
+                memory = 1024
             }
         }
     }
@@ -369,12 +363,10 @@ job "voip" {
 
             config {
                 image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_jvb }}:{{ voip_jitsi_version }}"
-{% if not "docker_registry" in groups %}
                 auth {
-                    username = "{{ dockerhub_username }}"
-                    password = "{{ dockerhub_password }}"
+                    username = "{{ docker_registry_username }}"
+                    password = "{{ docker_registry_password }}"
                 }
-{%endif %}
 
                 # Although group-level networking is set to "host"
                 # Docker-specific networking setting is required
@@ -472,6 +464,10 @@ job "voip" {
 
             config {
                 image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}{{ voip_container_turn }}:{{ voip_jitsi_version }}"
+                auth {
+                    username = "{{ docker_registry_username }}"
+                    password = "{{ docker_registry_password }}"
+                }
 
                 network_mode = "host"
 

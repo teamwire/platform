@@ -183,6 +183,7 @@
   no_log: true
   with_items:
     - { secret: 'dockerhub/password', value: "{{ dockerhub_password | default('') }}" }
+    - { secret: 'registry/password', value: "{{ local_registry_password | default('') }}" }
     - { secret: 'keys/gcm', value: "{{ gcm_api_key | default('') }}" }
     - { secret: 'database/password', value: "{{ teamwire_db_password | default('') }}" }
     - { secret: 'database/aes_key', value: "{{ aes_key | default('') }}" }

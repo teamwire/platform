@@ -21,3 +21,8 @@ beat_ram_alloc_min: 384
 nomad_jobs:
   - teamwire
   - voip
+
+# Decide which login data to use for docker registry local / harbor / others
+local_registry_username: "teamwire"
+docker_registry_username: "{{ local_registry_username if groups.docker_registry is defined else dockerhub_username }}"
+docker_registry_password: "{{ local_registry_password if groups.docker_registry is defined else dockerhub_password }}"
