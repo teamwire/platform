@@ -118,8 +118,23 @@ for pkg in ${APT_3RD_PARTY_PREREQUISITES}; do
   sudo apt-get install -qyd "${pkg}"
 done
 
+echo "Step 2: Downloading 3rd party software and teamwire package lists"
+echo "================================================================="
+for DOWNLOAD in ${DOWNLOADS} ; do
+  # split line into URL and SHA256 checksum
+  IFS=";" read -r -a UC <<< "${DOWNLOAD}"
+  echo "Getting ${UC[0]}"
+  wget -q "${UC[0]}"
+  FILENAME="${UC[0]##*/}"
+  if [ "${UC[1]}" != "$(sha256sum "${FILENAME}" | cut -d' ' -f1)" ] ; then
+    echo "${FILENAME}: Checksum failure"
+    exit 1
+  fi
+  sudo mv "${FILENAME}" /var/cache/downloads
+done
+
 # Add additional repo signing keys
-echo "Step 2: Import additional repo signing keys / repositories"
+echo "Step 3: Import additional repo signing keys / repositories"
 echo "==========================================="
 sudo apt-get update -q
 
@@ -150,14 +165,14 @@ fi
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,
 # e.g. php-cli is required when solely installing icingaweb2, but not when installing all regular packages at once.
 # Thus, installing them one by one to get dependencies "properly" resolved
-echo "Step 3: Caching packages"
+echo "Step 4: Caching packages"
 echo "========================"
 sudo apt-get update -q
 for pkg in ${REGULAR_PACKAGES}; do
   sudo apt-get install -qyd "${pkg}"
 done
 
-echo "Step 4: Getting Docker containers"
+echo "Step 5: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
 sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}" harbor.teamwire.eu
@@ -169,18 +184,3 @@ sudo rm -rf /root/.docker
 cd ~/platform/ansible/group_vars
 cp all.example all
 sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
-
-echo "Step 5: Downloading 3rd party software"
-echo "======================================"
-for DOWNLOAD in ${DOWNLOADS} ; do
-  # split line into URL and SHA256 checksum
-  IFS=";" read -r -a UC <<< "${DOWNLOAD}"
-  echo "Getting ${UC[0]}"
-  wget -q "${UC[0]}"
-  FILENAME="${UC[0]##*/}"
-  if [ "${UC[1]}" != "$(sha256sum "${FILENAME}" | cut -d' ' -f1)" ] ; then
-    echo "${FILENAME}: Checksum failure"
-    exit 1
-  fi
-  sudo mv "${FILENAME}" /var/cache/downloads
-done
