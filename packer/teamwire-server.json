@@ -157,6 +157,10 @@
 			]
 		},
 		{
+			"type": "shell",
+			"inline": "if [ ! -d /var/cache/downloads ] ; then sudo mkdir /var/cache/downloads; fi"
+		},
+		{
 			"type": "ansible-local",
 			"command": "env tw_dev_mode=1 ansible-playbook",
 			"playbook_file": "../ansible/site.yml",

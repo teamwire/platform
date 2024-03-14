@@ -172,9 +172,6 @@ sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
 
 echo "Step 5: Downloading 3rd party software"
 echo "======================================"
-if [ ! -d /var/cache/downloads ] ; then
-  sudo mkdir /var/cache/downloads
-fi
 for DOWNLOAD in ${DOWNLOADS} ; do
   # split line into URL and SHA256 checksum
   IFS=";" read -r -a UC <<< "${DOWNLOAD}"
