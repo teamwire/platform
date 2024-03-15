@@ -60,9 +60,14 @@
     - "'storage_servers' in groups"
     - groups['storage_servers'] | length == 1
 
-- name: Register storage servers
+- name: Register GlusterFS storage servers
   ansible.builtin.set_fact:
     storage: "{{ groups['storage_servers'] | sort | list }}"
+  when:
+    - external_storage_path is not defined
+    - "'storage_servers' in groups"
+    - groups['storage_servers'] | length > 1
+    - not inventory_hostname in groups['storage_servers']
 
 - name: Mount GlusterFS share (cluster)
   ansible.posix.mount:
