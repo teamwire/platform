@@ -1,0 +1,7 @@
+{%- for package in lookup('file', icinga_package_file_path).splitlines() %}
+{%- set package, version = package.split('=') %}
+Package: {{ package }}
+Pin: version {{ version }}*
+Pin-Priority: 1000
+
+{% endfor %}

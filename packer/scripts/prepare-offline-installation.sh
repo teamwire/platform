@@ -41,17 +41,17 @@ patch
 python3-docker
 mlock
 libcap2-bin
-icinga2=2.14.0-1*
-icinga2-bin=2.14.0-1*
-icinga2-common=2.14.0-1*
-icinga2-doc=2.14.0-1*
-icinga2-ido-mysql=2.14.0-1*
-icingaweb2-common=2.12.0-1*
-icingacli=2.12.0-1*
-php-icinga=2.12.0-1*
-icinga-php-library=0.13.1-1*
-icinga-php-thirdparty=0.12.0-1*
-icingaweb2=2.12.0-1*
+icinga2
+icinga2-bin
+icinga2-common
+icinga2-doc
+icinga2-ido-mysql
+icingaweb2-common
+icingacli
+php-icinga
+icinga-php-library
+icinga-php-thirdparty
+icingaweb2
 monitoring-plugins
 nagios-plugins-contrib
 libredis-perl
@@ -76,7 +76,6 @@ CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-CHECK_NTP_TIME_VERSION=$(awk '/^check_ntp_time_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
 
 DOCKER_IMAGES="
 harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
@@ -97,7 +96,8 @@ https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}
 https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-https://repo.teamwire.eu/bin/icinga/check_ntp_time-${CHECK_NTP_TIME_VERSION};$(awk '/^check_ntp_time_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/monitoring/vars/main.yml)
+https://repo.teamwire.eu/external/ftp/icinga_packages.txt;$(curl -s https://repo.teamwire.eu/external/ftp/checksum_icinga_packages)
+https://repo.teamwire.eu/external/ftp/check_ntp_time-latest;$(curl -s https://repo.teamwire.eu/external/ftp/checksum_check_ntp_time-latest)
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
@@ -118,8 +118,23 @@ for pkg in ${APT_3RD_PARTY_PREREQUISITES}; do
   sudo apt-get install -qyd "${pkg}"
 done
 
+echo "Step 2: Downloading 3rd party software and teamwire package lists"
+echo "================================================================="
+for DOWNLOAD in ${DOWNLOADS} ; do
+  # split line into URL and SHA256 checksum
+  IFS=";" read -r -a UC <<< "${DOWNLOAD}"
+  echo "Getting ${UC[0]}"
+  wget -q "${UC[0]}"
+  FILENAME="${UC[0]##*/}"
+  if [ "${UC[1]}" != "$(sha256sum "${FILENAME}" | cut -d' ' -f1)" ] ; then
+    echo "${FILENAME}: Checksum failure"
+    exit 1
+  fi
+  sudo mv "${FILENAME}" /var/cache/downloads
+done
+
 # Add additional repo signing keys
-echo "Step 2: Import additional repo signing keys / repositories"
+echo "Step 3: Import additional repo signing keys / repositories"
 echo "==========================================="
 sudo apt-get update -q
 
@@ -144,20 +159,20 @@ fi
 
 if [ ! -f /etc/apt/preferences.d/tw_monitoring_pinning ]; then
   cd ~/platform/ansible
-  sudo cp roles/monitoring/files/tw_monitoring_pinning /etc/apt/preferences.d/tw_monitoring_pinning
+  ansible localhost -i hosts -m template -b -a "src=roles/monitoring/templates/tw_monitoring_pinning.j2 dest=/etc/apt/preferences.d/tw_monitoring_pinning owner=root group=root mode=0644" -e @roles/monitoring/defaults/main.yml
 fi
 
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,
 # e.g. php-cli is required when solely installing icingaweb2, but not when installing all regular packages at once.
 # Thus, installing them one by one to get dependencies "properly" resolved
-echo "Step 3: Caching packages"
+echo "Step 4: Caching packages"
 echo "========================"
 sudo apt-get update -q
 for pkg in ${REGULAR_PACKAGES}; do
   sudo apt-get install -qyd "${pkg}"
 done
 
-echo "Step 4: Getting Docker containers"
+echo "Step 5: Getting Docker containers"
 echo "================================="
 # We need to use sudo as the teamwire user is apparently not yet updated
 sudo docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}" harbor.teamwire.eu
@@ -169,21 +184,3 @@ sudo rm -rf /root/.docker
 cd ~/platform/ansible/group_vars
 cp all.example all
 sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
-
-echo "Step 5: Downloading 3rd party software"
-echo "======================================"
-if [ ! -d /var/cache/downloads ] ; then
-  sudo mkdir /var/cache/downloads
-fi
-for DOWNLOAD in ${DOWNLOADS} ; do
-  # split line into URL and SHA256 checksum
-  IFS=";" read -r -a UC <<< "${DOWNLOAD}"
-  echo "Getting ${UC[0]}"
-  wget -q "${UC[0]}"
-  FILENAME="${UC[0]##*/}"
-  if [ "${UC[1]}" != "$(sha256sum "${FILENAME}" | cut -d' ' -f1)" ] ; then
-    echo "${FILENAME}: Checksum failure"
-    exit 1
-  fi
-  sudo mv "${FILENAME}" /var/cache/downloads
-done

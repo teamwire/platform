@@ -1,5 +1,0 @@
----
-# Plugin check_ntp_time
-check_ntp_time_version: "2.4.6"
-check_ntp_time_checksum: "77ec5fc287f99236e7df3eab38bb6c38ce67e060b3859aac4b1fb117e6aa4252"
-check_delay: "2"
