@@ -26,6 +26,7 @@
     group: root
     mode: 0644
   run_once: true
+  notify: Restart registry
 
 - name: Local registry container
   community.docker.docker_container:
@@ -33,7 +34,6 @@
     image: "{{ registry_version }}"
     state: started
     restart_policy: always
-    restart: true
     network_mode: host
     log_driver: syslog
     log_options:
