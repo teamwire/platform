@@ -81,7 +81,7 @@
     pkg: "{{ item }}"
     state: present
     force: true
-  with_items: "{{ lookup('ansible.builtin.template', docker_package_file_path) }}"
+  with_items: "{{ lookup('ansible.builtin.template', docker_package_file_path).splitlines() }}"
 
 - name: Install python3-docker
   ansible.builtin.apt:
