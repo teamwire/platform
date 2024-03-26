@@ -194,7 +194,7 @@
   block:
 # Necessary for the nomad docker authentication fallback
     - name: Log in on local docker registry - teamwire
-      become_user: teamwire
+      become: false
       community.docker.docker_login:
         registry_url: "{{ groups['docker_registry'] | first }}:5000/"
         username: "{{ local_registry_username }}"
@@ -218,7 +218,7 @@
       ansible.builtin.meta: flush_handlers
 
     - name: Force reauthorization on local docker registry - teamwire
-      become_user: teamwire
+      become: false
       community.docker.docker_login:
         registry_url: "{{ groups['docker_registry'] | first }}:5000/"
         username: "{{ local_registry_username }}"
