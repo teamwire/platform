@@ -249,6 +249,10 @@ vault_restore_single() {
     fi
 }
 
+_change_to_platform_ansible_dir(){
+    cd "${ANSIBLE_DIR}" || exit
+}
+
 _get_config_value() {
     local ENTRY="$1"
     awk '/^'"${ENTRY}"':/ { gsub("(^\"|\"$)","", $2); print $2 }' "${CONFIG_FILE}" 2> /dev/null
@@ -257,6 +261,7 @@ _get_config_value() {
 _get_config_value_array() {
     local ENTRY="$1"
     ANSIBLE_HOST_FILE="${ANSIBLE_DIR}/hosts"
+    _change_to_platform_ansible_dir
 
     if [ "${INSTALLATION}" = "cluster" ]; then
         local ANSIBLE_HOST_FILE="${ANSIBLE_DIR}/cluster_hosts"
@@ -983,6 +988,7 @@ setup_containers_base() {
 setup_containers_single() {
     local enabled
     enabled="$(_get_config_value enable_voip)"
+    _change_to_platform_ansible_dir
     setup_containers_base
 
     ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
@@ -997,6 +1003,7 @@ setup_containers_single() {
 setup_containers_cluster() {
     local enabled
     enabled="$(_get_config_value enable_voip)"
+    _change_to_platform_ansible_dir
     setup_containers_base
 
     ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
