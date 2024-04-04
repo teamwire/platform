@@ -120,7 +120,6 @@
       when:
         - enable_voip is defined
         - enable_voip | string() == 'true'
-        - groups['all'] | length == 1
         - groups['all'] | length > 1
 
 - name: Configure additional hosts for video server(s)
