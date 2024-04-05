@@ -29,6 +29,8 @@ variables:
   SHELLCHECK_VERSION: "0.7.1"
   GOLINT_IMAGE: "cytopia/golint:latest-0.3"
   GOLINT_CMD: "docker run --rm -v $(pwd):/data $GOLINT_IMAGE"
+  PY_COLORS: '1'
+  ANSIBLE_FORCE_COLOR: '1'
 
 # ------------------------------------------------------------------------------
 #
