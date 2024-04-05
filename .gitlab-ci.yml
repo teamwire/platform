@@ -10,7 +10,9 @@ workflow:
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
 
 stages:
-  - release
+  - hub-deploy
+  - release-tag
+  - cloud-deploy
   - startup
   - ansible-lint
   - shellcheck
@@ -43,29 +45,84 @@ variables:
 
 # ------------------------------------------------------------------------------
 #
-# Release on GitHub
+# Deploy to Hub
 #
 # ------------------------------------------------------------------------------
 
-release:
-  stage: release
+Deploy to hub:
+  stage: hub-deploy
+  tags:
+  - hub3-runner
+  script:
+    - eval $(ssh-agent -s)
+    - echo "${HUB_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
+    - cd /home/teamwire/platform/ansible
+    - git status
+    - git fetch --all
+    - git reset --hard remotes/origin/master
+    - ansible-playbook -i cluster_hosts playbooks/cluster.yml
+  rules:
+    # Only accept tags what match the regex
+    # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
+
+# ------------------------------------------------------------------------------
+#
+# Release tag on GitHub
+#
+# ------------------------------------------------------------------------------
+
+Release tag on GitHub:
+  stage: release-tag
+  script:
+    - LAST_DIGIT="${CI_COMMIT_TAG##*.}"
+    - git remote add github https://${GITHUB_TOKEN}:x-oauth-basic@github.com/teamwire/platform.git
+    - git push github ${CI_COMMIT_TAG}
+    - git checkout master
+    - git push github master
+    - |
+      if [ "$LAST_DIGIT" = "0" ]; then
+        # It's a release tag, not a patch
+        TAG_MESSAGE="Teamwire on-premise platform release ${CI_COMMIT_TAG}"
+        echo "Creating GitHub release for ${CI_COMMIT_TAG}"
+        curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/teamwire/platform/releases \
+          -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"target_commitish\":\"master\",\"name\":\"${CI_COMMIT_TAG}\",\"body\":\"${TAG_MESSAGE}\",\"draft\":false,\"prerelease\":false,\"generate_release_notes\":false}"
+      else
+        echo "Skipping GitHub release creation for patch ${CI_COMMIT_TAG}"
+      fi
+  rules:
+    # Only accept tags what match the regex
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
+      when: manual
+
+# ------------------------------------------------------------------------------
+#
+# Deploy to Cloud
+#
+# ------------------------------------------------------------------------------
+
+Deploy to cloud:
+  stage: cloud-deploy
+  tags:
+  - prod-cloud
+  script:
+    - eval $(ssh-agent -s)
+    - echo "${CLOUD_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
+    - cd /home/teamwire/platform/ansible
+    - git status
+    - git fetch --all
+    - git reset --hard remotes/origin/master
+    - ansible-playbook -i cluster_hosts playbooks/cluster.yml
   rules:
     # Only accept tags what match the regex
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
       when: manual
-    # Reject every other tag
-    - if: $CI_COMMIT_TAG
-      when: never
-  script:
-    - ls -la
-    - git remote add github https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/teamwire/platform.git
-    - git push github $CI_COMMIT_TAG
-    - git fetch
-    - git checkout master
-    - git push github master
-  after_script:
-    - rm -rf .git
 
 # ------------------------------------------------------------------------------
 #
