@@ -39,7 +39,7 @@
         that:
           - item.Value == "0"
         msg: "Your galera cluster is already initialized. Please carry on with the setup process."
-      with_items: "{{ hostvars[groups['database_servers'][0]].show_galera_cluster_size.query_result }}"
+      with_items: "{{ hostvars[groups['database_servers'] | sort | first].show_galera_cluster_size.query_result }}"
       run_once: true
 
     - name: Stop MySQL on all cluster nodes
