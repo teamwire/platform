@@ -7,12 +7,22 @@ VERSION=v1
 ENDPOINT=allocations
 URI="${SCHEME}://${HOST}:${PORT}/${VERSION}/${ENDPOINT}"
 
-# Set job and container
-JOB_NAME="{% if tw_environments.voip01 is defined %}{{ tw_environments.voip01 + '-voip' }}{% else %}voip{%endif%}"
-GROUP_NAME="voip-prosodys"
+# Get information over JVB Users
+JVB_AUTH_PASSWORD="$1"
+JVB_USERS=$(find /data/voip/ -maxdepth 1 -name 'jvb[0-9]*' -type d -exec basename {} \;)
 
-# Fetch container allocation ID as bash array
-allocations=($(curl -s ${URI} | jq -r ".[] | select ( (.Name | contains( \"${JOB_NAME}.${GROUP_NAME}\" )) and (.ClientStatus | contains( \"running\" ))) | .ID"))
+for JVB_USER in ${JVB_USERS}; do
 
-# Execute command on first element of array
-nomad alloc exec ${allocations[0]} prosodyctl --config /config/prosody.cfg.lua $@
+  # Set job and container
+  JOB_NAME="{% if tw_environments.voip01 is defined %}{{ tw_environments.voip01 + '-voip' }}{% else %}voip{%endif%}"
+  GROUP_NAME="voip-prosodys"
+
+  # Fetch container allocation ID as bash array
+  allocations=($(curl -s ${URI} | jq -r ".[] | select ( (.Name | contains( \"${JOB_NAME}.${GROUP_NAME}\" )) and (.ClientStatus | contains( \"running\" ))) | .ID"))
+
+  # Execute command on first element of array
+  nomad alloc exec ${allocations[0]} prosodyctl --config /config/prosody.cfg.lua register "${JVB_USER}" auth.meet.jitsi "${JVB_AUTH_PASSWORD}"
+done
+
+# ITOPS-1476: Ensure prosody service is restarted so that Jicofo notices all the JVB Bridges
+nomad alloc exec "${allocations[0]}" /etc/init.d/prosody reload > /dev/null

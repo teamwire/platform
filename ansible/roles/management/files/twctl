@@ -359,11 +359,7 @@ voip_status_single() {
 }
 
 voip_jvb_register() {
-    JVB_AUTH_PASSWORD="$(vault_read_secrets voip/jvb_password)"
-    JVB_USERS=$(find /data/voip/ -maxdepth 1 -name 'jvb[0-9]*' -type d -exec basename {} \;)
-    for JVB_USER in ${JVB_USERS}; do
-        /usr/local/bin/tw_prosodyctl register "${JVB_USER}" auth.meet.jitsi "${JVB_AUTH_PASSWORD}"
-    done
+    /usr/local/bin/tw_prosodyctl $(vault_read_secrets voip/jvb_password)
 }
 
 voip() {
