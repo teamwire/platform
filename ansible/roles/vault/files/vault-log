@@ -1,7 +1,7 @@
 /var/log/vault_audit.log {
         daily
         missingok
-        rotate 31
+        rotate 60
         compress
         postrotate
             /usr/bin/systemctl reload vault 2> /dev/null || true
