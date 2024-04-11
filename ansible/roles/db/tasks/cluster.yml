@@ -32,7 +32,7 @@
     priv: "*.*:RELOAD,LOCK TABLES,REPLICATION CLIENT,PROCESS"
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
-  when: inventory_hostname == groups['database_servers'][0]
+  when: inventory_hostname == groups['database_servers'] | sort | first
 
 - name: Write Galera cluster configuration
   ansible.builtin.template:
@@ -48,7 +48,7 @@
     priv: "*.*:PROCESS"
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
-  when: inventory_hostname == groups['database_servers'][0]
+  when: inventory_hostname == groups['database_servers'] | sort | first
 
 # Clustercheck script from https://github.com/olafz/percona-clustercheck
 # Licensed under the BSD license
