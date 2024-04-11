@@ -1,6 +1,6 @@
 /var/log/icinga2/icinga2.log /var/log/icinga2/debug.log {
   daily
-  rotate 7
+  rotate 60
   compress
   delaycompress
   missingok
