@@ -1,7 +1,7 @@
 
 /var/log/glusterfs/*.log /var/log/glusterfs/bricks/*.log {
         daily
-        rotate 7
+        rotate 60
         delaycompress
         compress
         copytruncate
