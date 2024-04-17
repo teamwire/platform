@@ -20,7 +20,11 @@ ff02::2 ip6-allrouters
 {% else %}
 
 {% for host in groups['all']|sort %}
+{%- if hostvars[host].ansible_host is defined and hostvars[host].ansible_host is not match("\d+\.\d+\.\d+") %}
+{{ hostvars[host].private_ip }} {{ hostvars[host].ansible_host }}
+{%- else %}
 {{ hostvars[host].private_ip }} {{ host }}
+{%- endif %}
 {%- if host in groups['frontend_servers']|sort|first %}
 {% if loadbalancer_external_ip is defined %}
 
