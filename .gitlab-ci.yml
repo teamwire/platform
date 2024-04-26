@@ -26,7 +26,8 @@ default:
 variables:
   ANSIBLE_LINT_IMAGE: "cytopia/ansible-lint:6-0.12"
   ANSIBLE_LINT_CMD: "docker run --rm -v $(pwd):/data $ANSIBLE_LINT_IMAGE"
-  SHELLCHECK_VERSION: "0.7.1"
+  SHELLCHECK_IMAGE: "koalaman/shellcheck:v0.7.1"
+  SHELLCHECK_CMD: "docker run --rm -v $(pwd):/mnt $SHELLCHECK_IMAGE"
   GOLINT_IMAGE: "cytopia/golint:latest-0.3"
   GOLINT_CMD: "docker run --rm -v $(pwd):/data $GOLINT_IMAGE"
   PY_COLORS: '1'
@@ -145,15 +146,9 @@ Ensure golint docker image exists:
       - ansible/roles/go/files/ocspResponder.go
       - ansible/roles/go/files/archiving.go
 
-# ------------------------------------------------------------------------------
-#
-# Check shellcheck version
-#
-# ------------------------------------------------------------------------------
-
-Ensure shellcheck has correct version:
+Ensure shellcheck docker image exists:
   stage: startup
-  script: dpkg -l | grep "ii  shellcheck" | grep $SHELLCHECK_VERSION
+  script: docker pull $SHELLCHECK_IMAGE
   only:
     changes:
       - packer/build-vmware.sh
@@ -205,84 +200,84 @@ Roles dir test:
 
 Packer Build vmware test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always packer/build-vmware.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD packer/build-vmware.sh"
   only:
     changes:
       - packer/build-vmware.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 
 Packer network fix script test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always packer/scripts/fix-network.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/fix-network.sh"
   only:
     changes:
       - packer/scripts/fix-network.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 Packer shrink test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always packer/scripts/shrink-image.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/shrink-image.sh"
   only:
     changes:
       - packer/scripts/shrink-image.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 Packer unique test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always packer/scripts/make-unique.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/make-unique.sh"
   only:
     changes:
       - packer/scripts/make-unique.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 Packer guest tools test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always packer/scripts/vm-guest-tools.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/vm-guest-tools.sh"
   only:
     changes:
       - packer/scripts/vm-guest-tools.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 OCSP wrapper test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always ansible/roles/frontend/files/ocsp.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/frontend/files/ocsp.sh"
   only:
     changes:
       - ansible/roles/frontend/files/ocsp.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 Backup / Restore test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always ansible/roles/db/files/backup_restore_db.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/db/files/backup_restore_db.sh"
   only:
     changes:
       - ansible/roles/db/files/backup_restore_db.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 Offline installation test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always packer/scripts/prepare-offline-installation.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/prepare-offline-installation.sh"
   only:
     changes:
       - packer/scripts/prepare-offline-installation.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 TWCTL test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always ansible/roles/management/files/twctl
+  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/management/files/twctl"
   only:
     changes:
       - ansible/roles/management/files/twctl
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 Login banner test:
   stage: shellcheck
-  script: shellcheck --format=tty --color=always ansible/roles/management/files/motd.sh
+  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/management/files/motd.sh"
   only:
     changes:
       - ansible/roles/management/files/motd.sh
-  needs: ['Ensure shellcheck has correct version']
+  needs: ['Ensure shellcheck docker image exists']
 
 # ------------------------------------------------------------------------------
 #
