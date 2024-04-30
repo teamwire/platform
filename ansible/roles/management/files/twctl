@@ -359,7 +359,7 @@ voip_status_single() {
 }
 
 voip_jvb_register() {
-    /usr/local/bin/tw_prosodyctl $(vault_read_secrets voip/jvb_password)
+    /usr/local/bin/tw_prosodyctl "$(vault_read_secrets voip/jvb_password)"
 }
 
 voip() {
