@@ -29,7 +29,7 @@
           line: "LoginGraceTime 1m"
         # CIS - BENCHMARK ID: 26663 cis: 5.2.21
         - regexp: "^AllowTcpForwarding\ "
-          line: "AllowTcpForwarding no"
+          line: "AllowTcpForwarding {{ allow_tcp_forwarding if allow_tcp_forwarding is defined else 'no' }}"
         # DEFAULT BY TEAMWIRE COMPLIANCE
         - regexp: "^PermitRootLogin\ "
           line: "PermitRootLogin {{ permit_root_login | lower if permit_root_login | lower == 'yes' or permit_root_login | lower == 'no' else 'prohibit-password' }}"

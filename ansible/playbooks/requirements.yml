@@ -209,6 +209,17 @@
       run_once: true
       when: VOIP_VIDEO_RAM is defined
 
+    - name: Ensure allow_tcp_forwarding is set to yes or no when enabled
+      ansible.builtin.assert:
+        that:
+          - allow_tcp_forwarding is string
+          - allow_tcp_forwarding is in ['yes', 'no']
+        msg: >-
+          Ensure value from allow_tcp_forwarding is set to lower quoted yes or no when enabled
+      run_once: true
+      when:
+        - allow_tcp_forwarding is defined  
+
     - name: Ensure valid configuration combination
       block:
         - name: Retrieve name of playbook file
