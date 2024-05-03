@@ -1,0 +1,14 @@
+disable=SC2059
+disable=SC2034
+disable=SC1090
+disable=SC1091
+disable=SC1092
+disable=SC1093
+disable=SC1094
+disable=SC1095
+disable=SC1096
+disable=SC1097
+disable=SC1098
+disable=SC1099
+disable=SC1100
+enable=require-variable-braces
