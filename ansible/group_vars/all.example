@@ -334,6 +334,12 @@ system_email_recipient:
 # are valid values for the variable. Otherwise "prohibit-password" is always inserted.
 # permit_root_login: "prohibit-password"
 
+# Permit SSH TCP forwarding
+# To reach the icinga webUI via an SSH tunnel, SSH TCP forwarding must be permitted. 
+# Only quoted "yes" or "no" are valid values for the variable.
+# By default, the variable <allow_tcp_forwarding> is set to "no".
+# allow_tcp_forwarding: "no"
+
 ##############################################################################
 ## DEBUGGING
 ##############################################################################
