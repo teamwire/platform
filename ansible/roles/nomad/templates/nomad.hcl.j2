@@ -43,6 +43,12 @@ server {
 client {
   enabled = {{ "true" if "backend_servers" in group_names or "management_servers" in group_names or "voip_servers" in group_names or "video_servers" in group_names else "false" }}
   network_interface =  "{{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}"
+{% if ansible_host != private_ip %}
+  host_network "public" {
+        interface = "{{ ansible_host | addr_to_if(hostvars[inventory_hostname]) }}"
+        }
+{% endif %}
+
 {% if 'backend_servers' in group_names and inventory_hostname in groups['backend_servers'] %}
   node_class = "backend_servers"
 {% elif 'video_servers' in group_names and inventory_hostname in groups['video_servers'] %}
