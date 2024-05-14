@@ -218,7 +218,7 @@
           Ensure value from allow_tcp_forwarding is set to lower quoted yes or no when enabled
       run_once: true
       when:
-        - allow_tcp_forwarding is defined  
+        - allow_tcp_forwarding is defined
 
     - name: Ensure valid configuration combination
       block:
