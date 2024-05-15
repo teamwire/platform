@@ -56,3 +56,14 @@
 # CIS - BENCHMARK cronjobs
 - name: Include cronjob
   ansible.builtin.include_tasks: cronjob.yml
+
+# CIS - BENCHMARK ID: 29672 cis: 5.3.2
+- name: Configure sudo to use pseudo tty
+  ansible.builtin.copy:
+    src: 10-pty-console
+    dest: "/etc/sudoers.d/10-pty-console"
+    mode: 0440
+    owner: root
+    group: root
+    validate: /usr/sbin/visudo -cf %s
+
