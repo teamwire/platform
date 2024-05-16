@@ -56,3 +56,13 @@
 # CIS - BENCHMARK cronjobs
 - name: Include cronjob
   ansible.builtin.include_tasks: cronjob.yml
+
+- name: Configure sudo to use sudo log
+  ansible.builtin.copy:
+    src: 10-log-file
+    dest: "/etc/sudoers.d/10-log-file"
+    mode: 0440
+    owner: root
+    group: root
+    validate: /usr/sbin/visudo -cf %s
+
