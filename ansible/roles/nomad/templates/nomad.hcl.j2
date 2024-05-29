@@ -43,9 +43,9 @@ server {
 client {
   enabled = {{ "true" if "backend_servers" in group_names or "management_servers" in group_names or "voip_servers" in group_names or "video_servers" in group_names else "false" }}
   network_interface =  "{{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}"
-{% if ansible_host != private_ip %}
+{% if ansible_default_ipv4.address != private_ip %}
   host_network "public" {
-        interface = "{{ ansible_host | addr_to_if(hostvars[inventory_hostname]) }}"
+        interface = "{{ ansible_default_ipv4.address | addr_to_if(hostvars[inventory_hostname]) }}"
         }
 {% endif %}
 
