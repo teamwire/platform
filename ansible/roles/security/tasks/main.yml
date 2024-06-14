@@ -57,6 +57,48 @@
 - name: Include cronjob
   ansible.builtin.include_tasks: cronjob.yml
 
+# CIS - BENCHMARK ID: 29691 cis: 6.1.5
+- name: Harden shadow
+  ansible.builtin.file:
+    name: /etc/shadow
+    owner: root
+    group: root
+    mode: u-x,g-wx,o-rwx
+
+# CIS - BENCHMARK ID: 29692 cis: 6.1.6
+- name: Harden shadow-
+  ansible.builtin.file:
+    name: /etc/shadow-
+    owner: root
+    group: root
+    mode: u-x,g-wx,o-rwx
+
+# CIS - BENCHMARK ID: 29693 cis: 6.1.7
+- name: Harden gshadow
+  ansible.builtin.file:
+    name: /etc/gshadow
+    owner: root
+    group: root
+    mode: u-x,g-wx,o-rwx
+
+# CIS - BENCHMARK ID: 29694 cis: 6.1.8
+- name: Harden gshadow-
+  ansible.builtin.file:
+    name: /etc/gshadow-
+    owner: root
+    group: root
+    mode: u-x,g-wx,o-rwx
+
+- name: Configure sudo to use sudo log
+  ansible.builtin.copy:
+    src: 10-log-file
+    dest: "/etc/sudoers.d/10-log-file"
+    mode: 0440
+    owner: root
+    group: root
+    validate: /usr/sbin/visudo -cf %s
+
+
 # CIS - BENCHMARK ID: 29672 cis: 5.3.2
 - name: Configure sudo to use pseudo tty
   ansible.builtin.copy:
@@ -66,4 +108,3 @@
     owner: root
     group: root
     validate: /usr/sbin/visudo -cf %s
-

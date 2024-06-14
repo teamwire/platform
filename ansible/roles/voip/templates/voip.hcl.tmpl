@@ -344,7 +344,7 @@ job "voip" {
         network {
             port "jvb" {
                 static = "10000"
-{% if ansible_host != private_ip %}
+{% if ansible_default_ipv4.address != private_ip %}
                 host_network = "public"
 {% endif %}
             }
