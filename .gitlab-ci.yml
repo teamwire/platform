@@ -1,13 +1,18 @@
 ---
 workflow:
   rules:
-    # Trigger the pipeline to run whenever the master branch changes.
-    # Since master is protected, the only way is a merge request.
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # Trigger the pipeline on merge request creation
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     # Trigger the pipeline to run on tag creation.
     # Only accept tags what match the regex
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
+
+    # INFO:
+    # In the past we had strict restriction about when should a stage executed based on file changes. 
+    # Example ansible-lint stage was only run if there was changes in the ./ansible directory.
+    # I needed to remove it because it was breaking the rule above (CI_PIPELINE_SOURCE == "merge_request_event).
+    # More info in the ticket ITOPS-1791
 
 stages:
   - hub-deploy
@@ -32,19 +37,6 @@ variables:
   GOLINT_CMD: "docker run --rm -v $(pwd):/data $GOLINT_IMAGE"
   PY_COLORS: '1'
   ANSIBLE_FORCE_COLOR: '1'
-
-# ------------------------------------------------------------------------------
-#
-# Rules declaration
-#
-# ------------------------------------------------------------------------------
-
-.ansible-changes:
-  only:
-    changes:
-      # Run only if changes are made inside the ./ansible directory
-      # (subdirectories are included)
-      - ansible/**/*
 
 # ------------------------------------------------------------------------------
 #
@@ -136,31 +128,14 @@ Deploy to cloud:
 Ensure ansible-lint docker image exists:
   stage: startup
   script: docker pull $ANSIBLE_LINT_IMAGE
-  extends: .ansible-changes
 
 Ensure golint docker image exists:
   stage: startup
   script: docker pull $GOLINT_IMAGE
-  only:
-    changes:
-      - ansible/roles/go/files/ocspResponder.go
-      - ansible/roles/go/files/archiving.go
 
 Ensure shellcheck docker image exists:
   stage: startup
   script: docker pull $SHELLCHECK_IMAGE
-  only:
-    changes:
-      - packer/build-vmware.sh
-      - packer/scripts/fix-network.sh
-      - packer/scripts/shrink-image.sh
-      - packer/scripts/make-unique.sh
-      - packer/scripts/vm-guest-tools.sh
-      - ansible/roles/frontend/files/ocsp.sh
-      - ansible/roles/db/files/backup_restore_db.sh
-      - packer/scripts/prepare-offline-installation.sh
-      - ansible/roles/management/files/twctl
-      - ansible/roles/management/files/motd.sh
 
 # ------------------------------------------------------------------------------
 #
@@ -171,25 +146,21 @@ Ensure shellcheck docker image exists:
 Single server test:
   stage: ansible-lint
   script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/site.yml -x 301 --force-color"
-  extends: .ansible-changes
   needs: ['Ensure ansible-lint docker image exists']
 
 Cluster server test:
   stage: ansible-lint
   script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/cluster.yml -x 301 --force-color"
-  extends: .ansible-changes
   needs: ['Ensure ansible-lint docker image exists']
 
 Procedure test:
   stage: ansible-lint
   script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/procedures/*.yml -x 301 --force-color"
-  extends: .ansible-changes
   needs: ['Ensure ansible-lint docker image exists']
 
 Roles dir test:
   stage: ansible-lint
   script: /bin/bash -c "$ANSIBLE_LINT_CMD ansible/playbooks/roles/*.yml -x 301 --force-color"
-  extends: .ansible-changes
   needs: ['Ensure ansible-lint docker image exists']
 
 # ------------------------------------------------------------------------------
@@ -201,82 +172,52 @@ Roles dir test:
 Packer Build vmware test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/build-vmware.sh"
-  only:
-    changes:
-      - packer/build-vmware.sh
   needs: ['Ensure shellcheck docker image exists']
 
 
 Packer network fix script test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/fix-network.sh"
-  only:
-    changes:
-      - packer/scripts/fix-network.sh
   needs: ['Ensure shellcheck docker image exists']
 
 Packer shrink test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/shrink-image.sh"
-  only:
-    changes:
-      - packer/scripts/shrink-image.sh
   needs: ['Ensure shellcheck docker image exists']
 
 Packer unique test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/make-unique.sh"
-  only:
-    changes:
-      - packer/scripts/make-unique.sh
   needs: ['Ensure shellcheck docker image exists']
 
 Packer guest tools test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/vm-guest-tools.sh"
-  only:
-    changes:
-      - packer/scripts/vm-guest-tools.sh
   needs: ['Ensure shellcheck docker image exists']
 
 OCSP wrapper test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/frontend/files/ocsp.sh"
-  only:
-    changes:
-      - ansible/roles/frontend/files/ocsp.sh
   needs: ['Ensure shellcheck docker image exists']
 
 Backup / Restore test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/db/files/backup_restore_db.sh"
-  only:
-    changes:
-      - ansible/roles/db/files/backup_restore_db.sh
   needs: ['Ensure shellcheck docker image exists']
 
 Offline installation test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/prepare-offline-installation.sh"
-  only:
-    changes:
-      - packer/scripts/prepare-offline-installation.sh
   needs: ['Ensure shellcheck docker image exists']
 
 TWCTL test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/management/files/twctl"
-  only:
-    changes:
-      - ansible/roles/management/files/twctl
   needs: ['Ensure shellcheck docker image exists']
 
 Login banner test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/management/files/motd.sh"
-  only:
-    changes:
-      - ansible/roles/management/files/motd.sh
   needs: ['Ensure shellcheck docker image exists']
 
 # ------------------------------------------------------------------------------
@@ -288,16 +229,10 @@ Login banner test:
 OcspResonder test:
   stage: Golint
   script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/ocspResponder.go"
-  only:
-    changes:
-      - ansible/roles/go/files/ocspResponder.go
   needs: ['Ensure golint docker image exists']
 
 Archiving test:
   stage: Golint
   script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/archiving.go"
-  only:
-    changes:
-      - ansible/roles/go/files/archiving.go
   needs: ['Ensure golint docker image exists']
 
