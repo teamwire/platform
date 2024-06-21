@@ -8,6 +8,12 @@ workflow:
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
 
+    # INFO:
+    # In the past we had strict restriction about when should a stage executed based on file changes. 
+    # Example ansible-lint stage was only run if there was changes in the ./ansible directory.
+    # I needed to remove it because it was breaking the rule above (CI_PIPELINE_SOURCE == "merge_request_event).
+    # More info in the ticket ITOPS-1791
+
 stages:
   - hub-deploy
   - release-tag
