@@ -80,19 +80,6 @@
             - dockerhub_password is undefined
             - not offline_mode.stat.exists
 
-        - name: Ask for Firebase Cloud Messaging (FCM) API key
-          block:
-            - name: Google API key required
-              ansible.builtin.pause:
-                prompt: "Please enter the key you have received from us"
-              register: pause_entry
-              run_once: true
-            - name: Save container registry password
-              ansible.builtin.set_fact:
-                gcm_api_key: "{{ pause_entry.user_input }}"
-              when: pause_entry.user_input is defined
-          when: gcm_api_key is undefined
-
         - name: Ask for SMTP authentication details
           block:
             - name: SMTP authentication
