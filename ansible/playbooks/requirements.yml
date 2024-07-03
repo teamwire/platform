@@ -103,6 +103,17 @@
       run_once: true
       when: disable_gc_reconfiguration is defined
 
+    - name: Ensure that fcm_account_file is set to quoted string or empty
+      ansible.builtin.assert:
+        that:
+          - fcm_account_file is string
+          - fcm_account_file is exists
+        msg: >-
+          Please ensure that the 'fcm_account_file' parameter is set to a quoted valid 'path' and exists
+      when:
+        - fcm_account_file is defined
+        - fcm_account_file | length > 0
+
     - name: Ensure voip_server group has only one member
       ansible.builtin.assert:
         that:
