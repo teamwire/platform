@@ -88,7 +88,9 @@ job "teamwire" {
 				}
 				volumes = [
 					"/data/archiving:/archiving",
-					"/data/assets:/assets"
+					"/data/assets:/assets"{% if fcm_account_file is defined and fcm_account_file | length > 0 %},
+					"/data/certs/fcm/customer.json:/certs/fcm/customer.json"
+{%endif %}
 				]
 			}
 
@@ -168,6 +170,7 @@ job "teamwire" {
 				GUNICORN_MAX_REQUESTS="{{ worker_gunicorn_max_requests | default('500') }}"
       			CHANNEL_GROUP_EXPIRY = "{{ channel_group_expiry|default('86400') }}"
 				DISABLE_GC_RECONFIGURATION = "{{ disable_gc_reconfiguration | default('false') | lower }}"
+				FCM_SERVICE_ACCOUNT_FILE = "{{ '/certs/fcm/customer.json' if fcm_account_file is defined and fcm_account_file | length > 0 else '' }}"
 			}
 
 			resources {
@@ -221,7 +224,9 @@ job "teamwire" {
 
 				volumes = [
 					"/data/assets:/assets",
-					"/data/certs/apns:/app/certs/apns"
+					"/data/certs/apns:/app/certs/apns"{% if fcm_account_file is defined and fcm_account_file | length > 0 %},
+					"/data/certs/fcm/customer.json:/certs/fcm/customer.json"
+{%endif %}
 				]
 			}
 
@@ -247,7 +252,6 @@ job "teamwire" {
 			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
 {% endraw %}{%endif %}{% raw %}
 			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
-			GCM_API_KEY = "{{ with secret "secret/keys/gcm"}}{{.Data.value}}{{end}}"
 			EOH
 			destination = "secrets/file.env"
 			env = true
@@ -288,6 +292,7 @@ job "teamwire" {
 				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 				LOGLEVEL = "{{ worker_loglevel|default() }}"
 				DEFAULT_FROM_EMAIL = "{{ sender_address }}"
+				FCM_SERVICE_ACCOUNT_FILE = "{{ '/certs/fcm/customer.json' if fcm_account_file is defined and fcm_account_file | length > 0 else '' }}"
 			}
 
 			resources {
@@ -366,6 +371,7 @@ job "teamwire" {
 				CELERY_BEAT_SCHEDULE = "/beat/celerybeat-schedule"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
 				LOGLEVEL = "{{ beat_loglevel|default() }}"
+				FCM_SERVICE_ACCOUNT_FILE = "{{ '/certs/fcm/customer.json' if fcm_account_file is defined and fcm_account_file | length > 0 else '' }}"
 			}
 
 			resources {

@@ -11,6 +11,30 @@
     group: teamwire
   run_once: true
 
+- name: Create the backend fcm account file storage directory
+  ansible.builtin.file:
+    path: /data/certs/fcm
+    owner: daemon
+    group: ssl-cert
+    mode: 0750
+    state: directory
+  when:
+    - fcm_account_file is defined
+    - fcm_account_file | length > 0
+  run_once: true
+
+- name: Install the FCM account file
+  ansible.builtin.copy:
+    src: "{{ fcm_account_file }}"
+    dest: "/data/certs/fcm/customer.json"
+    mode: 0440
+    owner: daemon
+    group: ssl-cert
+  when:
+    - fcm_account_file is defined
+    - fcm_account_file | length > 0
+  run_once: true
+
 - name: Write cluster configuration file
   run_once: true
   ansible.builtin.template:
