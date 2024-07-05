@@ -4,8 +4,6 @@ secrets:
     path: secret/dockerhub/password
   local_registry_password:
     path: secret/registry/password
-  gcm_api_key:
-    path: secret/keys/gcm
   teamwire_db_password:
     path: secret/database/password
   aes_key:
