@@ -162,6 +162,12 @@ allow_user_query: "no"
 # apns_certificate_2:
 # apns_appid_2:
 
+# When provided, the application will use a fcm_account_file to communicate with
+# the Google services. The fcm_account_file can either be provided by teamwire
+# or you could use your own fcm_account_file.
+# To use your own fcm_account_file you have to enter the full path below.
+# fcm_account_file: "/home/teamwire/example.json" 
+
 # When you want to install your SSL certificate on the backend server, uncomment
 # the following keys and add the full paths to the key file and the certificate
 # files. When you configure these values, unencrypted access to the backend
