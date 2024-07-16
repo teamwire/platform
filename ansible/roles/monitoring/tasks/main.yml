@@ -121,11 +121,13 @@
     state: present
 
 - name: Set sudo escalation for icinga plugins
-  ansible.builtin.lineinfile:
-    dest: /etc/sudoers
-    line: "nagios ALL=(root) NOPASSWD: /usr/lib/nagios/plugins/"
-    state: present
-    validate: '/usr/sbin/visudo -cf %s'
+  ansible.builtin.copy:
+    src: 10-nagios-user
+    dest: "/etc/sudoers.d/10-nagios-user"
+    mode: 0440
+    owner: root
+    group: root
+    validate: /usr/sbin/visudo -cf %s
 
 - name: Configure Icinga NodeName
   ansible.builtin.lineinfile:
