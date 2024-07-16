@@ -149,6 +149,26 @@
     dbname: "{{ item.0.value.dbname }}"
   when: config_done is defined
 
+- name: Allow Teamwire database user to localhost for maxscale connections
+  community.mysql.mysql_user:
+    name: "{{ username }}"
+    host: "localhost"
+    password: "{{ password }}"
+    priv: "{{ dbname }}.*:ALL/*.*:RELOAD"
+    state: present
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
+  loop: "{{ mysql_databases | dict2items | subelements('value.hosts') }}"
+  vars:
+    username: "{{ item.0.value.username }}"
+    password: "{{ item.0.value.password }}"
+    dbname: "{{ item.0.value.dbname }}"
+  when:
+    - config_done is defined
+    - enable_tls_mysql is defined
+    - enable_tls_mysql | lower == "true"
+
   # Ensure MariaDB UTC timezone definition is present
 - name: Count MariaDB UTC timezone definition
   community.mysql.mysql_query:

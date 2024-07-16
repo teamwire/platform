@@ -1,0 +1,10 @@
+---
+- name: Cleanup /etc/mysql/conf.d/tls.cnf if no tls is required
+  ansible.builtin.file:
+    path: /etc/mysql/conf.d/tls.cnf
+    state: absent
+
+- name: Cleanup certificates folder for mysql if no tls is required
+  ansible.builtin.file:
+    path: /etc/mysql/ssl
+    state: absent

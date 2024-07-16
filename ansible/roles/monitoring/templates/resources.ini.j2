@@ -1,13 +1,19 @@
 [icinga2]
 type = "db"
 db = "mysql"
-host =  "{{ monitoring_db_host }}"
+host = "{{ monitoring_db_host }}"
 port = "{{ monitoring_db_port }}"
 dbname = "{{ monitoring_db_name }}"
 username = "{{ monitoring_db_user }}"
 password = "{{ monitoring_db_password }}"
 charset = ""
 persistent = "0"
+{% if groups['all'] | length > 1 and enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
+use_ssl = true
+ssl_capath = "/etc/mysql/ssl/"
+ssl_do_not_verify_server_cert = true
+{% endif %}
+
 
 [icingaweb2]
 type = "db"
@@ -19,3 +25,8 @@ username = "{{ monitoring_db_web_user }}"
 password = "{{ monitoring_db_web_password }}"
 charset = ""
 persistent = "0"
+{% if groups['all'] | length > 1 and enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
+use_ssl = true
+ssl_capath = "/etc/mysql/ssl/"
+ssl_do_not_verify_server_cert = true
+{% endif %}

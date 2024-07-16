@@ -2,25 +2,28 @@
 # DEFAULTS
 # ----------------------------------------------------
 defaults
-	log global
-	retries 2
-	timeout connect 5s
-	timeout server 120s
-	timeout client 120s
+    log global
+    retries 2
+    timeout connect 5s
+    timeout server 120s
+    timeout client 120s
 
 peers backend-servers
 {% for server in groups['backend_servers'] | sort %}
-	peer {{ server }} {{ hostvars[server]['private_ip'] }}:1024
+    peer {{ server }} {{ hostvars[server]['private_ip'] }}:1024
 {% endfor %}
 
 listen galera-cluster
-	bind 127.0.0.1:3307
-	bind {{ private_ip }}:3307
-	mode tcp
-	option tcpka
-	option httpchk
-	balance leastconn
-	default-server port 9200 inter 2s downinter 5s rise 3 fall 2 slowstart 60s weight 100
+    bind 127.0.0.1:3307
+    bind {{ private_ip }}:3307
+    mode tcp
+    option tcp-check
+    balance leastconn
+    default-server port 9200 inter 2s downinter 5s rise 3 fall 2 slowstart 60s weight 100
+{% if enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
+    server {{ inventory_hostname }} 127.0.0.1:3308 check port 3308
+{% else %}
 {% for server in groups['database_servers'] | sort %}
-	server {{ server }} {{ hostvars[server]['private_ip'] }}:3306 check
+    server {{ server }} {{ hostvars[server]['private_ip'] }}:3306 check port 3306
 {% endfor %}
+{% endif %}

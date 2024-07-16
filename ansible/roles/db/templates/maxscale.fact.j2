@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cat <<EOF
+{
+    "password_hash": "{{ maxscale_password_hash.stdout }}"
+}
+EOF

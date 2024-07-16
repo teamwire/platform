@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------
 DB='teamwire'                           # Name of the database
 HOST='127.0.0.1'                        # IP/Domain of database
+PORT='3306'                             # Loginport
 USER=''                                 # Loginuser
 PASS=${PASS:-''}                        # Password of user. DO NOT SET THIS IN THE SCRIPT!
 TASK='helpme'                           # Default task of this script
@@ -69,8 +70,8 @@ fi
 # -----------------------------------------------------------------------------
 helpme() {
 
-  echo "usage: ${SCRIPT_NAME} -t|--task <operation> [-d |--database <dbname>][-h|--host <hostname>][-u|--user <username>]
-  [-p|--pass][-o|--outputdir <path>][-n|--nfs-path <path>][-m|--max-backups <number>]
+  echo "usage: ${SCRIPT_NAME} -t|--task <operation> [-d |--database <dbname>][-h|--host <hostname>][-P|--port <port>]
+  [-u|--user <username>][-p|--pass][-o|--outputdir <path>][-n|--nfs-path <path>][-m|--max-backups <number>]
   [-i|--in-file <path>][-f|--force][-s|--secret-path <path>][--help][--vault]
 
   where:
@@ -83,6 +84,7 @@ helpme() {
   ---------
   -d|--database     = Databasename
   -h|--host         = Hostname
+  -P|--port         = Loginport
   -u|--user         = Loginuser
   -p|--pass         = Interactive password input
   -s|--secret-path  = Vault secret path. Only used in combination with
@@ -165,6 +167,7 @@ backup_db() {
   mydumper --defaults-file="${TMPFILE_PATH}" \
     --database=${DB} \
     --host=${HOST} \
+    --port="${PORT}" \
     --outputdir="${OUTDIR}/tmp" \
     --threads="${MAX_THREADS}"
 
@@ -259,6 +262,7 @@ restore_db() {
     myloader --defaults-file="${TMPFILE_PATH}" \
     --database=${DB} \
     --host=${HOST} \
+    --port="${PORT}" \
     --user="${USER}" \
     --password="${PASS}" \
     --directory="${DIR_TMP}" \
@@ -269,6 +273,7 @@ restore_db() {
     myloader --defaults-file="${TMPFILE_PATH}" \
     --database=${DB} \
     --host=${HOST} \
+    --port="${PORT}" \
     --user="${USER}" \
     --password="${PASS}" \
     --directory="${DIR_TMP}" \
@@ -441,6 +446,9 @@ while [ $# -gt 0 ]; do
       ;;
     -h|--host)
       HOST="$2"
+      ;;
+    -P|--port)
+      PORT="$2"
       ;;
     -u|--user)
       USER="$2"

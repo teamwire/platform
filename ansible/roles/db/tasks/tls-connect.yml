@@ -1,0 +1,44 @@
+---
+
+- name: Create mysql certificate directory to store the certificates
+  ansible.builtin.file:
+    path: /etc/mysql/ssl
+    state: directory
+    mode: 0755
+    owner: "{{ mysql_ssl_owner }}"
+    group: "{{ mysql_ssl_group }}"
+
+- name: Copy teamwire certificate
+  ansible.builtin.copy:
+    src: "{{ ssl_server_certificate }}"
+    dest: /etc/mysql/ssl/server.pem
+    mode: 0400
+    owner: "{{ mysql_ssl_owner }}"
+    group: "{{ mysql_ssl_group }}"
+  when: inventory_hostname in groups['database_servers']
+
+- name: Create the SSL intermediate and root certificate file
+  ansible.builtin.template:
+    src: intermediate_and_root.crt.j2
+    dest: /etc/mysql/ssl/intermediate_and_root.pem
+    mode: 0444
+    owner: "{{ mysql_ssl_owner }}"
+    group: "{{ mysql_ssl_group }}"
+
+- name: Copy the SSL key
+  ansible.builtin.copy:
+    src: "{{ ssl_keyfile }}"
+    dest: /etc/mysql/ssl/private_key.pem
+    mode: 0400
+    owner: "{{ mysql_ssl_owner }}"
+    group: "{{ mysql_ssl_group }}"
+  when: inventory_hostname in groups['database_servers']
+
+- name: Configure /etc/mysql/conf.d/tls.cnf
+  ansible.builtin.template:
+    src: tls.cnf.j2
+    dest: /etc/mysql/conf.d/tls.cnf
+    owner: "{{ mysql_ssl_owner }}"
+    group: "{{ mysql_ssl_group }}"
+    mode: 0644
+  when: inventory_hostname in groups['database_servers']

@@ -229,6 +229,11 @@ allow_user_query: "no"
 # for example:
 # innodb_buffer_pool_size: 6
 
+# To enable tls for the connection to the mysql server you have to set
+# following variable to "true"
+# The setting will only have an effect on cluster setups.
+# enable_tls_mysql: "false"
+
 ##############################################################################
 ## MAIL
 ##############################################################################

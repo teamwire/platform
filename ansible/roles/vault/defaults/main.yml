@@ -10,6 +10,8 @@ secrets:
     path: secret/database/aes_key
   mysql_root_password:
     path: secret/dbserver/mysql_root_password
+  mysql_maxscale_password:
+    path: secret/dbserver/mysql_maxscale_password
   clustercheck_password:
     path: secret/dbserver/clustercheck_password
   xtrabackup_password:

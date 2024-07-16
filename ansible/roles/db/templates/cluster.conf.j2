@@ -7,6 +7,9 @@ wsrep_sst_method=mariabackup{{ '\n' -}}
 wsrep_sst_auth=mariabackup:{{ xtrabackup_password }}
 wsrep_node_address="{{ private_ip }}"
 wsrep_node_name="{{ inventory_hostname }}"
+{% if enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
+wsrep_provider_options="socket.ssl_cert=/etc/mysql/ssl/server.pem; socket.ssl_key=/etc/mysql/ssl/private_key.pem; socket.ssl_ca=/etc/mysql/ssl/intermediate_and_root.pem"
+{% endif %}
 
 binlog_format=row
 default_storage_engine=InnoDB

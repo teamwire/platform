@@ -1,0 +1,182 @@
+---
+
+# ------------------------------------------------------------------------------
+# Include vault passwords for the mysql variables
+# ------------------------------------------------------------------------------
+- name: Vault Status check
+  hosts: hashi_servers
+  tasks:
+    - name: Include roles
+      ansible.builtin.include_role:
+        name: ../../roles/vault
+        tasks_from: secrets
+      when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+
+# ------------------------------------------------------------------------------
+# Assert if restart of galera cluster is necessary
+# ------------------------------------------------------------------------------
+- name: Assert if restart is necessary
+  hosts: database_servers
+  tasks:
+    - name: Check if environment is a cluster
+      ansible.builtin.assert:
+        that:
+          - groups['all'] | length > 1
+        msg:
+          - "In single host environments there is no galera cluster to restart."
+
+    - name: Check if galera cluster is already initialized
+      community.mysql.mysql_query:
+        query: "SHOW STATUS LIKE 'wsrep_cluster_size'"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+      when: inventory_hostname == groups['database_servers'] | sort | first
+      register: show_galera_cluster_size
+
+    - name: Check if galera is already initialized
+      ansible.builtin.assert:
+        that:
+          - item.Value != "0"
+        msg: "It seems like your galera cluster is not initialized yet. Please do that first before trying anything else."
+      with_items: "{{ hostvars[groups['database_servers'] | sort | first].show_galera_cluster_size.query_result }}"
+      run_once: true
+      when: inventory_hostname == groups['database_servers'] | sort | first
+
+    - name: Check if mysql tls config exists
+      ansible.builtin.stat:
+        path: /etc/mysql/conf.d/tls.cnf
+      register: mysql_tls_conf
+      when: inventory_hostname == groups['database_servers'] | sort | first
+
+    - name: Check the state of ssl the running mysql server
+      community.mysql.mysql_query:
+        query: "SHOW VARIABLES LIKE 'have_ssl'"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+      when:
+        - inventory_hostname == groups['database_servers'] | sort | first
+      register: mysql_have_ssl
+
+    - name: Assert if restart is necessary for enabling mysql tls connection
+      ansible.builtin.assert:
+        that:
+          - mysql_tls_conf.stat.exists
+          - item.Value | lower == "disabled"
+        msg:
+          - "It seems like you enabled tls connections for mysql but the database does not need a restart at the moment."
+      with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
+      when:
+        - enable_tls_mysql is defined
+        - enable_tls_mysql | lower == "true"
+        - inventory_hostname == groups['database_servers'] | sort | first
+      run_once: true
+
+    - name: Assert if restart is necessary for disabling mysql tls connection
+      ansible.builtin.assert:
+        that:
+          - not mysql_tls_conf.stat.exists
+          - item.Value | lower == "yes"
+        msg:
+          - "It seems like you do not have tls connections for mysql enabled and the database does not need a restart at the moment."
+      with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
+      when:
+        - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
+        - inventory_hostname == groups['database_servers'] | sort | first
+      run_once: true
+
+# ------------------------------------------------------------------------------
+# Ensure Customer knows the impact of this procedure
+# ------------------------------------------------------------------------------
+    - name: Announce impact
+      ansible.builtin.pause:
+        prompt: "Please confirm that you are aware of the risks which are listed in the wiki. Continue procedure by typing 'Yes'"
+      register: customer_answer
+      when:
+        - inventory_hostname == groups['database_servers'] | sort | first
+
+    - name: Check customer answer
+      ansible.builtin.assert:
+        that:
+          - hostvars[groups['database_servers'] | sort | first].customer_answer.user_input | lower == "yes"
+        msg:
+          - "Nothing was changed cause you typed {{ hostvars[groups['database_servers'] | sort | first].customer_answer.user_input }}"
+      run_once: true
+      when: inventory_hostname == groups['database_servers'] | sort | first
+
+# ------------------------------------------------------------------------------
+# Stop necessary services
+# ------------------------------------------------------------------------------
+- name: Stop haproxy on backend_servers
+  hosts: backend_servers
+  tasks:
+    - name: Stop haproxy
+      ansible.builtin.service:
+        name: haproxy
+        state: stopped
+
+- name: Stop icinga2 on monitoring servers
+  hosts: monitoring
+  tasks:
+    - name: Stop icinga2
+      ansible.builtin.service:
+        name: icinga2
+        state: stopped
+      when:
+        - enable_monitoring is defined
+        - enable_monitoring | lower == "yes"
+
+# ------------------------------------------------------------------------------
+# Stop and Resetup the Galera Cluster
+# ------------------------------------------------------------------------------
+- name: Stop and Resetup the Galera Cluster
+  hosts: database_servers
+  tasks:
+    - name: Stop MariaDB one after the other
+      ansible.builtin.service:
+        name: mariadb
+        state: stopped
+      throttle: 1
+
+    - name: Check which server can be used for the setup
+      ansible.builtin.shell: "grep 'safe_to_bootstrap' /var/lib/mysql/grastate.dat | cut -d ' ' -f2"
+      changed_when: false
+      register: mysql_safe_to_bootstrap
+
+    - name: Setup the cluster again on the correct node
+      ansible.builtin.command: "/usr/bin/galera_new_cluster"
+      changed_when: false
+      when: mysql_safe_to_bootstrap.stdout == "1"
+
+    - name: Start the service on the rest of the nodes
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+      when: mysql_safe_to_bootstrap.stdout == "0"
+
+    - name: Start service normally on the first node
+      ansible.builtin.service:
+        name: mariadb
+        state: restarted
+      when: mysql_safe_to_bootstrap.stdout == "1"
+
+# ------------------------------------------------------------------------------
+# Start the services again
+# ------------------------------------------------------------------------------
+- name: Start haproxy on backend_servers
+  hosts: backend_servers
+  tasks:
+    - name: Start haproxy
+      ansible.builtin.service:
+        name: haproxy
+        state: started
+
+- name: Start icinga2 on monitoring servers
+  hosts: monitoring
+  tasks:
+    - name: Start icinga2
+      ansible.builtin.service:
+        name: icinga2
+        state: started
+      when:
+        - enable_monitoring is defined
+        - enable_monitoring | lower == "yes"

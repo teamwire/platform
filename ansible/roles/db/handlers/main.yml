@@ -42,3 +42,25 @@
     query: "SET PASSWORD FOR root@localhost = '{{ item.Password }}'"
   with_items: "{{ mysql_root_password_hash.query_result }}"
   listen: mysql_root_user_update
+
+- name: Maxscale_restart
+  ansible.builtin.service:
+    name: maxscale
+    state: restarted
+
+- name: Generate Password Hash if not defined
+  ansible.builtin.command: "maxpasswd {{ mysql_maxscale_password }}"
+  register: maxscale_password_hash
+  when: ansible_local.maxscale.password_hash is undefined or hostvars[groups['database_servers'] | sort | first].mysql_maxscale_user.changed
+
+- name: Copy maxscale ansible facts
+  ansible.builtin.template:
+    src: maxscale.fact.j2
+    dest: /etc/ansible/facts.d/maxscale.fact
+    mode: 0755
+  when:
+    - maxscale_password_hash is changed
+
+- name: Ansible_facts_reload
+  ansible.builtin.setup:
+    filter: ansible_local

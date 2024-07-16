@@ -189,6 +189,7 @@
     - { secret: 'dbserver/mysql_root_password', value: "{{ mysql_root_password | default('') }}" }
     - { secret: 'dbserver/clustercheck_password', value: "{{ clustercheck_password | default('') }}" }
     - { secret: 'dbserver/xtrabackup_password', value: "{{ xtrabackup_password | default('') }}" }
+    - { secret: 'dbserver/mysql_maxscale_password', value: "{{ mysql_maxscale_password | default('') }}" }
     - { secret: 'redis/password', value: "{{ redis_pass | default('') }}" }
     - { secret: 'smtp/password', value: "{{ smtp_smartpass | default('') }}" }
     - { secret: 'monitoring/db_password', value: "{{ monitoring_db_password | default('') }}" }

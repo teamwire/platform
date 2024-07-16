@@ -1,6 +1,7 @@
 ---
 # Please refer here: https://github.com/ansible/ansible/issues/30901 why `inventory_dir` is
 # sometimes not possible to use
+
 - name: Configure housekeeping for management server(s)
   hosts: local:management_servers
   tasks:
@@ -35,3 +36,13 @@
       ansible.builtin.import_role:
         name: "../../roles/housekeeping"
         tasks_from: clean_mysql_users
+
+- name: Clean up MySQL Configuration
+  hosts: database_servers
+  gather_facts: false
+  tasks:
+    - name: Cleanup enable_tls_mysql Configuration
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
+        tasks_from: mysql_tls_configuration
+      when: enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"

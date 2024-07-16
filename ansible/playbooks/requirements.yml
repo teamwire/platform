@@ -230,6 +230,58 @@
       run_once: true
       when:
         - allow_tcp_forwarding is defined
+    - name: Assert enable_tls_mysql is valid
+      ansible.builtin.assert:
+        that:
+          - enable_tls_mysql is string
+          - enable_tls_mysql | lower is in ['true', 'false']
+        msg: >-
+          Invalid value for configuration option `enable_tls_mysql`.
+          Please ensure your value is quoted and is either "true" or "false".
+      run_once: true
+      when: enable_tls_mysql is defined
+
+    - name: Check if enable_tls_mysql has all required values and can be enabled on the environment
+      block:
+        - name: Assert that all conditions for enable_tls_mysql are set
+          ansible.builtin.assert:
+            that:
+              - mysql_host is undefined
+              - oracle_host is undefined
+              - ssl_server_certificate is defined
+              - ssl_intermediate_certificate is defined
+              - ssl_root_certificate is defined
+              - ssl_keyfile is defined
+            msg:
+              - "Please ensure that you are using the mysql installation from the playbooks and no external host."
+              - "Please make sure that you are using a valid ssl certificate."
+          run_once: true
+          when:
+            - groups['all'] | length() > 1
+
+        - name: Get SSL Certificate purpose
+          ansible.builtin.shell: "openssl x509 -noout -in {{ ssl_server_certificate }} -purpose | grep 'SSL client :' | cut -d ' ' -f4"
+          register: ssl_server_certificate_purpose
+          changed_when: false
+          when:
+            - groups['all'] | length() > 1
+
+        - name: Check SSL Certificate purpose
+          ansible.builtin.assert:
+            that:
+              - hostvars[groups['management_servers'][0]].ssl_server_certificate_purpose.stdout == "Yes"
+            msg:
+              - "To use enable_tls_mysql you have to ensure that your Certificate can also be used as a Client certificate."
+              - "You can check which purposes are supported for you Certificate with following command."
+              - "The purpose 'SSL client' has to be 'Yes'"
+              - "    openssl x509 -noout -in {{ ssl_server_certificate }} -purpose"
+          run_once: true
+          when:
+            - ssl_server_certificate_purpose is defined
+            - ssl_server_certificate_purpose is not skipped
+      when:
+        - enable_tls_mysql is defined
+        - enable_tls_mysql | lower == "true"
 
     - name: Ensure valid configuration combination
       block:
@@ -534,3 +586,93 @@
     # Check for unattended-upgrades
     - name: Wait for automatic system updates to complete
       ansible.builtin.shell: while pgrep /usr/bin/unattended-upgrade; do sleep 1; done; # noqa no-changed-when
+
+# ------------------------------------------------------------------------------
+# Notifications for Single Host
+# ------------------------------------------------------------------------------
+- name: Check if enable_tls_mysql needs a notification Single
+  hosts: local
+  tasks:
+
+    - name: Check if enable_tls_mysql is set for single host
+      ansible.builtin.debug:
+        msg:
+          - "You have set the value enable_tls_mysql to 'true' but you are running a single host environment."
+          - "Please note that this value will not have any effect in this environment."
+      when:
+        - groups['all'] | length() == 1
+        - enable_tls_mysql is defined
+        - enable_tls_mysql | lower == "true"
+
+# ------------------------------------------------------------------------------
+# Notifications for Cluster
+# ------------------------------------------------------------------------------
+- name: Run tasks on the first database server
+  hosts: "{{ groups['database_servers'] | sort | first if groups['database_servers'] is defined else 'localhost' }}"
+  tasks:
+    - name: Gather installed packages
+      ansible.builtin.package_facts:
+        manager: auto
+      when:
+        - groups['all'] | length() > 1
+
+    - name: Check if cluster environment needs notifications
+      block:
+        - name: Check if galera cluster is already initialized
+          community.mysql.mysql_query:
+            query: "SHOW STATUS LIKE 'wsrep_cluster_size'"
+            login_user: root
+            login_password: "{{ mysql_root_password }}"
+          register: show_galera_cluster_size
+
+        - name: Set fact if galera cluster is initialized
+          ansible.builtin.set_fact:
+            galera_cluster_init: "defined"
+          with_items: "{{ show_galera_cluster_size.query_result }}"
+          when:
+            - item.Value != "0"
+
+        - name: Check the state of ssl the running mysql server
+          community.mysql.mysql_query:
+            query: "SHOW VARIABLES LIKE 'have_ssl'"
+            login_user: root
+            login_password: "{{ mysql_root_password }}"
+          register: mysql_have_ssl
+
+        - name: Notification for enable_tls_mysql = true
+          ansible.builtin.debug:
+            msg:
+              - "You've enabled enable_tls_mysql group variable to true. However, as your"
+              - "cluster is currently running, to apply this change, you will need to first stop and then restart the database cluster."
+              - "To do that, After the playbook execution finishes, execute this command to implement the TLS changes and restart"
+              - "the database cluster. Before executing the playbook, please verify that no users are accessing the database."
+              - "Restart database cluster command:"
+              - "    ansible-playbook -i {{ 'hosts' if teamwire_platform_dir is defined else 'cluster_hosts' }} {{ 'platform/ansible/' if teamwire_platform_dir is defined }}playbooks/procedures/restart-galera-cluster.yml"
+          with_items: "{{ mysql_have_ssl.query_result }}"
+          when:
+            - enable_tls_mysql is defined
+            - enable_tls_mysql | lower == "true"
+            - item.Value | lower == "disabled"
+            - galera_cluster_init is defined
+          register: enable_tls_mysql_true_notify
+
+        - name: Notification for enable_tls_mysql = false
+          ansible.builtin.debug:
+            msg:
+              - "You disabled the tls connection for mysql. To apply this change please execute following procedure:"
+              - "    ansible-playbook -i {{ 'hosts' if teamwire_platform_dir is defined else 'cluster_hosts' }} {{ 'platform/ansible/' if teamwire_platform_dir is defined }}playbooks/procedures/restart-galera-cluster.yml"
+          with_items: "{{ mysql_have_ssl.query_result }}"
+          when:
+            - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
+            - item.Value | lower == "yes"
+            - galera_cluster_init is defined
+          register: enable_tls_mysql_false_notify
+
+        - name: Interrupt play so that the message can be understood
+          ansible.builtin.pause:
+            prompt: "Please read the Information from the task above this. If you want to continue please press [ENTER]"
+          when:
+            - enable_tls_mysql_true_notify is not skipped or enable_tls_mysql_false_notify is not skipped
+      when:
+        - groups['all'] | length() > 1
+        - "'mariadb-server' in ansible_facts.packages"

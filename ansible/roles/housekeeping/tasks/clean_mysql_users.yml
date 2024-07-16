@@ -51,7 +51,7 @@
   loop_control:
     label: "{{ item.value.username }}"
 
-- name: Cleanup existing teamwire database users
+- name: Cleanup existing teamwire database users if TLS enabled
   community.mysql.mysql_user:
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
@@ -63,6 +63,22 @@
   when:
     - item.User == db_username
     - "item.Host not in db_host"
+    - item.Host != "localhost"
+    - enable_tls_mysql is defined and enable_tls_mysql | lower == "true"
+
+- name: Cleanup existing teamwire database users if TLS undefined or disabled
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  throttle: 1
+  with_items: "{{ mysql_user_data.query_result }}"
+  when:
+    - item.User == db_username
+    - "item.Host not in db_host"
+    - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
 
 # ------------------------------------------------------------------------------
 # Cleanup available monitoring users
