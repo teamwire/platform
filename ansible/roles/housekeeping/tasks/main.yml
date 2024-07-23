@@ -23,3 +23,7 @@
 # Clean APNS Folder
 - name: Clean APNS Folder
   ansible.builtin.include_tasks: clean_apns_folder.yml
+
+# Clean OCSP files and tasks
+- name: Clean OCSP files and tasks
+  ansible.builtin.include_tasks: clean_ocsp.yml

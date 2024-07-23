@@ -1,0 +1,24 @@
+---
+
+- name: Check if file ocspResponder exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/ocspResponder
+  register: ocspresponder
+
+- name: Remove ocsp related files and tasks
+  block:
+    - name: Remove daily ocsp cron job
+      ansible.builtin.cron:
+        name: "daily ocsp job to create ocsp file"
+        state: absent
+
+    - name: Remove no longer required files belongs to ocsp
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - '/usr/local/src/go/ocspResponder.go'
+        - '/usr/local/src/ocsp.sh'
+        - '/etc/ssl/certs/server_and_intermediate_and_root.crt.ocsp'
+        - '/usr/local/bin/ocspResponder'
+  when: ocspresponder.stat.exists
