@@ -41,7 +41,26 @@
     - smtp_smartpass is defined
     - smtp_smartuser is defined
     - smtp_smartuser !=""
-  notify: Rebuild postfix passwd map
+  notify:
+    - Rebuild postfix passwd map
+    - Restart postfix
+
+- name: Get status of password db file
+  ansible.builtin.stat:
+    path: /etc/postfix/sasl/passwd.db
+  register: sasl_passwd_db
+
+- name: Recreate password db file
+  ansible.builtin.command: /bin/true
+  when:
+    - not sasl_passwd_db.stat.exists
+    - config_done is defined
+    - smtp_smartpass is defined
+    - smtp_smartuser is defined
+    - smtp_smartuser !=""
+  notify:
+    - Rebuild postfix passwd map
+    - Restart postfix
 
 - name: Setup e-mail aliases
   ansible.builtin.lineinfile:
