@@ -196,11 +196,6 @@ Packer guest tools test:
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/vm-guest-tools.sh"
   needs: ['Ensure shellcheck docker image exists']
 
-OCSP wrapper test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/frontend/files/ocsp.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
 Backup / Restore test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/db/files/backup_restore_db.sh"
@@ -226,11 +221,6 @@ Login banner test:
 # GO LINT TEST
 #
 # ------------------------------------------------------------------------------
-
-OcspResonder test:
-  stage: Golint
-  script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/ocspResponder.go"
-  needs: ['Ensure golint docker image exists']
 
 Archiving test:
   stage: Golint
