@@ -1,4 +1,3 @@
 ---
 gosource:
      - archiving.go
-     - ocspResponder.go
