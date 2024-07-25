@@ -13,14 +13,6 @@
         - ansible_local.vault.initialized == "true"
         - secrets_read is not defined
 
-- name: Include offline installation check
-  hosts: local:management_servers:voip_servers:backend_servers:video_servers
-  tasks:
-    - name: Import check offline installation task
-      ansible.builtin.include_role:
-        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/common"
-        tasks_from: check_offline_installation
-
 # Please refer here: https://github.com/ansible/ansible/issues/30901 why `inventory_dir` is
 # sometimes not possible to use
 - name: Configure voip for management server(s)
