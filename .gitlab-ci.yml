@@ -9,7 +9,7 @@ workflow:
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
 
     # INFO:
-    # In the past we had strict restriction about when should a stage executed based on file changes. 
+    # In the past we had strict restriction about when should a stage executed based on file changes.
     # Example ansible-lint stage was only run if there was changes in the ./ansible directory.
     # I needed to remove it because it was breaking the rule above (CI_PIPELINE_SOURCE == "merge_request_event).
     # More info in the ticket ITOPS-1791
@@ -175,6 +175,10 @@ Packer Build vmware test:
   script: /bin/bash -c "$SHELLCHECK_CMD packer/build-vmware.sh"
   needs: ['Ensure shellcheck docker image exists']
 
+Packer ansible fact script test:
+  stage: shellcheck
+  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/create_ansible_facts.sh"
+  needs: ['Ensure shellcheck docker image exists']
 
 Packer network fix script test:
   stage: shellcheck
