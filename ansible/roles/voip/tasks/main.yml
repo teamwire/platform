@@ -89,7 +89,7 @@
     registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Pull VoIP Docker images
   community.docker.docker_image:
@@ -105,7 +105,7 @@
     - "{{ voip_container_turn }}"
   when:
     - config_done is defined
-    - not offline_mode.stat.exists
+    - not ansible_local.offline_mode.stat.exists
     - groups.docker_registry is defined
 
 - name: Push VoIP Docker images to local registry

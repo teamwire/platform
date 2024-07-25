@@ -1,6 +1,0 @@
----
-
-- name: Check if installing offline
-  ansible.builtin.stat:
-    path: /etc/offline_installation
-  register: offline_mode

@@ -7,7 +7,7 @@
     registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
     username: "{{ dockerhub_username }}"
     password: "{{ dockerhub_password }}"
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Set fact for own fcm_account_file
   ansible.builtin.set_fact:
@@ -23,7 +23,7 @@
     state: present
   when:
     - config_done is defined
-    - not offline_mode.stat.exists
+    - not ansible_local.offline_mode.stat.exists
 
 - name: Run the Teamwire backend main container
   when: config_done is defined

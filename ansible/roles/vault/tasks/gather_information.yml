@@ -78,7 +78,7 @@
               when: pause_entry.user_input is defined
           when:
             - dockerhub_password is undefined
-            - not offline_mode.stat.exists
+            - not ansible_local.offline_mode.stat.exists
 
         - name: Ask for SMTP authentication details
           block:

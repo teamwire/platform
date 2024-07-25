@@ -13,14 +13,6 @@
         - ansible_local.vault.initialized == "true"
         - secrets_read is not defined
 
-- name: Include offline installation check
-  hosts: all
-  tasks:
-    - name: Import check offline installation task
-      ansible.builtin.include_role:
-        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/common"
-        tasks_from: check_offline_installation
-
 - name: Deploy Icinga monitoring system
   hosts: all
   tasks:

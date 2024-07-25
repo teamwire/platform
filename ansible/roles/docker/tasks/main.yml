@@ -45,7 +45,7 @@
     HTTPS_PROXY: "{{ http_proxy | default() }}"
   register: docker_signing_key
   notify: Dearmor Docker repository key
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
@@ -55,14 +55,14 @@
     repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
     state: present
     update_cache: true
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Get checksum for docker version from repo.teamwire.eu
   ansible.builtin.get_url:
     url: "{{ docker_checksum_package_file_url }}"
     dest: "{{ docker_checksum_file_path }}"
     mode: 0444
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
   environment:
     https_proxy: "{{ http_proxy | default() }}"
 
@@ -72,7 +72,7 @@
     dest: "{{ docker_package_file_path }}"
     mode: 0644
     checksum: "sha256: {{ lookup('file', docker_checksum_file_path) }}"
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
   environment:
     https_proxy: "{{ http_proxy | default() }}"
 
@@ -164,11 +164,6 @@
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
-- name: Check if installing offline
-  ansible.builtin.stat:
-    path: /etc/offline_installation
-  register: offline_mode
-
 - name: Install Docker Registry on configured host
   ansible.builtin.include_tasks: registry.yml
   when:
@@ -182,7 +177,7 @@
   when:
     - config_done is defined
     - not "docker_registry" in groups
-    - not offline_mode.stat.exists
+    - not ansible_local.offline_mode.stat.exists
   become: true
   become_user: teamwire
   community.docker.docker_login:
@@ -234,7 +229,7 @@
   when:
     - groups['all'] | length() > 1
     - groups.docker_registry is defined
-    - not offline_mode.stat.exists
+    - not ansible_local.offline_mode.stat.exists
 
 - name: Include cluster
   ansible.builtin.include_tasks: cluster.yml

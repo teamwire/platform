@@ -474,15 +474,6 @@
         - cert_issuer_org.stdout is defined
         - cert_subject_org.stdout == cert_issuer_org.stdout
 
-- name: Check if installing offline
-  hosts: all
-  tasks:
-    - name: Check if offline file is present
-      ansible.builtin.stat:
-        path: /etc/offline_installation
-      register: offline_mode
-      run_once: true
-
 - name: Perform SSL-Preflight check
   hosts: 127.0.0.1
   connection: local

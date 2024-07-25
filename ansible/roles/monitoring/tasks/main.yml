@@ -26,7 +26,7 @@
     HTTP_PROXY: "{{ http_proxy | default() }}"
     HTTPS_PROXY: "{{ http_proxy | default() }}"
   register: icinga_signing_key
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Dearmor Icinga repository key # noqa no-handler
   ansible.builtin.command: gpg --dearmor -o {{ (icinga_signing_key.dest | splitext)[0] }}.gpg {{ icinga_signing_key.dest }}
@@ -38,14 +38,14 @@
     state: present
     filename: icinga2
     update_cache: true
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Get checksum for icinga versions from repo.teamwire.eu
   ansible.builtin.get_url:
     url: "{{ icinga_checksum_package_file_url }}"
     dest: "{{ icinga_checksum_file_path }}"
     mode: 0444
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
   environment:
     https_proxy: "{{ http_proxy | default() }}"
 
@@ -55,7 +55,7 @@
     dest: "{{ icinga_package_file_path }}"
     mode: 0644
     checksum: "sha256: {{ lookup('file', icinga_checksum_file_path) }}"
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
   environment:
     https_proxy: "{{ http_proxy | default() }}"
 
@@ -149,7 +149,7 @@
     url: "{{ icinga_check_ntp_time_checksum_file_url }}"
     dest: "{{ icinga_check_ntp_time_checksum_file_path }}"
     mode: 0444
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
   environment:
     https_proxy: "{{ http_proxy | default() }}"
 
@@ -162,7 +162,7 @@
     owner: root
     group: root
     mode: 0644
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
   environment:
     https_proxy: "{{ http_proxy | default() }}"
 
