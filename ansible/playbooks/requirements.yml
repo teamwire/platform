@@ -16,6 +16,15 @@
           - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v3.yml"
         success_msg: Ansible {{ ansible_version.full }} matches expected version.
 
+- name: Ensure ansible fact for offline_mode is defined
+  hosts: all
+  tasks:
+    - name: Trigger housekeeping for offline_mode ansible facts
+      ansible.builtin.include_role:
+        name: "{{ inventory_dir }}/roles/housekeeping"
+        tasks_from: ensure_ansible_fact_offline_mode_exists.yml
+      when: ansible_local.offline_mode.stat.exists is undefined
+
 - name: Check overall requirements
   hosts: all
   tasks:
