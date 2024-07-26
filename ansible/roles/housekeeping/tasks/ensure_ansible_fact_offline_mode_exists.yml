@@ -1,0 +1,23 @@
+---
+
+- name: Check if old offline file exists
+  ansible.builtin.stat:
+    path: /etc/offline_installation
+  register: offline_file
+
+- name: Delete old offline file
+  ansible.builtin.file:
+    path: /etc/offline_installation
+    state: absent
+
+- name: Ensure the new offline_mode ansible fact is created
+  ansible.builtin.template:
+    src: offline_mode.fact.j2
+    dest: /etc/ansible/facts.d/offline_mode.fact
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Reload Ansible local facts to register offline_mode fact
+  ansible.builtin.setup:
+    filter: ansible_local
