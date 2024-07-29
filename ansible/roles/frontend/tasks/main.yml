@@ -163,64 +163,6 @@
     name: socat
     state: present
 
-- name: Copy precompiled ocspResponder
-  ansible.builtin.copy:
-    src: "/usr/local/bin/ocspResponder"
-    dest: "/usr/local/bin/ocspResponder"
-    mode: 0755
-    owner: root
-    group: root
-  when:
-    - ssl_server_certificate is defined
-    - ssl_intermediate_certificate is defined
-    - ssl_root_certificate is defined
-    - groups['all'] | length() > 1
-    - "'management_servers' in groups"
-
-- name: Copy ocsp.sh to src dir
-  ansible.builtin.copy:
-    src: ocsp.sh
-    dest: "/usr/local/src/"
-    mode: 0755
-    owner: root
-    group: root
-  when:
-    - ssl_server_certificate is defined
-    - ssl_intermediate_certificate is defined
-    - ssl_root_certificate is defined
-
-- name: Copy ocsp.sh to src dir on managment server
-  ansible.builtin.copy:
-    src: ocsp.sh
-    dest: "/usr/local/src/"
-    mode: 0755
-    owner: root
-    group: root
-  delegate_to: localhost
-  run_once: true
-  when:
-    - ssl_server_certificate is defined
-    - ssl_intermediate_certificate is defined
-    - ssl_root_certificate is defined
-    - groups['all'] | length() > 1
-    - "'management_servers' in groups"
-
-- name: Stat ocsp file and register it
-  ansible.builtin.stat:
-    path: "{{ ocspfile_path }}"
-  register: stat_ocspfile
-
-- name: Add OCSP daily cron job
-  ansible.builtin.cron:
-    name: "daily ocsp job to create ocsp file"
-    special_time: daily
-    job: "/usr/local/src/ocsp.sh > /dev/null 2>&1"
-  ignore_errors: true # noqa ignore-errors
-  when:
-    - ssl_server_certificate is defined
-    - ssl_intermediate_certificate is defined
-    - ssl_root_certificate is defined
-
 - name: Generate a new Diffie-Hellman group
   ansible.builtin.command: /usr/bin/openssl dhparam -out /etc/ssl/private/dhparams.pem 2048
   when: ssl_keyfile is defined
@@ -327,10 +269,6 @@
     owner: root
     group: root
     mode: 0644
-
-- name: Include ocsp
-  ansible.builtin.include_tasks: ocsp.yml
-  when: not offline_mode.stat.exists
 
 - name: Include cluster
   ansible.builtin.include_tasks: cluster.yml
