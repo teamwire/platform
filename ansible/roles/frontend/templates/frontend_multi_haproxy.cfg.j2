@@ -124,6 +124,20 @@ frontend https-in
     acl PATH_MATCH_WEB-{{$tag}} path_beg /web-screenshot
     use_backend teamwire-web-screenshot-{{$tag}} if HOST_MATCH_WEB-{{$tag}} PATH_MATCH_WEB-{{$tag}}
     {{- end -}}
+    {{end}}{{range $tag,$_ := service "dashboard" | byTag}}
+
+    # Dashboard header routes
+    {{- if ne $tag "tw_hub" }}
+    acl HOST_MATCH_DASH-{{$tag}} hdr_beg(host) -i {{$tag}}-dashboard
+    use_backend teamwire-{{$tag}}-dashboard if HOST_MATCH_DASH-{{$tag}}
+    {{- end -}}
+    {{end}}{{range $tag,$_ := service "backend" | byTag}}
+
+    # WebClient header routes
+    {{- if ne $tag "tw_hub" }}
+    acl HOST_MATCH_WC-{{$tag}} hdr_beg(host) -i {{$tag}}-web-client
+    use_backend teamwire-{{$tag}}-backend if HOST_MATCH_WC-{{$tag}}
+    {{- end -}}
     {{end}}{{range $tag,$_ := service "backend" | byTag}}
 
     # Backend header routes
@@ -226,4 +240,19 @@ backend voip-{{$tag}}-backend
     http-request del-header   X-Powered-By {{- range $service}}
     server teamwire-backend-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
     {{end}}
+
+{{range $tag, $service := service "dashboard" | byTag}}
+{{if ne $tag "tw_hub" }}
+# ----------------------------------------------------
+# DASHBOARD DC TW_HUB: teamwire-{{$tag}}-backend
+# ----------------------------------------------------
+
+backend teamwire-{{$tag}}-dashboard
+    http-response del-header Server
+    http-response set-header Connection keep-alive
+    {{range $service}}
+    server teamwire-dashboard-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}
+    {{end}}
+{{end}}
+{{end}}
 {%endraw%}
