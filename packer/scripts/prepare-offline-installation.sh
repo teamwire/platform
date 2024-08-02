@@ -109,7 +109,7 @@ echo "Preparing for offline installation."
 
 # This file will be checked by the Ansible scripts; if it exists,
 # the apt cache will not be updated.
-sudo touch /etc/offline_installation
+sudo sed -i 's/false/true/' /etc/ansible/facts.d/offline_mode.fact
 
 echo "Step 1: Install APT third-party prerequisites"
 echo "============================================="

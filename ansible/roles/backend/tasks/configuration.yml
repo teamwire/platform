@@ -94,11 +94,6 @@
   ansible.builtin.set_fact:
     vault_job_token: "{{ remote_job_token.content | b64decode }}"
 
-- name: Check if installing offline
-  ansible.builtin.stat:
-    path: /etc/offline_installation
-  register: offline_mode
-
 - name: Ensure Redis servers are defined
   ansible.builtin.fail:
     msg: "Redis servers aren't defined. Please check the cluster_hosts file"

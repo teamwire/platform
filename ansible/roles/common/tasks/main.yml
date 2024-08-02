@@ -43,13 +43,10 @@
     owner: root
     group: root
 
-- name: Import check offline installation task
-  ansible.builtin.include_tasks: check_offline_installation.yml
-
 - name: Apt-get update
   ansible.builtin.apt:
     update_cache: true
-  when: not offline_mode.stat.exists
+  when: not ansible_local.offline_mode.stat.exists
 
   # Clusters: set up DNS with local dnsmasq
 - name: Install dnsmasq (cluster only)
@@ -80,7 +77,7 @@
     group: root
   when:
     - config_done is defined
-    - not offline_mode.stat.exists
+    - not ansible_local.offline_mode.stat.exists
 
 - name: Automatically remove obsolete packages
   ansible.builtin.copy:
