@@ -28,7 +28,10 @@ TMPFILE_PATH="${HOME}/.my.cnf"
 # -----------------------------------------------------------------------------
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 SCRIPT_NAME=$(basename "$0")
-MAX_THREADS=$(grep -c ^processor /proc/cpuinfo)
+
+# MAX_THREADS was originally $(grep -c ^processor /proc/cpuinfo), but it caused deadlock issues during the restore.
+# As a fix we need to use only 1 thread to prevent issues. More details in ITOPS-2017.
+MAX_THREADS=1
 
 declare -r FALSE=1
 declare -r TRUE=0
