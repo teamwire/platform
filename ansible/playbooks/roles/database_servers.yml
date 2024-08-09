@@ -43,3 +43,5 @@
       ansible.builtin.include_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db"
         tasks_from: maxscale
+      when:
+        - mysql_host is not defined

@@ -107,3 +107,4 @@
   when:
     - mysql_maxscale_password is defined
     - inventory_hostname == groups['database_servers'] | sort | first
+    - mysql_host is not defined
