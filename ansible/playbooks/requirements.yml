@@ -608,7 +608,7 @@
 # Notifications for Cluster
 # ------------------------------------------------------------------------------
 - name: Run tasks on the first database server
-  hosts: "{{ groups['database_servers'] | sort | first if groups['database_servers'] is defined else 'localhost' }}"
+  hosts: "{{ groups['database_servers'] | sort | first if groups['database_servers'] is defined and groups['database_servers'] | length > 0 else 'localhost' }}"
   tasks:
     - name: Gather installed packages
       ansible.builtin.package_facts:
