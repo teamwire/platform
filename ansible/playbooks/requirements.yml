@@ -218,6 +218,29 @@
       run_once: true
       when: enable_stun is defined or stun_hostname is defined
 
+    - name: Warning about Stun/Turn server
+      when: enable_stun is defined and enable_stun | lower == "true"
+      block:
+        - name: Warn the user about STUN/TURN server risks
+          ansible.builtin.debug:
+            msg: >
+              Running your own STUN/TURN server is highly risky.
+              It can introduce serious security vulnerabilities,
+              so you should only consider starting it in extremely rare and exceptional cases.
+              It's crucial that you understand these dangers fully to protect your systems from potential threats.
+
+        - name: Prompt for user confirmation
+          ansible.builtin.pause:
+            prompt: "Please type 'yes' to confirm and continue or anything else to stop"
+            echo: true
+          register: user_input
+
+        - name: Check if the user confirmation
+          ansible.builtin.fail:
+            msg: "User did not confirm. Stopping the playbook."
+          when: user_input.user_input != "yes"
+      run_once: true
+
     - name: Assert that VOIP_VIDEO_RAM is an integer and has value between 256 and 3584
       ansible.builtin.assert:
         that:
