@@ -234,11 +234,12 @@
             prompt: "Please type 'yes' to confirm and continue or anything else to stop"
             echo: true
           register: user_input
+          when: user_input is not defined
 
-        - name: Check if the user confirmation
+        - name: Check if the user confirms
           ansible.builtin.fail:
             msg: "User did not confirm. Stopping the playbook."
-          when: user_input.user_input != "yes"
+          when: user_input.user_input | lower != "yes"
       run_once: true
 
     - name: Assert that VOIP_VIDEO_RAM is an integer and has value between 256 and 3584
