@@ -123,6 +123,16 @@
         - fcm_account_file is defined
         - fcm_account_file | length > 0
 
+    - name: Check if internal and external stun options are enabled
+      ansible.builtin.fail:
+        msg: "Internal and external stun server cannot be activated at the same time."
+      run_once: true
+      when:
+        - enable_external_turn_server is defined
+        - enable_external_turn_server | lower == "true"
+        - enable_stun is defined
+        - enable_stun | lower == "true"
+
     - name: Ensure voip_server group has only one member
       ansible.builtin.assert:
         that:
@@ -161,6 +171,17 @@
       run_once: true
       when:
         - enable_stun is defined
+
+    - name: Ensure enable_external_turn_server is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - enable_external_turn_server is string
+          - enable_external_turn_server is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_external_turn_server is set to lower quoted true or false when enabled
+      run_once: true
+      when:
+        - enable_external_turn_server is defined
 
     - name: Ensure enable_jvb_cluster is a string when enabled
       ansible.builtin.assert:
@@ -217,6 +238,20 @@
           Please note that the 'stun_hostname' should never be left empty.
       run_once: true
       when: enable_stun is defined or stun_hostname is defined
+
+    - name: Ensure that external_turn_server - external_turn_port is set only if enable_external_turn_server is also set to true
+      ansible.builtin.assert:
+        that:
+          - enable_external_turn_server is defined
+          - enable_external_turn_server | lower == "true"
+          - external_turn_server is defined
+          - external_turn_server is string
+          - external_turn_server | length >= 1
+        msg: >-
+          Please ensure that the 'enable_external_turn_server' parameter is set to 'true' and that the 'external_turn_server' parameter is set to an existing external stun/turn server.
+          Please note that the 'external_turn_server' should never be left empty.
+      run_once: true
+      when: enable_external_turn_server is defined or external_turn_server is defined or external_turn_port is defined
 
     - name: Warning about Stun/Turn server
       when: enable_stun is defined and enable_stun | lower == "true"

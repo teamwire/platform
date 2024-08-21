@@ -119,6 +119,13 @@ external_hostname: ""
 # Uncomment the following line and set your value.
 # VOIP_VIDEO_RAM: 400
 
+# External TURN/STUN
+# Here you can add an external TURN/STUN server which you like to use.
+# Uncomment the following 3 lines and fill in the right values:
+# enable_external_turn_server: "true"
+# external_turn_server: "meet-jit-si-turnrelay.jitsi.net"
+# external_turn_port: "443"
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################

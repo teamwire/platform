@@ -102,9 +102,9 @@
       JIBRI_XMPP_USER: "jibri"
       TZ: "UTC"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
-      TURN_CREDENTIALS: "{{ stun_password if enable_stun is defined and enable_stun | string() == 'true'  |default() }}"
-      TURNS_HOST: "{{ stun_hostname if enable_stun is defined and enable_stun | string() == 'true' |default() }}"
-      TURNS_PORT: "{{ voip_turn_port if enable_stun is defined and enable_stun | string() == 'true' |default() }}"
+      TURN_CREDENTIALS: "{{ stun_password if ( enable_stun is defined and enable_stun | string() == 'true' or enable_external_turn_server is defined and enable_external_turn_server | string() == 'true' ) |default() }}"
+      TURNS_HOST: "{{ ( stun_hostname if enable_stun is defined and enable_stun | string() == 'true') or (external_turn_server if enable_external_turn_server is defined and enable_external_turn_server | string() == 'true') |default() }}"
+      TURNS_PORT: "{{ (voip_turn_port if enable_stun is defined and enable_stun | string() == 'true') or (external_turn_port if enable_external_turn_server is defined and enable_external_turn_server | string() == 'true' ) |default() }}"
   when: config_done is defined
 
 - name: Run the Teamwire voip jicofo container
@@ -192,7 +192,7 @@
       JVB_TCP_HARVESTER_DISABLED: "false"
       JVB_TCP_PORT: "4443"
       JVB_TCP_MAPPED_PORT: "4443"
-      JVB_STUN_SERVERS: "{{ stun_hostname + ':' + voip_turn_port if enable_stun is defined and enable_stun | string() == 'true' else 'meet-jit-si-turnrelay.jitsi.net:443' }}"
+      JVB_STUN_SERVERS: "{{ stun_hostname + ':' + voip_turn_port if enable_stun is defined and enable_stun | string() == 'true' else external_turn_server | default('meet-jit-si-turnrelay.jitsi.net') + ':' + external_turn_port | default('443') }}"
       TZ: "UTC"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
       ENABLE_COLIBRI_WEBSOCKET: "1"
