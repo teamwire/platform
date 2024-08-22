@@ -199,3 +199,34 @@
       REDIS_URI: "127.0.0.1:6379:1"
       REDIS_PASSWORD: "{{ redis_pass | default() }}"
       LOGLEVEL: "{{ notification_loglevel | default() }}"
+
+- name: Retrieve the Teamwire dashboard container
+  when:
+    - config_done is defined
+    - dashboard_version is defined
+    - not (is_legacy_installation | default('True') | lower | bool)
+  community.docker.docker_image:
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/dashboard:{{ dashboard_version | default('prod') }}"
+    source: pull
+    state: present
+
+- name: Run the Teamwire dashboard container
+  when:
+    - config_done is defined
+    - dashboard_version is defined
+    - not (is_legacy_installation | default('True') | lower | bool)
+  community.docker.docker_container:
+    name: teamwire_dashboard
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/dashboard:{{ dashboard_version | default('prod') }}"
+    state: started
+    restart_policy: always
+    network_mode: bridge
+    ports:
+      - "8099:80"
+    log_driver: "syslog"
+    log_opt:
+      tag: teamwire-dashboard
+      syslog-facility: "local6"
+    env:
+      TW_SCHEME: "https"
+      TW_DOMAIN: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"

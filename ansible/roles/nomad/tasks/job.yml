@@ -45,3 +45,13 @@
     mode: 0644
   run_once: true
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+
+- name: Write Dashboard nomad job
+  ansible.builtin.template:
+    src: dashboard.nomad.j2
+    dest: /data/cluster_config/dashboard.nomad
+    owner: teamwire
+    group: root
+    mode: 0644
+  run_once: true
+  when: dashboard_version is defined and not (is_legacy_installation | default('True') | lower | bool)

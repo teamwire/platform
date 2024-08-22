@@ -7,6 +7,7 @@
 backend_cpu_alloc: 0.2 # Default:20%
 worker_cpu_alloc: 0.2
 notification_cpu_alloc: 0.2
+dashboard_cpu_alloc: 0.2
 
 # Nomad RAM allocations in MB per CPU core
 backend_ram_alloc: 512
@@ -16,6 +17,8 @@ worker_ram_alloc_min: "{{ worker_ram_alloc }}"
 notification_ram_alloc: 64
 notification_ram_alloc_min: "{{ notification_ram_alloc }}"
 beat_ram_alloc_min: 384
+dashboard_ram_alloc: 256
+dashboard_ram_alloc_min: "{{ dashboard_ram_alloc }}"
 
 # Nomad jobs list
 nomad_jobs:

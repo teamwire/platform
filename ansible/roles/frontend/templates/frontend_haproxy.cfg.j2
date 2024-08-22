@@ -140,6 +140,7 @@ frontend https-in
     {%if external_hostname is iterable and external_hostname is not string%}{% for item in external_hostname %}
     acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i ^{{ item }}(:[0-9]+)?$
     {% endfor %}{%else%}acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i ^{{ external_hostname }}(:[0-9]+)?$
+    {%endif%}{% if not (is_legacy_installation | default('True') | lower | bool) %}acl IS_DASHBOARD_DOMAIN hdr(host) -m reg -i ^{{ dashboard_hostname }}(:[0-9]+)?$
     {%endif%}acl IS_ADMIN hdr_beg(host) -i admin
 
     # Backends redirect
@@ -147,6 +148,8 @@ frontend https-in
     {% if websockets_enabled | string() == 'true' %}use_backend teamwire-backend-websockets if { path_beg -i /ws } IS_EXTERNAL_HOSTNAME
 {%endif%}
     use_backend teamwire-backend if IS_EXTERNAL_HOSTNAME || IS_ADMIN
+    {% if not (is_legacy_installation | default('True') | lower | bool) %}use_backend teamwire-dashboard if IS_DASHBOARD_DOMAIN
+    {%endif%}
 
 # ----------------------------------------------------
 # BACKEND: teamwire-backend
@@ -159,6 +162,20 @@ backend teamwire-backend
     {{ end }}{% endraw %}
     {%else%}server teamwire-backend 127.0.0.1:8080 check port 8080
     {% endif %}
+
+{% if not (is_legacy_installation | default('True') | lower | bool) %}
+# ----------------------------------------------------
+# BACKEND: teamwire-dashboard
+# ----------------------------------------------------
+backend teamwire-dashboard
+    http-response del-header Server
+    http-response set-header Connection keep-alive
+    {% if "frontend_servers" in groups %}{% raw %}{{ if service "dashboard" }} {{ range $index, $service := service "dashboard" }}
+    server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{ end }}{% endraw %}
+    {%else%}server teamwire-dashboard 127.0.0.1:8099 check port 8099
+    {% endif %}
+{% endif %}
 
 {% if websockets_enabled | string() == 'true' %}
 # ----------------------------------------------------

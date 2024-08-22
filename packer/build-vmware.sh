@@ -16,6 +16,7 @@ help() {
   echo "  --offline-installation           Prepare an image for offline installation"
   echo "                                   Requires the following three parameters"
   echo "  --backend-release <TAG>          Backend release to integrate into the offline installation VM"
+  echo "  --dashboard-release <TAG>        Dashboard release to integrate into the offline installation VM"
   echo "  --dockerhub-username <username>  Docker Hub user name"
   echo "  --dockerhub-password <password>  Docker Hub password"
 }
@@ -32,6 +33,10 @@ while [[ $# -gt 0 ]] ; do
       ;;
     --backend-release)
       BACKEND_RELEASE="$2"
+      shift
+      ;;
+    --dashboard-release)
+      DASHBOARD_RELEASE="$2"
       shift
       ;;
     --dockerhub-username)
@@ -70,6 +75,13 @@ if [ -n "${OFFLINE_INSTALLATION}" ] && [ -z "${BACKEND_RELEASE}" ] ; then
   exit 1
 fi
 
+if [ -n "${OFFLINE_INSTALLATION}" ] && [ -z "${DASHBOARD_RELEASE}" ] ; then
+  echo "Please specify a dashboard release when packaging for offline installation."
+  echo
+  help
+  exit 1
+fi
+
 if [ -f ../ansible/group_vars/all ] ; then
   echo "Please remove the Ansible config before building!"
   exit 1
@@ -81,6 +93,7 @@ packer build \
   -var "http_directory=." \
   -var "ssh_password=${PASSWORD}" \
   -var "offline_installation=${OFFLINE_INSTALLATION}" \
+  -var "dashboard_release=${DASHBOARD_RELEASE}" \
   -var "backend_release=${BACKEND_RELEASE}" \
   -var "dockerhub_password=${DOCKERHUB_PASSWORD}" \
   -var "dockerhub_username=${DOCKERHUB_USERNAME}" \

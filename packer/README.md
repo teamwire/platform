@@ -32,6 +32,7 @@ When building an image for offline installation, add the following parameters:
 ```
 	-var "offline_installation=true" \
 	-var "backend_release=<version tag>" \
+	-var "dashboard_release=<version tag>" \
 	-var "dockerhub_password=<Docker Hub password>" \
 	-var "dockerhub_username=<Docker Hub user name>" \
 ```

@@ -1,0 +1,98 @@
+job "dashboard" {
+	# Specify the datacenters within the region this job can run in.
+	datacenters = ["dc1"]
+
+	# Priority controls our access to resources and scheduling priority.
+	# This can be 1 to 100, inclusively, and defaults to 50.
+	# priority = 50
+
+	constraint {
+		attribute = "${attr.kernel.name}"
+		value = "linux"
+	}
+
+	# In general both constraint are not needed and one of both were sufficient,
+	# but we might want to filter per instance in the future. A node class as
+	# well the the ansible group could help us to filter even finer in the future.
+	# Therefor we keep both "node.class" and "meta.groups".
+
+	constraint {
+		attribute = "${node.class}"
+		value     = "backend_servers"
+	}
+
+	constraint {
+		attribute = "${meta.groups}"
+		operator = "regexp"
+		value = "backend_servers"
+	}
+
+	# Configure the job to do rolling updates
+	update {
+		# Stagger updates every 10 seconds
+		stagger = "10s"
+
+		# Update a single task at a time
+		max_parallel = 1
+	}
+
+	vault {
+		policies = ["nomad-job"]
+		change_mode = "restart"
+	}
+
+	group "dashboard" {
+		count = 1
+
+		network {
+			port "http" {
+				static = 8099
+				to = 80
+			}
+		}
+
+		task "dashboard" {
+			driver = "docker"
+
+			config {
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/dashboard:{{ dashboard_version }}"
+				auth {
+					username = "{{ docker_registry_username }}"
+					password = "{{ docker_registry_password }}"
+				}
+                network_mode = "bridge"
+				ports = [ "http" ]
+
+				logging {
+					type = "syslog"
+					config {
+						tag = "teamwire-dashboard"
+						syslog-facility = "local6"
+					}
+				}
+			}
+
+			service {
+				name = "${TASK}"
+				tags = ["dashboard"]
+				port = "http"
+				check {
+					type = "http"
+					path = "/"
+					interval = "15s"
+					timeout = "2s"
+				}
+			}
+
+			env {
+				TW_SCHEME = "https"
+				TW_DOMAIN = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+			}
+
+			resources {
+				cpu = {{ (total_cpu_power|int * dashboard_cpu_alloc)|int }} # Allocated CPU in MHz
+				memory = {{ [dashboard_ram_alloc_min|int, core_count|int * dashboard_ram_alloc|int]|max }} # Allocated RAM in MB
+			}
+		}
+	}
+}

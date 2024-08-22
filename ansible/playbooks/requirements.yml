@@ -57,6 +57,26 @@
         - vagrant_mode is not defined
         - (version is not defined or version | lower == "prod" or version == None or version | length == 0)
 
+    - name: Check if legacy installation is disabled
+      ansible.builtin.assert:
+        that:
+          - external_hostname is defined
+          - external_hostname | length > 0
+          - dashboard_hostname is defined
+          - dashboard_hostname is string
+          - dashboard_hostname | length > 0
+          - webclient_hostname is defined
+          - webclient_hostname is string
+          - webclient_hostname | length > 0
+          - dashboard_version is defined
+          - dashboard_version is string
+          - dashboard_version | length > 0
+        msg:
+          - "If is_legacy_installation is set to 'false', dashboard_version, external_hostname, dashboard_hostname and webclient_hostname must be set"
+          - "Please set these variables in group_vars/all file"
+      when:
+        - not (is_legacy_installation | default('True') | lower | bool)
+
     - name: Check if in developer mode
       ansible.builtin.set_fact:
         tw_dev_mode: "{{ lookup('env', 'tw_dev_mode') | ternary(True, False) }}"

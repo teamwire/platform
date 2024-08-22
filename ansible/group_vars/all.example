@@ -14,15 +14,20 @@
 # Insert your Docker Hub credentials below
 dockerhub_username: ""
 
-# The external fully qualified host name under which the clients can access
-# this server, e.g. "teamwire.example.com". external_hostname can be a single
-# string like e.g. external_hostname: "teamwire.example.com" or you can provide
-# a list of domains. The first domain in the list on a single server is selected
-# as hostname e.g.
-# external_hostname:
-#     - teamwire.example.com
-#     - second.eample.com
+# The fully qualified host names under which the different parts of the system can be accessed.
+# `external_hostname` is used for the backend server, which clients connect to.
+# `dashboard_hostname` is used for the admin dashboard.
+# `webclient_hostname` is used for the web client site.
+# Each of these can be a single string (e.g., "backend.example.com") to specify the domain
+# for that specific component.
+#
+# Example configuration:
+# external_hostname: "backend.example.com"
+# dashboard_hostname: "admin.example.com"
+# webclient_hostname: "webclient.example.com"
 external_hostname: ""
+dashboard_hostname: ""
+webclient_hostname: ""
 
 # Uncomment the following line if you want to disable SSH logins with passwords.
 # Make sure to test your SSH keys first, otherwise this you might lock yourself

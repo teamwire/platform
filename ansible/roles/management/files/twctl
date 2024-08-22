@@ -21,6 +21,7 @@ fi
 
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
 CLUSTER_CONFIG_DIR=/data/cluster_config
+RELEASE_FILE=/usr/local/share/twctl/teamwire-release
 DFLT_TMOUT=10
 
 # Set http proxy for the OpenSSL client if one is set
@@ -49,6 +50,7 @@ if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
     fi
 
     NOMAD_JOB="${CLUSTER_CONFIG_DIR}/teamwire.nomad"
+    DASHBOARD_NOMAD_JOB="${CLUSTER_CONFIG_DIR}/dashboard.nomad"
     NOMAD="/usr/local/bin/nomad"
 else
     # Single server installation
@@ -67,7 +69,7 @@ else
     VOIP_CONTAINERS="teamwire_web teamwire_prosody teamwire_jicofo teamwire_jvb"
 fi
 #####ImageNames - Mainifest
-IMAGES=( "teamwire/backend" "teamwire/notification-server" )
+IMAGES=( "teamwire/backend" "teamwire/notification-server" "teamwire/dashboard" )
 VOIPIMAGES=( "teamwire/web2" "teamwire/prosody" "teamwire/jicofo" "teamwire/jvb" )
 
 
@@ -100,6 +102,32 @@ if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" == "false" ]]; then
         exit 1
     fi
 fi
+
+fetch_image_versions() {
+  local TAG=$1
+  if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact; then
+    get_release_file "${TAG}"
+  fi
+  fetch_image_base
+}
+
+get_release_file() {
+    local TAG=$1
+    local RELEASE_FILE_URL="https://repo.teamwire.eu/external/release/${TAG}"
+    if [ ! -d "/usr/local/share/twctl" ]; then
+      sudo mkdir /usr/local/share/twctl
+    fi
+    if ! sudo curl -L -s -f -o "${RELEASE_FILE}" "${RELEASE_FILE_URL}"; then
+        echo "ERROR: The release file for the provided tag (${TAG}) was not found."
+        echo "       Please ensure that the tag is correct and try again."
+      exit 1
+    fi
+}
+
+fetch_image_base() {
+    BACKEND_VERSION=$(grep -i backend "${RELEASE_FILE}" | grep -oP 'prod.*')
+    DASHBOARD_VERSION=$(grep -i dashboard "${RELEASE_FILE}" | grep -oP 'v.*')
+}
 
 vault_read_secrets() {
     local secret_path
@@ -273,10 +301,19 @@ _get_config_value_array() {
 check_tag() {
     local TAG=$1
     check_registry
+    fetch_image_versions "${TAG}"
+
     for IMAGE in "${IMAGES[@]}"; do
-        if ! docker images "${PRFX}${IMAGE}" | grep -q "${TAG}"; then
-            # Required image not found for given tag
-            echo "ERROR: Containers for the requested tag could not be found."
+        local IMAGE_TAG
+        if [[ "${IMAGE}" == "teamwire/dashboard" ]]; then
+            IMAGE_TAG="${DASHBOARD_VERSION}"
+        else
+            IMAGE_TAG="${BACKEND_VERSION}"
+        fi
+
+        if ! docker images "${PRFX}${IMAGE}" | grep -q "${IMAGE_TAG}"; then
+            # Required image not found for the fetched tag
+            echo "ERROR: Containers for the requested tag (${IMAGE_TAG}) could not be found."
             echo "       Please pull the containers first using the pull action."
             exit 1
         fi
@@ -389,6 +426,79 @@ voip() {
             echo "       stop    : Stops the voip container"
             echo "       restart : Restart the voip container"
             echo "       status  : Shows the status of voip container"
+            ;;
+    esac
+}
+
+dashboard_start_cluster() {
+    ${NOMAD} run /data/cluster_config/dashboard.nomad
+}
+
+dashboard_start_single() {
+    c=$(docker start "teamwire_dashboard")
+    printf "${c:0:15}\t...${GRN}start [done]${NOC}\n"
+}
+
+
+dashboard_restart_cluster() {
+    ${NOMAD} job restart -on-error=fail dashboard
+}
+
+dashboard_restart_single() {
+    c=$(docker restart "teamwire_dashboard")
+    printf "${c:0:15}\t...${GRN}restart [done]${NOC}\n"
+}
+
+
+dashboard_stop_cluster() {
+    ${NOMAD} job stop dashboard
+}
+
+dashboard_stop_single() {
+    c=$(docker stop "teamwire_dashboard")
+    printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+}
+
+dashboard_remove_single() {
+    c=$(docker stop "teamwire_dashboard")
+    docker rm "dashboard"
+    printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
+}
+
+dashboard_status_cluster() {
+    ${NOMAD} status dashboard
+}
+
+dashboard_status_single() {
+    docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}" -f name=teamwire_dashboard
+}
+
+dashboard() {
+    local enabled
+    if [ -z "$(_get_config_value dashboard_version)" ]; then
+        echo "Dashboard is not enabled. Please set the  dashboard_version in the group_vars/all file"
+        exit
+    fi
+    case ${OPTION} in
+        start)
+            dashboard_start_${INSTALLATION}
+            ;;
+        stop)
+            dashboard_stop_${INSTALLATION}
+            ;;
+        restart)
+            dashboard_restart_${INSTALLATION}
+            ;;
+        status)
+            "dashboard_status_${INSTALLATION}"
+            ;;
+        *)
+            echo "Managing Dashboard container"
+            echo "Usage: twctl dashboard {start|stop|restart|status}"
+            echo "       start   : Starts the dashboard container if not already running"
+            echo "       stop    : Stops the dashboard container"
+            echo "       restart : Restart the dashboard container"
+            echo "       status  : Shows the status of dashboard container"
             ;;
     esac
 }
@@ -531,6 +641,7 @@ help() {
     echo "archiving       Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
     echo "ha-log          Show content of haproxy.log. Pipe to less -R for pager with colour support"
     echo "voip            Manage voip containers {start|stop|restart|status}"
+    echo "dashboard       Manage dashboard containers {start|stop|restart|status}"
 }
 
 test_server_condition_for_preflight_check() {
@@ -626,24 +737,8 @@ check_registry() {
 }
 
 show-tags() {
-    check_registry
-  echo "***** Backend version: *****"
-    if [ "${USE_TEAMWIRE_REGISTRY}" == "false" ]; then
-        local USER
-        USER="$(_get_config_value dockerhub_username)"
-        local PASS
-        PASS="$(vault_read_secrets dockerhub/password)"
-
-        local TOKEN
-        TOKEN=$(curl -m ${DFLT_TMOUT} -s -H "Content-Type: application/json" -X POST -d '{"username": "'"${USER}"'", "password": "'"${PASS}"'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
-        curl -m ${DFLT_TMOUT} -s -H "Authorization: JWT ${TOKEN}" "https://registry.hub.docker.com/v2/repositories/teamwire/backend/tags/?name=prod&page_size=100" | jq -r '.results[].name'
-    else
-        local USER
-        USER="$(_get_config_value dockerhub_username)"
-        local PASS
-        PASS="$(vault_read_secrets dockerhub/password)"
-        curl -m ${DFLT_TMOUT} -s -u "${USER}:${PASS}" -H "Content-Type: application/json" -X GET "https://harbor.teamwire.eu/api/v2.0/projects/teamwire/repositories/backend/artifacts?q=tags%3D~prod-&page=1&page_size=20" -H "accept: application/json" |jq -r  '.[].tags[].name' |sort -r
-    fi
+  echo "***** Teamwire version: *****"
+  curl -s -H "Content-Type: application/json" 'https://repo.teamwire.eu/service/rest/v1/search?repository=external&group=/release' | jq -r '.items[] | .name | sub("^/release/"; "") + "\t"' | sort -Vr
 }
 
 create_report() {
@@ -830,20 +925,35 @@ restoredb() {
 pull_images_base() {
     local enabled
     enabled="$(_get_config_value enable_voip)"
+
     if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact; then
-        echo "Pulling Teamwire container images for version ${TAG}"
+        # Fetch the backend and dashboard versions using the fetch_image_versions function
+        fetch_image_versions "${TAG}"
+
+        echo "Pulling Teamwire container images for backend version ${BACKEND_VERSION}"
+        echo "Pulling Teamwire container dashboard version ${DASHBOARD_VERSION}"
         echo
+
         check_registry
+
         for IMAGE in "${IMAGES[@]}"; do
-            docker pull "${PRFX}${IMAGE}:${TAG}"
+            if [[ "${IMAGE}" == "teamwire/dashboard" ]]; then
+                docker pull "${PRFX}${IMAGE}:${DASHBOARD_VERSION}"
+            else
+                docker pull "${PRFX}${IMAGE}:${BACKEND_VERSION}"
+            fi
         done
+
         if [ -n "${enabled}" ] && [ "${enabled}" = "true" ]; then
             for VOIPIMG in "${VOIPIMAGES[@]}"; do
-                docker pull "${PRFX}${VOIPIMG}:${TAG}" || exit 1;
+                docker pull "${PRFX}${VOIPIMG}:${BACKEND_VERSION}" || exit 1
             done
         fi
+    else
+        echo "Offline mode is enabled, skipping image pulls."
     fi
 }
+
 
 pull_images_single() {
     pull_images_base
@@ -875,6 +985,7 @@ run_migrations_base() {
     check_tag "${TAG}"
     get_database_configuration
     check_registry
+    fetch_image_versions "${TAG}"
     echo "Running database migrations"
     echo
     docker run --rm --network host -e MODE=migration --name teamwire-migrations \
@@ -884,7 +995,7 @@ run_migrations_base() {
         -e ORA_HOST="${ORA_HOST}" -e ORA_PORT="${ORA_PORT}" -e ORA_DATABASE="${ORA_DATABASE}" \
         -e ORA_USER="${ORA_USER}" -e ORA_PASSWORD="${ORA_PASSWORD}" \
         -e REDIS_URI="${REDIS_URI}" -e REDIS_PASSWORD="${REDIS_PASSWORD}"\
-        -e AESKEY="${AESKEY}" -e VAULT_ADDR="${VAULT_ADDR}" "${PRFX}teamwire/backend:${TAG}" 2>&1
+        -e AESKEY="${AESKEY}" -e VAULT_ADDR="${VAULT_ADDR}" "${PRFX}teamwire/backend:${BACKEND_VERSION}" 2>&1
 
 }
 
@@ -967,6 +1078,7 @@ restart_containers_cluster() {
 
 setup_containers_base() {
     check_tag "${TAG}"
+    fetch_image_versions "${TAG}"
 
     if [ -z "$(_get_config_value version)" ]; then
         echo "ERROR: Please update the configuration file ${CONFIG_FILE}"
@@ -974,8 +1086,15 @@ setup_containers_base() {
         exit 1
     fi
 
+    if [ -z "$(_get_config_value dashboard_version)" ]; then
+        echo "WARNING: Please update the configuration file ${CONFIG_FILE}"
+        echo "         from the provided example before using this action. "
+    else
+          sed -i -e 's/^\(dashboard_version: \).*$/\1'"${DASHBOARD_VERSION}"'/' "${CONFIG_FILE}"
+    fi
     # Write given tag into config file
-    sed -i -e 's/^\(version: \).*$/\1'"${TAG}"'/' ${CONFIG_FILE}
+    sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_VERSION}"'/' ${CONFIG_FILE}
+
 }
 
 setup_containers_single() {
@@ -1001,6 +1120,9 @@ setup_containers_cluster() {
 
     ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
     ${NOMAD} run "${NOMAD_JOB}"
+    if [ -n "$(_get_config_value dashboard_version)" ]; then
+    ${NOMAD} run "${DASHBOARD_NOMAD_JOB}"
+    fi
     if [ -z "${enabled}" ]; then
             :
     elif [ "${enabled}" = "true" ]; then
@@ -1172,6 +1294,11 @@ while [ $# -gt 0 ]; do
             ;;
         voip)
             TASK="voip"
+            OPTION="$2"
+            shift
+            ;;
+        dashboard)
+            TASK="dashboard"
             OPTION="$2"
             shift
             ;;
