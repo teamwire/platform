@@ -70,6 +70,7 @@ php-gd
 php-xml
 jq
 gnupg2
+maxscale
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
@@ -160,6 +161,16 @@ fi
 if [ ! -f /etc/apt/preferences.d/tw_monitoring_pinning ]; then
   cd ~/platform/ansible
   ansible localhost -i hosts -m template -b -a "src=roles/monitoring/templates/tw_monitoring_pinning.j2 dest=/etc/apt/preferences.d/tw_monitoring_pinning owner=root group=root mode=0644" -e @roles/monitoring/defaults/main.yml
+fi
+
+# Configure Maxscale Repository Key
+if [ ! -f /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg ]; then
+  MAXSCALE_GPG_KEY_ID=$(grep "maxscale_gpg_key_id" ~teamwire/platform/ansible/roles/db/defaults/main.yml | sed -e 's/"//g' | cut -d ':' -f2 | sed -e 's/^0x//')
+  source /etc/os-release
+
+  sudo gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys "${MAXSCALE_GPG_KEY_ID}"
+  sudo gpg --export "${MAXSCALE_GPG_KEY_ID}" | sudo tee /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg
+  echo "deb [arch=amd64,arm64] https://dlm.mariadb.com/repo/maxscale/latest/apt ${VERSION_CODENAME} main" | sudo tee /etc/apt/sources.list.d/mariadb-maxscale.list
 fi
 
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,
