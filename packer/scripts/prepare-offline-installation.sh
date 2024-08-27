@@ -97,8 +97,8 @@ https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}
 https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-https://repo.teamwire.eu/external/ftp/icinga_packages.txt;$(curl -s https://repo.teamwire.eu/external/ftp/checksum_icinga_packages)
-https://repo.teamwire.eu/external/ftp/check_ntp_time-latest;$(curl -s https://repo.teamwire.eu/external/ftp/checksum_check_ntp_time-latest)
+https://repo.teamwire.eu/external/ftp/icinga_packages.txt;$(curl -Ls https://repo.teamwire.eu/external/ftp/checksum_icinga_packages)
+https://repo.teamwire.eu/external/ftp/check_ntp_time-latest;$(curl -Ls https://repo.teamwire.eu/external/ftp/checksum_check_ntp_time-latest)
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
