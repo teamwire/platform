@@ -884,7 +884,7 @@ run_migrations_base() {
         -e ORA_HOST="${ORA_HOST}" -e ORA_PORT="${ORA_PORT}" -e ORA_DATABASE="${ORA_DATABASE}" \
         -e ORA_USER="${ORA_USER}" -e ORA_PASSWORD="${ORA_PASSWORD}" \
         -e REDIS_URI="${REDIS_URI}" -e REDIS_PASSWORD="${REDIS_PASSWORD}"\
-        -e AESKEY="${AESKEY}" "${PRFX}teamwire/backend:${TAG}" 2>&1
+        -e AESKEY="${AESKEY}" -e VAULT_ADDR="${VAULT_ADDR}" "${PRFX}teamwire/backend:${TAG}" 2>&1
 
 }
 
