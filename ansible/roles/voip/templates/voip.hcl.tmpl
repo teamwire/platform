@@ -181,7 +181,7 @@ job "voip" {
                     JWT_APP_SECRET          = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
                     PROSODY_KEY             = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
 {%- endraw %}
-{%- if enable_stun is defined  and enable_stun |lower == "true" %}
+{%- if enable_stun is defined and enable_stun | string() == 'true' or enable_external_turn_server is defined and enable_external_turn_server | string() == 'true' %}
 {%- raw %}
                     TURN_CREDENTIALS        = "{{ with secret "secret/voip/stun_password" }}{{.Data.value}}{{end}}"
 {%- endraw %}
@@ -219,10 +219,14 @@ job "voip" {
                 JWT_APP_ID                      = "teamwire"
                 TZ                              = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
-                {% if enable_stun is defined and enable_stun | lower == "true" -%}
-                TURNS_HOST                      = "{{ stun_hostname }}"
-                TURNS_PORT                      = "{{ voip_turn_port }}"
+{% if enable_stun is defined and enable_stun | lower == "true" %}
+                TURNS_HOST                      = "{{ stun_hostname | default() }}"
+                TURNS_PORT                      = "{{ voip_turn_port | default() }}"
                 {% endif %}
+{%- if enable_external_turn_server is defined and enable_external_turn_server | lower == "true" %}
+                TURNS_HOST                      = "{{ external_turn_server | default() }}"
+                TURNS_PORT                      = "{{ external_turn_port | default() }}"
+{% endif %}
             }
 
             resources {
@@ -408,7 +412,7 @@ job "voip" {
 {% if enable_stun is defined  and enable_stun |lower == "true" %}
                 JVB_STUN_SERVERS                = "{{ stun_hostname }}:{{ voip_turn_port }}"
 {% else %}
-                JVB_STUN_SERVERS                = "meet-jit-si-turnrelay.jitsi.net:443"
+                JVB_STUN_SERVERS                = "{{ external_turn_server | default('meet-jit-si-turnrelay.jitsi.net') }}:{{ external_turn_port | default('443') }}"
 {% endif %}
                 TZ                              = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = "2"
