@@ -95,6 +95,7 @@
       when:
         - config_done is defined
         - mysql_host is not defined
+        - oracle_host is not defined
 
 - name: Set current tag (COMPLETE) in /etc/platform_version
   hosts: all
