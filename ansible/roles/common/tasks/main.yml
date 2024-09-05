@@ -192,7 +192,7 @@
 - name: Write NTP configuration file
   ansible.builtin.template:
     src: ntp.conf.j2
-    dest: /etc/ntp.conf
+    dest: "{{ '/etc/ntp.conf' if ansible_distribution_release == 'bullseye' else '/etc/ntpsec/ntp.conf' }}"
     mode: 0644
     owner: root
     group: root
