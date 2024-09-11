@@ -219,6 +219,7 @@ job "voip" {
                 JWT_APP_ID                      = "teamwire"
                 TZ                              = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
+                ENABLE_END_CONFERENCE           = "0"
 {% if enable_stun is defined and enable_stun | lower == "true" %}
                 TURNS_HOST                      = "{{ stun_hostname | default() }}"
                 TURNS_PORT                      = "{{ voip_turn_port | default() }}"
