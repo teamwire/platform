@@ -101,6 +101,7 @@ job "voip" {
                 ENABLE_AUTH                     = "1"
                 ENABLE_GUESTS                   = "0"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
+                ENABLE_IPV6                     = "0"
             }
 
             resources {
@@ -220,6 +221,7 @@ job "voip" {
                 TZ                              = "UTC"
                 S6_BEHAVIOUR_IF_STAGE2_FAILS    = 2
                 ENABLE_END_CONFERENCE           = "0"
+                ENABLE_IPV6                     = "0"
 {% if enable_stun is defined and enable_stun | lower == "true" %}
                 TURNS_HOST                      = "{{ stun_hostname | default() }}"
                 TURNS_PORT                      = "{{ voip_turn_port | default() }}"
