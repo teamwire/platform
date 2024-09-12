@@ -43,6 +43,7 @@
       ENABLE_AUTH: "1"
       ENABLE_GUESTS: "0"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
+      ENABLE_IPV6: "0"
   when: config_done is defined
 
 - name: Run the Teamwire voip prosody container
@@ -103,6 +104,7 @@
       TZ: "UTC"
       S6_BEHAVIOUR_IF_STAGE2_FAILS: "2"
       ENABLE_END_CONFERENCE: "0"
+      ENABLE_IPV6: "0"
       TURN_CREDENTIALS: "{{ stun_password if ( enable_stun is defined and enable_stun | string() == 'true' or enable_external_turn_server is defined and enable_external_turn_server | string() == 'true' ) |default() }}"
       TURNS_HOST: "{{ ( stun_hostname if enable_stun is defined and enable_stun | string() == 'true') or (external_turn_server if enable_external_turn_server is defined and enable_external_turn_server | string() == 'true') |default() }}"
       TURNS_PORT: "{{ (voip_turn_port if enable_stun is defined and enable_stun | string() == 'true') or (external_turn_port if enable_external_turn_server is defined and enable_external_turn_server | string() == 'true' ) |default() }}"
