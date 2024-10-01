@@ -44,3 +44,13 @@
   when:
     - "'database_servers' in groups"
     - groups['database_servers'] | length > 1
+
+- name: Determine MariaDB host and port for external database.
+  ansible.builtin.set_fact:
+    monitoring_db_host: "{{ mysql_host }}"
+    monitoring_db_port: "{{ mysql_port }}"
+  when:
+    - mysql_host is defined
+    - mysql_port is defined
+    - groups['database_servers'] is not defined
+    - groups['all'] | length() > 1

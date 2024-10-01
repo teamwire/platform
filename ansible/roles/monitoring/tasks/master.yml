@@ -171,6 +171,9 @@
   args:
     creates: /etc/icinga2/pki/ca.crt
 
+# ------------------------------------------------------------------------------
+# Check if database is already created
+# ------------------------------------------------------------------------------
 - name: Register first installation var if external database is in use
   ansible.builtin.command: mysql -u {{ monitoring_db_user }} -h {{ mysql_host }} -p{{ monitoring_db_password }} {{ monitoring_db_name }} -e 'SELECT count(*) FROM information_schema.tables WHERE table_schema = "monitor";'
   register: isfirstextinstallion
@@ -187,6 +190,9 @@
     - isfirstextinstallion.stdout_lines is defined
     - isfirstextinstallion.stdout_lines[1] | int == 0
 
+# ------------------------------------------------------------------------------
+# Create Databases on integrated database servers
+# ------------------------------------------------------------------------------
 - name: Create Icinga databases # noqa no-handler
   community.mysql.mysql_db:
     name: "{{ item }}"
@@ -198,7 +204,9 @@
     - "{{ monitoring_db_name }}"
     - "{{ monitoring_db_web_name }}"
   register: database_created
-  when: isfirstextinstallion.changed == false # noqa literal-compare
+  when:
+    - isfirstextinstallion.changed == false # noqa literal-compare
+    - groups['database_servers'] is defined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: "Create Icinga database user {{ monitoring_db_user }}"
@@ -215,6 +223,7 @@
     - "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
     - "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') | list + ['localhost'] if groups['all'] | length > 1 else 'localhost' }}"
   delegate_to: "{{ monitoring_db_host }}"
+  when: groups['database_servers'] is defined
 
 - name: "Create Icingaweb database user {{ monitoring_db_web_user }}"
   community.mysql.mysql_user:
@@ -228,6 +237,7 @@
   no_log: true
   with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
   delegate_to: "{{ monitoring_db_host }}"
+  when: groups['database_servers'] is defined
 
 - name: Fetch the Icinga DB schemas # noqa no-handler
   ansible.builtin.fetch:
@@ -235,9 +245,9 @@
     dest: "{{ item.dest }}"
     flat: true
   with_items:
-    - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: 'icinga2.sql'}
-    - { src: '/usr/share/icingaweb2/schema/mysql.schema.sql', dest: 'icingaweb2.sql'}
-  when: database_created.changed
+    - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: '/home/teamwire/icinga2.sql'}
+    - { src: '/usr/share/icingaweb2/schema/mysql.schema.sql', dest: '/home/teamwire/icingaweb2.sql'}
+  when: database_created.changed or firstinstalldb.changed
 
 - name: Copy the Icinga DB schemas to the database server # noqa no-handler
   ansible.builtin.copy:
@@ -245,9 +255,11 @@
     dest: "{{ item.dest }}"
     mode: 0644
   with_items:
-    - { src: 'icinga2.sql', dest: '/tmp/icinga2.sql'}
-    - { src: 'icingaweb2.sql', dest: '/tmp/icingaweb2.sql'}
-  when: database_created.changed
+    - { src: '/home/teamwire/icinga2.sql', dest: '/tmp/icinga2.sql'}
+    - { src: '/home/teamwire/icingaweb2.sql', dest: '/tmp/icingaweb2.sql'}
+  when:
+    - database_created.changed
+    - groups['database_servers'] is defined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Import Icinga databases # noqa no-handler
@@ -263,7 +275,9 @@
     - { db: '{{ monitoring_db_web_name }}', target: '/tmp/icingaweb2.sql' }
   loop_control:
     label: "{{ item.db }}"
-  when: database_created.changed
+  when:
+    - database_created.changed
+    - groups['database_servers'] is defined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Import Icinga database on external database server monitor DB # noqa no-handler
@@ -274,8 +288,10 @@
     login_password: "{{ monitoring_db_password }}"
     login_host: "{{ mysql_host }}"
     login_port: "{{ mysql_port | int }}"
-    target: "/usr/share/icinga2-ido-mysql/schema/mysql.sql"
-  when: firstinstalldb.changed
+    target: "/home/teamwire/icinga2.sql"
+  when:
+    - firstinstalldb.changed
+    - groups['database_servers'] is not defined
 
 - name: Import Icinga database on external database server monitor_web DB  # noqa no-handler
   community.mysql.mysql_db:
@@ -285,8 +301,10 @@
     login_password: "{{ monitoring_db_web_password }}"
     login_host: "{{ mysql_host }}"
     login_port: "{{ mysql_port | int }}"
-    target: "/usr/share/icingaweb2/etc/schema/mysql.schema.sql"
-  when: firstinstalldb.changed
+    target: "/home/teamwire/icingaweb2.sql"
+  when:
+    - firstinstalldb.changed
+    - groups['database_servers'] is not defined
 
 - name: Delete the Icinga DB schemas from the database server # noqa no-handler
   ansible.builtin.file:
@@ -295,7 +313,9 @@
   with_items:
     - "/tmp/icinga2.sql"
     - "/tmp/icingaweb2.sql"
-  when: database_created.changed
+  when:
+    - database_created.changed
+    - groups['database_servers'] is defined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Delete the Icinga DB schemas from localhost # noqa no-handler
@@ -303,8 +323,8 @@
     dest: "{{ playbook_dir }}/{{ item }}"
     state: absent
   with_items:
-    - "icinga2.sql"
-    - "icingaweb2.sql"
+    - "/home/teamwire/icinga2.sql"
+    - "/home/teamwire/icingaweb2.sql"
   when: database_created.changed
   delegate_to: localhost
   become: false
