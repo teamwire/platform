@@ -20,6 +20,9 @@ else
 fi
 
 CONFIG_FILE="${ANSIBLE_DIR}/group_vars/all"
+BACKEND_FACTS_FILE=/etc/ansible/facts.d/backend_version.fact
+DASHBOARD_FACTS_FILE=/etc/ansible/facts.d/dashboard_version.fact
+WEBCLIENT_FACTS_FILE=/etc/ansible/facts.d/webclient_version.fact
 CLUSTER_CONFIG_DIR=/data/cluster_config
 RELEASE_FILE=/usr/local/share/twctl/teamwire-release
 DFLT_TMOUT=10
@@ -51,6 +54,7 @@ if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
 
     NOMAD_JOB="${CLUSTER_CONFIG_DIR}/teamwire.nomad"
     DASHBOARD_NOMAD_JOB="${CLUSTER_CONFIG_DIR}/dashboard.nomad"
+    WEBCLIENT_NOMAD_JOB="${CLUSTER_CONFIG_DIR}/webclient.nomad"
     NOMAD="/usr/local/bin/nomad"
 else
     # Single server installation
@@ -69,7 +73,7 @@ else
     VOIP_CONTAINERS="teamwire_web teamwire_prosody teamwire_jicofo teamwire_jvb"
 fi
 #####ImageNames - Mainifest
-IMAGES=( "teamwire/backend" "teamwire/notification-server" "teamwire/dashboard" )
+IMAGES=( "teamwire/backend" "teamwire/notification-server" "teamwire/dashboard" "teamwire/webclient")
 VOIPIMAGES=( "teamwire/web2" "teamwire/prosody" "teamwire/jicofo" "teamwire/jvb" )
 
 
@@ -127,6 +131,7 @@ get_release_file() {
 fetch_image_base() {
     BACKEND_VERSION=$(grep -i backend "${RELEASE_FILE}" | grep -oP 'prod.*')
     DASHBOARD_VERSION=$(grep -i dashboard "${RELEASE_FILE}" | grep -oP 'v.*')
+    WEBCLIENT_VERSION=$(grep -i webclient "${RELEASE_FILE}" | grep -oP 'v.*')
 }
 
 vault_read_secrets() {
@@ -307,6 +312,8 @@ check_tag() {
         local IMAGE_TAG
         if [[ "${IMAGE}" == "teamwire/dashboard" ]]; then
             IMAGE_TAG="${DASHBOARD_VERSION}"
+        elif [[ "${IMAGE}" == "teamwire/webclient" ]]; then
+            IMAGE_TAG="${WEBCLIENT_VERSION}"
         else
             IMAGE_TAG="${BACKEND_VERSION}"
         fi
@@ -334,6 +341,18 @@ is_stun_Enabled() {
     if [ "${enabled}" == "true" ]; then
         VOIP_CONTAINERS="${VOIP_CONTAINERS} teamwire_turn"
         VOIPIMAGES+=( "teamwire/turn" )
+    fi
+}
+
+is_legacy_installation() {
+    local legacy
+    legacy="$(_get_config_value is_legacy_installation)"
+
+    # Treat unset or empty values as 'true'
+    if [ -z "${legacy}" ] || [ "${legacy}" == "true" ]; then
+        return 0
+    else
+        return 1
     fi
 }
 
@@ -376,9 +395,14 @@ voip_stop_single() {
 voip_remove_single() {
     is_stun_Enabled
     for CONTAINER in ${VOIP_CONTAINERS}; do
-        c=$(docker stop "${CONTAINER}")
-        docker rm "${CONTAINER}"
-        printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
+        # Check if the container is running
+        if [ "$(docker ps -q -f name="${CONTAINER}")" ]; then
+            c=$(docker stop "${CONTAINER}")
+            docker rm "${CONTAINER}"
+            printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
+        else
+            printf "${CONTAINER}\t...${YELLOW}not running, skipping...${NOC}\n"
+        fi
     done
 }
 
@@ -475,9 +499,9 @@ dashboard_status_single() {
 
 dashboard() {
     local enabled
-    if [ -z "$(_get_config_value dashboard_version)" ]; then
-        echo "Dashboard is not enabled. Please set the  dashboard_version in the group_vars/all file"
-        exit
+    if is_legacy_installation; then
+        echo "Dashboard is not enabled. Please set the is_legacy_installation to false in the group_vars/all file"
+        exit 1
     fi
     case ${OPTION} in
         start)
@@ -499,6 +523,79 @@ dashboard() {
             echo "       stop    : Stops the dashboard container"
             echo "       restart : Restart the dashboard container"
             echo "       status  : Shows the status of dashboard container"
+            ;;
+    esac
+}
+
+webclient_start_cluster() {
+    ${NOMAD} run /data/cluster_config/webclient.nomad
+}
+
+webclient_start_single() {
+    c=$(docker start "teamwire_webclient")
+    printf "${c:0:15}\t...${GRN}start [done]${NOC}\n"
+}
+
+
+webclient_restart_cluster() {
+    ${NOMAD} job restart -on-error=fail webclient
+}
+
+webclient_restart_single() {
+    c=$(docker restart "teamwire_webclient")
+    printf "${c:0:15}\t...${GRN}restart [done]${NOC}\n"
+}
+
+
+webclient_stop_cluster() {
+    ${NOMAD} job stop webclient
+}
+
+webclient_stop_single() {
+    c=$(docker stop "teamwire_webclient")
+    printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+}
+
+webclient_remove_single() {
+    c=$(docker stop "teamwire_webclient")
+    docker rm "webclient"
+    printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
+}
+
+webclient_status_cluster() {
+    ${NOMAD} status webclient
+}
+
+webclient_status_single() {
+    docker ps --format "table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}" -f name=teamwire_webclient
+}
+
+webclient() {
+    local enabled
+    if is_legacy_installation; then
+        echo "Webclient is not enabled. Please set the is_legacy_installation to false in the group_vars/all file"
+        exit 1
+    fi
+    case ${OPTION} in
+        start)
+            webclient_start_${INSTALLATION}
+            ;;
+        stop)
+            webclient_stop_${INSTALLATION}
+            ;;
+        restart)
+            webclient_restart_${INSTALLATION}
+            ;;
+        status)
+            "webclient_status_${INSTALLATION}"
+            ;;
+        *)
+            echo "Managing webclient container"
+            echo "Usage: twctl webclient {start|stop|restart|status}"
+            echo "       start   : Starts the webclient container if not already running"
+            echo "       stop    : Stops the webclient container"
+            echo "       restart : Restart the webclient container"
+            echo "       status  : Shows the status of webclient container"
             ;;
     esac
 }
@@ -642,6 +739,8 @@ help() {
     echo "ha-log          Show content of haproxy.log. Pipe to less -R for pager with colour support"
     echo "voip            Manage voip containers {start|stop|restart|status}"
     echo "dashboard       Manage dashboard containers {start|stop|restart|status}"
+    echo "webclient       Manage webclient containers {start|stop|restart|status}"
+
 }
 
 test_server_condition_for_preflight_check() {
@@ -927,11 +1026,12 @@ pull_images_base() {
     enabled="$(_get_config_value enable_voip)"
 
     if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact; then
-        # Fetch the backend and dashboard versions using the fetch_image_versions function
+        # Fetch the backend, webclient and dashboard versions using the fetch_image_versions function
         fetch_image_versions "${TAG}"
 
         echo "Pulling Teamwire container images for backend version ${BACKEND_VERSION}"
         echo "Pulling Teamwire container dashboard version ${DASHBOARD_VERSION}"
+        echo "Pulling Teamwire container webclient version ${WEBCLIENT_VERSION}"
         echo
 
         check_registry
@@ -939,6 +1039,8 @@ pull_images_base() {
         for IMAGE in "${IMAGES[@]}"; do
             if [[ "${IMAGE}" == "teamwire/dashboard" ]]; then
                 docker pull "${PRFX}${IMAGE}:${DASHBOARD_VERSION}"
+            elif [[ "${IMAGE}" == "teamwire/webclient" ]]; then
+                docker pull "${PRFX}${IMAGE}:${WEBCLIENT_VERSION}"
             else
                 docker pull "${PRFX}${IMAGE}:${BACKEND_VERSION}"
             fi
@@ -1076,59 +1178,77 @@ restart_containers_cluster() {
     ${NOMAD} job restart -on-error=fail "$(_get_nomad_environment)"
 }
 
-setup_containers_base() {
-    check_tag "${TAG}"
-    fetch_image_versions "${TAG}"
-
-    if [ -z "$(_get_config_value version)" ]; then
-        echo "ERROR: Please update the configuration file ${CONFIG_FILE}"
-        echo "       from the provided example before using this action. "
-        exit 1
-    fi
-
-    if [ -z "$(_get_config_value dashboard_version)" ]; then
-        echo "WARNING: Please update the configuration file ${CONFIG_FILE}"
-        echo "         from the provided example before using this action. "
-    else
-          sed -i -e 's/^\(dashboard_version: \).*$/\1'"${DASHBOARD_VERSION}"'/' "${CONFIG_FILE}"
-    fi
-    # Write given tag into config file
-    sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_VERSION}"'/' ${CONFIG_FILE}
-
-}
-
 setup_containers_single() {
     local enabled
+    check_tag "${TAG}"
+    fetch_image_versions "${TAG}"
     enabled="$(_get_config_value enable_voip)"
     _change_to_platform_ansible_dir
-    setup_containers_base
+
+    # Update BACKEND_FACTS_FILE in JSON format
+    echo "Update Backend version ansible fact"
+    sudo bash -c "
+    echo '{\"tag\": \"${BACKEND_VERSION}\"}' > '${BACKEND_FACTS_FILE}'
+    "
+
+    # Update DASHBOARD_FACTS_FILE in JSON format
+    echo "Update Dashboard version ansible fact"
+    sudo bash -c "
+    echo '{\"tag\": \"${DASHBOARD_VERSION}\"}' > '${DASHBOARD_FACTS_FILE}'
+    "
+
+    # Update WEBCLIENT_FACTS_FILE in JSON format
+    echo "Update Webclient version ansible fact"
+    sudo bash -c "
+    echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'
+    "
 
     ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
     if [ -z "${enabled}" ]; then
             :
     elif [ "${enabled}" = "true" ]; then
     voip_remove_single
-    ansible-playbook -i "${ANSIBLE_DIR}/hosts" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
+    ansible-playbook -i "${ANSIBLE_DIR}/hosts" ${ANSIBLE_DIR}/playbooks/roles/voip_container.yml
     fi
 }
 
 setup_containers_cluster() {
     local enabled
+    check_tag "${TAG}"
+    fetch_image_versions "${TAG}"
     enabled="$(_get_config_value enable_voip)"
     _change_to_platform_ansible_dir
-    setup_containers_base
+
+    # Update BACKEND_FACTS_FILE in JSON format
+    echo "Update Backend version ansible fact"
+    ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
+      "echo '{\"tag\": \"${BACKEND_VERSION}\"}' > '${BACKEND_FACTS_FILE}'"
+
+    # Update DASHBOARD_FACTS_FILE in JSON format
+    echo "Update Dashboard version ansible fact"
+    ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
+      "echo '{\"tag\": \"${DASHBOARD_VERSION}\"}' > '${DASHBOARD_FACTS_FILE}'"
+
+    # Update WEBCLIENT_FACTS_FILE in JSON format
+    echo "Update Webclient version ansible fact"
+    ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
+      "echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'"
 
     ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
     ${NOMAD} run "${NOMAD_JOB}"
-    if [ -n "$(_get_config_value dashboard_version)" ]; then
-    ${NOMAD} run "${DASHBOARD_NOMAD_JOB}"
+
+    # Run additional jobs only if it's not a legacy installation
+    if ! is_legacy_installation; then
+        ${NOMAD} run "${DASHBOARD_NOMAD_JOB}"
+        ${NOMAD} run "${WEBCLIENT_NOMAD_JOB}"
     fi
+
     if [ -z "${enabled}" ]; then
-            :
+        :
     elif [ "${enabled}" = "true" ]; then
-    ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" ${ANSIBLE_DIR}/playbooks/roles/voip.yml
-    ${NOMAD} run /data/voip/voip.hcl
-    voip_jvb_register
+        ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/voip_container.yml"
+        ${NOMAD} run /data/voip/voip.hcl
+        voip_jvb_register
     fi
 }
 
@@ -1299,6 +1419,11 @@ while [ $# -gt 0 ]; do
             ;;
         dashboard)
             TASK="dashboard"
+            OPTION="$2"
+            shift
+            ;;
+        webclient)
+            TASK="webclient"
             OPTION="$2"
             shift
             ;;

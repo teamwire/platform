@@ -178,6 +178,7 @@
 			"environment_vars": [
 				"BACKEND_RELEASE={{user `backend_release`}}",
 				"DASHBOARD_RELEASE={{user `dashboard_release`}}",
+				"WEBCLIENT_RELEASE={{user `webclient_release`}}",
 				"DOCKERHUB_PASSWORD={{user `dockerhub_password`}}",
 				"DOCKERHUB_USERNAME={{user `dockerhub_username`}}",
 				"OFFLINE_INSTALLATION={{user `offline_installation`}}"

@@ -85,10 +85,6 @@
     - ansible_play_hosts | length() == 1
     - "'teamwire_worker' in docker_procs.stdout"
 
-- name: Include single server
-  ansible.builtin.include_tasks: "single.yml"
-  when: "'backend_servers' not in groups"
-
 - name: Include haproxy
   ansible.builtin.include_tasks: "haproxy.yml"
   when:

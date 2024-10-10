@@ -91,6 +91,7 @@ harbor.teamwire.eu/teamwire/turn:${BACKEND_RELEASE}
 $(awk '/^registry_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 $(awk '/^hashui_container:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
 harbor.teamwire.eu/teamwire/dashboard:${DASHBOARD_RELEASE}
+harbor.teamwire.eu/teamwire/webclient:${WEBCLIENT_RELEASE}
 "
 
 # File URL and SHA256 checksum separated by a semicolon
@@ -194,12 +195,16 @@ for IMAGE in ${DOCKER_IMAGES} ; do
 done
 sudo rm -rf /root/.docker
 
-cd ~/platform/ansible/group_vars
-cp all.example all
-sed -i -e 's/^\(version: \).*$/\1'"${BACKEND_RELEASE}"'/' all
 
 echo "Step 6: Creating Release file"
 echo "================================="
 sudo mkdir /usr/local/share/twctl
 echo "BACKEND_VERSION=${BACKEND_RELEASE}" | sudo tee /usr/local/share/twctl/teamwire-release
 echo "DASHBOARD_VERSION=${DASHBOARD_RELEASE}" | sudo tee -a /usr/local/share/twctl/teamwire-release
+echo "WEBCLIENT_VERSION=${WEBCLIENT_RELEASE}" | sudo tee -a /usr/local/share/twctl/teamwire-release
+
+echo "Step 7: Creating version facts"
+echo "================================="
+echo '{"tag": "'"${BACKEND_RELEASE}"'"}' | sudo tee /etc/ansible/facts.d/backend_version.fact
+echo '{"tag": "'"${DASHBOARD_RELEASE}"'"}' | sudo tee /etc/ansible/facts.d/dashboard_version.fact
+echo '{"tag": "'"${WEBCLIENT_RELEASE}"'"}' | sudo tee /etc/ansible/facts.d/webclient_version.fact

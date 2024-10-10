@@ -18,7 +18,7 @@
 
 - name: Retrieve the Teamwire backend main container
   community.docker.docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ ansible_local.backend_version.tag | default('prod') }}"
     source: pull
     state: present
   when:
@@ -29,7 +29,7 @@
   when: config_done is defined
   community.docker.docker_container:
     name: teamwire_backend
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ ansible_local.backend_version.tag | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -70,7 +70,7 @@
       http_proxy: "{{ http_proxy | default() }}"
       https_proxy: "{{ http_proxy | default() }}"
       SERVICE_NAME: "backend"
-      VERSION: "{{ version }}"
+      VERSION: "{{ ansible_local.backend_version.tag }}"
       FAKE_PIN: "{{ fake_pin | default() }}"
       FAKE_SMS: "{{ fake_sms | default() }}"
       FAKE_EMAIL_CONFIRMATION: "{{ fake_email_confirmation | default() }}"
@@ -93,7 +93,7 @@
   when: config_done is defined
   community.docker.docker_container:
     name: teamwire_worker
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ ansible_local.backend_version.tag | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -145,7 +145,7 @@
   when: config_done is defined
   community.docker.docker_container:
     name: teamwire_beat
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ version | default('prod') }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/backend:{{ ansible_local.backend_version.tag | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -179,7 +179,7 @@
 - name: Retrieve the Teamwire notification server container
   when: config_done is defined
   community.docker.docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{ version | default('prod') }}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{ ansible_local.backend_version.tag | default('prod') }}"
     source: pull
     state: present
 
@@ -187,7 +187,7 @@
   when: config_done is defined
   community.docker.docker_container:
     name: teamwire_notification_server
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{ version | default('prod') }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/notification-server:{{ ansible_local.backend_version.tag | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: host
@@ -203,21 +203,19 @@
 - name: Retrieve the Teamwire dashboard container
   when:
     - config_done is defined
-    - dashboard_version is defined
     - not (is_legacy_installation | default('True') | lower | bool)
   community.docker.docker_image:
-    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/dashboard:{{ dashboard_version | default('prod') }}"
+    name: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/dashboard:{{ ansible_local.dashboard_version.tag | default('prod') }}"
     source: pull
     state: present
 
 - name: Run the Teamwire dashboard container
   when:
     - config_done is defined
-    - dashboard_version is defined
     - not (is_legacy_installation | default('True') | lower | bool)
   community.docker.docker_container:
     name: teamwire_dashboard
-    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/dashboard:{{ dashboard_version | default('prod') }}"
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/dashboard:{{ ansible_local.dashboard_version.tag | default('prod') }}"
     state: started
     restart_policy: always
     network_mode: bridge
@@ -230,3 +228,23 @@
     env:
       TW_SCHEME: "https"
       TW_DOMAIN: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+
+- name: Run the Teamwire webclient container
+  when:
+    - config_done is defined
+    - not (is_legacy_installation | default('True') | lower | bool)
+  community.docker.docker_container:
+    name: teamwire_webclient
+    image: "{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/webclient:{{ ansible_local.webclient_version.tag | default('prod') }}"
+    state: started
+    restart_policy: always
+    network_mode: bridge
+    ports:
+      - "8098:80"
+    log_driver: "syslog"
+    log_opt:
+      tag: teamwire-webclient
+      syslog-facility: "local6"
+    env:
+      WD_SCHEME: "https"
+      WD_DOMAIN: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"

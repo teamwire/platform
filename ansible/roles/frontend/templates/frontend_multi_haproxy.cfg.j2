@@ -95,7 +95,7 @@ frontend https-in
 
     # Webclient restricted by IPs
     {% if webclient_ip_ranges is defined %}{% if webclient_ip_ranges is not none %}{% for range in webclient_ip_ranges %}acl webclient_allowed src {{ range }}
-    {% endfor %}acl webclient_page path_beg,url_dec -m reg -i  ^(/static)?/web-client/?
+    {% endfor %}acl webclient_page path_beg,url_dec -m reg -i  ^(/static)?/webclient/?
     http-request deny if webclient_page !webclient_allowed
     {% endif %}{% endif %}
 
@@ -135,7 +135,7 @@ frontend https-in
 
     # WebClient header routes
     {{- if ne $tag "tw_hub" }}
-    acl HOST_MATCH_WC-{{$tag}} hdr_beg(host) -i {{$tag}}-web-client
+    acl HOST_MATCH_WC-{{$tag}} hdr_beg(host) -i {{$tag}}-webclient
     use_backend teamwire-{{$tag}}-backend if HOST_MATCH_WC-{{$tag}}
     {{- end -}}
     {{end}}{{range $tag,$_ := service "backend" | byTag}}
@@ -252,6 +252,21 @@ backend teamwire-{{$tag}}-dashboard
     http-response set-header Connection keep-alive
     {{range $service}}
     server teamwire-dashboard-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}
+    {{end}}
+{{end}}
+{{end}}
+
+{{range $tag, $service := service "webclient" | byTag}}
+{{if ne $tag "tw_hub" }}
+# ----------------------------------------------------
+# WEBCLIENT DC TW_HUB: teamwire-{{$tag}}-webclient
+# ----------------------------------------------------
+
+backend teamwire-{{$tag}}-webclient
+    http-response del-header Server
+    http-response set-header Connection keep-alive
+    {{range $service}}
+    server teamwire-webclient-{{.Address}} {{.Address}}:{{.Port}} check port {{.Port}}
     {{end}}
 {{end}}
 {{end}}

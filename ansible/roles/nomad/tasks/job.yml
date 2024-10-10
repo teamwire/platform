@@ -54,4 +54,14 @@
     group: root
     mode: 0644
   run_once: true
-  when: dashboard_version is defined and not (is_legacy_installation | default('True') | lower | bool)
+  when: not (is_legacy_installation | default('True') | lower | bool)
+
+- name: Write Webclient nomad job
+  ansible.builtin.template:
+    src: webclient.nomad.j2
+    dest: /data/cluster_config/webclient.nomad
+    owner: teamwire
+    group: root
+    mode: 0644
+  run_once: true
+  when: not (is_legacy_installation | default('True') | lower | bool)

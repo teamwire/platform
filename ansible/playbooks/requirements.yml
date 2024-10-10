@@ -46,17 +46,6 @@
         - groups['all'] | length() > 1
         - config_done is not defined
 
-    - name: Ensure a proper backend version has been set
-      ansible.builtin.fail:
-        msg:
-          - "ERROR: group_vars/all => version: '{{ version if version is defined else 'not set' }}'."
-          - "Please set a valid backend version in group_vars/all variable 'version'"
-          - "To display the latest valid backend versions, please run twctl show-tags"
-      when:
-        - packer_build_name is not defined
-        - vagrant_mode is not defined
-        - (version is not defined or version | lower == "prod" or version == None or version | length == 0)
-
     - name: Check if legacy installation is disabled
       ansible.builtin.assert:
         that:
@@ -68,14 +57,28 @@
           - webclient_hostname is defined
           - webclient_hostname is string
           - webclient_hostname | length > 0
-          - dashboard_version is defined
-          - dashboard_version is string
-          - dashboard_version | length > 0
         msg:
-          - "If is_legacy_installation is set to 'false', dashboard_version, external_hostname, dashboard_hostname and webclient_hostname must be set"
+          - "If is_legacy_installation is set to 'false', external_hostname, dashboard_hostname and webclient_hostname must be set"
           - "Please set these variables in group_vars/all file"
       when:
         - not (is_legacy_installation | default('True') | lower | bool)
+
+    - name: Check if version fact files already exist
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: fact_files_status
+      loop:
+        - /etc/ansible/facts.d/backend_version.fact
+        - /etc/ansible/facts.d/webclient_version.fact
+        - /etc/ansible/facts.d/dashboard_version.fact
+
+    - name: Create version fact files if they do not exist
+      ansible.builtin.copy:
+        dest: "{{ item.item }}"
+        content: '{"tag": "1.0.0"}'
+        mode: '0644'
+      loop: "{{ fact_files_status.results }}"
+      when: "not item.stat.exists"
 
     - name: Check if in developer mode
       ansible.builtin.set_fact:

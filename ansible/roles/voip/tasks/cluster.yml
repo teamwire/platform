@@ -1,0 +1,32 @@
+- name: Register docker registry with harbor
+  ansible.builtin.set_fact:
+    local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
+  when:
+    - config_done is defined
+    - groups.docker_registry is defined
+
+- name: VOIPHCL_5 Template voip nomad job file
+  ansible.builtin.template:
+    src: "voip.hcl.tmpl"
+    dest: "{{ voip_root_path }}/voip.hcl"
+    owner: root
+    group: root
+    mode: 0644
+  run_once: true
+  when:
+    - groups['all'] | length > 1
+    - voiphcl_5 | default(true)
+
+- name: Log into Harbor and force re-authorization
+  community.docker.docker_login:
+    registry: harbor.teamwire.eu
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    reauthorize: true
+  become: true
+  become_user: teamwire
+  delegate_to: localhost
+  run_once: true
+  when:
+    - use_teamwire_registry | default('true') | bool
+    - not ansible_local.offline_mode.stat.exists

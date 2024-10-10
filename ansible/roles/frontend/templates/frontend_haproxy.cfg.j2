@@ -132,7 +132,8 @@ frontend https-in
 
     # Webclient restricted by IPs
     {% if webclient_ip_ranges is defined %}{% if webclient_ip_ranges is not none %}{% for range in webclient_ip_ranges %}acl webclient_allowed src {{ range }}
-    {% endfor %}acl webclient_page path_beg,url_dec -m reg -i  ^(/static)?/web-client/?
+    {% endfor %}
+    acl webclient_page path_beg,url_dec -m reg -i  ^(/static)?/web-client/?
     http-request deny if webclient_page !webclient_allowed
     {% endif %}{% endif %}
 
@@ -141,6 +142,7 @@ frontend https-in
     acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i ^{{ item }}(:[0-9]+)?$
     {% endfor %}{%else%}acl IS_EXTERNAL_HOSTNAME hdr(host) -m reg -i ^{{ external_hostname }}(:[0-9]+)?$
     {%endif%}{% if not (is_legacy_installation | default('True') | lower | bool) %}acl IS_DASHBOARD_DOMAIN hdr(host) -m reg -i ^{{ dashboard_hostname }}(:[0-9]+)?$
+    {%endif%}{% if not (is_legacy_installation | default('True') | lower | bool) %}acl IS_WEBCLIENT_DOMAIN hdr(host) -m reg -i ^{{ webclient_hostname }}(:[0-9]+)?$
     {%endif%}acl IS_ADMIN hdr_beg(host) -i admin
 
     # Backends redirect
@@ -149,6 +151,8 @@ frontend https-in
 {%endif%}
     use_backend teamwire-backend if IS_EXTERNAL_HOSTNAME || IS_ADMIN
     {% if not (is_legacy_installation | default('True') | lower | bool) %}use_backend teamwire-dashboard if IS_DASHBOARD_DOMAIN
+    {%endif%}
+    {% if not (is_legacy_installation | default('True') | lower | bool) %}use_backend teamwire-webclient if IS_WEBCLIENT_DOMAIN
     {%endif%}
 
 # ----------------------------------------------------
@@ -174,6 +178,20 @@ backend teamwire-dashboard
     server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
     {{ end }}{% endraw %}
     {%else%}server teamwire-dashboard 127.0.0.1:8099 check port 8099
+    {% endif %}
+{% endif %}
+
+{% if not (is_legacy_installation | default('True') | lower | bool) %}
+# ----------------------------------------------------
+# BACKEND: teamwire-webclient
+# ----------------------------------------------------
+backend teamwire-webclient
+    http-response del-header Server
+    http-response set-header Connection keep-alive
+    {% if "frontend_servers" in groups %}{% raw %}{{ if service "webclient" }} {{ range $index, $service := service "webclient" }}
+    server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
+    {{ end }}{% endraw %}
+    {%else%}server teamwire-webclient 127.0.0.1:8098 check port 8099
     {% endif %}
 {% endif %}
 

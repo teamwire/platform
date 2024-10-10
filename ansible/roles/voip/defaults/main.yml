@@ -3,7 +3,7 @@ nginx_http_port: 7080
 nginx_https_port: 7443
 
 voip_root_path: "/data/voip"
-voip_jitsi_version: "{{ version }}"
+voip_jitsi_version: "{{ ansible_local.backend_version.tag }}"
 
 
 voip_container_web: "teamwire/web2"

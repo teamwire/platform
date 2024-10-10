@@ -1,4 +1,4 @@
-job "dashboard" {
+job "webclient" {
 	# Specify the datacenters within the region this job can run in.
 	datacenters = ["dc1"]
 
@@ -41,21 +41,21 @@ job "dashboard" {
 		change_mode = "restart"
 	}
 
-	group "dashboard" {
+	group "webclient" {
 		count = 1
 
 		network {
 			port "http" {
-				static = 8099
+				static = 8098
 				to = 80
 			}
 		}
 
-		task "dashboard" {
+		task "webclient" {
 			driver = "docker"
 
 			config {
-				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/dashboard:{{ ansible_local.dashboard_version.tag }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/webclient:{{ ansible_local.webclient_version.tag }}"
 				auth {
 					username = "{{ docker_registry_username }}"
 					password = "{{ docker_registry_password }}"
@@ -66,7 +66,7 @@ job "dashboard" {
 				logging {
 					type = "syslog"
 					config {
-						tag = "teamwire-dashboard"
+						tag = "teamwire-webclient"
 						syslog-facility = "local6"
 					}
 				}
@@ -74,7 +74,7 @@ job "dashboard" {
 
 			service {
 				name = "${TASK}"
-				tags = ["dashboard"]
+				tags = ["webclient"]
 				port = "http"
 				check {
 					type = "http"
@@ -85,13 +85,13 @@ job "dashboard" {
 			}
 
 			env {
-				TW_SCHEME = "https"
-				TW_DOMAIN = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+				WD_SCHEME = "https"
+				WD_DOMAIN = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
 			}
 
 			resources {
-				cpu = {{ (total_cpu_power|int * dashboard_cpu_alloc)|int }} # Allocated CPU in MHz
-				memory = {{ [dashboard_ram_alloc_min|int, core_count|int * dashboard_ram_alloc|int]|max }} # Allocated RAM in MB
+				cpu = {{ (total_cpu_power|int * webclient_cpu_alloc)|int }} # Allocated CPU in MHz
+				memory = {{ [webclient_ram_alloc_min|int, core_count|int * webclient_ram_alloc|int]|max }} # Allocated RAM in MB
 			}
 		}
 	}

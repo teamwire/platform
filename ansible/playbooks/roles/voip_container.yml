@@ -1,0 +1,33 @@
+---
+# This task will check if Vault has been initialized and read the secrets from there if so
+- name: Vault Status check
+  hosts: local:hashi_servers
+  tasks:
+    - name: Include vault role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
+        tasks_from: secrets
+      when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
+         and secrets_read is not defined
+
+# This play only applies to the single server installation
+- name: Configure containers for single installations
+  hosts: local
+  tasks:
+    - name: Include voip role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
+        tasks_from: single
+      when: groups['all'] | length() == 1
+
+# This play only applies to cluster installations
+- name: Write cluster configuration
+  hosts: hashi_servers
+  tasks:
+    - name: Include voip role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
+        tasks_from: cluster
+      when: groups['all'] | length() > 1

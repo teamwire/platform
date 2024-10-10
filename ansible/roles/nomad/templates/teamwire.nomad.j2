@@ -68,7 +68,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ ansible_local.backend_version.tag }}"
 				auth {
 					username = "{{ docker_registry_username }}"
 					password = "{{ docker_registry_password }}"
@@ -152,7 +152,7 @@ job "teamwire" {
 				DEFAULT_FROM_EMAIL = "{{ sender_address }}"
 				http_proxy = "{{ http_proxy|default() }}"
 				https_proxy = "{{ http_proxy|default() }}"
-				VERSION = "{{ version }}"
+				VERSION = "{{ ansible_local.backend_version.tag }}"
 				FAKE_PIN = "{{ fake_pin|default() }}"
 				FAKE_SMS = "{{ fake_sms|default() }}"
 				FAKE_EMAIL_CONFIRMATION = "{{ fake_email_confirmation|default() }}"
@@ -166,6 +166,10 @@ job "teamwire" {
 				USE_APNS_STANDARD_PORT = "{{ USE_APNS_STANDARD_PORT | default('false')}}"
 				VOIP_URL = "http://voipWeb.service.consul:7080"
 				LOGLEVEL = "{{ backend_loglevel|default() }}"
+{% if not (is_legacy_installation | default('True') | lower | bool) %}
+                ALLOW_DASHBOARD_ORIGINS = "https://{{ dashboard_hostname|default() }}"
+                ALLOW_WEBCLIENT_ORIGINS = "https://{{ webclient_hostname|default() }}"
+{% endif %}
 				WORKERS = "{{ workers|default() }}"
 				GUNICORN_MAX_REQUESTS="{{ worker_gunicorn_max_requests | default('500') }}"
       			CHANNEL_GROUP_EXPIRY = "{{ channel_group_expiry|default('86400') }}"
@@ -204,7 +208,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ ansible_local.backend_version.tag }}"
 				auth {
 					username = "{{ docker_registry_username }}"
 					password = "{{ docker_registry_password }}"
@@ -312,7 +316,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/backend:{{ ansible_local.backend_version.tag }}"
 				auth {
 					username = "{{ docker_registry_username }}"
 					password = "{{ docker_registry_password }}"
@@ -397,7 +401,7 @@ job "teamwire" {
 			driver = "docker"
 
 			config {
-				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/notification-server:{{ version }}"
+				image = "{{ local_registry | default() }}{{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool }}teamwire/notification-server:{{ ansible_local.backend_version.tag }}"
 				auth {
 					username = "{{ docker_registry_username }}"
 					password = "{{ docker_registry_password }}"
