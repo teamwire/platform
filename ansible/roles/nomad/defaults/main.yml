@@ -27,6 +27,9 @@ webclient_ram_alloc_min: "{{ dashboard_ram_alloc }}"
 nomad_jobs:
   - teamwire
   - voip
+  - dashboard
+  - webclient
+
 
 # Decide which login data to use for docker registry local / harbor / others
 local_registry_username: "teamwire"

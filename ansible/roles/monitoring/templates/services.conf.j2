@@ -164,7 +164,7 @@ apply Service "check-nomad-job-{{ job }}" {
   assign where "hashi_servers" in host.vars.roles
 }
 {% else %}
-{% if enable_voip is defined and enable_voip == "true" %}
+{% if job == 'voip' and enable_voip is defined and enable_voip == "true" %}
 apply Service "check-nomad-job-{{ job }}" {
   import "generic-service"
   check_command = "http"
@@ -179,6 +179,21 @@ apply Service "check-nomad-job-{{ job }}" {
   assign where "voip_servers" in host.vars.roles
 }
 {% endif %}
+{% endif %}
+{% if (job == 'dashboard' or job == 'webclient') and is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool)%}
+apply Service "check-nomad-job-{{ job }}" {
+  import "generic-service"
+  check_command = "http"
+
+  vars.http_port = 4646
+  vars.http_uri = "/v1/job/{{ job }}"
+  vars.http_string = "running"
+  vars.address = "127.0.0.1"
+  vars.http_ssl = "false"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where "hashi_servers" in host.vars.roles
+}
 {% endif %}
 {% endfor %}
 
