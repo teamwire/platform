@@ -578,6 +578,29 @@ apply Service "check-haproxy-notification-server" {
   assign where host.vars.os == "Linux"
 }
 
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+apply Service "check-haproxy-dashboard" {
+  import "generic-service"
+  check_command = "http"
+  vars.http_vhost = "{{ dashboard_hostname }}"
+  vars.http_uri = "/"
+  vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-haproxy-webclient" {
+  import "generic-service"
+  check_command = "http"
+  vars.http_vhost = "{{ webclient_hostname }}"
+  vars.http_uri = "/"
+  vars.http_ssl = {{ 'true' if ssl_keyfile is defined else 'false' }}
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+{% endif %}
 {% endif %}
 
 apply Service "check-process-rsyslogd" {
