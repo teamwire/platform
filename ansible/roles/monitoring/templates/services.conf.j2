@@ -473,6 +473,30 @@ apply Service "check-container-notification-server" {
   assign where host.vars.os == "Linux"
 }
 
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+apply Service "check-container-dashboard" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_dashboard"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+
+apply Service "check-container-webclient" {
+  import "generic-service"
+  check_command = "check_docker"
+
+  vars.docker_containers = "teamwire_webclient"
+  vars.docker_status = "running"
+
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+{% endif %}
+
 {% if enable_voip is defined and enable_voip == 'true' %}
 apply Service "check-container-voip-web" {
   import "generic-service"
