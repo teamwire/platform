@@ -27,3 +27,7 @@
 # Clean OCSP files and tasks
 - name: Clean OCSP files and tasks
   ansible.builtin.include_tasks: clean_ocsp.yml
+
+# Ensure only one mail service is enabled
+- name: Clean running mailservices
+  ansible.builtin.include_tasks: clean_mail_service.yml

@@ -165,9 +165,22 @@
     owner: root
     group: root
 
+# Include mail service cleanup
+- name: Include mail service cleanup
+  ansible.builtin.include_role:
+    name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
+    tasks_from: clean_mail_service.yml
+
 # send outgoing mail over smarthost
 - name: Include postfix
   ansible.builtin.include_tasks: postfix.yml
+  when: use_nullmailer is undefined or use_nullmailer | lower != "true"
+
+- name: Include mail configuration
+  ansible.builtin.include_tasks: mail.yml
+  when:
+    - use_nullmailer is defined
+    - use_nullmailer | lower == "true"
 
 # install ntp and set timezone to UTC
 - name: Set timezone to UTC
