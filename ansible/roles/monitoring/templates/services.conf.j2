@@ -72,11 +72,35 @@ apply Service "check-mail-queue" {
 
   vars.mailq_warning = 50
   vars.mailq_critical = 100
+{% if use_nullmailer is defined and use_nullmailer | lower == "true" %}
+  vars.mailq_servertype = "nullmailer"
+{% else %}
   vars.mailq_servertype = "postfix"
-
+{% endif %}
   command_endpoint = host.vars.client_endpoint
   assign where host.vars.os == "Linux" && host.vars.client_endpoint
 }
+
+{% if use_nullmailer is defined and use_nullmailer | lower == "true" %}
+apply Service "check-process-nullmailer" {
+ import "generic-service"
+  check_command = "procs"
+
+  vars.procs_command = "nullmailer-send"
+  vars.procs_critical = "1:"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+apply Service "check-process-xinetd" {
+ import "generic-service"
+  check_command = "procs"
+
+  vars.procs_command = "xinetd"
+  vars.procs_critical = "1:"
+  command_endpoint = host.vars.client_endpoint
+  assign where host.vars.os == "Linux"
+}
+{% endif %}
 
 apply Service for (http_vhost => config in host.vars.http_vhosts) {
   import "generic-service"

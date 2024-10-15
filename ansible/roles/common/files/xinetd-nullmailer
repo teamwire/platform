@@ -1,0 +1,22 @@
+# description: listen on 127.0.0.1:25 and forward incoming connections to nullmailer
+
+service nullmailer
+{
+    # Set default options for the service
+    user        = mail
+    group       = mail
+    type        = UNLISTED
+    socket_type	= stream
+    wait        = no
+
+    # Configure the bind protocol, ip and port
+    protocol    = tcp
+    bind        = 127.0.0.1
+    port        = 25
+
+    # Limit the allowed ips to connect to the service
+    only_from   = 127.0.0.1
+
+    # program to execute for this service
+    server      = /usr/bin/nullmailer-smtpd
+}

@@ -14,7 +14,22 @@
       ansible.builtin.include_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/common"
         tasks_from: postfix
-      when: new_vault_bootstrap is defined
+      when:
+        - new_vault_bootstrap is defined
+        - use_nullmailer is undefined or use_nullmailer | lower != "true"
+
+- name: Run tasks to configure email credentials after initial vault bootstrap
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include common role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/common"
+        tasks_from: mail
+      when:
+        - new_vault_bootstrap is defined
+        - use_nullmailer is defined
+        - use_nullmailer | lower == "true"
 
 - name: Distribute Vault token to all remaining hosts that require it
   hosts: all:!hashi_servers

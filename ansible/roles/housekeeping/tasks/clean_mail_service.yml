@@ -1,0 +1,29 @@
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Disable postfix
+  ansible.builtin.service:
+    name: postfix
+    state: stopped
+    enabled: false
+  when:
+    - use_nullmailer is defined
+    - use_nullmailer | lower == "true"
+    - "'postfix' in ansible_facts.packages"
+
+- name: Disable nullmailer related services
+  block:
+    - name: Disable nullmailer
+      ansible.builtin.service:
+        name: nullmailer
+        state: stopped
+        enabled: false
+    - name: Disable xinetd
+      ansible.builtin.service:
+        name: xinetd
+        state: stopped
+        enabled: false
+  when:
+    - ( use_nullmailer is undefined or use_nullmailer | lower != "true" )
+    - "'nullmailer' in ansible_facts.packages"

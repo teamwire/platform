@@ -50,3 +50,23 @@
 
 - name: Reload systemd
   ansible.builtin.command: systemctl daemon-reload # noqa command-instead-of-module
+
+- name: Restart nullmailer
+  ansible.builtin.service:
+    name: nullmailer
+    state: restarted
+
+- name: Restart xinetd service
+  ansible.builtin.service:
+    name: xinetd
+    state: restarted
+  listen: Restart xinetd
+
+- name: Ensure xinetd nullmailer configuration is loaded
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 25
+    search_regex: "220 nullmailer-smtpd ready"
+    msg: "Something went wrong. Please check if the xinetd nullmailer configuration is valid and loaded."
+    timeout: 10
+  listen: Restart xinetd
