@@ -273,6 +273,13 @@ system_email_recipient:
 # Use the new mail service nullmailer instead of postfix. Defaults to false
 # use_nullmailer: "true"
 
+# In case the smtp_smarthost is configured with a selfsigned certificate
+# you have to set this value to true.
+# This will only work if use_nullmailer is set to true.
+
+# Defaults to false.
+# allow_selfsigned_smtp_cert: "false"
+
 ##############################################################################
 ## MONITORING
 ##############################################################################
