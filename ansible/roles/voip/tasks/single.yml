@@ -169,7 +169,7 @@
       tag: teamwire-jvb
       syslog-facility: "local6"
     ports:
-      - 10000:10000
+      - 10000:10000/udp
       - 127.0.0.1:8085:8085
       - 127.0.0.1:9090:9090
       - "{{ ansible_default_ipv4.address }}:4443:4443"
