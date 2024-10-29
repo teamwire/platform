@@ -35,7 +35,7 @@
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       TZ: "UTC"
       XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
-      XMPP_BOSH_URL_BASE: "http://{{ 'prosody.service.consul' if groups['all'] | length > 1 else 'xmpp.meet.jitsi' }}:5280"
+      XMPP_BOSH_URL_BASE: "http://{{ 'prosody.service.consul' if groups['all'] | length > 1 else '172.18.0.3' }}:5280"
       XMPP_DOMAIN: "meet.jitsi"
       XMPP_GUEST_DOMAIN: "guest.meet.jitsi"
       XMPP_MUC_DOMAIN: "muc.meet.jitsi"
