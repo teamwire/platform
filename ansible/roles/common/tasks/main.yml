@@ -236,28 +236,17 @@
     state: present
     reload: true
 
-# SSH
-- name: Disable SSH password logins
-  when: ssh_disable_passwords is defined and ssh_disable_passwords
-  ansible.builtin.lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: ^#?PasswordAuthentication
-    line: "PasswordAuthentication no"
-  notify: Reload sshd
-
-- name: Enable SSH password logins
-  when: ssh_disable_passwords is not defined or not ssh_disable_passwords
-  ansible.builtin.lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: ^#?PasswordAuthentication
-    line: "PasswordAuthentication yes"
-  notify: Reload sshd
-
-- name: Accept VAULT_TOKEN Variable from remote if defined
-  ansible.builtin.lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: ^AcceptEnv VAULT_TOKEN$
-    line: "AcceptEnv VAULT_TOKEN"
+# ------------------------------------------------------------------------------
+# SSHD Configuration
+# ------------------------------------------------------------------------------
+- name: Deploy TW SSHD Configuration
+  ansible.builtin.template:
+    src: sshd-teamwire.j2
+    dest: /etc/ssh/sshd_config.d/00-teamwire.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: "sshd -t -f %s"
   notify: Reload sshd
 
 # Prepare tmate usage
