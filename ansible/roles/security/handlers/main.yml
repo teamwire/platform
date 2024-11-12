@@ -17,8 +17,3 @@
 
 - name: Permission handler
   ansible.builtin.command: "chmod 1777 /tmp" # noqa deprecated-command-syntax
-
-- name: Restart sshd
-  ansible.builtin.systemd:
-    name: sshd
-    state: restarted
