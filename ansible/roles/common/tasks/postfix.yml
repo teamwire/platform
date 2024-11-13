@@ -19,6 +19,12 @@
   ansible.builtin.apt:
     pkg: postfix
 
+- name: Ensure postfix is started
+  ansible.builtin.service:
+    name: postfix
+    state: started
+    enabled: true
+
 - name: PSTFX_4 Write the Postfix configuration file
   ansible.builtin.template:
     src: postfix-main.cf.j2
