@@ -7,6 +7,7 @@
 - name: Determine MariaDB host (external)
   ansible.builtin.set_fact:
     monitoring_db_host: "{{ mysql_host }}"
+    monitoring_db_external: "true"
   when:
     - groups['all'] | length() == 1
     - mysql_host is defined and mysql_host != "localhost"
@@ -49,6 +50,7 @@
   ansible.builtin.set_fact:
     monitoring_db_host: "{{ mysql_host }}"
     monitoring_db_port: "{{ mysql_port }}"
+    monitoring_db_external: "true"
   when:
     - mysql_host is defined
     - mysql_port is defined
