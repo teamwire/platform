@@ -186,7 +186,7 @@
   ansible.builtin.debug:
     msg: "{{ isfirstextinstallion.stdout_lines[1] }}"
   register: firstinstalldb
-  changed_when: "{{ isfirstextinstallion.stdout_lines[1] | int }} == 0"
+  changed_when: isfirstextinstallion.stdout_lines[1] | int == 0
   when:
     - isfirstextinstallion.stdout_lines is defined
     - isfirstextinstallion.stdout_lines[1] | int == 0
