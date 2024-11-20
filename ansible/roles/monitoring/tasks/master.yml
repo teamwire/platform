@@ -177,6 +177,7 @@
 - name: Register first installation var if external database is in use
   ansible.builtin.command: mysql -u {{ monitoring_db_user }} -h {{ mysql_host }} -p{{ monitoring_db_password }} {{ monitoring_db_name }} -e 'SELECT count(*) FROM information_schema.tables WHERE table_schema = "monitor";'
   register: isfirstextinstallion
+  changed_when: isfirstextinstallion.stdout_lines[1] | int == 0
   when:
     - monitoring_db_external is defined
     - monitoring_db_external
