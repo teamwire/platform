@@ -1,0 +1,30 @@
+# CIS - BENCHMARK ID: 2648 cis: 5.2.6
+X11Forwarding no
+
+# CIS - BENCHMARK ID: 2649 cis: 5.2.7
+MaxAuthTries 4
+
+# CIS - BENCHMARK ID: 2656 cis: 5.2.14
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
+
+# CIS - BENCHMARK ID: 2659 cis: 5.2.17
+LoginGraceTime 1m
+
+# CIS - BENCHMARK ID: 26663 cis: 5.2.21
+AllowTcpForwarding {{ allow_tcp_forwarding if allow_tcp_forwarding is defined else 'no' }}
+
+# See chapter 3.4 - technische Richtlinie BSI-TR-02102-4.pdf
+# Mac ciphers currently not supported ( AEAD_AES_128_GCM, AEAD_AES_256_GCM )
+Ciphers {{ ssh_ciphers }}
+
+# DEFAULT BY TEAMWIRE COMPLIANCE
+{% if permit_root_login != 'default' %}
+PermitRootLogin {{ permit_root_login | lower if permit_root_login | lower == 'yes' or permit_root_login | lower == 'no' else 'prohibit-password' }}
+{% endif %}
+PermitEmptyPasswords no
+UseDNS no
+KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256
+PasswordAuthentication {{ 'no' if ssh_disable_passwords is defined and ssh_disable_passwords else 'yes' }}
+
+# Accept the Vault Token as Environment Variable
+AcceptEnv VAULT_TOKEN

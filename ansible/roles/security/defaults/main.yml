@@ -1,3 +1,2 @@
 ---
 enable_tmp_mount: false
-permit_root_login: "default"

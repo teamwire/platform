@@ -50,9 +50,7 @@
 - name: Include tmp_disk
   ansible.builtin.include_tasks: tmp_disk.yml
   when: enable_tmp_mount | default(false) | bool
-# CIS - BENCHMARK sshd hardening
-- name: Include sshd-hardening
-  ansible.builtin.include_tasks: sshd-hardening.yml
+
 # CIS - BENCHMARK cronjobs
 - name: Include cronjob
   ansible.builtin.include_tasks: cronjob.yml
