@@ -177,15 +177,16 @@
 - name: Register first installation var if external database is in use
   ansible.builtin.command: mysql -u {{ monitoring_db_user }} -h {{ mysql_host }} -p{{ monitoring_db_password }} {{ monitoring_db_name }} -e 'SELECT count(*) FROM information_schema.tables WHERE table_schema = "monitor";'
   register: isfirstextinstallion
+  changed_when: isfirstextinstallion.stdout_lines[1] | int == 0
   when:
-    - (mysql_host is defined and 'localhost' not in mysql_host)
-    - (mysql_host is defined and '127.0.0.1' not in mysql_host)
+    - monitoring_db_external is defined
+    - monitoring_db_external
 
 - name: Check if its the first installation on external database
   ansible.builtin.debug:
     msg: "{{ isfirstextinstallion.stdout_lines[1] }}"
   register: firstinstalldb
-  changed_when: "{{ isfirstextinstallion.stdout_lines[1] | int }} == 0"
+  changed_when: isfirstextinstallion.stdout_lines[1] | int == 0
   when:
     - isfirstextinstallion.stdout_lines is defined
     - isfirstextinstallion.stdout_lines[1] | int == 0
@@ -206,7 +207,7 @@
   register: database_created
   when:
     - isfirstextinstallion.changed == false # noqa literal-compare
-    - groups['database_servers'] is defined
+    - monitoring_db_external is undefined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: "Create Icinga database user {{ monitoring_db_user }}"
@@ -223,7 +224,7 @@
     - "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
     - "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') | list + ['localhost'] if groups['all'] | length > 1 else 'localhost' }}"
   delegate_to: "{{ monitoring_db_host }}"
-  when: groups['database_servers'] is defined
+  when: monitoring_db_external is undefined
 
 - name: "Create Icingaweb database user {{ monitoring_db_web_user }}"
   community.mysql.mysql_user:
@@ -237,7 +238,7 @@
   no_log: true
   with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
   delegate_to: "{{ monitoring_db_host }}"
-  when: groups['database_servers'] is defined
+  when: monitoring_db_external is undefined
 
 - name: Fetch the Icinga DB schemas # noqa no-handler
   ansible.builtin.fetch:
@@ -259,7 +260,7 @@
     - { src: '/home/teamwire/icingaweb2.sql', dest: '/tmp/icingaweb2.sql'}
   when:
     - database_created.changed
-    - groups['database_servers'] is defined
+    - monitoring_db_external is undefined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Import Icinga databases # noqa no-handler
@@ -277,7 +278,7 @@
     label: "{{ item.db }}"
   when:
     - database_created.changed
-    - groups['database_servers'] is defined
+    - monitoring_db_external is undefined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Import Icinga database on external database server monitor DB # noqa no-handler
@@ -291,7 +292,8 @@
     target: "/home/teamwire/icinga2.sql"
   when:
     - firstinstalldb.changed
-    - groups['database_servers'] is not defined
+    - monitoring_db_external is defined
+    - monitoring_db_external
 
 - name: Import Icinga database on external database server monitor_web DB  # noqa no-handler
   community.mysql.mysql_db:
@@ -304,7 +306,8 @@
     target: "/home/teamwire/icingaweb2.sql"
   when:
     - firstinstalldb.changed
-    - groups['database_servers'] is not defined
+    - monitoring_db_external is defined
+    - monitoring_db_external
 
 - name: Delete the Icinga DB schemas from the database server # noqa no-handler
   ansible.builtin.file:
@@ -315,7 +318,7 @@
     - "/tmp/icingaweb2.sql"
   when:
     - database_created.changed
-    - groups['database_servers'] is defined
+    - monitoring_db_external is undefined
   delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
 
 - name: Delete the Icinga DB schemas from localhost # noqa no-handler
