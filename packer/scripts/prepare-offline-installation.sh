@@ -71,6 +71,7 @@ php-xml
 jq
 gnupg2
 maxscale
+nullmailer
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)

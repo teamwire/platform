@@ -1,0 +1,94 @@
+---
+
+- name: Install the relay mail service
+  ansible.builtin.apt:
+    pkg:
+      - nullmailer
+      - xinetd
+
+- name: Ensure nullmailer is started
+  ansible.builtin.service:
+    name: nullmailer
+    state: started
+    enabled: true
+
+- name: Ensure nullmailer is started
+  ansible.builtin.service:
+    name: xinetd
+    state: started
+    enabled: true
+
+- name: Setup e-mail aliases
+  ansible.builtin.lineinfile:
+    path: "/etc/aliases"
+    regexp: "^root:"
+    line: "root{{ ':' }} {{ system_email_recipient | default() }}"
+    insertafter: EOF
+    state: present
+
+- name: Set host mail name
+  ansible.builtin.template:
+    src: mailname.j2
+    dest: /etc/mailname
+    owner: root
+    group: root
+    mode: 0644
+  when: config_done is defined
+
+# ------------------------------------------------------------------------------
+# Configure nullmailer
+# ------------------------------------------------------------------------------
+- name: Set the admin address for mail
+  ansible.builtin.template:
+    src: mail-adminaddr.j2
+    dest: /etc/nullmailer/adminaddr
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nullmailer
+
+- name: Set the default domain for mail
+  ansible.builtin.template:
+    src: mail-defaultdomain.j2
+    dest: /etc/nullmailer/defaultdomain
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nullmailer
+
+
+- name: Set the remotes confg for mail
+  ansible.builtin.template:
+    src: mail-remotes.j2
+    dest: /etc/nullmailer/remotes
+    owner: mail
+    group: mail
+    mode: '0600'
+  notify: Restart nullmailer
+
+# ------------------------------------------------------------------------------
+# Configure xinetd to listen on 127.0.0.1:25
+# ------------------------------------------------------------------------------
+
+- name: Configure nullmailer xinetd listener
+  ansible.builtin.copy:
+    src: xinetd-nullmailer
+    dest: /etc/xinetd.d/nullmailer
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart xinetd
+
+- name: Gather existing xinetd files
+  ansible.builtin.find:
+    path: /etc/xinetd.d
+  register: xinetd_files
+
+- name: Remove default xinetd service files
+  ansible.builtin.file:
+    name: "{{ item.path }}"
+    state: absent
+  with_items: "{{ xinetd_files.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: item.path != "/etc/xinetd.d/nullmailer"

@@ -108,7 +108,7 @@ external_hostname: ""
 # TURN/STUN - DO NOT TURN ON, FOR YOUR OWN SAFETY! -
 # To run a own turn server, enable_voip must be enabled. Further a DNS entry must
 # be created e.g. stun.yourdomain.com which points to the public Ip of the Voip server.
-# Then the next two lines can be commented out. However, we strongly advise against 
+# Then the next two lines can be commented out. However, we strongly advise against
 # running your own TURN/STUN server and turning on the function!!
 # stun_hostname: "stun.yourdomain.com"
 # enable_stun: "true"
@@ -173,7 +173,7 @@ allow_user_query: "no"
 # the Google services. The fcm_account_file can either be provided by teamwire
 # or you could use your own fcm_account_file.
 # To use your own fcm_account_file you have to enter the full path below.
-# fcm_account_file: "/home/teamwire/example.json" 
+# fcm_account_file: "/home/teamwire/example.json"
 
 # When you want to install your SSL certificate on the backend server, uncomment
 # the following keys and add the full paths to the key file and the certificate
@@ -270,6 +270,15 @@ smtp_use_tls: "yes"
 # Forward system mails to external email address, e.g. "admin@example.com"
 system_email_recipient:
 
+# Use the new mail service nullmailer instead of postfix. Defaults to false
+# use_nullmailer: "true"
+
+# In case the smtp_smarthost is configured with a selfsigned certificate
+# you have to set this value to true.
+# This will only work if use_nullmailer is set to true.
+# Defaults to false.
+# allow_selfsigned_smtp_cert: "false"
+
 ##############################################################################
 ## MONITORING
 ##############################################################################
@@ -353,7 +362,7 @@ system_email_recipient:
 # permit_root_login: "prohibit-password"
 
 # Permit SSH TCP forwarding
-# To reach the icinga webUI via an SSH tunnel, SSH TCP forwarding must be permitted. 
+# To reach the icinga webUI via an SSH tunnel, SSH TCP forwarding must be permitted.
 # Only quoted "yes" or "no" are valid values for the variable.
 # By default, the variable <allow_tcp_forwarding> is set to "no".
 # allow_tcp_forwarding: "no"

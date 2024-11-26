@@ -444,6 +444,18 @@
       run_once: true
       delegate_to: localhost
 
+# ------------------------------------------------------------------------------
+# Check mail requirements
+# ------------------------------------------------------------------------------
+    - name: Fail if system_email_recipient is not defined
+      ansible.builtin.fail:
+        msg: The Variable 'system_email_recipient' must be defined in group_vars/all
+      when:
+        - config_done is defined
+        - system_email_recipient is not defined
+        - use_nullmailer is defined
+        - use_nullmailer | lower == "true"
+
     - name: Get current git tag
       ansible.builtin.command: "git describe --always --tags" # noqa command-instead-of-module
       args:
