@@ -39,3 +39,9 @@ syslog {
   enabled = true
   facility = "LOCAL5"
 }
+
+vault {
+  address = "https://vault.service.consul:8200"
+  token = ""
+  renew_token = false
+}
