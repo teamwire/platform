@@ -118,20 +118,53 @@ fetch_image_versions() {
 get_release_file() {
     local TAG=$1
     local RELEASE_FILE_URL="https://repo.teamwire.eu/external/release/${TAG}"
-    if [ ! -d "/usr/local/share/twctl" ]; then
-      sudo mkdir /usr/local/share/twctl
+    local is_teamwire_registry
+    is_teamwire_registry="$(_get_config_value use_teamwire_registry)"
+
+    # sSkip function if teamwire registry is not used
+    if [ "${is_teamwire_registry}" = "false" ]; then
+        echo "WARNING: The variable use_teamwire_registry was set to false in the group_vars/all file."
+        echo "This means that the tag specified with the --tag parameter will be IGNORED!"
+        echo "THE VERSION OF TEAMWIRE DOCKER BACKEND STACK WILL NOT CHANGE!"
+
+        return 0
     fi
+
+    if [ ! -d "/usr/local/share/twctl" ]; then
+        sudo mkdir -p /usr/local/share/twctl
+    fi
+
     if ! sudo curl -L -s -f -o "${RELEASE_FILE}" "${RELEASE_FILE_URL}"; then
         echo "ERROR: The release file for the provided tag (${TAG}) was not found."
         echo "       Please ensure that the tag is correct and try again."
-      exit 1
+        exit 1
     fi
 }
-
 fetch_image_base() {
-    BACKEND_VERSION=$(grep -i backend "${RELEASE_FILE}" | grep -oP 'prod.*')
-    DASHBOARD_VERSION=$(grep -i dashboard "${RELEASE_FILE}" | grep -oP 'v.*')
-    WEBCLIENT_VERSION=$(grep -i webclient "${RELEASE_FILE}" | grep -oP 'v.*')
+    # Reset variables to avoid retaining old values
+    BACKEND_VERSION=""
+    DASHBOARD_VERSION=""
+    WEBCLIENT_VERSION=""
+
+    while IFS='=' read -r key value; do
+        case "${key}" in
+            BACKEND_VERSION)
+                BACKEND_VERSION="${value}"
+                ;;
+            DASHBOARD_VERSION)
+                DASHBOARD_VERSION="${value}"
+                ;;
+            WEBCLIENT_VERSION)
+                WEBCLIENT_VERSION="${value}"
+                ;;
+        esac
+    done < "${RELEASE_FILE}"
+
+    # Validate that all versions were found
+    if [ -z "${BACKEND_VERSION}" ] || [ -z "${DASHBOARD_VERSION}" ] || [ -z "${WEBCLIENT_VERSION}" ]; then
+        echo "ERROR: Missing required version information in ${RELEASE_FILE}."
+        exit 1
+    fi
 }
 
 vault_read_secrets() {
