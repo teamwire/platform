@@ -64,3 +64,28 @@
 - name: Ansible_facts_reload
   ansible.builtin.setup:
     filter: ansible_local
+
+# ------------------------------------------------------------------------------
+# Ensure to flush ssl options when the certificate files for mysql gets
+# updated and the database has TLS Communication already enabled
+# ------------------------------------------------------------------------------
+- name: Check the state of ssl the running mysql server
+  listen: Update MySQL Certificates
+  community.mysql.mysql_query:
+    query: "SHOW VARIABLES LIKE 'have_ssl'"
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  register: mysql_have_ssl
+
+- name: Flush MySQL SSL Certificates
+  listen: Update MySQL Certificates
+  community.mysql.mysql_query:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    query: FLUSH SSL
+  with_items: "{{ mysql_have_ssl.query_result }}"
+  loop_control:
+    label: "Flushing MySQL SSL Options"
+  when:
+    - inventory_hostname in groups['database_servers']
+    - item.Value | lower == "yes"

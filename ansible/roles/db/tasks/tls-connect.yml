@@ -7,6 +7,7 @@
     mode: 0755
     owner: "{{ mysql_ssl_owner }}"
     group: "{{ mysql_ssl_group }}"
+  notify: Update MySQL Certificates
 
 - name: Copy teamwire certificate
   ansible.builtin.copy:
@@ -16,6 +17,7 @@
     owner: "{{ mysql_ssl_owner }}"
     group: "{{ mysql_ssl_group }}"
   when: inventory_hostname in groups['database_servers']
+  notify: Update MySQL Certificates
 
 - name: Create the SSL intermediate and root certificate file
   ansible.builtin.template:
@@ -24,6 +26,7 @@
     mode: 0444
     owner: "{{ mysql_ssl_owner }}"
     group: "{{ mysql_ssl_group }}"
+  notify: Update MySQL Certificates
 
 - name: Copy the SSL key
   ansible.builtin.copy:
@@ -33,6 +36,7 @@
     owner: "{{ mysql_ssl_owner }}"
     group: "{{ mysql_ssl_group }}"
   when: inventory_hostname in groups['database_servers']
+  notify: Update MySQL Certificates
 
 - name: Configure /etc/mysql/conf.d/tls.cnf
   ansible.builtin.template:
