@@ -9,6 +9,8 @@
 [maxscale]
 threads=auto
 admin_enabled=false
+query_retries=0
+skip_permission_checks=true
 
 # ------------------------------------------------------------------------------
 # Server Definition
@@ -19,6 +21,8 @@ type=server
 address={{ hostvars[host].private_ip }}
 port=3306
 protocol=MariaDBBackend
+persistpoolmax={{ maxscale_persistpoolmax | default('50') }}
+persistmaxtime={{ maxscale_persistmaxtime | default('3600s') }}
 {% if enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
 ssl=true
 {% endif %}
@@ -42,7 +46,8 @@ monitor_interval=2s
 # ------------------------------------------------------------------------------
 [rw-service]
 type=service
-router=readwritesplit
+router=readconnroute
+router_options=synced
 servers={% for host in groups['database_servers'] | sort %}{{ host }}{% if not loop.last %}, {% endif %}{% endfor %}
 
 user=maxscale
