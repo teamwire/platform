@@ -175,6 +175,7 @@ job "teamwire" {
       			CHANNEL_GROUP_EXPIRY = "{{ channel_group_expiry|default('86400') }}"
 				DISABLE_GC_RECONFIGURATION = "{{ disable_gc_reconfiguration | default('false') | lower }}"
 				FCM_SERVICE_ACCOUNT_FILE = "{{ '/certs/fcm/customer.json' if fcm_account_file is defined and fcm_account_file | length > 0 else '' }}"
+                EXTERNAL_HOSTNAME = "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
 			}
 
 			resources {
