@@ -132,10 +132,15 @@ frontend https-in
 
     # Webclient restricted by IPs
     {% if webclient_ip_ranges is defined %}{% if webclient_ip_ranges is not none %}{% for range in webclient_ip_ranges %}acl webclient_allowed src {{ range }}
-    {% endfor %}
-    acl webclient_page path_beg,url_dec -m reg -i  ^(/static)?/web-client/?
-    http-request deny if webclient_page !webclient_allowed
-    {% endif %}{% endif %}
+    {% endfor -%}
+    {% if enable_monitoring is defined and not (is_legacy_installation | default('True') | lower | bool) and groups['all'] | length() == 1 %}acl webclient_allowed src 127.0.0.1
+    {% endif -%}
+    acl webclient_page_old path_beg,url_dec -m reg -i  ^(/static)?/web-client/?
+    {% if not (is_legacy_installation | default('True') | lower | bool) %}acl webclient_page hdr(host) -i {{ webclient_hostname }}
+    {% endif -%}
+    http-request deny if webclient_page_old !webclient_allowed
+    {% if not (is_legacy_installation | default('True') | lower | bool) %}http-request deny if webclient_page !webclient_allowed
+    {% endif %}{% endif %}{% endif %}
 
     # ACL
     {%if external_hostname is iterable and external_hostname is not string%}{% for item in external_hostname %}
