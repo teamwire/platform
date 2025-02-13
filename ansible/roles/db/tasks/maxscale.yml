@@ -50,9 +50,36 @@
     - Copy maxscale ansible facts
     - Ansible_facts_reload
 
+# ------------------------------------------------------------------------------
+# Ensure encrypted Password for maxscale users are up to date and created
+# ------------------------------------------------------------------------------
+- name: Ensure maxscale_monitor password hash fact is defined
+  ansible.builtin.debug:
+    msg: "Password hash fact for maxscale_monitor is not define. Triggered regeneration."
+  when: ansible_local.maxscale.monitor_password_hash is not defined
+  changed_when: ansible_local.maxscale.monitor_password_hash is not defined
+  notify:
+    - Generate Password Hash if not defined
+    - Copy maxscale ansible facts
+    - Ansible_facts_reload
+
+- name: Check if maxscale_monitor user password needs an update
+  ansible.builtin.command: "maxpasswd -d {{ ansible_local.maxscale.monitor_password_hash }}"
+  register: decrpyted_maxscale_monitor_password
+  changed_when: decrpyted_maxscale_monitor_password.stdout != mysql_maxscale_monitor_password
+  when: ansible_local.maxscale.monitor_password_hash is defined
+  no_log: true
+  notify:
+    - Generate Password Hash if not defined
+    - Copy maxscale ansible facts
+    - Ansible_facts_reload
+
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
+# ------------------------------------------------------------------------------
+# Configure maxscale
+# ------------------------------------------------------------------------------
 - name: Copy configuration file /etc/maxscale.cnf
   ansible.builtin.template:
     src: maxscale.cnf.j2

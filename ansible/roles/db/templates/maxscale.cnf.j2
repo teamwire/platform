@@ -37,8 +37,8 @@ type=monitor
 module=galeramon
 servers={% for host in groups['database_servers'] | sort %}{{ host }}{% if not loop.last %}, {% endif %}{% endfor %}
 
-user=maxscale
-password={{ ansible_local.maxscale.password_hash }}
+user=maxscale_monitor
+password={{ ansible_local.maxscale.monitor_password_hash }}
 monitor_interval=2s
 
 # ------------------------------------------------------------------------------

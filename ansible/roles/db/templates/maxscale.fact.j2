@@ -2,6 +2,7 @@
 
 cat <<EOF
 {
-    "password_hash": "{{ maxscale_password_hash.stdout }}"
+    "password_hash": "{{ maxscale_password_hash.stdout }}",
+    "monitor_password_hash": "{{ maxscale_monitor_password_hash.stdout }}"
 }
 EOF
