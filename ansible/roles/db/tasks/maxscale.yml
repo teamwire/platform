@@ -45,19 +45,36 @@
 - name: Initialize maxscale encryption for passwords
   ansible.builtin.command: "maxkeys /var/lib/maxscale"
   when: maxscale_secret_file.stat.exists is falsy
+
+# ------------------------------------------------------------------------------
+# Ensure encrypted Password for maxscale users are up to date and created
+# ------------------------------------------------------------------------------
+- name: Ensure maxscale password hash fact is defined
+  ansible.builtin.debug:
+    msg: "Password hash fact for maxscale is not define. Triggered regeneration."
+  when: ansible_local.maxscale.password_hash is not defined
+  changed_when: ansible_local.maxscale.password_hash is not defined
   notify:
     - Generate Password Hash if not defined
     - Copy maxscale ansible facts
     - Ansible_facts_reload
 
-# ------------------------------------------------------------------------------
-# Ensure encrypted Password for maxscale users are up to date and created
-# ------------------------------------------------------------------------------
 - name: Ensure maxscale_monitor password hash fact is defined
   ansible.builtin.debug:
     msg: "Password hash fact for maxscale_monitor is not define. Triggered regeneration."
   when: ansible_local.maxscale.monitor_password_hash is not defined
   changed_when: ansible_local.maxscale.monitor_password_hash is not defined
+  notify:
+    - Generate Password Hash if not defined
+    - Copy maxscale ansible facts
+    - Ansible_facts_reload
+
+- name: Check if maxscale user password needs an update
+  ansible.builtin.command: "maxpasswd -d {{ ansible_local.maxscale.password_hash }}"
+  register: decrpyted_maxscale_password
+  changed_when: decrpyted_maxscale_password.stdout != mysql_maxscale_password
+  when: ansible_local.maxscale.password_hash is defined
+  no_log: true
   notify:
     - Generate Password Hash if not defined
     - Copy maxscale ansible facts
