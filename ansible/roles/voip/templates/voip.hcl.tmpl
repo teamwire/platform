@@ -425,6 +425,9 @@ job "voip" {
                 JVB_AUTH_USER                   = "jvb${NOMAD_ALLOC_INDEX}"
                 USERNAME                        = "jvb${NOMAD_ALLOC_INDEX}"
                 MUC_NICKNAME                    = "jvb${NOMAD_ALLOC_INDEX}"
+{% if jvb_public_ip is defined %}
+                JVB_ADVERTISE_IPS               = "{{ jvb_public_ip }}"
+{% endif %}
             }
 
             resources {
