@@ -35,7 +35,8 @@
     - "{{ voip_root_path }}/jigasi"
     - "{{ voip_root_path }}/jibri"
     - "{{ voip_root_path }}/turn/config"
-
+  loop_control:
+    label: "{{ item.path | default(item) }}"
   run_once: true
 
 - name: Create JVB users for cluster environment.
