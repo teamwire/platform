@@ -9,17 +9,17 @@
     - "{{ voip_root_path }}/transcripts"
     - {
       path: "{{ voip_root_path }}/prosody/config/",
-      owner: 101,
+      owner: "{{ jvb_dir_owner }}",
       group: 101
     }
     - {
       path: "{{ voip_root_path }}/prosody/prosody-plugins-custom",
-      owner: 101,
+      owner: "{{ jvb_dir_owner }}",
       group: 101
     }
     - {
       path: "{{ voip_root_path }}/prosody/config/data/auth%2emeet%2ejitsi/accounts",
-      owner: 101,
+      owner: "{{ jvb_dir_owner }}",
       group: 102
     }
     - {
