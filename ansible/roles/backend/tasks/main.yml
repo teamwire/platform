@@ -91,5 +91,6 @@
     - mysql_host is not defined
     - "'database_servers' in groups"
     - groups['database_servers'] | length > 1
+    - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
 
 # The cluster backend deployment is delegated to the nomad servers

@@ -1,4 +1,11 @@
 ---
+- name: Ensure to stop the maxscale service
+  ansible.builtin.service:
+    name: maxscale
+    enabled: false
+    state: stopped
+  when: inventory_hostname in groups['backend_servers']
+
 - name: Install HAproxy
   ansible.builtin.apt:
     name: haproxy
