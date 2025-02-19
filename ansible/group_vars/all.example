@@ -131,6 +131,11 @@ webclient_hostname: ""
 # external_turn_server: "meet-jit-si-turnrelay.jitsi.net"
 # external_turn_port: "443"
 
+# JVB PUBLIC IP
+# The public ip of the Jitsi Videobridge server. This is necessary if JVB is running behind a NAT.
+# Uncomment the following line and set your value.
+# jvb_public_ip: "1.2.3.4"
+
 ##############################################################################
 ## APPLICATION
 ##############################################################################

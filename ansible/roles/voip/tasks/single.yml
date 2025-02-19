@@ -183,7 +183,9 @@
         "guest.meet.jitsi": "172.18.0.3",
         "recorder.meet.jitsi": "172.18.0.3"
       }
-    env:
+    env: "{{ env_vars | combine(jvb_advertise_ips_env_var) if jvb_public_ip is defined else env_vars }}"
+  vars:
+    env_vars:
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       JVB_AUTH_PASSWORD: "{{ voip_jvb_password }}"
       XMPP_AUTH_DOMAIN: "auth.meet.jitsi"
@@ -201,6 +203,8 @@
       ENABLE_COLIBRI_WEBSOCKET: "1"
       PUBLIC_URL: "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
       JVB_WS_SERVER_ID: "172.18.0.5"
+    jvb_advertise_ips_env_var:
+      JVB_ADVERTISE_IPS: "{{ jvb_public_ip }}"
   when: config_done is defined
 
 - name: Run the Teamwire turn container
