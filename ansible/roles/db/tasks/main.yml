@@ -149,6 +149,28 @@
     dbname: "{{ item.0.value.dbname }}"
   when: config_done is defined
 
+- name: Allow Teamwire database user from the management_host for maxscale connections
+  community.mysql.mysql_user:
+    name: "{{ username }}"
+    host: "{{ hostvars[groups['management_servers'] | sort | first].private_ip }}"
+    password: "{{ password }}"
+    priv: "{{ dbname }}.*:ALL/*.*:RELOAD"
+    state: present
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
+  loop: "{{ mysql_databases | dict2items | subelements('value.hosts') }}"
+  vars:
+    username: "{{ item.0.value.username }}"
+    password: "{{ item.0.value.password }}"
+    dbname: "{{ item.0.value.dbname }}"
+  when:
+    - config_done is defined
+    - enable_tls_mysql is defined
+    - enable_tls_mysql | lower == "true"
+    - groups['all'] | length > 1
+    - groups['management_servers'] | sort | first not in groups['backend_servers']
+
 - name: Allow Teamwire database user to localhost for maxscale connections
   community.mysql.mysql_user:
     name: "{{ username }}"
