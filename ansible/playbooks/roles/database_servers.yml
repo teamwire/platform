@@ -25,7 +25,7 @@
         - groups['all'] | length() > 1
 
 - name: Deploy and configure MySQL database
-  hosts: database_servers:montoring
+  hosts: database_servers:monitoring
   serial: 1
   tasks:
     - name: Include TLS DB Configuration

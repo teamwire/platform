@@ -82,6 +82,7 @@
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
   register: mysql_have_ssl
+  when: inventory_hostname in groups['database_servers']
 
 - name: Flush MySQL SSL Certificates
   listen: Update MySQL Certificates
