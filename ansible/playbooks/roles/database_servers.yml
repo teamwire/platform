@@ -24,7 +24,7 @@
         - mysql_host is not defined
         - groups['all'] | length() > 1
 
-- name: Deploy and configure MySQL database
+- name: Deploy and configure MySQL SSL Certificates
   hosts: database_servers:monitoring
   serial: 1
   tasks:
