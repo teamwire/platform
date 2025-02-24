@@ -92,6 +92,10 @@
     mode: 0644
   notify: Restart consul
 
+
+# ------------------------------------------------------------------------------
+# MySQL Maxscale Users Creation
+# ------------------------------------------------------------------------------
 - name: Set password for mysql maxscale user
   community.mysql.mysql_user:
     name: maxscale
@@ -108,3 +112,16 @@
     - mysql_maxscale_password is defined
     - inventory_hostname == groups['database_servers'] | sort | first
     - mysql_host is not defined
+
+- name: Set password for mysql maxscale monitoring user
+  community.mysql.mysql_user:
+    name: maxscale_monitor
+    password: "{{ mysql_maxscale_monitor_password }}"
+    priv: "*.*:SUPER,REPLICATION CLIENT,RELOAD"
+    host: "{{ item }}"
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  with_items:
+    - "{{ groups['backend_servers'] | map('extract', hostvars, 'private_ip') | list }}"
+    - 127.0.0.1
+  when: inventory_hostname == groups['database_servers'] | sort | first

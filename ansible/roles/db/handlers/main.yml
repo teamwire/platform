@@ -43,23 +43,29 @@
   with_items: "{{ mysql_root_password_hash.query_result }}"
   listen: mysql_root_user_update
 
+# ------------------------------------------------------------------------------
+# Handlers related to maxscale
+# ------------------------------------------------------------------------------
 - name: Maxscale_restart
   ansible.builtin.service:
     name: maxscale
     state: restarted
 
-- name: Generate Password Hash if not defined
+- name: Generate maxscale password hash
   ansible.builtin.command: "maxpasswd {{ mysql_maxscale_password }}"
   register: maxscale_password_hash
-  when: ansible_local.maxscale.password_hash is undefined or hostvars[groups['database_servers'] | sort | first].mysql_maxscale_user.changed
+  listen: "Generate Password Hash if not defined"
+
+- name: Generate maxscale_monitor password hash
+  ansible.builtin.command: "maxpasswd {{ mysql_maxscale_monitor_password }}"
+  register: maxscale_monitor_password_hash
+  listen: "Generate Password Hash if not defined"
 
 - name: Copy maxscale ansible facts
   ansible.builtin.template:
     src: maxscale.fact.j2
     dest: /etc/ansible/facts.d/maxscale.fact
     mode: 0755
-  when:
-    - maxscale_password_hash is changed
 
 - name: Ansible_facts_reload
   ansible.builtin.setup:
