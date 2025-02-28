@@ -12,6 +12,17 @@
         - ansible_local.vault.initialized == "true"
          and secrets_read is not defined
 
+# This task will check that the environment is prepared for the voip setup
+- name: Configure voip for management server(s)
+  hosts: local:management_servers
+  tasks:
+    - name: Include voip main.yml for management_server
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/voip"
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true'
+
 # This play only applies to the single server installation
 - name: Configure containers for single installations
   hosts: local
