@@ -1,5 +1,11 @@
 ---
 
+- name: Include Tasks to disable HA-Proxy Galera configuration
+  ansible.builtin.include_role:
+    name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
+    tasks_from: disable_galera_haproxy_configuration
+  when: enable_tls_mysql is defined and enable_tls_mysql | lower == "true"
+
 - name: Get gpg key for maxscale repository
   ansible.builtin.apt_key:
     id: "{{ maxscale_gpg_key_id }}"
@@ -36,6 +42,7 @@
     name: maxscale
     enabled: true
     state: started
+  when: enable_tls_mysql is defined and enable_tls_mysql | lower == "true"
 
 - name: Check if maxscale secret file exists
   ansible.builtin.stat:

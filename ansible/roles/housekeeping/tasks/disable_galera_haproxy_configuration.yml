@@ -1,0 +1,7 @@
+---
+
+- name: Ensure the galera haproxy configuration is not present
+  ansible.builtin.file:
+    path: /etc/haproxy/02-galera.cfg
+    state: absent
+  notify: Disable or Reload HA-Proxy Service

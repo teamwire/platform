@@ -369,7 +369,7 @@ apply Service "check-process-keepalived" {
 }
 {% endif %}
 
-{% if 'backend_servers' in groups %}
+{% if 'backend_servers' in groups and (enable_tls_mysql is undefined or enable_tls_mysql | lower != "true") %}
 apply Service "check-haproxy" {
   import "generic-service"
   check_command = "haproxy"
@@ -380,6 +380,17 @@ apply Service "check-haproxy" {
 }
 {% endif %}
 
+{% if 'backend_servers' in groups and enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
+apply Service "check-maxscale" {
+  import "generic-service"
+  check_command = "procs"
+
+  vars.procs_command = "maxscale"
+  vars.procs_critical = "1:"
+  command_endpoint = host.vars.client_endpoint
+  assign where "backend_servers" in host.vars.roles
+}
+{% endif %}
 
 {% if apns_certificate is defined %}
 apply Service "check-apns" {

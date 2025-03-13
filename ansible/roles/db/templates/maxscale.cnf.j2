@@ -62,4 +62,11 @@ type=listener
 service=rw-service
 protocol=MariaDBClient
 address=127.0.0.1
-port=3308
+port=3307
+
+[privateip-listener]
+type=listener
+service=rw-service
+protocol=MariaDBClient
+address={{ private_ip }}
+port=3307

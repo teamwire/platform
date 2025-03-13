@@ -1,0 +1,16 @@
+---
+
+- name: Reload HAProxy
+  ansible.builtin.systemd:
+    name: haproxy
+    state: reloaded
+  when: "inventory_hostname in groups['backend_servers'] and inventory_hostname in groups['frontend_servers']"
+  listen: Disable or Reload HA-Proxy Service
+
+- name: Stop and disable HAProxy
+  ansible.builtin.service:
+    name: haproxy
+    enabled: false
+    state: stopped
+  when: "inventory_hostname in groups['backend_servers'] and inventory_hostname not in groups['frontend_servers']"
+  listen: Disable or Reload HA-Proxy Service
