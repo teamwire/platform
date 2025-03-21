@@ -46,8 +46,8 @@ monitor_interval=2s
 # ------------------------------------------------------------------------------
 [rw-service]
 type=service
-router=readwritesplit
-max_slave_connections=0
+router=readconnroute
+router_options=synced
 servers={% for host in groups['database_servers'] | sort %}{{ host }}{% if not loop.last %}, {% endif %}{% endfor %}
 
 user=maxscale
