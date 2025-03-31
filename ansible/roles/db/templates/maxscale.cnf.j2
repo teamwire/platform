@@ -8,7 +8,7 @@
 
 [maxscale]
 threads=auto
-admin_enabled=false
+admin_enabled={{ mysql_tls_admin_enabled | default('true') | lower }}
 query_retries=0
 skip_permission_checks=true
 

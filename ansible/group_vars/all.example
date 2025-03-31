@@ -245,6 +245,12 @@ allow_user_query: "no"
 # The setting will only have an effect on cluster setups.
 # enable_tls_mysql: "false"
 
+# If tls connections to the mysql server are enabled it is possible
+# to enable/disable a commandlet to check the connections and the state
+# of the database servers on the backend_servers.
+# The default value is "true".
+# mysql_tls_admin_enabled: "true"
+
 ##############################################################################
 ## MAIL
 ##############################################################################
