@@ -380,7 +380,7 @@ apply Service "check-haproxy" {
 }
 {% endif %}
 
-{% if 'backend_servers' in groups and enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
+{% if ('management_servers' in groups or 'backend_servers' in groups) and enable_tls_mysql is defined and enable_tls_mysql | lower == "true" %}
 apply Service "check-maxscale" {
   import "generic-service"
   check_command = "procs"
@@ -388,7 +388,7 @@ apply Service "check-maxscale" {
   vars.procs_command = "maxscale"
   vars.procs_critical = "1:"
   command_endpoint = host.vars.client_endpoint
-  assign where "backend_servers" in host.vars.roles
+  assign where "backend_servers" in host.vars.roles || "management_servers" in host.vars.roles
 }
 {% endif %}
 
