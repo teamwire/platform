@@ -1,7 +1,7 @@
 REGISTRY="{{ groups['docker_registry'] | sort | first if 'docker_registry' in groups else '' }}{{ ':5000' if 'docker_registry' in groups else '' }}"
 {% if 'database_servers' in groups and groups['database_servers'] | length > 1 %}
   {%- if 'backend_servers' in groups and groups['backend_servers'] | length > 1 %}
-MYSQL_HOST="{{ hostvars[groups['backend_servers'] | sort | first].private_ip }}"
+MYSQL_HOST="{{ '127.0.0.1' if enable_tls_mysql is defined and enable_tls_mysql | lower == 'true' else hostvars[groups['backend_servers'] | sort | first].private_ip }}"
 MYSQL_PORT="{{ mysql_port }}"
 {% endif %}
 {% else %}
