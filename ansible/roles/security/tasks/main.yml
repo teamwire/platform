@@ -1,12 +1,13 @@
 ---
 # CIS - BENCHMARK IDS: 2500,2501,2502,2503,2504,2505,2506
-- name: Ensure mounting of additional filesystems is disabled
+- name: MNTFS_1 Ensure mounting of additional filesystems is disabled
   ansible.builtin.copy:
     src: mountfs.conf
     dest: "/etc/modprobe.d/mounts.conf"
     mode: 0640
     owner: root
     group: root
+  when: mntfs_1 | default(true) | lower == "true"
   notify:
     - Unload fs modules
     - Restart kernel modules systemd
