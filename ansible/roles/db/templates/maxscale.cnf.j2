@@ -44,8 +44,13 @@ monitor_interval=2s
 # ------------------------------------------------------------------------------
 [rw-service]
 type=service
-router=readconnroute
+router={{ 'readwritesplit' if inventory_hostname not in groups.backend_servers else 'readconnroute' }}
+{% if inventory_hostname not in groups.backend_servers %}
+max_slave_connections=0
+{% endif %}
+{% if inventory_hostname in groups.backend_servers %}
 router_options=synced
+{% endif %}
 servers={% for host in groups['database_servers'] | sort %}{{ host }}{% if not loop.last %}, {% endif %}{% endfor %}
 
 user=maxscale
@@ -60,11 +65,4 @@ type=listener
 service=rw-service
 protocol=MariaDBClient
 address=127.0.0.1
-port=3307
-
-[privateip-listener]
-type=listener
-service=rw-service
-protocol=MariaDBClient
-address={{ private_ip }}
 port=3307

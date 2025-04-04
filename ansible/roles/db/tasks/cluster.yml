@@ -106,6 +106,7 @@
     login_unix_socket: /var/run/mysqld/mysqld.sock
   with_items:
     - "{{ groups['backend_servers'] | map('extract', hostvars, 'private_ip') | list }}"
+    - "{{ groups['management_servers'] | map('extract', hostvars, 'private_ip') | list }}"
     - 127.0.0.1
   register: mysql_maxscale_user
   when:
@@ -123,5 +124,6 @@
     login_unix_socket: /var/run/mysqld/mysqld.sock
   with_items:
     - "{{ groups['backend_servers'] | map('extract', hostvars, 'private_ip') | list }}"
+    - "{{ groups['management_servers'] | map('extract', hostvars, 'private_ip') | list }}"
     - 127.0.0.1
   when: inventory_hostname == groups['database_servers'] | sort | first
