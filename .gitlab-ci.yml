@@ -113,8 +113,6 @@ Deploy to cloud:
     - git status
     - git fetch --all
     - git reset --hard remotes/origin/master
-    # TEMPORARY SLEEP - See ITOPS-3308
-    - sleep 300
     - ansible-playbook -i cluster_hosts playbooks/cluster.yml
   rules:
     # Only accept tags what match the regex
