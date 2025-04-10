@@ -1149,16 +1149,20 @@ run_migrations_base() {
     get_database_configuration
     check_registry
     fetch_image_versions "${TAG}"
+    if [ "${INSTALLATION}" == "single" ]; then
+      local VAULT_ADDR
+      VAULT_ADDR="https://172.17.0.1:8200"
+    fi
     echo "Running database migrations"
     echo
     docker run --rm --network host -e MODE=migration --name teamwire-migrations \
         --log-driver syslog --log-opt syslog-facility=local6 --log-opt tag=teamwire-migrations \
         -e MYSQL_HOST="${MYSQL_HOST}" -e MYSQL_PORT="${MYSQL_PORT}" -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
-        -e MYSQL_USER="${MYSQL_USER}" -e MYSQL_PASSWORD="${MYSQL_PASS}" \
+        -e MYSQL_USER="${MYSQL_USER}" -e VAULT_MYSQL_PASSWORD_PATH="database/password" \
         -e ORA_HOST="${ORA_HOST}" -e ORA_PORT="${ORA_PORT}" -e ORA_DATABASE="${ORA_DATABASE}" \
         -e ORA_USER="${ORA_USER}" -e ORA_PASSWORD="${ORA_PASSWORD}" \
         -e REDIS_URI="${REDIS_URI}" -e REDIS_PASSWORD="${REDIS_PASSWORD}"\
-        -e AESKEY="${AESKEY}" -e VAULT_ADDR="${VAULT_ADDR}" "${PRFX}teamwire/backend:${BACKEND_VERSION}" 2>&1
+        -e VAULT_AES_SECRET_PATH="database/aes_key" -e VAULT_ADDR="${VAULT_ADDR}"  -e VAULT_TOKEN="${VAULT_TOKEN}" "${PRFX}teamwire/backend:${BACKEND_VERSION}" 2>&1
 
 }
 
