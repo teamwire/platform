@@ -294,10 +294,14 @@ system_email_recipient:
 ##############################################################################
 # To enable on-premise monitoring, please uncomment and set enable_monitoring
 # to true. If running a cluster-setup, please specify the monitoring node in the
-# cluster_hosts file, under the monitoring group. The monitoring system requires
-# MySQL and doesn't currently support other database types.
+# cluster_hosts file, under the monitoring group.
 
 # enable_monitoring: yes
+
+# Please uncomment and enter the emails which monitoring mails are send from.
+# If not defined it will fallback to the sender_address configuration for mails.
+# At least the monitoring_sender_address or the sender_address has to be set.
+# monitoring_sender_address: "tw_monitoring@example.com"
 
 # Please uncomment and enter the email addresses which you'd like to receive
 # monitoring alerts to. At least 1 entry is required.
@@ -305,17 +309,10 @@ system_email_recipient:
 #   - admin@example.com
 #   - admin2@example.com
 
-# Define the database user name.
-#monitoring_db_user: monitor
-
-# Define the monitoring database name.
-# monitoring_db_name: monitor
-
-# Define the monitoring web interface database username.
-# monitoring_db_web_user: monitor_web
-
-# Define the monitoring web interface database name.
-# monitoring_db_web_name: monitor_web
+# In case an external Database is used you need to define a
+# database username and password for the monitoring
+# monitoring_db_user: "monitor
+# monitoring_db_password: "your secure password"
 
 ##############################################################################
 ## NOMAD ALLOCATION & SETTINGS

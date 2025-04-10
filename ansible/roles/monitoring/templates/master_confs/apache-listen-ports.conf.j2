@@ -1,0 +1,4 @@
+# This file is created by 'omd config set APACHE_TCP_PORT'.
+# Better do not edit manually
+ServerName 127.0.0.1:{{ checkmk_apache_tcp_port | default("8001") }}
+Listen 127.0.0.1:{{ checkmk_apache_tcp_port | default("8001") }}

@@ -1,0 +1,28 @@
+---
+
+# ------------------------------------------------------------------------------
+# Ensure database user for monitoring is created
+# ------------------------------------------------------------------------------
+- name: Create monitoring database user
+  community.mysql.mysql_user:
+    name: "{{ monitoring_db_user }}"
+    host: "localhost"
+    password: "{{ monitoring_db_password }}"
+    priv: "*.*:SELECT,SHOW DATABASES"
+    state: present
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when:
+    - ( groups['all'] | length == 1 and mysql_host is undefined ) or
+      ( groups['database_servers'] is defined and inventory_hostname in groups['database_servers'] )
+
+# ------------------------------------------------------------------------------
+# Ensure mariadb client is installed if using an external database
+# ------------------------------------------------------------------------------
+- name: Install mariadb-client
+  ansible.builtin.apt:
+    name: mariadb-client
+    state: present
+  when:
+    - ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in [ "localhost", "127.0.0.1" ] ) or
+      ( groups['all'] | length > 1 and groups['database_servers'] is undefined and inventory_hostname in groups['backend_servers'] )

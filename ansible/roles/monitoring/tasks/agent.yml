@@ -1,0 +1,134 @@
+---
+
+# ------------------------------------------------------------------------------
+# Generate Autocheck discovery configuration for each agent on master
+# ------------------------------------------------------------------------------
+- name: Configure Autodiscover configuration files
+  ansible.builtin.template:
+    src: master_confs/autochecks-hosts.mk.j2
+    dest: "/opt/omd/sites/{{ checkmk_site }}/var/check_mk/autochecks/{{ inventory_hostname if groups['all'] | length() > 1 else external_hostname }}.mk"
+    owner: "{{ checkmk_site }}"
+    group: "{{ checkmk_site }}"
+    mode: '0660'
+  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  notify: Update checkmk config
+
+# ------------------------------------------------------------------------------
+# Install Agents
+# ------------------------------------------------------------------------------
+- name: Download Checkmk agent deb file from monitoring master
+  ansible.builtin.get_url:
+    url: "{{ checkmk_agent_pkg_endpoint }}"
+    dest: "/var/cache/downloads/checkmk_agent_linux_amd64.deb"
+    mode: 0440
+    use_proxy: false
+    validate_certs: false
+
+- name: Install checkmk agent
+  ansible.builtin.apt:
+    deb: "/var/cache/downloads/checkmk_agent_linux_amd64.deb"
+
+- name: Check if agent is registered
+  ansible.builtin.command: "cmk-agent-ctl status"
+  register: cmk_agent_status
+  changed_when: "'No connections' in cmk_agent_status.stdout"
+  notify: Register checkmk agent
+
+# ------------------------------------------------------------------------------
+# Ensure all plugins are available for the agent
+# ------------------------------------------------------------------------------
+- name: Download necessary plugins
+  ansible.builtin.get_url:
+    url: "{{ monitoring_master_plugin_endpoint }}{{ item }}"
+    dest: "{{ monitoring_agent_plugin_dir }}{{ item }}"
+    owner: root
+    group: root
+    mode: 0700
+    use_proxy: false
+    validate_certs: false
+  with_items:
+    - "{{ monitoring_agent_plugins }}"
+    - "{{ monitoring_custom_agent_plugins }}"
+
+- name: Copy exchange plugins into agent directory
+  ansible.builtin.copy:
+    src: "{{ monitoring_master_custom_plugin_dir }}{{ item }}"
+    dest: "{{ monitoring_agent_plugin_dir }}{{ item }}"
+    owner: root
+    group: root
+    mode: 0700
+    remote_src: true
+  when: groups['all'] | length() == 1
+  with_items: "{{ monitoring_custom_agent_plugins }}"
+
+- name: Create custom check script folder on agents
+  ansible.builtin.file:
+    path: "{{ monitoring_agent_custom_check_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Copy custom check scripts to agent
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ monitoring_agent_custom_check_dir }}"
+    owner: root
+    group: root
+    mode: 0755
+  with_fileglob:
+    - "files/checks/*"
+
+# ------------------------------------------------------------------------------
+# Allow agent user to switch to execute custom plugins as root
+# ------------------------------------------------------------------------------
+- name: Configure sudo to allow cmk agent user to execute custom plugins as root
+  ansible.builtin.template:
+    src: agent_confs/sudo-10-monitoring-agent.j2
+    dest: "/etc/sudoers.d/10-monitoring-agent"
+    mode: 0440
+    owner: root
+    group: root
+    validate: /usr/sbin/visudo -cf %s
+
+# ------------------------------------------------------------------------------
+# Configure necessary credentials for the agent checks
+# ------------------------------------------------------------------------------
+- name: Create mysql credentials file for the agent
+  ansible.builtin.template:
+    src: agent_confs/mysql.cfg.j2
+    dest: /etc/check_mk/mysql.cfg
+    owner: root
+    group: root
+    mode: 0400
+  when:
+    - groups['all'] | length == 1 or
+      ( groups['database_servers'] is defined and inventory_hostname in groups['database_servers'] ) or
+      ( groups['all'] | length > 1 and groups['database_servers'] is undefined and inventory_hostname in groups['backend_servers'] )
+
+- name: Create redis credentials file for the agent
+  ansible.builtin.template:
+    src: agent_confs/mk_redis.cfg.j2
+    dest: /etc/check_mk/mk_redis.cfg
+    owner: root
+    group: root
+    mode: 0400
+  when:
+    - groups['all'] | length() == 1 or
+      groups['redis_servers'] is defined and inventory_hostname in groups['redis_servers']
+
+- name: Create MRPE configuration file for the agent
+  ansible.builtin.template:
+    src: agent_confs/mrpe.cfg.j2
+    dest: /etc/check_mk/mrpe.cfg
+    owner: root
+    group: root
+    mode: 0400
+
+- name: Create sslcertificates file for the agent
+  ansible.builtin.template:
+    src: agent_confs/sslcertificates.j2
+    dest: /etc/check_mk/sslcertificates
+    owner: cmk-agent
+    group: cmk-agent
+    mode: 0644

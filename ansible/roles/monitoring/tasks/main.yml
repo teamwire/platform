@@ -1,223 +1,36 @@
 ---
-- name: Ensure all required variables are defined before configuring the monitoring system
-  ansible.builtin.assert:
-    that:
-      - monitoring_email_addresses is defined
-      - mysql_root_password is defined
-      - monitoring_db_user is defined
-      - monitoring_db_name is defined
-      - monitoring_db_password is defined
-      - monitoring_db_web_user is defined
-      - monitoring_db_web_name is defined
-      - monitoring_db_web_password is defined
-      - icinga_admin_password is defined
-      - icinga_salt is defined
-      - icinga_api_password is defined
+
+# ------------------------------------------------------------------------------
+# Ensure necessary variables from other roles
+# ------------------------------------------------------------------------------
+- name: Include redis variables for monitoring
+  ansible.builtin.include_vars: ../../roles/redis/defaults/main.yml
+  when: redis_instances is not defined
+
+- name: Include nomad variables for monitoring
+  ansible.builtin.include_vars: ../../roles/nomad/defaults/main.yml
+  when: nomad_jobs is not defined
+
+# ------------------------------------------------------------------------------
+# Ensure to include master and agent setups
+# ------------------------------------------------------------------------------
+- name: Include monitoring master setup
+  ansible.builtin.include_tasks: master.yml
   when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
 
-# Using `apt-key` to add third party signing keys is deprecated
-# https://wiki.debian.org/DebianRepository/UseThirdParty
-- name: Get Icinga repository key
-  ansible.builtin.get_url:
-    url: https://packages.icinga.com/icinga.key
-    dest: /usr/share/keyrings/icinga-archive-keyring.key
-    mode: '0644'
-  environment:
-    HTTP_PROXY: "{{ http_proxy | default() }}"
-    HTTPS_PROXY: "{{ http_proxy | default() }}"
-  register: icinga_signing_key
-  when: not ansible_local.offline_mode.stat.exists
+- name: Include monitoring agent setup
+  ansible.builtin.include_tasks: agent.yml
 
-- name: Dearmor Icinga repository key # noqa no-handler
-  ansible.builtin.command: gpg --dearmor -o {{ (icinga_signing_key.dest | splitext)[0] }}.gpg {{ icinga_signing_key.dest }}
-  when: icinga_signing_key.changed
+# ------------------------------------------------------------------------------
+# Ensure to include steps to setup database monitoring
+# ------------------------------------------------------------------------------
+- name: Ensure monitoring can connect to the database
+  ansible.builtin.include_tasks: database.yml
 
-- name: Add Icinga repository
-  ansible.builtin.apt_repository:
-    repo: deb [signed-by={{ (icinga_signing_key.dest | splitext)[0] }}.gpg] https://packages.icinga.com/debian icinga-{{ ansible_distribution_release }} main
-    state: present
-    filename: icinga2
-    update_cache: true
-  when: not ansible_local.offline_mode.stat.exists
-
-- name: Get checksum for icinga versions from repo.teamwire.eu
-  ansible.builtin.get_url:
-    url: "{{ icinga_checksum_package_file_url }}"
-    dest: "{{ icinga_checksum_file_path }}"
-    mode: 0444
-  when: not ansible_local.offline_mode.stat.exists
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
-
-- name: Get icinga version from repo.teamwire.eu
-  ansible.builtin.get_url:
-    url: "{{ icinga_package_file_url }}"
-    dest: "{{ icinga_package_file_path }}"
-    mode: 0644
-    checksum: "sha256: {{ lookup('file', icinga_checksum_file_path) }}"
-  when: not ansible_local.offline_mode.stat.exists
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
-
-- name: Pin Icinga version
-  ansible.builtin.template:
-    src: tw_monitoring_pinning.j2
-    dest: /etc/apt/preferences.d/tw_monitoring_pinning
-    owner: root
-    group: root
-    mode: 0644
-  notify: Update apt
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
-
-- name: Install Icinga2 and monitoring plugins
+# ------------------------------------------------------------------------------
+# Ensure to install python rpm package since checkmk has rpm as requirement
+# ------------------------------------------------------------------------------
+- name: Install python3-rpm
   ansible.builtin.apt:
-    name: "{{ item }}"
+    name: python3-rpm
     state: present
-  with_items:
-    - icinga2
-    - monitoring-plugins
-    - nagios-plugins-contrib
-    - libredis-perl
-    - libmonitoring-plugin-perl
-    - liblwp-useragent-determined-perl
-    - libdbd-mysql-perl
-  check_mode: false
-
-- name: Clear plugin directory
-  block:
-    - name: Determine plugin directory content
-      ansible.builtin.find:
-        path: /usr/share/icinga2/include/plugins-contrib.d
-        file_type: any
-        hidden: true
-      register: plugin_dir_content
-    - name: Delete plugin directory content
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        state: absent
-      loop: "{{ plugin_dir_content.files }}"
-      loop_control:
-        label: "{{ item.path }}"
-
-- name: Enable and start the icinga2 daemon
-  ansible.builtin.service:
-    name: icinga2
-    state: started
-    enabled: true
-
-- name: Install additional icinga plugins
-  ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: /usr/lib/nagios/plugins
-    mode: 0755
-  with_fileglob:
-    - "files/checks/*"
-
-- name: Ensure sudo is installed
-  ansible.builtin.apt:
-    pkg: sudo
-    state: present
-
-- name: Set sudo escalation for icinga plugins
-  ansible.builtin.copy:
-    src: 10-nagios-user
-    dest: "/etc/sudoers.d/10-nagios-user"
-    mode: 0440
-    owner: root
-    group: root
-    validate: /usr/sbin/visudo -cf %s
-
-- name: Configure Icinga NodeName
-  ansible.builtin.lineinfile:
-    dest: /etc/icinga2/constants.conf
-    regexp: "^//const NodeName = \"localhost\"$"
-    line: "const NodeName = \"{{ inventory_hostname }}\""
-    backrefs: true
-  notify: Restart icinga2
-
-- name: Fix Icinga PKI directory permissions
-  ansible.builtin.file:
-    dest: /etc/icinga2/pki
-    owner: nagios
-    group: nagios
-    mode: 0750
-
-- name: Get checksum for check_ntp_time plugin from repo.teamwire.eu
-  ansible.builtin.get_url:
-    url: "{{ icinga_check_ntp_time_checksum_file_url }}"
-    dest: "{{ icinga_check_ntp_time_checksum_file_path }}"
-    mode: 0444
-  when: not ansible_local.offline_mode.stat.exists
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
-
-# We have to download the check file to /var/cache/download first cause of the offline image
-- name: Fetch Icinga check_ntp_time plugin from repo.teamwire.eu
-  ansible.builtin.get_url:
-    url: "{{ icinga_check_ntp_time_file_url }}"
-    dest: /var/cache/downloads/check_ntp_time-latest
-    checksum: "sha256: {{ lookup('file', icinga_check_ntp_time_checksum_file_path) }}"
-    owner: root
-    group: root
-    mode: 0644
-  when: not ansible_local.offline_mode.stat.exists
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
-
-- name: Install Icinga check_ntp_time plugin
-  ansible.builtin.copy:
-    src: /var/cache/downloads/check_ntp_time-latest
-    dest: /usr/lib/nagios/plugins/check_ntp_time
-    owner: root
-    group: root
-    mode: 0755
-    remote_src: true
-
-- name: Patch Icinga2 check_haproxy_stats plugin
-  ansible.builtin.lineinfile:
-    path: /usr/lib/nagios/plugins/check_haproxy_stats
-    regexp: "^/usr/bin/perl"
-    line: "#/usr/bin/perl"
-    backrefs: true
-
-- name: Include database-configurateion
-  ansible.builtin.include_tasks: "database-configuration.yml"
-  when: mysql_root_password is defined
-
-- name: Include master
-  ansible.builtin.include_tasks: "master.yml"
-  when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
-
-# On Single installation or monitoring masters, configuration is placed into zones.d/
-# On monitoring agents of a cluster installation, configuration is placed into conf.d/
-- name: Configure Icinga2 commands
-  ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: "{{ icinga2_config_target_dir | trim }}"
-    owner: nagios
-    group: nagios
-    mode: 0644
-  loop:
-    - commands.conf
-    - commands.custom.conf
-  vars:
-    icinga2_config_target_dir: >-
-      {% if groups['all'] | length() == 1 or inventory_hostname in groups['monitoring'] %}
-        /etc/icinga2/zones.d/{{ inventory_hostname }}
-      {% else %}
-        /etc/icinga2/conf.d/
-      {% endif %}
-  notify: Restart icinga2
-
-- name: Install logrotate job for icinga2 logs
-  ansible.builtin.copy:
-    src: icinga2-log
-    dest: /etc/logrotate.d/icinga2
-    owner: root
-    group: root
-    mode: 0644
-
-- name: Include client
-  ansible.builtin.include_tasks: "client.yml"

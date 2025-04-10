@@ -82,11 +82,17 @@
     - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
 
 # ------------------------------------------------------------------------------
-# Cleanup available monitoring users
+# Cleanup monitoring database users
 # ------------------------------------------------------------------------------
+- name: Include monitoring default variables
+  ansible.builtin.include_vars:
+    file: ../../monitoring/defaults/main.yml
+  when:
+    - enable_monitoring is defined and enable_monitoring | lower in [ "yes", "true" ]
+
 - name: Cleanup monitoring db users - Single Server
   block:
-    - name: "Cleanup available users {{ monitoring_db_user }}"
+    - name: "Cleanup available monitoring users"
       community.mysql.mysql_user:
         login_user: root
         login_unix_socket: /var/run/mysqld/mysqld.sock
@@ -98,7 +104,7 @@
         - item.User == monitoring_db_user
         - item.Host != "localhost"
 
-    - name: "Cleanup available users {{ monitoring_db_web_user }}"
+    - name: Cleanup old icinga database users
       community.mysql.mysql_user:
         login_user: root
         login_unix_socket: /var/run/mysqld/mysqld.sock
@@ -108,38 +114,6 @@
       with_items: "{{ mysql_user_data.query_result }}"
       when:
         - item.User == monitoring_db_web_user
-        - item.Host != "localhost"
   when:
-    - enable_monitoring is defined
+    - enable_monitoring is defined and enable_monitoring | lower in [ "yes", "true" ]
     - groups['all'] | length == 1
-
-- name: Cleanup monitoring db users - Cluster
-  block:
-    - name: "Cleanup available users {{ monitoring_db_user }}"
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      throttle: 1
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_user
-        - not ( item.Host in groups['monitoring'] | map('extract',hostvars,'private_ip') or item.Host in groups['database_servers'] | map('extract',hostvars,'private_ip') or item.Host == 'localhost' )
-
-    - name: "Cleanup available users {{ monitoring_db_web_user }}"
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      throttle: 1
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_web_user
-        - item.Host not in groups['monitoring'] | map('extract',hostvars,'private_ip')
-  when:
-    - enable_monitoring is defined
-    - groups['all'] | length > 1

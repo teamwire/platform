@@ -192,11 +192,8 @@
     - { secret: 'dbserver/mysql_maxscale_password', value: "{{ mysql_maxscale_password | default('') }}" }
     - { secret: 'redis/password', value: "{{ redis_pass | default('') }}" }
     - { secret: 'smtp/password', value: "{{ smtp_smartpass | default('') }}" }
+    - { secret: 'monitoring/cmkadmin_password', value: "{{ monitoring_cmkadmin_password | default('') }}" }
     - { secret: 'monitoring/db_password', value: "{{ monitoring_db_password | default('') }}" }
-    - { secret: 'monitoring/db_web_password', value: "{{ monitoring_db_web_password | default('') }}" }
-    - { secret: 'monitoring/icinga_admin_password', value: "{{ icinga_admin_password | default('') }}" }
-    - { secret: 'monitoring/icinga_salt', value: "{{ icinga_salt | default('') }}" }
-    - { secret: 'monitoring/icinga_api_password', value: "{{ icinga_api_password | default('') }}" }
     - { secret: 'reportfile/password', value: "{{ reportfile_password | default('reportfile_password') }}" }
     - { secret: 'voip/jibri_password', value: "{{ voip_jibri_password | default('') }}" }
     - { secret: 'voip/jicofo_password', value: "{{ voip_jicofo_password | default('') }}" }

@@ -1,19 +1,103 @@
-- name: Restart icinga2
-  ansible.builtin.service:
-    name: icinga2
-    state: restarted
+---
 
-- name: Restart nagios-nrpe-server
-  ansible.builtin.service:
-    name: nagios-nrpe-server
-    state: restarted
+# ------------------------------------------------------------------------------
+# Create checkmk site and configure it correctly
+# ------------------------------------------------------------------------------
+- name: Create checkmk site
+  ansible.builtin.command: "omd create {{ checkmk_site }}"
+  changed_when: false
 
-- name: Restart apache
+- name: Reload omd site apache config
+  ansible.builtin.command: "omd update-apache-config {{ checkmk_site }}"
+  changed_when: false
+
+- name: Restart apache2
   ansible.builtin.service:
     name: apache2
     state: restarted
 
-- name: Update apt
-  ansible.builtin.apt:
-    update_cache: true
-  when: not ansible_local.offline_mode.stat.exists
+# ------------------------------------------------------------------------------
+# Trigger omd site update if checkmk version updates
+# ------------------------------------------------------------------------------
+- name: Stop omd site before the update
+  ansible.builtin.command: "omd stop {{ checkmk_site }}"
+  changed_when: false
+  listen: Update omd site
+
+- name: Update omd site
+  ansible.builtin.command: "omd --force -V {{ ansible_local.general_facts.monitoring.version }}.cre update --conflict=install {{ checkmk_site }}"
+  changed_when: false
+  listen: Update omd site
+
+- name: Start omd site after the update
+  ansible.builtin.command: "omd start {{ checkmk_site }}"
+  changed_when: false
+  listen: Update omd site
+
+- name: Cleanup omd versions
+  ansible.builtin.command: "omd cleanup"
+  changed_when: false
+  listen: Update omd site
+
+# ------------------------------------------------------------------------------
+# Install & Enable MKP Packages
+# ------------------------------------------------------------------------------
+- name: Install MKP Package
+  ansible.builtin.command: "mkp add /var/cache/downloads/sslcertificates-{{ ansible_local.general_facts.monitoring.sslcertificate_version }}.mkp"
+  become_user: "{{ checkmk_site }}"
+  become_flags: -i
+  environment:
+    PATH: "/omd/sites/{{ checkmk_site }}/lib/perl5/bin:/omd/sites/{{ checkmk_site }}/local/bin:/omd/sites/{{ checkmk_site }}/bin:/omd/sites/{{ checkmk_site }}/local/lib/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  changed_when: true
+  register: mkp_add_sslcertificates
+  listen: Install mkp package
+
+- name: Enable MKP Package
+  ansible.builtin.command: "mkp enable {{ mkp_add_sslcertificates.stdout }}"
+  become_user: "{{ checkmk_site }}"
+  become_flags: -i
+  environment:
+    PATH: "/omd/sites/{{ checkmk_site }}/lib/perl5/bin:/omd/sites/{{ checkmk_site }}/local/bin:/omd/sites/{{ checkmk_site }}/bin:/omd/sites/{{ checkmk_site }}/local/lib/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  changed_when: true
+  listen: Install mkp package
+  notify: Update checkmk config
+
+# ------------------------------------------------------------------------------
+# Update checkmk site configuration
+# ------------------------------------------------------------------------------
+- name: Check the checkmk configuration
+  ansible.builtin.command: "cmk -U"
+  become_user: "{{ checkmk_site }}"
+  become_flags: -i
+  environment:
+    PATH: "/omd/sites/{{ checkmk_site }}/lib/perl5/bin:/omd/sites/{{ checkmk_site }}/local/bin:/omd/sites/{{ checkmk_site }}/bin:/omd/sites/{{ checkmk_site }}/local/lib/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  listen: "Update checkmk config"
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+
+- name: Apply and reload the checkmk configuration
+  ansible.builtin.command: "cmk -O"
+  become_user: "{{ checkmk_site }}"
+  become_flags: -i
+  environment:
+    PATH: "/omd/sites/{{ checkmk_site }}/lib/perl5/bin:/omd/sites/{{ checkmk_site }}/local/bin:/omd/sites/{{ checkmk_site }}/bin:/omd/sites/{{ checkmk_site }}/local/lib/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  listen: "Update checkmk config"
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+
+# ------------------------------------------------------------------------------
+# Reload ansible facts
+# ------------------------------------------------------------------------------
+- name: Ansible facts reload
+  ansible.builtin.setup:
+    filter: ansible_local
+
+# ------------------------------------------------------------------------------
+# Register checkmk agent
+# ------------------------------------------------------------------------------
+- name: Register checkmk agent
+  ansible.builtin.command: "cmk-agent-ctl register --hostname {{ external_hostname if groups['all'] | length() == 1 else inventory_hostname }} --server {{ checkmk_master_ip }}:{{ checkmk_agent_reciever_port | default('5665') }} --site tw_monitoring --user agent_registration --trust-cert --password {{ ansible_local.checkmk.agent_registration_secret if groups['all'] | length() == 1 else hostvars[groups['monitoring'] | sort | first].ansible_local.checkmk.agent_registration_secret }}"
+  changed_when: false
+  no_log: true

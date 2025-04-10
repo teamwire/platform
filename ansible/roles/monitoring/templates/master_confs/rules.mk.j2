@@ -1,0 +1,203 @@
+# Written by Checkmk store
+
+# ------------------------------------------------------------------------------
+# Check SSH Connection
+# ------------------------------------------------------------------------------
+active_checks.setdefault('ssh', [])
+
+active_checks['ssh'] = [
+{'value': {'port': 22, 'timeout': 10}, 'condition': {}, 'options': {'disabled': False}},
+] + active_checks['ssh']
+
+
+# ------------------------------------------------------------------------------
+# Check Ping
+# ------------------------------------------------------------------------------
+active_checks.setdefault('icmp', [])
+
+active_checks['icmp'] = [
+{'value': {'description': 'Ping', 'address': 'address', 'loss': (80.0, 100.0), 'timeout': 5}, 'condition': {}, 'options': {'disabled': False}},
+] + active_checks['icmp']
+
+
+# ------------------------------------------------------------------------------
+# Check CPU Load
+# ------------------------------------------------------------------------------
+static_checks.setdefault('cpu_load', [])
+
+static_checks['cpu_load'] = [
+{'value': ('cpu_loads', None, {'levels1': (5.0, 10.0), 'levels5': (5.0, 10.0), 'levels15': (5.0, 10.0)}), 'condition': {}, 'options': {'disabled': False}},
+] + static_checks['cpu_load']
+
+
+# ------------------------------------------------------------------------------
+# Check Mailq
+# ------------------------------------------------------------------------------
+static_checks.setdefault('mail_queue_length_single', [])
+
+static_checks['mail_queue_length_single'] = [
+{'value': ('nullmailer_mailq', None, {'deferred': (10, 20), 'active': (800, 1000), 'failed': (1, 1)}), 'condition': {}, 'options': {'disabled': False}},
+] + static_checks['mail_queue_length_single']
+
+
+# ------------------------------------------------------------------------------
+# Check Memory and SWAP
+# ------------------------------------------------------------------------------
+#static_checks.setdefault('memory', [])
+
+# Not possible cause of same service name
+#static_checks['memory'] = [
+#{'value': ('mem_used', None, {'levels': (90.0, 100.0), 'average': 5}), 'condition': {}, 'options': {'disabled': False}},
+#] + static_checks['memory']
+
+static_checks.setdefault('memory_linux', [])
+
+static_checks['memory_linux'] = [
+{'value': ('mem_linux', None, {'levels_ram': ('perc_used', (85.0, 90.0)), 'levels_swap': ('perc_used', (75.0, 90.0))}), 'condition': {}, 'options': {'disabled': False, 'description': 'SWAP'}},
+] + static_checks['memory_linux']
+
+
+# ------------------------------------------------------------------------------
+# Check NTP
+# ------------------------------------------------------------------------------
+static_checks.setdefault('ntp_time', [])
+
+static_checks['ntp_time'] = [
+{'value': ('ntp_time', None, {'ntp_levels': (10, 200.0, 500.0), 'alert_delay': (300, 3600)}), 'condition': {}, 'options': {'disabled': False}},
+] + static_checks['ntp_time']
+
+
+# ------------------------------------------------------------------------------
+# Check different procs
+# ------------------------------------------------------------------------------
+static_checks.setdefault('ps', [])
+
+static_checks['ps'] = [
+{'value': ('ps', 'nullmailer-send', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {}, 'options': {'disabled': False, 'description': 'check-process-nullmailer'}},
+{'value': ('ps', 'xinetd', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {}, 'options': {'disabled': False, 'description': 'check-process-xinetd'}},
+{'value': ('ps', 'rsyslogd', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {}, 'options': {'disabled': False, 'description': 'check-process-rsyslogd'}},
+{'value': ('ps', 'dnsmasq', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'single_server': {'$ne': 'true'}}}, 'options': {'disabled': False}},
+{'value': ('ps', 'keepalived', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'load_balancers': 'true'}}, 'options': {'disabled': False}},
+{'value': ('ps', 'consul-template', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'frontend_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': ('ps', 'maxscale', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'backend_servers': 'true'}}, 'options': {'disabled': False}},
+] + static_checks['ps']
+
+
+# ------------------------------------------------------------------------------
+# Check https Endpoints
+# ------------------------------------------------------------------------------
+active_checks.setdefault('httpv2', [])
+
+active_checks['httpv2'] = [
+# Single Host Endpoints
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Backend Health Endpoint'}, 'url': 'https://{{ external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname }}/health'}], 'standard_settings': {'connection': {'method': ('get', None), 'redirects': 'follow', 'timeout': 10.0}, 'response_time': ('fixed', (0.5, 1.0)), 'server_response': {'expected': [200]}}}, 'condition': {'host_tags': {'single_server': 'true'}}, 'options': {'disabled': False}},
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Notification Server Endpoint'}, 'url': 'https://{{ external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname }}/notifications/'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}}}, 'condition': {'host_tags': {'single_server': 'true' }}, 'options': {'disabled': False}},
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Dashboard Endpoint'}, 'url': 'https://{{ dashboard_hostname if dashboard_hostname is defined }}'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}}}, 'condition': {'host_tags': { 'single_server': 'true' }}, 'options': {'disabled': False}},
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Webclient Endpoint'}, 'url': 'https://{{ webclient_hostname if webclient_hostname is defined }}'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}}}, 'condition': {'host_tags': { 'single_server': 'true' }}, 'options': {'disabled': False}},
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'VoIP Endpoint'}, 'url': 'https://{{ external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname }}:8443'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None)}}, 'condition': {'host_tags': {'single_server': 'true', 'voip_servers': 'true'}}, 'options': {'disabled': False}},
+
+# Cluster Endpoints
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Nomad Health Endpoint'}, 'url': 'http://127.0.0.1:4646/v1/status/leader'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*4647.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': {'hashi_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Nomad Health Endpoint'}, 'url': 'http://127.0.0.1:4646/v1/status/leader'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*4647.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': {'backend_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Consul Health Endpoint'}, 'url': 'http://127.0.0.1:8500/v1/status/leader'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*8300.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': {'single_server': {'$ne': 'true'}}}, 'options': {'disabled': False}},
+{% for job in nomad_jobs %}
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Nomad Job {{ job }}'}, 'url': 'http://127.0.0.1:4646/v1/job/{{ job }}'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*running.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': { {{ "'voip_servers': 'true', 'single_server': {'$ne': 'true' }" if job == 'voip' else "'hashi_servers': 'true'" }} }}, 'options': {'disabled': False}},
+{% endfor %}
+
+# Vault Sealed Status check
+# single Host
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Vault Seal Status'}, 'url': 'https://127.0.0.1:8200/v1/sys/seal-status'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*sealed\\":false.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': {'single_server': 'true'}}, 'options': {'disabled': False}},
+
+{% if groups['hashi_servers'] is defined %}
+# Cluster
+{% for host in groups.hashi_servers %}
+{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Vault Seal Status'}, 'url': 'https://{{ hostvars[host].private_ip }}:8200/v1/sys/seal-status'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*sealed\\":false.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_name': ['{{ host }}']}, 'options': {'disabled': False}},
+{% endfor %}
+{% endif %}
+] + active_checks['httpv2']
+
+
+# ------------------------------------------------------------------------------
+# Check https Certificate
+# ------------------------------------------------------------------------------
+active_checks.setdefault('cert', [])
+
+active_checks['cert'] = [
+{'value': {'connections': [{'service_name': {'prefix': 'none', 'name': 'SSL Certificate'}, 'address': '{{ external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname }}', 'port': 443, 'individual_settings': {'validity': {'remaining': ('fixed', (3456000.0, 1728000.0)), 'self_signed': False}}}], 'standard_settings': {'port': 443}}, 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'frontend_servers': 'true'" }} }}, 'options': {'disabled': False}},
+] + active_checks['cert']
+
+
+# ------------------------------------------------------------------------------
+# Check Database Connection/s
+# ------------------------------------------------------------------------------
+static_checks.setdefault('mysql_connections', [])
+
+static_checks['mysql_connections'] = [
+{'value': ('mysql_connections', 'mysql', {'perc_conn_threads': (90.0, 85.0)}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'database_servers': 'true'" }}, 'external_db': {'$ne': 'external_db'} }}, 'options': {'disabled': False}},
+] + static_checks['mysql_connections']
+
+
+# ------------------------------------------------------------------------------
+# Check Redis
+# ------------------------------------------------------------------------------
+static_checks.setdefault('redis_info', [])
+
+static_checks['redis_info'] = [
+{% for key, value in redis_instances.items() %}
+{'value': ('redis_info', '{{ key }}', {}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'redis_servers': 'true'" }} }}, 'options': {'disabled': False}},
+{% endfor %}
+{% if groups['all'] | length > 1 %}
+{% for key, value in redis_instances.items() %}
+{'value': ('redis_info', 'sentinel_{{ key }}', {}), 'condition': {'host_tags': { 'redis_servers': 'true' }}, 'options': {'disabled': False}},
+{% endfor %}
+{% endif %}
+] + static_checks['redis_info']
+
+
+static_checks.setdefault('redis_info_clients', [])
+
+static_checks['redis_info_clients'] = [
+{% for key, value in redis_instances.items() %}
+{'value': ('redis_info_clients', '{{ key }}', {}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'redis_servers': 'true'" }} }}, 'options': {'disabled': False}},
+{% endfor %}
+] + static_checks['redis_info_clients']
+
+
+# ------------------------------------------------------------------------------
+# Check Uptime
+# ------------------------------------------------------------------------------
+static_checks.setdefault('uptime', [])
+
+static_checks['uptime'] = [
+{ 'value': ('uptime', None, {'max': (7776000, 10368000)}), 'condition': {}, 'options': {'disabled': False}},
+] + static_checks['uptime']
+
+
+# ------------------------------------------------------------------------------
+# Check SSL Certificates
+# ------------------------------------------------------------------------------
+static_checks.setdefault('sslcertificates', [])
+
+static_checks['sslcertificates'] = [
+{'value': ('sslcertificates', '/var/lib/vault/ssl/vault.crt', {'age': ('fixed', (5184000.0, 2592000.0))}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'hashi_servers': 'true'" }} }}, 'options': {'disabled': False}},
+{% if apns_certificate is defined -%}
+{'value': ('sslcertificates', '/data/certs/apns/aps-production.pem', {'age': ('fixed', (5184000.0, 2592000.0))}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'backend_servers': 'true'" }} }}, 'options': {'disabled': False}},
+{%- endif %}
+{% if apns_certificate_2 is defined -%}
+{'value': ('sslcertificates', '/data/certs/apns/{{ apns_certificate_2 | basename }}', {'age': ('fixed', (5184000.0, 2592000.0))}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'backend_servers': 'true'" }} }}, 'options': {'disabled': False}},
+{%- endif %}
+{% if apns_certificate_3 is defined -%}
+{'value': ('sslcertificates', '/data/certs/apns/{{ apns_certificate_3 | basename }}', {'age': ('fixed', (5184000.0, 2592000.0))}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'backend_servers': 'true'" }} }}, 'options': {'disabled': False}},
+{%- endif %}
+] + static_checks['sslcertificates']
+
+# ------------------------------------------------------------------------------
+# DNS Resolution
+# ------------------------------------------------------------------------------
+active_checks.setdefault('dns', [])
+
+active_checks['dns'] = [
+{% for key, value in redis_instances.items() %}
+{'value': {'hostname': '{{ key }}.redis.service.consul', 'name': 'Redis {{ key }} DNS Resolution', 'server': '127.0.0.1', 'response_time': (1.0, 2.0), 'timeout': 10}, 'condition': {'host_tags': { 'backend_servers': 'true' }}, 'options': {'disabled': False}},
+{% endfor %}
+] + active_checks['dns']

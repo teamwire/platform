@@ -1,1 +1,0 @@
-nagios ALL=(root) NOPASSWD: /usr/lib/nagios/plugins/

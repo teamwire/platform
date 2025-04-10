@@ -1,2 +1,9 @@
 ---
 voip_root_path: "/data/voip"
+
+# ------------------------------------------------------------------------------
+# Cleanup monitoring variables
+# ------------------------------------------------------------------------------
+monitoring_db_name: monitor
+monitoring_db_web_user: monitor_web
+monitoring_db_web_name: monitor_web

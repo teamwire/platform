@@ -1,0 +1,140 @@
+---
+
+# ------------------------------------------------------------------------------
+# Ensure to stop icinga2 service if installed
+# ------------------------------------------------------------------------------
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Ensure to stop icinga2
+  ansible.builtin.service:
+    name: icinga2
+    state: stopped
+  when: "'icinga2' in ansible_facts.packages"
+
+# ------------------------------------------------------------------------------
+# Ensure to cleanup all files related to icinga
+# ------------------------------------------------------------------------------
+- name: Ensure to cleanup packages related to icinga2
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - icinga2-ido-mysql
+    - icingaweb2
+    - icingacli
+    - php-mysql
+    - php-curl
+    - php-imagick
+    - php-intl
+    - icinga2
+    - monitoring-plugins
+    - nagios-plugins-contrib
+    - libredis-perl
+    - libmonitoring-plugin-perl
+
+- name: Cleanup files and directories related to icinga
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/icinga2
+    - /etc/icingaweb2
+    - /var/log/icinga2
+    - /etc/logrotate.d/icinga2
+
+- name: Cleanup apache icingaweb2 configuration
+  ansible.builtin.file:
+    path: /etc/apache2/sites-enabled/icinga.conf
+    state: absent
+  notify: Restart apache
+
+# ------------------------------------------------------------------------------
+# Ensure to cleanup the databases and db users
+# ------------------------------------------------------------------------------
+- name: Cleanup unnecessary monitoring databases
+  community.mysql.mysql_db:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ monitoring_db_name }}"
+    - "{{ monitoring_db_web_name }}"
+    - icinga2
+  when:
+    - ( groups['all'] | length == 1 and mysql_host is undefined ) or
+      ( groups['database_servers'] is defined and inventory_hostname == groups['database_servers'] | sort | first )
+
+- name: Cleanup icinga2 database user for monitoring server
+  community.mysql.mysql_user:
+    name: "{{ monitoring_db_web_user }}"
+    host: "{{ item }}"
+    state: absent
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list }}"
+  when:
+    - groups['all'] | length > 1
+    - groups['database_servers'] is defined
+    - inventory_hostname == groups['database_servers'] | sort | first
+    - groups['monitoring'] is defined
+
+- name: Cleanup icingaweb2 database user
+  community.mysql.mysql_user:
+    name: "{{ monitoring_db_web_user }}"
+    host: "{{ item }}"
+    state: absent
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
+  when:
+    - ( groups['all'] | length == 1 and mysql_host is undefined ) or
+      ( groups['database_servers'] is defined and inventory_hostname == groups['database_servers'] | sort | first and groups['monitoring'] is defined )
+
+- name: Cleanup database user icinga2
+  community.mysql.mysql_user:
+    name: icinga2
+    host: localhost
+    state: absent
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when:
+    - ( groups['all'] | length == 1 and mysql_host is undefined ) or
+      ( groups['database_servers'] is defined and inventory_hostname == groups['database_servers'] | sort | first )
+
+# ------------------------------------------------------------------------------
+# Remove icinga2 repository
+# ------------------------------------------------------------------------------
+- name: Cleanup icinga2 apt key files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /usr/share/keyrings/icinga-archive-keyring.key
+    - /usr/share/keyrings/icinga-archive-keyring.gpg
+  notify: Restart apache
+
+- name: Cleanup icinga2 apt repo and configuration
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/apt/preferences.d/tw_monitoring_pinning
+    - /etc/apt/sources.list.d/icinga2.list
+  notify: Update apt
+
+# ------------------------------------------------------------------------------
+# Cleanup unnecessary icinga2 vault secrets
+# ------------------------------------------------------------------------------
+- name: Check if secret exists
+  ansible.builtin.command: "vault delete secret/monitoring/{{ item }}"
+  with_items:
+    - db_web_password
+    - icinga_admin_password
+    - icinga_api_password
+    - icinga_salt
+  register: icinga2_secrets
+  changed_when: false
+  when:
+    - groups['all'] | length == 1 or
+      ( groups['hashi_servers'] is defined and inventory_hostname == groups['hashi_servers'] | sort | first )

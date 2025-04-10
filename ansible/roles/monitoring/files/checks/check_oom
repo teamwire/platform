@@ -28,4 +28,3 @@ if [[ $OOM_CHECK == *"oom_kill_process"* ]]; then
         echo "CRITICAL - A process in the container ${CONTAINER_NAME} was killed due to reaching resource restrictions within the last ${MINUTES_THRESHOLD} minutes."
         exit 2
 fi
-

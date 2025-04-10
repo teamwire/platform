@@ -577,6 +577,73 @@
         - use_nullmailer is defined
         - use_nullmailer | lower == "true"
 
+# ------------------------------------------------------------------------------
+# Check monitoring requirements
+# ------------------------------------------------------------------------------
+    - name: Check enable_monitoring variable value
+      ansible.builtin.assert:
+        that:
+          - enable_monitoring | lower in ["yes", "no", "true", "false"]
+        msg: >-
+          Please ensure the enable_monitoring is set to "yes" or "no"
+      when: enable_monitoring is defined
+      run_once: true
+      delegate_to: localhost
+
+    - name: Check monitoring requirements
+      block:
+        - name: Ensure monitoring group has only one member
+          ansible.builtin.assert:
+            that:
+              - "groups['monitoring'] is defined"
+              - "groups['monitoring'] | length == 1"
+            msg: >-
+              Please ensure to defined the monitoring group in the cluster_hosts file and
+              that the monitoring group only includes one server.
+          when: groups['all'] | length > 1
+
+        - name: Ensure that monitoring_email_addresses is correctly defined
+          ansible.builtin.assert:
+            that:
+              - monitoring_email_addresses is defined
+              - monitoring_email_addresses | type_debug == 'list'
+            msg: >-
+              Please ensure to define a list of at least one value for monitoring_email_addresses.
+              Checkout the group_vars/all.example to see the correct syntax for the variable.
+
+        - name: Ensure that monitoring_sender_address is correctly defined
+          ansible.builtin.assert:
+            that:
+              - monitoring_sender_address is string
+              - monitoring_sender_address | regex_search('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+            msg: >-
+              Please ensure the value set for monitoring_sender_address is a valid email address and does not include any Display name.
+              A valid value would be 'test@example.com'
+          when: monitoring_sender_address is defined
+
+        - name: Ensure that mail is enabled for monitoring
+          ansible.builtin.assert:
+            that:
+              - smtp_smarthost is defined
+              - ( sender_address or monitoring_sender_address is defined )
+            msg: >-
+              Please ensure to add a mail configuration to the group_vars/all to use the monitoring
+
+        - name: Ensure that database authentication is defined if external database is used
+          ansible.builtin.assert:
+            that:
+              -
+              - monitoring_db_user is defined
+              - monitoring_db_password is defined
+            msg: >-
+              The environment is using an external Database. Please ensure to specify a monitoring_db_user and monitoring_db_password.
+          when:
+            - ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in ["localhost", "127.0.0.1"] ) or
+              ( groups['all'] | length > 1 and groups['database_servers'] is undefined )
+      run_once: true
+      delegate_to: localhost
+      when: enable_monitoring is defined and enable_monitoring | lower in ["yes", "true"]
+
     - name: Get current git tag
       ansible.builtin.command: "git describe --always --tags" # noqa command-instead-of-module
       args:

@@ -59,13 +59,22 @@
     - role: frontend
       when: config_done is defined
 
+- name: Clean up icinga
+  hosts: all
+  tasks:
+    - name: Cleanup icinga
+      ansible.builtin.import_role:
+        name: housekeeping
+        tasks_from: cleanup_monitoring
+      when: config_done is defined
+
 - name: Deploy monitoring services
   hosts: all
   roles:
     - role: monitoring
       when:
         - config_done is defined
-        - enable_monitoring is defined
+        - enable_monitoring is defined and enable_monitoring | lower in [ "yes", "true" ]
 
 - name: Run security and housekeeping job to remove unused dependencies
   hosts: all
@@ -82,11 +91,6 @@
     - name: Get variables for teamwire db users
       ansible.builtin.include_vars:
         file: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db/defaults/main.yml"
-
-    - name: Get variables for monitoring db users
-      ansible.builtin.import_role:
-        name: monitoring
-        tasks_from: database-configuration
 
     - name: Cleanup mysql users
       ansible.builtin.import_role:

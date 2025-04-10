@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Copyright (C) 2019 Checkmk GmbH - License: GNU General Public License v2
+# This file is part of Checkmk (https://checkmk.com). It is subject to the terms and
+# conditions defined in the file COPYING, which is part of this source code package.
+
+### Configuration example for the mk_redis plugin.
+### If no configuration file is given, the plugin will try to detect the
+### running Redis instances with "pgrep", using the host and port as instance name
+
+# List of instances, defines service name for resulting checks
+REDIS_INSTANCES=(
+{% for key, value in redis_instances.items() %}
+  {{ key }}
+{% if groups['all'] | length > 1 %}
+  sentinel_{{ key }}
+{% endif %}
+{% endfor %}
+)
+
+
+# Host, Port and optional password per instance
+{% for key, value in redis_instances.items() %}
+REDIS_HOST_{{ key }}="127.0.0.1"
+REDIS_PORT_{{ key }}="{{ value.server_port }}"
+{% if value.password is not none %}
+REDIS_PASSWORD_{{ key }}='{{ value.password }}'
+{% endif %}
+{% endfor %}
+
+{% if groups['all'] | length > 1 %}
+{% for key, value in redis_instances.items() %}
+REDIS_HOST_sentinel_{{ key }}="127.0.0.1"
+REDIS_PORT_sentinel_{{ key }}="{{ value.sentinel_port }}"
+{% if value.password is not none %}
+REDIS_PASSWORD_sentinel_{{ key }}='{{ value.password }}'
+{% endif %}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,25 @@
+---
+
+# ------------------------------------------------------------------------------
+# Define Plugin variables
+# ------------------------------------------------------------------------------
+monitoring_master_plugin_dir: "/opt/omd/sites/{{ checkmk_site }}/share/check_mk/agents/plugins/"
+monitoring_master_plugin_endpoint: "{{ checkmk_url }}/agents/plugins/"
+
+monitoring_master_custom_plugin_dir: "/opt/omd/sites/{{ checkmk_site }}/local/share/check_mk/agents/plugins/"
+monitoring_agent_plugin_dir: "/usr/lib/check_mk_agent/plugins/"
+monitoring_agent_custom_check_dir: "/usr/local/bin/monitoring_checks/"
+
+# Native Plugins
+monitoring_agent_plugins:
+  - mk_mysql
+  - mk_redis
+
+# Plugins downloaded as MKP
+monitoring_custom_agent_plugins:
+  - sslcertificates
+
+# ------------------------------------------------------------------------------
+# Define Agent Package URL
+# ------------------------------------------------------------------------------
+checkmk_agent_pkg_endpoint: "{{ checkmk_url }}/agents/check-mk-agent_{{ ansible_local.general_facts.monitoring.version }}-1_all.deb"

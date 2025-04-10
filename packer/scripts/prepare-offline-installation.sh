@@ -40,46 +40,178 @@ socat
 patch
 python3-docker
 libcap2-bin
-icinga2
-icinga2-bin
-icinga2-common
-icinga2-doc
-icinga2-ido-mysql
-icingaweb2-common
-icingacli
-php-icinga
-icinga-php-library
-icinga-php-thirdparty
-icingaweb2
-monitoring-plugins
-nagios-plugins-contrib
-libredis-perl
-libmonitoring-plugin-perl
-liblwp-useragent-determined-perl
-libdbd-mysql-perl
 dnsutils
-apache2
-libapache2-mod-php
-php
-php-mysql
-php-curl
-php-imagick
-php-intl
-php-gd
-php-xml
-jq
 gnupg2
 maxscale
 nullmailer
 debsums
 apt-listbugs
 libpam-tmpdir
+xinetd
+acl
+python3-rpm
+apache2
+apache2-bin
+apache2-data
+apache2-utils
+libapache2-mod-php8.2
+bc
+binutils
+binutils-common
+binutils-x86-64-linux-gnu
+debugedit
+dialog
+fontconfig
+fontconfig-config
+fonts-dejavu-core
+graphviz
+libabsl20220623
+libann0
+libaom3
+libapr1
+libaprutil1
+libaprutil1-dbd-sqlite3
+libaprutil1-ldap
+libarchive13
+libavahi-client3
+libavahi-common-data
+libavahi-common3
+libavif15
+libbinutils
+libcairo2
+libcdt5
+libcgraph6
+libctf-nobfd0
+libctf0
+libdatrie1
+libdav1d6
+libde265-0
+libdeflate0
+libdw1
+libfontconfig1
+libfreeradius3
+libfribidi0
+libfsverity0
+libgav1-1
+libgd3
+libgomp1
+libgprofng0
+libgraphite2-3
+libgsf-1-114
+libgsf-1-common
+libgts-0.7-5
+libgvc6
+libgvpr2
+libharfbuzz0b
+libheif1
+libice6
+libjbig0
+libjpeg62-turbo
+liblab-gamut1
+liblcms2-2
+libldb2
+liblerc4
+libltdl7
+liblua5.3-0
+libnspr4
+libnss3
+libnuma1
+libopenjp2-7
+libpango-1.0-0
+libpango1.0-0
+libpangocairo-1.0-0
+libpangoft2-1.0-0
+libpangoxft-1.0-0
+libpathplan4
+libpcap0.8
+libpcre3
+libpixman-1-0
+libpoppler126
+libpq5
+librav1e0
+librpm9
+librpmbuild9
+librpmio9
+librpmsign9
+libsm6
+libsmbclient
+libsvtav1enc1
+libtalloc2
+libtdb1
+libtevent0
+libthai-data
+libthai0
+libtiff6
+libwbclient0
+libwebp7
+libx265-199
+libxaw7
+libxcb-render0
+libxcb-shm0
+libxft2
+libxmu6
+libxpm4
+libxrender1
+libxt6
+libyuv0
+php
+php-cgi
+php-common
+php-gd
+php-pear
+php-sqlite3
+php-xml
+php8.2
+php8.2-cgi
+php8.2-cli
+php8.2-common
+php8.2-gd
+php8.2-opcache
+php8.2-readline
+php8.2-sqlite3
+php8.2-xml
+poppler-utils
+psmisc
+rpcbind
+rpm
+rpm-common
+rpm2cpio
+samba-common
+samba-libs
+smbclient
+time
+x11-common
 "
+
+# Install jq to fetch checksums from repo.teamwire.eu directly
+sudo apt install -qy jq
+
+# Download remote ansible facts file
+sudo curl https://repo.teamwire.eu/repository/external/ftp/general-facts.j2 -o /var/cache/downloads/general-facts.j2
+REMOTE_FACT_FILE_CHECKSUM=$(curl -Ls "https://repo.teamwire.eu/service/rest/v1/search?repository=external&name=/ftp/general-facts.j2" | jq -r '.items[].assets[].checksum.sha256')
+
+if [ "${REMOTE_FACT_FILE_CHECKSUM}" != "$(sha256sum /var/cache/downloads/general-facts.j2 | cut -d' ' -f1)" ] ; then
+  echo "/var/cache/downloads/general-facts.j2: Checksum failure"
+  exit 1
+fi
+
+# Render ansible facts file
+ansible all -i ~teamwire/platform/ansible/hosts -b -m template -a "src=/var/cache/downloads/general-facts.j2.j2 dest=/etc/ansible/facts.d/general-facts mode=0444"
+
+REMOTE_URL=$(jq -r '.general.url' /etc/ansible/facts.d/general-facts)
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
+CHECKMK_VERSION=$(jq -r '.monitoring.version' /etc/ansible/facts.d/general-facts)
+CHECKMK_REMOTE_PATH=$(jq -r '.monitoring.path' /etc/ansible/facts.d/general-facts)
+CHECKMK_SSLCERTIFICATE_VERSION=$(jq -r '.monitoring.sslcertificate_version' /etc/ansible/facts.d/general-facts)
+CHECKMK_SSLCERTIFICATE_REMOTE_PATH=$(jq -r '.monitoring.sslcertificate_path' /etc/ansible/facts.d/general-facts)
+
+# Include Variables for OS Version
+# shellcheck disable=SC1091
+source /etc/os-release
 
 DOCKER_IMAGES="
 harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
@@ -102,8 +234,8 @@ https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}
 https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-https://repo.teamwire.eu/external/ftp/icinga_packages.txt;$(curl -Ls https://repo.teamwire.eu/external/ftp/checksum_icinga_packages)
-https://repo.teamwire.eu/external/ftp/check_ntp_time-latest;$(curl -Ls https://repo.teamwire.eu/external/ftp/checksum_check_ntp_time-latest)
+${REMOTE_URL}/external${CHECKMK_REMOTE_PATH}/check-mk-raw-${CHECKMK_VERSION}.${VERSION_CODENAME}_amd64.deb;$(curl -Ls "${REMOTE_URL}/service/rest/v1/search?repository=external&name=${CHECKMK_REMOTE_PATH}/check-mk-raw-${CHECKMK_VERSION}.${VERSION_CODENAME}_amd64.deb" | jq -r '.items[].assets[].checksum.sha256')
+${REMOTE_URL}/repository/external${CHECKMK_SSLCERTIFICATE_REMOTE_PATH}/sslcertificates-${CHECKMK_SSLCERTIFICATE_VERSION}.mkp;$(curl -Ls "${REMOTE_URL}/service/rest/v1/search?repository=external&name=${CHECKMK_SSLCERTIFICATE_REMOTE_PATH}/sslcertificates-${CHECKMK_SSLCERTIFICATE_VERSION}.mkp" | jq -r '.items[].assets[].checksum.sha256')
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
@@ -151,27 +283,9 @@ if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
   sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
 fi
 
-# Configure Icinga2 Repository and Key
-# https://icinga.com/docs/icinga-2/latest/doc/02-installation/01-Debian/#debian-repository
-if [ ! -f /usr/share/keyrings/icinga-archive-keyring.key ]; then
-  sudo wget -q -O /usr/share/keyrings/icinga-archive-keyring.key https://packages.icinga.com/icinga.key
-  sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg /usr/share/keyrings/icinga-archive-keyring.key
-fi
-
-if [ ! -f /etc/apt/sources.list.d/icinga2.list ]; then
-  DIST=$(awk -F"[)(]+" '/VERSION=/ {print $2}' /etc/os-release)
-  echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.key] https://packages.icinga.com/debian icinga-${DIST} main" | sudo tee /etc/apt/sources.list.d/icinga2.list
-fi
-
-if [ ! -f /etc/apt/preferences.d/tw_monitoring_pinning ]; then
-  cd ~/platform/ansible
-  ansible localhost -i hosts -m template -b -a "src=roles/monitoring/templates/tw_monitoring_pinning.j2 dest=/etc/apt/preferences.d/tw_monitoring_pinning owner=root group=root mode=0644" -e @roles/monitoring/defaults/main.yml
-fi
-
 # Configure Maxscale Repository Key
 if [ ! -f /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg ]; then
   MAXSCALE_GPG_KEY_ID=$(grep "maxscale_gpg_key_id" ~teamwire/platform/ansible/roles/db/defaults/main.yml | sed -e 's/"//g' | cut -d ':' -f2 | sed -e 's/^0x//')
-  source /etc/os-release
 
   sudo gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys "${MAXSCALE_GPG_KEY_ID}"
   sudo gpg --export "${MAXSCALE_GPG_KEY_ID}" | sudo tee /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg

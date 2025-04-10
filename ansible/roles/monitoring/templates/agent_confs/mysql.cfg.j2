@@ -1,0 +1,7 @@
+[client]
+user={{ monitoring_db_user }}
+password={{ monitoring_db_password }}
+{% if ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in [ "localhost", "127.0.0.1" ] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined ) %}
+host={{ mysql_host }}
+port={{ mysql_port }}
+{% endif %}
