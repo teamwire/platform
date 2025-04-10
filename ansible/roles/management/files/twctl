@@ -802,12 +802,16 @@ test_server_condition_for_preflight_check() {
 raw_smtp_connect() {
         local mail_recipient
         mail_recipient=$1
+        local mail_sender
+        mail_sender=$2
         echo "Debug ${mail_recipient}"
         (\
         echo "helo localhost";\
-        echo "mail from: root";\
+        echo "mail from: <${mail_sender}>";\
         echo "rcpt to: <${mail_recipient}>";\
         echo "data";\
+        echo "From: ${mail_sender}"; \
+        echo "To: ${mail_recipient}"; \
         echo "Subject: test connectivity";\
         echo "test";\
         echo ".";\
@@ -830,17 +834,41 @@ connectivity_test() {
                             "Check your outgoing IP: $(wget --timeout=10 -qO - http://ipinfo.io/ip)"
         local mail_recipient
         mail_recipient="$(_get_config_value system_email_recipient)"
+        local mail_sender
+        if [[ $(grep -E "^sender_address" ${CONFIG_FILE} | grep -c '<') -ge 1 ]]; then
+            mail_sender="$(awk -F'<' '/^sender_address:/ {print $2}' ${CONFIG_FILE} | sed 's/>"//')"
+        else
+            mail_sender="$(_get_config_value sender_address)"
+            if [ "${mail_sender}" == "" ]; then
+                local mail_domain
+                mail_domain="$(_get_config_value domain)"
+                mail_sender="teamwire@${mail_domain}"
+                echo "WARNING: sender_address is undefined or empty. Ensure to define a sender_address within the group_vars/all else the E-Mail sending may failed!"
+            fi
+        fi
+        local use_nullmailer
+        use_nullmailer="$(_get_config_value use_nullmailer)"
         if [ -n "${mail_recipient}" ]; then
             local mail_test_response
-            mail_test_response="$(raw_smtp_connect "${mail_recipient}" | tail -n 2 | head -n 1)"
-            local mail_message_id
-            mail_message_id="$(echo "${mail_test_response}" |  awk -v RS='\r\n' '{print $6}')"
-            local mail_message_status
-            mail_message_status="$(sleep 2 && sudo grep "${mail_message_id}" /var/log/mail.log | grep -oP 'status=\K.*')"
-            test_server_condition_for_preflight_check    "" \
+            mail_test_response="$(raw_smtp_connect "${mail_recipient}" "${mail_sender}" | tail -n 2 | head -n 1)"
+            if [ "${use_nullmailer}" == "true" ]; then
+                if [[ ${mail_test_response} =~ ^.*Accepted\ message.*$ ]]; then
+                    test_server_condition_for_preflight_check    "" \
+                                "Local mail test: Send Test Mail to local mail service. For more information check 'sudo journalctl -u nullmailer'"
+                else
+                    test_server_condition_for_preflight_check    "/bin/false" \
+                                "Local Mailserver rejected the E-Mail. For more informations check 'sudo journalctl -u nullmailer'"
+                fi
+            else
+                local mail_message_id
+                mail_message_id="$(echo "${mail_test_response}" |  awk -v RS='\r\n' '{print $6}')"
+                local mail_message_status
+                mail_message_status="$(sleep 2 && sudo grep "${mail_message_id}" /var/log/mail.log | grep -oP 'status=\K.*')"
+                test_server_condition_for_preflight_check    "" \
                                 "Local mail test 1/2: ${mail_test_response}"
-            test_server_condition_for_preflight_check    "" \
+                test_server_condition_for_preflight_check    "" \
                                 "Local mail test 2/2: ${mail_message_status}"
+            fi
         else
             test_server_condition_for_preflight_check    "/bin/false" \
                                 "Local mail test: Fail. Please define 'system_email_recipient' in ${CONFIG_FILE}"
