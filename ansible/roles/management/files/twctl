@@ -1389,9 +1389,6 @@ Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $(</etc/latest_remote_github_version)
 Ansible: $(ANSIBLE_DEPRECATION_WARNINGS=false ansible --version | grep -oPm 1 '(\d+\.\d+\.\d+)')"
-if [ "${USE_TEAMWIRE_REGISTRY}" == "true" ] || [ -z "${USE_TEAMWIRE_REGISTRY}" ]; then
-  echo -e "\nHarbor check IP: $(curl -m ${DFLT_TMOUT} -s https://harbor.teamwire.eu:8000/loopback | jq . )"
-fi
 }
 
 
