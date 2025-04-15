@@ -25,6 +25,7 @@ DASHBOARD_FACTS_FILE=/etc/ansible/facts.d/dashboard_version.fact
 WEBCLIENT_FACTS_FILE=/etc/ansible/facts.d/webclient_version.fact
 CLUSTER_CONFIG_DIR=/data/cluster_config
 RELEASE_FILE=/usr/local/share/twctl/teamwire-release
+RELEASE_VERSION_FILE=/usr/local/share/twctl/teamwire-release-version
 DFLT_TMOUT=10
 
 # Set http proxy for the OpenSSL client if one is set
@@ -1285,6 +1286,16 @@ restart_containers_cluster() {
     ${NOMAD} job restart -on-error=fail "$(_get_nomad_environment)"
 }
 
+update_release_version_file() {
+    # Update RELEASE_VERSION_FILE with current tag
+    local is_teamwire_registry
+    is_teamwire_registry="$(_get_config_value use_teamwire_registry)"
+
+    if [ "${is_teamwire_registry}" != "false" ]; then
+      echo "${TAG}" | sudo tee ${RELEASE_VERSION_FILE} > /dev/null
+    fi
+}
+
 setup_containers_single() {
     local enabled
     check_tag "${TAG}"
@@ -1309,6 +1320,9 @@ setup_containers_single() {
     sudo bash -c "
     echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'
     "
+
+    # Update RELEASE_VERSION_FILE with current tag on management host only
+    update_release_version_file
 
     ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
     if [ -z "${enabled}" ]; then
@@ -1340,6 +1354,9 @@ setup_containers_cluster() {
     echo "Update Webclient version ansible fact"
     ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
       "echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'"
+
+    # Update RELEASE_VERSION_FILE with current tag on management host only
+    update_release_version_file
 
     ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
     ${NOMAD} run "${NOMAD_JOB}"
@@ -1388,7 +1405,15 @@ Installation type: ${INSTALLATION}
 Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $(</etc/latest_remote_github_version)
-Ansible: $(ANSIBLE_DEPRECATION_WARNINGS=false ansible --version | grep -oPm 1 '(\d+\.\d+\.\d+)')"
+Ansible: $(ANSIBLE_DEPRECATION_WARNINGS=false ansible --version | grep -oPm 1 '(\d+\.\d+\.\d+)')
+"
+if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact; then
+  if [ -e ${RELEASE_VERSION_FILE} ]; then
+    echo "Backend stack version: $(cat ${RELEASE_VERSION_FILE})"
+  fi
+fi
+echo "Backend version: $(jq -r .tag ${BACKEND_FACTS_FILE})"
+
 }
 
 
