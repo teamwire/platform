@@ -68,6 +68,7 @@
       DEFAULT_FROM_EMAIL: "{{ sender_address }}"
       http_proxy: "{{ http_proxy | default() }}"
       https_proxy: "{{ http_proxy | default() }}"
+      no_proxy: "{{ ansible_default_ipv4.address if http_proxy is defined }}"
       SERVICE_NAME: "backend"
       VERSION: "{{ ansible_local.backend_version.tag }}"
       FAKE_PIN: "{{ fake_pin | default() }}"
@@ -132,6 +133,7 @@
       APNS_CERT_3: "{% if apns_certificate_3 is defined %}/app/certs/apns/{{ apns_certificate_3 | basename }},{{ apns_certificate_type_3 | default('push_production') }},{{ apns_appid_3 }}{% endif %}" # noqa line-length
       http_proxy: "{{ http_proxy | default() }}"
       https_proxy: "{{ http_proxy | default() }}"
+      no_proxy: "{{ ansible_default_ipv4.address if http_proxy is defined }}"
       SERVICE_NAME: "worker"
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption | default() }}"
       ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false') }}"
