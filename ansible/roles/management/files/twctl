@@ -766,7 +766,7 @@ help() {
     echo "restoredb       Restore a backup of the database (requires file name)"
     echo "secrets         Manage Vault and its secrets"
     echo "version         Show version information"
-    echo "report          Create a report (system information & logs. --file can be specified for the file name)"
+    echo "report          Create a report (system information & logs. --file can be specified for the file name. --tag full will add the whole logfiles)"
     echo "connectivity    Test external connections"
     echo "archiving       Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
     echo "ha-log          Show content of haproxy.log. Pipe to less -R for pager with colour support"
@@ -918,6 +918,20 @@ create_report() {
             exit 1
         fi
     fi
+
+    # Ensure TAG is correctly defined if set
+    if [[ -n "${TAG}" ]] && [[ "${TAG}" != "full" ]]; then
+        echo "ERROR: Tag can only be set to 'full' or should not be defined."
+        exit 1
+    fi
+
+    # Ensure LOG_LINE_LIMIT is correctly defined if not set
+    local LOG_LINE_LIMIT
+    LOG_LINE_LIMIT=$(_get_config_value LOG_LINE_LIMIT)
+    if [[ -z "${LOG_LINE_LIMIT}" ]] || [[ "${LOG_LINE_LIMIT}" == "" ]]; then
+        LOG_LINE_LIMIT=2000
+    fi
+
     RUNTIME_REPORT_OF_SCRIPT="${TMPDIR}/runtime_report" # All outputs from twctl (STDOUT/STDERR) are collected here. See line below
 
     exec > >(tee -i "${RUNTIME_REPORT_OF_SCRIPT}")
@@ -966,10 +980,21 @@ create_report() {
         # Retrieve logs from loghost and add them to the report
         LOG_SERVER=$(ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -m setup -a "filter=ansible_hostname" | grep ansible_hostname | awk '{print $2}' | tr -d '",')
         LOG_FILES=$(ssh "teamwire@${LOG_SERVER}" "find /var/log/cluster -name \"*.log"\" | awk -F/ '{print $NF}')
-        for LOG_FILE in ${LOG_FILES}; do
-            ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/${LOG_FILE} dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
-        done
-        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/var/log/haproxy.log dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
+        if [[ -n "${TAG}" ]] && [[ "${TAG}" == "full" ]]; then
+            for LOG_FILE in ${LOG_FILES}; do
+                ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/${LOG_FILE} dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
+            done
+            ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/var/log/haproxy.log dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
+        else
+            for LOG_FILE in ${LOG_FILES}; do
+                ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m shell -a "tail -n${LOG_LINE_LIMIT} /var/log/cluster/${LOG_FILE} > /tmp/${LOG_FILE}" > /dev/null 2>&1
+                ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/tmp/${LOG_FILE} dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
+                ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m file -a "path=/tmp/${LOG_FILE} state=absent" > /dev/null 2>&1
+            done
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m shell -a "tail -n${LOG_LINE_LIMIT} /var/log/haproxy.log > /tmp/haproxy.log" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/tmp/haproxy.log dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m file -a "path=/tmp/haproxy.log state=absent" > /dev/null 2>&1
+        fi
 
     else
 
@@ -1012,8 +1037,25 @@ create_report() {
     done
 
     # Retrieve docker logs on single installations and management servers
-    find /var/log/docker/ -name "*.log" -exec sudo cp {} "${TMPDIR}" \;
-    find /var/log/* -maxdepth 0 -type f -name haproxy.log  -exec sudo cp {} "${TMPDIR}" \;
+    if [[ -n "${TAG}" ]] && [[ "${TAG}" == "full" ]]; then
+        find /var/log/docker/ -name "*.log" -exec sudo cp {} "${TMPDIR}" \;
+        find /var/log/* -maxdepth 0 -type f -name haproxy.log  -exec sudo cp {} "${TMPDIR}" \;
+    else
+
+        LOG_FILES=$(find /var/log/docker/ -name "*.log")
+        for logfile in ${LOG_FILES}; do
+            filename=$(basename "${logfile}")
+            # shellcheck disable=SC2024
+            sudo tail -n${LOG_LINE_LIMIT} "${logfile}" > "${TMPDIR}/${filename}"
+        done
+
+        HAPROXY_LOG_FILE=$(find /var/log/* -maxdepth 0 -type f -name haproxy.log)
+        for logfile in ${HAPROXY_LOG_FILE}; do
+            filename=$(basename "${logfile}")
+            # shellcheck disable=SC2024
+            sudo tail -n${LOG_LINE_LIMIT} "${logfile}" > "${TMPDIR}/${filename}"
+        done
+    fi
 
     # copy ansible config
     cp -f "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/group_vars/all" "${TMPDIR}" 2>/dev/null
