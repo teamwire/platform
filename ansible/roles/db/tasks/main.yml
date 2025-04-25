@@ -33,6 +33,15 @@
     state: directory
   when: '"database_servers" not in groups'
 
+- name: Create MariaDB Log directory
+  ansible.builtin.file:
+    dest: /var/log/mysql
+    owner: mysql
+    group: adm
+    mode: 0755
+    state: directory
+  notify: Flush MySQL Logs
+
 # Install MariaDB server templates
 # 50-server.cnf
 # 60-teamwire.cnf
