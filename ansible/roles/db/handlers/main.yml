@@ -97,3 +97,16 @@
   when:
     - inventory_hostname in groups['database_servers']
     - item.Value | lower == "yes"
+
+# ------------------------------------------------------------------------------
+# Ensure logs can be written
+# ------------------------------------------------------------------------------
+- name: Flush MySQL Logs
+  listen: Update MySQL Certificates
+  community.mysql.mysql_query:
+    query:
+      - set global log_slow_query=0
+      - set global log_slow_query=1
+      - FLUSH LOGS
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
