@@ -40,7 +40,7 @@
     group: adm
     mode: 0755
     state: directory
-  notify: Flush MySQL Logs
+  notify: Flush MySQL Logs Handler
 
 # Install MariaDB server templates
 # 50-server.cnf
