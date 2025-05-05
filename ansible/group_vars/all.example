@@ -377,13 +377,6 @@ system_email_recipient:
 # By default, the variable <allow_tcp_forwarding> is set to "no".
 # allow_tcp_forwarding: "no"
 
-# Set Log Line Limit of twctl report
-# It is possible to alter the amount of log lines of the Teamwire Application Logs
-# added into the report file.
-# Only integer values are permitted.
-# By default, the variable <LOG_LINE_LIMIT> is set to 2000.
-# LOG_LINE_LIMIT: 2000
-
 ##############################################################################
 ## DEBUGGING
 ##############################################################################
