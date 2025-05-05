@@ -324,3 +324,23 @@
   when:
     - groups['all'] | length() > 1
     - (skip_private_if is not defined or skip_private_if)
+
+# ------------------------------------------------------------------------------
+# Journald configuration
+# ------------------------------------------------------------------------------
+- name: Create journald configuration directory
+  ansible.builtin.file:
+    dest: /etc/systemd/journald.conf.d
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Configure journald
+  ansible.builtin.template:
+    src: 10-tw-journald.conf.j2
+    dest: /etc/systemd/journald.conf.d/10-tw-journald.conf
+    mode: 0644
+    owner: root
+    group: root
+  notify: Restart systemd-journald
