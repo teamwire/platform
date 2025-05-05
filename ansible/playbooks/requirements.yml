@@ -540,44 +540,6 @@
         group: root
         mode: 0644
       when: packer_build_name is not defined
-
-# ------------------------------------------------------------------------------
-# Check TWCL LOG_LINE_LIMIT
-# ------------------------------------------------------------------------------
-    - name: Ensure LOG_LINE_LIMIT is set correctly
-      ansible.builtin.assert:
-        that:
-          - LOG_LINE_LIMIT is integer
-        msg: |-
-          "Please ensure to set LOG_LINE_LIMIT to an integer only."
-          "This means that the value has to be unquoted and has to be number without decimal points."
-      run_once: true
-      when: LOG_LINE_LIMIT is defined
-
-    - name: Warning if LOG_LINE_LIMIT is below default of 2000
-      block:
-        - name: Warn the user about LOG_LINE_LIMIT setting
-          ansible.builtin.debug:
-            msg: >
-              The LOG_LINE_LIMIT is set to {{ LOG_LINE_LIMIT }}. This is below the default of 2000.
-              We highly recommend setting the value above the default else the Teamwire Support
-              may request more logs manually.
-
-        - name: Prompt for user confirmation
-          ansible.builtin.pause:
-            prompt: "Please type 'yes' to confirm you understood that Teamwire might request more logs cause of the limited log lines"
-            echo: true
-          register: log_limit_user_input
-          when: log_limit_user_input is not defined
-
-        - name: Check if the user confirms
-          ansible.builtin.fail:
-            msg: "User did not confirm. Stopping the playbook."
-          when: log_limit_user_input.user_input | lower != "yes"
-      run_once: true
-      when: LOG_LINE_LIMIT is defined and LOG_LINE_LIMIT < 2000
-
-
 ##### END ######
 
 - name: Vault Status check
