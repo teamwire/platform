@@ -83,11 +83,12 @@
         - /etc/ansible/facts.d/backend_version.fact
         - /etc/ansible/facts.d/webclient_version.fact
         - /etc/ansible/facts.d/dashboard_version.fact
+        - /etc/ansible/facts.d/backend_stack_version.fact
 
     - name: Create version fact files if they do not exist
       ansible.builtin.copy:
         dest: "{{ item.item }}"
-        content: '{"tag": "1.0.0"}'
+        content: '{"tag": "not_set"}'
         mode: '0644'
       loop: "{{ fact_files_status.results }}"
       when: "not item.stat.exists"

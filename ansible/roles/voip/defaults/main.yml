@@ -23,7 +23,7 @@ docker_registry_username: "{{ local_registry_username if groups.docker_registry 
 docker_registry_password: "{{ local_registry_password if groups.docker_registry is defined else dockerhub_password }}"
 
 # Get API Version
-api_version: "{{ ansible_local.backend_version.tag | regex_search('prod-(\\d+)', '\\1') | first if ansible_local.backend_version.tag is defined and ansible_local.backend_version.tag != '1.0.0' else '' }}"
+api_version: "{{ ansible_local.backend_version.tag | regex_search('prod-(\\d+)', '\\1') | first if ansible_local.backend_version.tag is defined and ansible_local.backend_version.tag not in [ 'not_set', '1.0.0' ] else '' }}"
 
 # Decide which user and group to use for the prosody directories depending on the API Version
 jvb_dir_owner: "{{ '101' if api_version != '' and api_version | int <= 18 else '100' }}"
