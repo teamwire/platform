@@ -971,6 +971,7 @@ create_report() {
             ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/${LOG_FILE} dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
         done
         ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/var/log/haproxy.log dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" database_servers -b -m fetch -a "src=/var/log/mysql/mariadb-slow.log dest=${TMPDIR}/{{ inventory_hostname }}-mariadb-slow.log flat=yes" > /dev/null 2>&1
 
     else
 
@@ -981,6 +982,9 @@ create_report() {
         if [ -n "${CHECK_SSL}" ]; then
             report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; timeout 10 openssl s_client -quiet -connect localhost:443 -servername "${name}" -verify_return_error 2>&1 ; done)
         fi
+
+        # Retrieve mariadb slow query logs on single server
+        find /var/log/mysql/* -maxdepth 0 -type f -name mariadb-slow.log -exec sudo cp {} "${TMPDIR}" \;
 
     fi
 
