@@ -2,10 +2,12 @@
 {% if groups['all'] | length() == 1 %}
   {'check_plugin_name': 'mrpe', 'item': 'Container Backend', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'Container Beat', 'parameters': {}, 'service_labels': {}},
-  {'check_plugin_name': 'mrpe', 'item': 'Container Dashboard', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'Container Notification Server', 'parameters': {}, 'service_labels': {}},
-  {'check_plugin_name': 'mrpe', 'item': 'Container Webclient', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'Container Worker', 'parameters': {}, 'service_labels': {}},
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+  {'check_plugin_name': 'mrpe', 'item': 'Container Dashboard', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container Webclient', 'parameters': {}, 'service_labels': {}},
+{% endif %}
 {% if enable_voip is defined and enable_voip | lower == "true" %}
   {'check_plugin_name': 'mrpe', 'item': 'Container VoIP JVB', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'Container VoIP Jicofo', 'parameters': {}, 'service_labels': {}},

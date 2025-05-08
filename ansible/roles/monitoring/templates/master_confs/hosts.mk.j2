@@ -137,6 +137,9 @@ host_attributes.update({'{{ host if host != "localhost" else external_hostname }
 {% if ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in [ "localhost", "127.0.0.1" ] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined ) %}
   'tag_external_db': 'true',
 {% endif -%}
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+  'tag_decoupling': 'true',
+{% endif -%}
 }})
 
 {% endfor %}
