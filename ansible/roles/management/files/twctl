@@ -25,7 +25,7 @@ DASHBOARD_FACTS_FILE=/etc/ansible/facts.d/dashboard_version.fact
 WEBCLIENT_FACTS_FILE=/etc/ansible/facts.d/webclient_version.fact
 CLUSTER_CONFIG_DIR=/data/cluster_config
 RELEASE_FILE=/usr/local/share/twctl/teamwire-release
-RELEASE_VERSION_FILE=/usr/local/share/twctl/teamwire-release-version
+RELEASE_VERSION_FILE=/etc/ansible/facts.d/backend_stack_version.fact
 DFLT_TMOUT=10
 
 # Set http proxy for the OpenSSL client if one is set
@@ -1246,7 +1246,14 @@ update_release_version_file() {
     is_teamwire_registry="$(_get_config_value use_teamwire_registry)"
 
     if [ "${is_teamwire_registry}" != "false" ]; then
-      echo "${TAG}" | sudo tee ${RELEASE_VERSION_FILE} > /dev/null
+        if [ ${INSTALLATION} == "cluster" ]; then
+            ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
+            "echo '{\"tag\": \"${TAG}\"}' > '${RELEASE_VERSION_FILE}'" > /dev/null
+        else
+            sudo bash -c "
+            echo '{\"tag\": \"${TAG}\"}' > '${RELEASE_VERSION_FILE}'
+            " > /dev/null
+        fi
     fi
 }
 
@@ -1363,7 +1370,7 @@ Ansible: $(ANSIBLE_DEPRECATION_WARNINGS=false ansible --version | grep -oPm 1 '(
 "
 if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact; then
   if [ -e ${RELEASE_VERSION_FILE} ]; then
-    echo "Backend stack version: $(cat ${RELEASE_VERSION_FILE})"
+    echo "Backend stack version: $(jq -r .tag ${RELEASE_VERSION_FILE})"
   fi
 fi
 echo "Backend version: $(jq -r .tag ${BACKEND_FACTS_FILE})"
