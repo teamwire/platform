@@ -989,8 +989,7 @@ create_report() {
     fi
 
     report_map["Check if self signed cert is defined"]="$(grep 'ssl_certfile' ${ANSIBLE_DIR}/group_vars/all || echo 'NOT DEFINED')"
-    report_map["Show platform version(checkout)"]="$(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)"
-    report_map["Show platform version(applied)"]="$(cat /etc/platform_version)"
+    report_map["Show twctl version output"]="$(twctl version 2>&1)"
     report_map["Show git diff command"]="$(cd "${PLATFORM_HOME}" && git diff)"
     report_map["Show git logs"]="$(cd "${PLATFORM_HOME}" && git log --oneline -n 15 )" &&
     report_map["Show status of vault"]="$(vault_status_${INSTALLATION})" &&
@@ -1351,13 +1350,16 @@ get_latest_tag() {
   local latestFile
   latestFile="/etc/latest_remote_github_version"
 
-  if [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]];then
+  if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact && { [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]]; }; then
      local HEAD
      HEAD=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep 'HEAD' | awk '{print $1}')
      local LATEST
      LATEST=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep "${HEAD}" | grep -v -i 'HEAD' | awk '{print $2}')
 
      sudo bash -c "echo $(grep -oP '[0-9]+\.[0-9]+' <<< "${LATEST}") > ${latestFile}"
+     sudo chmod 0644 "${latestFile}"
+  else
+     sudo bash -c "echo 'N/A' > ${latestFile}"
      sudo chmod 0644 "${latestFile}"
   fi
 }
