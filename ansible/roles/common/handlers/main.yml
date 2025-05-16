@@ -70,3 +70,8 @@
     msg: "Something went wrong. Please check if the xinetd nullmailer configuration is valid and loaded."
     timeout: 10
   listen: Restart xinetd
+
+- name: Restart systemd-journald
+  ansible.builtin.service:
+    name: systemd-journald
+    state: restarted
