@@ -767,7 +767,8 @@ help() {
     echo "restoredb       Restore a backup of the database (requires file name)"
     echo "secrets         Manage Vault and its secrets"
     echo "version         Show version information"
-    echo "report          Create a report (system information & logs. --file can be specified for the file name)"
+    echo "report          Create a report (system information & logs. --file can be specified for the file name)."
+    echo "                See twctl report help for more details about how to include certain logs timeframes."
     echo "connectivity    Test external connections"
     echo "archiving       Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
     echo "ha-log          Show content of haproxy.log. Pipe to less -R for pager with colour support"
@@ -902,7 +903,62 @@ show-tags() {
   curl -s -H "Content-Type: application/json" 'https://repo.teamwire.eu/service/rest/v1/search?repository=external&group=/release' | jq -r '.items[] | .name | sub("^/release/"; "") + "\t"' | sort -Vr
 }
 
+show_help_for_create_report(){
+    echo "Command line options for twctl report:"
+    echo ""
+    echo "Without any arguments the logs fetched for the report will be limited"
+    echo "by the LOG_LINE_LIMIT Value given in the group_vars/all"
+    echo
+    echo "help                  Displays this messages"
+    echo "--file                The output filename of the report. Needs to end with '.tar.xz'"
+    echo "--full                Will create the report and include all logs from today"
+    echo "--since ARGUMENT      Will fetch all logs starting from the give time argument"
+    echo "--until ARGUMENT      Will fetch all logs up to the give time argument"
+    echo
+    echo "Examples for since and until arguments:"
+    echo "- Fetch all logs from yesterday"
+    echo "      twctl report --since yesterday --until today"
+    echo
+    echo "- Fetch logs from the last 5 hours"
+    echo "      twctl report --since -5h"
+    echo
+    echo "- Fetch all logs between 11:00 o'clock and 12:00 o'clock"
+    echo "      twctl report --since 11:00 --until 12:00"
+    echo
+    echo "- Fetch logs from a certain day"
+    echo "      twctl report --since '2025-05-02' --until '2025-05-03'"
+    echo
+    echo "- Fetch logs from a certain day in a certain timerange"
+    echo "      twctl report --since '2025-05-02 06:00:00' --until '2025-05-03 09:00:00'"
+    exit 0
+}
+
+
 create_report() {
+    # Ensure LOG_LINE_LIMIT is correctly defined if not set
+    local LOG_LINE_LIMIT
+    LOG_LINE_LIMIT=$(_get_config_value LOG_LINE_LIMIT)
+    if [[ -z "${LOG_LINE_LIMIT}" ]] || [[ "${LOG_LINE_LIMIT}" == "" ]]; then
+        LOG_LINE_LIMIT=2000
+    fi
+
+    # Decide which kind of logs should be fetched
+    if [ "${FULL}" ] && [ -n "${SINCE}" ] && [ -n "${UNTIL}" ]; then
+        echo "Please ensure to either set --full or set until and/or since."
+        exit 1
+    elif [ -n "${SINCE}" ] && [ -n "${UNTIL}" ]; then
+        JOURNALCTL="journalctl -q --since ${SINCE} --until ${UNTIL}"
+    elif [ -n "${SINCE}" ] && [ -z "${UNTIL}" ]; then
+        JOURNALCTL="journalctl -q --since ${SINCE}"
+    elif [ -n "${UNTIL}" ] && [ -z "${SINCE}" ]; then
+        JOURNALCTL="journalctl -q --until ${UNTIL}"
+    elif [ "${FULL}" ]; then
+        # Include all logs from today only
+        JOURNALCTL="journalctl -q --since today"
+    else
+        JOURNALCTL="journalctl -q -n ${LOG_LINE_LIMIT}"
+    fi
+
     echo "Generating report. Please wait..."
 
     PLATFORM_HOME="${HOME}/platform"    # Path to platform dir
@@ -920,6 +976,22 @@ create_report() {
         fi
     fi
     RUNTIME_REPORT_OF_SCRIPT="${TMPDIR}/runtime_report" # All outputs from twctl (STDOUT/STDERR) are collected here. See line below
+
+    # Specify Variables for fetching logs
+    SYSLOG_CONTAINER_IDENTIFIERS=(dockerd teamwire-backend teamwire-worker teamwire-beat teamwire-notifications teamwire-migrations)
+
+    # Additionally fetch VoIP Container Logs if voip is enabled
+    local enable_voip
+    enable_voip="$(_get_config_value enable_voip)"
+    if [ -n "${enable_voip}" ] && [ "${enable_voip}" = "true" ]; then
+        VOIP_SYSLOG_CONTAINER_IDENTIFIERS=(teamwire-web teamwire-jvb teamwire-jicofo teamwire-prosody)
+    fi
+
+    local enable_jvb_cluster
+    enable_jvb_cluster="$(_get_config_value enable_jvb_cluster)"
+
+    # create logfolder in report tar
+    mkdir "${TMPDIR}/logs"
 
     exec > >(tee -i "${RUNTIME_REPORT_OF_SCRIPT}")
     exec 2>&1
@@ -964,15 +1036,47 @@ create_report() {
             report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; ansible frontend_servers -i "${ANSIBLE_DIR}/cluster_hosts" -m shell -a "timeout 10 openssl s_client -quiet -connect localhost:443 -servername ${name} -verify_return_error 2>&1"; done)
         fi
 
-        # Retrieve logs from loghost and add them to the report
-        LOG_SERVER=$(ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -m setup -a "filter=ansible_hostname" | grep ansible_hostname | awk '{print $2}' | tr -d '",')
-        LOG_FILES=$(ssh "teamwire@${LOG_SERVER}" "find /var/log/cluster -name \"*.log"\" | awk -F/ '{print $NF}')
-        for LOG_FILE in ${LOG_FILES}; do
-            ansible -i "${ANSIBLE_DIR}/cluster_hosts" loghost['0'] -b -m fetch -a "src=/var/log/cluster/${LOG_FILE} dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
-        done
-        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers['0'] -b -m fetch -a "src=/var/log/haproxy.log dest=${TMPDIR}/ flat=yes" > /dev/null 2>&1
-        ansible -i "${ANSIBLE_DIR}/cluster_hosts" database_servers -b -m fetch -a "src=/var/log/mysql/mariadb-slow.log dest=${TMPDIR}/{{ inventory_hostname }}-mariadb-slow.log flat=yes" > /dev/null 2>&1
+        # Fetch Logs for Cluster environments
+        # Ensure that logs on cluster are first written to /data
+        LOG_OUTPUT="/data/reports"
+        if [ ! -d "${LOG_OUTPUT}" ]; then
+            sudo mkdir -p "${LOG_OUTPUT}"
+        fi
 
+        # Fetch backend logs on cluster envs
+        for syslog_identifier in "${SYSLOG_CONTAINER_IDENTIFIERS[@]}"; do
+            ansible -i "${ANSIBLE_DIR}/cluster_hosts" backend_servers -b -m shell -a "${JOURNALCTL} -t ${syslog_identifier} > ${LOG_OUTPUT}/{{ inventory_hostname }}-${syslog_identifier}.log" > /dev/null 2>&1
+        done
+
+        # Fetch management server logs on cluster envs
+        MANAGEMENT_SYSLOG_CONTAINER_IDENTIFIERS=(hashi-ui docker-registry)
+        for syslog_identifier in "${MANAGEMENT_SYSLOG_CONTAINER_IDENTIFIERS[@]}"; do
+            ansible -i "${ANSIBLE_DIR}/cluster_hosts" management_servers -b -m shell -a "${JOURNALCTL} -t ${syslog_identifier} > ${LOG_OUTPUT}/{{ inventory_hostname }}-${syslog_identifier}.log" > /dev/null 2>&1
+        done
+
+        # Fetch voip server logs on cluster envs
+        if [ -n "${enable_voip}" ] && [ "${enable_voip}" = "true" ]; then
+            for syslog_identifier in "${VOIP_SYSLOG_CONTAINER_IDENTIFIERS[@]}"; do
+                local HOST_GROUP
+                HOST_GROUP="voip_servers"
+                if [ "${syslog_identifier}" == "teamwire-jvb" ] && [ -n "${enable_jvb_cluster}" ] && [ "${enable_jvb_cluster}" = "true" ]; then
+                    if [ "$(ansible-inventory -i ${ANSIBLE_DIR}/cluster_hosts --list  | jq '.video_servers')" != "null" ]; then
+                        HOST_GROUP="video_servers"
+                    else
+                        HOST_GROUP="backend_servers"
+                    fi
+                fi
+                ansible -i "${ANSIBLE_DIR}/cluster_hosts" ${HOST_GROUP} -b -m shell -a "${JOURNALCTL} -t ${syslog_identifier} > ${LOG_OUTPUT}/{{ inventory_hostname }}-${syslog_identifier}.log" > /dev/null 2>&1
+            done
+        fi
+
+        # Fetch haproxy logs
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers -b -m shell -a "${JOURNALCTL} -u haproxy > ${LOG_OUTPUT}/{{ inventory_hostname }}-haproxy.log" > /dev/null 2>&1
+
+        # Retrieve mariadb slow query logs on cluster envs
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" database_servers -b -m fetch -a "src=/var/log/mysql/mariadb-slow.log dest=${TMPDIR}/logs/{{ inventory_hostname }}-mariadb-slow.log flat=yes" > /dev/null 2>&1
+
+        sudo mv "${LOG_OUTPUT}"/* "${TMPDIR}/logs/"
     else
 
         report_map["Show uptime"]=$(uptime)
@@ -983,8 +1087,22 @@ create_report() {
             report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; timeout 10 openssl s_client -quiet -connect localhost:443 -servername "${name}" -verify_return_error 2>&1 ; done)
         fi
 
+        # Fetch logs on single server
+        if [ -n "${enable_voip}" ] && [ "${enable_voip}" = "true" ]; then
+            # Combine the two arrays of identifier to one on single servers
+            SYSLOG_CONTAINER_IDENTIFIERS+=("${VOIP_SYSLOG_CONTAINER_IDENTIFIERS[@]}")
+        fi
+        for syslog_identifier in "${SYSLOG_CONTAINER_IDENTIFIERS[@]}"; do
+            # shellcheck disable=SC2024
+            sudo bash -c "${JOURNALCTL} -t ${syslog_identifier} > ${TMPDIR}/logs/${syslog_identifier}.log"
+        done
+
+        # Fetch haproxy logs on single server
+        # shellcheck disable=SC2024
+        sudo bash -c "${JOURNALCTL}" -u haproxy > "${TMPDIR}/logs/haproxy.log"
+
         # Retrieve mariadb slow query logs on single server
-        find /var/log/mysql/* -maxdepth 0 -type f -name mariadb-slow.log -exec sudo cp {} "${TMPDIR}" \;
+        find /var/log/mysql/* -maxdepth 0 -type f -name mariadb-slow.log -exec sudo cp {} "${TMPDIR}/logs" \;
 
     fi
 
@@ -1014,10 +1132,6 @@ create_report() {
         printf "============ ${key} ============ \n %s\n\n"  "${report_map[${key}]}" >> "${FILE}"
 
     done
-
-    # Retrieve docker logs on single installations and management servers
-    find /var/log/docker/ -name "*.log" -exec sudo cp {} "${TMPDIR}" \;
-    find /var/log/* -maxdepth 0 -type f -name haproxy.log  -exec sudo cp {} "${TMPDIR}" \;
 
     # copy ansible config
     cp -f "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/group_vars/all" "${TMPDIR}" 2>/dev/null
@@ -1439,6 +1553,17 @@ while [ $# -gt 0 ]; do
             ;;
         -f|--file)
             FILENAME=$2
+            ;;
+        --since)
+            SINCE=$2
+            shift
+            ;;
+        --until)
+            UNTIL=$2
+            shift
+            ;;
+        --full)
+            FULL=/bin/true
             shift
             ;;
         pull)
@@ -1486,7 +1611,11 @@ while [ $# -gt 0 ]; do
             INPUT="$3"
             ;;
         report)
-            TASK="create_report"
+            if [ "$2" == "help" ];then
+                TASK="show_help_for_create_report"
+            else
+                TASK="create_report"
+            fi
             ;;
         version)
             TASK="version"
