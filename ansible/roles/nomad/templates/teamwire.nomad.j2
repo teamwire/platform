@@ -157,6 +157,7 @@ job "teamwire" {
                 DASHBOARD_VERSION = "{{ ansible_local.dashboard_version.tag }}"
                 WEBCLIENT_VERSION = "{{ ansible_local.webclient_version.tag }}"
                 BACKEND_STACK_VERSION = "{{ ansible_local.backend_stack_version.tag }}"
+				BACKEND_VERSION = "{{ ansible_local.backend_version.tag }}"
 				FAKE_PIN = "{{ fake_pin|default() }}"
 				FAKE_SMS = "{{ fake_sms|default() }}"
 				FAKE_EMAIL_CONFIRMATION = "{{ fake_email_confirmation|default() }}"
