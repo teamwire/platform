@@ -768,7 +768,7 @@ help() {
     echo "secrets         Manage Vault and its secrets"
     echo "version         Show version information"
     echo "report          Create a report (system information & logs. --file can be specified for the file name)."
-    echo "                See twctl report help for more details about how to include certain logs timeframes."
+    echo "                See twctl report --help for more details about how to include certain logs timeframes."
     echo "connectivity    Test external connections"
     echo "archiving       Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
     echo "ha-log          Show content of haproxy.log. Pipe to less -R for pager with colour support"
@@ -909,7 +909,7 @@ show_help_for_create_report(){
     echo "Without any arguments the logs fetched for the report will be limited"
     echo "by the LOG_LINE_LIMIT Value given in the group_vars/all"
     echo
-    echo "help                  Displays this messages"
+    echo "--help                Displays this messages"
     echo "--file                The output filename of the report. Needs to end with '.tar.xz'"
     echo "--full                Will create the report and include all logs from today"
     echo "--since ARGUMENT      Will fetch all logs starting from the give time argument"
@@ -1611,8 +1611,9 @@ while [ $# -gt 0 ]; do
             INPUT="$3"
             ;;
         report)
-            if [ "$2" == "help" ];then
+            if [ "$2" == "--help" ] || [ "$2" == "-h" ];then
                 TASK="show_help_for_create_report"
+                break
             else
                 TASK="create_report"
             fi
