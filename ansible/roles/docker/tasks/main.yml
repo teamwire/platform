@@ -158,6 +158,15 @@
     - Reload systemd
     - Restart docker
 
+- name: Configure journald docker driver
+  ansible.builtin.copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart docker
+
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
 # following step, otherwise the login would fail when a proxy is configured.
