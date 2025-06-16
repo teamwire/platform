@@ -16,8 +16,8 @@ workflow:
 
 stages:
   - hub-deploy
-  - release-tag
   - cloud-deploy
+  - release-tag
   - startup
   - ansible-lint
   - shellcheck
