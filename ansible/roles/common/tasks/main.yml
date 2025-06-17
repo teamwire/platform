@@ -100,7 +100,6 @@
       - bsd-mailx
       - unzip
       - patch
-      - mlock
       - libcap2-bin
       - curl
       - jq

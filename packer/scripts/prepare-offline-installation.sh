@@ -39,7 +39,6 @@ libterm-readkey-perl
 socat
 patch
 python3-docker
-mlock
 libcap2-bin
 icinga2
 icinga2-bin
