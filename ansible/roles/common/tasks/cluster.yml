@@ -10,7 +10,7 @@
   when: private_ip not in ansible_all_ipv4_addresses
 
 - name: Allow all access from other cluster nodes
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     src: "{{ hostvars[item]['private_ip'] }}"
   with_items: "{{ groups['all'] | default([]) }}"

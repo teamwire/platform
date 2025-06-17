@@ -232,12 +232,12 @@
     state: present
 
 - name: Allow incoming SSH access
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     name: OpenSSH
 
 - name: Configure default firewall policy
-  community.general.system.ufw:
+  community.general.ufw:
     state: enabled
     policy: reject
 
