@@ -194,11 +194,11 @@
 
 - name: Install the NTP daemon
   ansible.builtin.apt:
-    pkg: ntp
+    pkg: ntpsec
 
 - name: Enable and start the NTP daemon
   ansible.builtin.service:
-    name: ntp
+    name: ntpsec
     state: started
     enabled: true
 

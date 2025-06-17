@@ -4,7 +4,7 @@
 
 - name: Restart NTP
   ansible.builtin.service:
-    name: ntp
+    name: ntpsec
     state: restarted
 
 - name: Reload sshd
