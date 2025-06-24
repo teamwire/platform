@@ -183,31 +183,16 @@ time
 x11-common
 "
 
-# Install jq to fetch checksums from repo.teamwire.eu directly
-sudo apt install -qy jq
-
-# Download remote ansible facts file
-sudo curl https://repo.teamwire.eu/repository/external/ftp/general-facts.j2 -o /var/cache/downloads/general-facts.j2
-REMOTE_FACT_FILE_CHECKSUM=$(curl -Ls "https://repo.teamwire.eu/service/rest/v1/search?repository=external&name=/ftp/general-facts.j2" | jq -r '.items[].assets[].checksum.sha256')
-
-if [ "${REMOTE_FACT_FILE_CHECKSUM}" != "$(sha256sum /var/cache/downloads/general-facts.j2 | cut -d' ' -f1)" ] ; then
-  echo "/var/cache/downloads/general-facts.j2: Checksum failure"
-  exit 1
-fi
-
-# Render ansible facts file
-ansible all -i ~teamwire/platform/ansible/hosts -b -m template -a "src=/var/cache/downloads/general-facts.j2.j2 dest=/etc/ansible/facts.d/general-facts mode=0444"
-
-REMOTE_URL=$(jq -r '.general.url' /etc/ansible/facts.d/general-facts)
+REMOTE_URL=$(jq -r '.general.url' /etc/ansible/facts.d/general_facts.fact)
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 NOMAD_VERSION=$(awk '/^nomad_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
 VAULT_VERSION=$(awk '/^vault_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-CHECKMK_VERSION=$(jq -r '.monitoring.version' /etc/ansible/facts.d/general-facts)
-CHECKMK_REMOTE_PATH=$(jq -r '.monitoring.path' /etc/ansible/facts.d/general-facts)
-CHECKMK_SSLCERTIFICATE_VERSION=$(jq -r '.monitoring.sslcertificate_version' /etc/ansible/facts.d/general-facts)
-CHECKMK_SSLCERTIFICATE_REMOTE_PATH=$(jq -r '.monitoring.sslcertificate_path' /etc/ansible/facts.d/general-facts)
+CHECKMK_VERSION=$(jq -r '.monitoring.version' /etc/ansible/facts.d/general_facts.fact)
+CHECKMK_REMOTE_PATH=$(jq -r '.monitoring.path' /etc/ansible/facts.d/general_facts.fact)
+CHECKMK_SSLCERTIFICATE_VERSION=$(jq -r '.monitoring.sslcertificate_version' /etc/ansible/facts.d/general_facts.fact)
+CHECKMK_SSLCERTIFICATE_REMOTE_PATH=$(jq -r '.monitoring.sslcertificate_path' /etc/ansible/facts.d/general_facts.fact)
 
 # Include Variables for OS Version
 # shellcheck disable=SC1091
