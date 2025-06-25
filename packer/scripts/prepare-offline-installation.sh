@@ -73,6 +73,7 @@ gnupg2
 maxscale
 nullmailer
 debsums
+apt-listbugs
 "
 
 CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)

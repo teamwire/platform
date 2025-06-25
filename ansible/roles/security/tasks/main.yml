@@ -129,3 +129,7 @@
 - name: Include Package related Tasks
   ansible.builtin.include_tasks: package.yml
   when: ansible_distribution_release != "bullseye"
+
+- name: Include APT related Tasks
+  ansible.builtin.include_tasks: apt.yml
+  when: ansible_distribution_release != "bullseye"
