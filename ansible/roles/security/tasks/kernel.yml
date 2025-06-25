@@ -1,0 +1,13 @@
+---
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3656] Configure kernel options
+# ------------------------------------------------------------------------------
+- name: Set teamwire kernel options
+  ansible.builtin.copy:
+    src: sysctl-99-teamwire.conf
+    dest: /etc/sysctl.d/99-teamwire.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reload sysctl options
