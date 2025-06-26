@@ -10,9 +10,9 @@
 
 - name: Download Vault
   ansible.builtin.get_url:
-    url: https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip
-    dest: /var/cache/downloads/vault_{{ vault_version }}_linux_amd64.zip
-    checksum: sha256:{{ vault_checksum }}
+    url: "{{ ansible_local.general_facts.vault.url }}"
+    dest: /var/cache/downloads/vault_{{ ansible_local.general_facts.vault.version }}_linux_amd64.zip
+    checksum: sha256:{{ ansible_local.general_facts.vault.sha256 }}
     mode: 0440
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: vault_downloaded
@@ -37,7 +37,7 @@
     - ansible_local.vault is defined
     - ansible_local.vault.initialized == "true"
     - vault_binary.stat.exists
-    - vault_version is version(vault_version_current, '>')
+    - ansible_local.general_facts.vault.version is version(vault_version_current, '>')
 
 - name: Allow direct container connection to vault
   ansible.builtin.include_tasks: container-connection.yml

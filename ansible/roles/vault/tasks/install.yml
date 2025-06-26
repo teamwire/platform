@@ -25,7 +25,7 @@
 
 - name: Install the Vault binary
   ansible.builtin.unarchive:
-    src: /var/cache/downloads/vault_{{ vault_version }}_linux_amd64.zip
+    src: /var/cache/downloads/vault_{{ ansible_local.general_facts.vault.version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
     copy: false
