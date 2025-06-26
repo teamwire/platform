@@ -137,3 +137,7 @@
 - name: Include Kernel related Tasks
   ansible.builtin.include_tasks: kernel.yml
   when: ansible_distribution_release != "bullseye"
+
+- name: Include PAM related Tasks
+  ansible.builtin.include_tasks: pam.yml
+  when: ansible_distribution_release != "bullseye"
