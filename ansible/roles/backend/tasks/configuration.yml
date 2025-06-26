@@ -92,7 +92,7 @@
 
 - name: Register published VAULT_JOB_TOKEN
   ansible.builtin.set_fact:
-    vault_job_token: "{{ remote_job_token.content | b64decode }}"
+    vault_job_token: "{{ remote_job_token.content | b64decode | trim }}"
 
 - name: Ensure Redis servers are defined
   ansible.builtin.fail:

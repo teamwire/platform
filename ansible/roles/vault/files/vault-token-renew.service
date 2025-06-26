@@ -1,0 +1,10 @@
+[Unit]
+Description=Renew Vault token
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/vault-token-renew.sh  > /dev/null 2>&1
+StandardOutput=null
+StandardError=null

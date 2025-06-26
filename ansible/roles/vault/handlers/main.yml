@@ -3,3 +3,10 @@
   ansible.builtin.service:
     name: vault
     state: restarted
+
+- name: Reload systemd and restart vault-token-renew.timer
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: vault-token-renew.timer
+    state: restarted
+    enabled: true

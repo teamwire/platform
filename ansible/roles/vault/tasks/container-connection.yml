@@ -1,4 +1,3 @@
----
 - name: Check if the vault secret job token file exists
   ansible.builtin.stat:
     path: "/etc/ansible/job-read.token"
@@ -45,27 +44,46 @@
   when: revoke_nomad_job_policy.changed
   delegate_to: "{{ host_to_delegate.msg }}"
 
-- name: Create Vault read only token for container jobs
-  ansible.builtin.command: vault token create -policy nomad-job -orphan -format=json
-  when:
-    - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
-    - revoke_nomad_job_policy.changed
-  register: vault_job_read_token
+- name: Ensure valid job token exists
+  block:
+    - name: Read existing job token from file
+      ansible.builtin.slurp:
+        src: /etc/ansible/job-read.token
+      register: existing_token_raw
+      when:
+        - vault_job_token_file.stat.exists
 
-- name: Set token fact
-  ansible.builtin.set_fact:
-    vault_job_read_token: "{{ vault_job_read_token.stdout | from_json }}"
-  when:
-    - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
-    - revoke_nomad_job_policy.changed
+    - name: Check job token validity
+      ansible.builtin.shell: >
+        vault token lookup "{{ existing_token_raw['content'] | b64decode | trim }}"
+      register: vault_token_check
+      failed_when: false
+      changed_when: false
+      when:
+        - existing_token_raw is defined
+        - existing_token_raw['content'] is defined
 
-- name: Publish vault job token into token file
-  ansible.builtin.copy:
-    dest: "/etc/ansible/job-read.token"
-    content: "{{ vault_job_read_token.auth.client_token }}"
-    owner: root
-    group: root
-    mode: 0644
+    - name: Create new job token if old one is invalid or missing
+      ansible.builtin.shell: >
+        vault token create -policy nomad-job --ttl=72h -renewable=true -format=json | jq -r .auth.client_token
+      register: vault_job_read_token
+      when:
+        - (groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers'])
+        - (vault_token_check.rc is not defined or vault_token_check.rc != 0 or revoke_nomad_job_policy.changed)
+
+    - name: Publish vault job token into token file
+      ansible.builtin.copy:
+        content: "{{ vault_job_read_token.stdout }}"
+        dest: /etc/ansible/job-read.token
+        owner: root
+        group: root
+        mode: '0644'
+      when:
+        - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
+        - vault_job_read_token is defined
+        - vault_job_read_token.stdout is defined
+
+- name: Include renew_job_token
+  ansible.builtin.include_tasks: vault_token_renew.yml
   when:
-    - groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers']
-    - revoke_nomad_job_policy.changed
+    - groups['all'] | length() == 1
