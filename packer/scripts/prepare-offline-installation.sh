@@ -185,7 +185,6 @@ x11-common
 
 REMOTE_URL=$(jq -r '.general.url' /etc/ansible/facts.d/general_facts.fact)
 
-CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
 CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 CHECKMK_VERSION=$(jq -r '.monitoring.version' /etc/ansible/facts.d/general_facts.fact)
 CHECKMK_REMOTE_PATH=$(jq -r '.monitoring.path' /etc/ansible/facts.d/general_facts.fact)
@@ -213,7 +212,7 @@ harbor.teamwire.eu/teamwire/webclient:${WEBCLIENT_RELEASE}
 
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
-https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
+$(jq -r '.consul.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul.sha256' /etc/ansible/facts.d/general_facts.fact)
 https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
 $(jq -r '.nomad.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.nomad.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.vault.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.vault.sha256' /etc/ansible/facts.d/general_facts.fact)

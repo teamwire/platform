@@ -23,12 +23,12 @@
 
 - name: Download Consul
   ansible.builtin.get_url:
-    url: https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_amd64.zip
-    dest: /var/cache/downloads/consul_{{ consul_version }}_linux_amd64.zip
+    url: "{{ ansible_local.general_facts.consul.url }}"
+    dest: /var/cache/downloads/consul_{{ ansible_local.general_facts.consul.version }}_linux_amd64.zip
     owner: root
     group: root
     mode: 0644
-    checksum: "sha256:{{ consul_checksum }}"
+    checksum: "sha256:{{ ansible_local.general_facts.consul.sha256 }}"
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: consul_downloaded
   environment:
@@ -36,7 +36,7 @@
 
 - name: Install/Update the Consul binary
   ansible.builtin.unarchive:
-    src: /var/cache/downloads/consul_{{ consul_version }}_linux_amd64.zip
+    src: /var/cache/downloads/consul_{{ ansible_local.general_facts.consul.version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
     copy: false
@@ -123,8 +123,8 @@
 
     - name: Verify upgrade succeeded
       ansible.builtin.assert:
-        that: consul_upgraded_version is version(consul_version, '==')
+        that: consul_upgraded_version is version(ansible_local.general_facts.consul.version, '==')
 
   when:
     - consul_binary.stat.exists
-    - consul_version_current is version(consul_version, '<')
+    - consul_version_current is version(ansible_local.general_facts.consul.version, '<')
