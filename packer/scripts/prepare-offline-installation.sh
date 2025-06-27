@@ -264,10 +264,9 @@ fi
 
 # Configure Maxscale Repository Key
 if [ ! -f /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg ]; then
-  MAXSCALE_GPG_KEY_ID=$(grep "maxscale_gpg_key_id" ~teamwire/platform/ansible/roles/db/defaults/main.yml | sed -e 's/"//g' | cut -d ':' -f2 | sed -e 's/^0x//')
+  MAXSCALE_REPOSITORY_KEY_URL=$(jq -r '.db.maxscale_repository_key_url' /etc/ansible/facts.d/general_facts.fact)
 
-  sudo gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys "${MAXSCALE_GPG_KEY_ID}"
-  sudo gpg --export "${MAXSCALE_GPG_KEY_ID}" | sudo tee /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg
+  sudo curl -Ls "${MAXSCALE_REPOSITORY_KEY_URL}" -o /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
   echo "deb [arch=amd64,arm64] https://dlm.mariadb.com/repo/maxscale/latest/apt ${VERSION_CODENAME} main" | sudo tee /etc/apt/sources.list.d/mariadb-maxscale.list
 fi
 

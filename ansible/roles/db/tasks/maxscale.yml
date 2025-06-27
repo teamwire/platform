@@ -7,10 +7,10 @@
   when: enable_tls_mysql is defined and enable_tls_mysql | lower == "true"
 
 - name: Get gpg key for maxscale repository
-  ansible.builtin.apt_key:
-    id: "{{ maxscale_gpg_key_id }}"
-    keyserver: keyserver.ubuntu.com
-    keyring: /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg
+  ansible.builtin.get_url:
+    url: "{{ ansible_local.general_facts.db.maxscale_repository_key_url }}"
+    dest: /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
+    checksum: "sha256:{{ ansible_local.general_facts.db.maxscale_repository_key_sha256 }}"
   environment:
     HTTP_PROXY: "{{ http_proxy | default() }}"
     HTTPS_PROXY: "{{ http_proxy | default() }}"
