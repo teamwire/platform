@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 - name: Fetch checkmk master deb file checksum
   ansible.builtin.uri:
-    url: "{{ ansible_local.general_facts.general.url }}/service/rest/v1/search?repository={{ ansible_local.general_facts.general.repo_url_part }}&name={{ ansible_local.general_facts.monitoring.path }}/check-mk-raw-{{ ansible_local.general_facts.monitoring.version }}.{{ ansible_distribution_release }}_amd64.deb"
+    url: "{{ ansible_local.general_facts.monitoring.sha256 }}"
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   environment:
     https_proxy: "{{ http_proxy | default() }}"
@@ -14,7 +14,7 @@
 
 - name: Download Checkmk master deb file
   ansible.builtin.get_url:
-    url: "{{ ansible_local.general_facts.general.url }}/repository/{{ ansible_local.general_facts.general.repo_url_part }}{{ ansible_local.general_facts.monitoring.path }}/check-mk-raw-{{ ansible_local.general_facts.monitoring.version }}.{{ ansible_distribution_release }}_amd64.deb"
+    url: "{{ ansible_local.general_facts.monitoring.url }}"
     dest: "/var/cache/downloads/check-mk-raw-{{ ansible_local.general_facts.monitoring.version }}.{{ ansible_distribution_release }}_amd64.deb"
     checksum: "sha256:{{ checkmk_shasum.json['items'][0]['assets'][0]['checksum']['sha256'] }}"
     mode: 0440
@@ -234,7 +234,7 @@
 # ------------------------------------------------------------------------------
 - name: Fetch checkmk master deb file checksum
   ansible.builtin.uri:
-    url: "{{ ansible_local.general_facts.general.url }}/service/rest/v1/search?repository={{ ansible_local.general_facts.general.repo_url_part }}&name={{ ansible_local.general_facts.monitoring.sslcertificate_path }}/sslcertificates-{{ ansible_local.general_facts.monitoring.sslcertificate_version }}.mkp"
+    url: "{{ ansible_local.general_facts.monitoring.sslcertificate_sha256 }}"
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   environment:
     https_proxy: "{{ http_proxy | default() }}"
@@ -243,7 +243,7 @@
 
 - name: Download checkmk sslcertificate mkp
   ansible.builtin.get_url:
-    url: "{{ ansible_local.general_facts.general.url }}/repository/{{ ansible_local.general_facts.general.repo_url_part }}{{ ansible_local.general_facts.monitoring.sslcertificate_path }}/sslcertificates-{{ ansible_local.general_facts.monitoring.sslcertificate_version }}.mkp"
+    url: "{{ ansible_local.general_facts.monitoring.sslcertificate_url }}"
     dest: "/var/cache/downloads/sslcertificates-{{ ansible_local.general_facts.monitoring.sslcertificate_version }}.mkp"
     checksum: "sha256:{{ checkmk_sslcertificate_shasum.json['items'][0]['assets'][0]['checksum']['sha256'] }}"
     mode: 0444

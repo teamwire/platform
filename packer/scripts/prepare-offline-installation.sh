@@ -183,12 +183,8 @@ time
 x11-common
 "
 
-REMOTE_URL=$(jq -r '.general.url' /etc/ansible/facts.d/general_facts.fact)
-
-CHECKMK_VERSION=$(jq -r '.monitoring.version' /etc/ansible/facts.d/general_facts.fact)
-CHECKMK_REMOTE_PATH=$(jq -r '.monitoring.path' /etc/ansible/facts.d/general_facts.fact)
-CHECKMK_SSLCERTIFICATE_VERSION=$(jq -r '.monitoring.sslcertificate_version' /etc/ansible/facts.d/general_facts.fact)
-CHECKMK_SSLCERTIFICATE_REMOTE_PATH=$(jq -r '.monitoring.sslcertificate_path' /etc/ansible/facts.d/general_facts.fact)
+CHECKMK_SHASUM_URL=$(jq -r '.monitoring.sha256' /etc/ansible/facts.d/general_facts.fact)
+CHECKMK_SSLCERTIFICATES_SHASUM_URL=$(jq -r '.monitoring.monitoring.sslcertificates_sha256' /etc/ansible/facts.d/general_facts.fact)
 
 # Include Variables for OS Version
 # shellcheck disable=SC1091
@@ -215,8 +211,8 @@ $(jq -r '.consul.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul.
 $(jq -r '.consul_template.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul_template.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.nomad.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.nomad.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.vault.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.vault.sha256' /etc/ansible/facts.d/general_facts.fact)
-${REMOTE_URL}/external${CHECKMK_REMOTE_PATH}/check-mk-raw-${CHECKMK_VERSION}.${VERSION_CODENAME}_amd64.deb;$(curl -Ls "${REMOTE_URL}/service/rest/v1/search?repository=external&name=${CHECKMK_REMOTE_PATH}/check-mk-raw-${CHECKMK_VERSION}.${VERSION_CODENAME}_amd64.deb" | jq -r '.items[].assets[].checksum.sha256')
-${REMOTE_URL}/repository/external${CHECKMK_SSLCERTIFICATE_REMOTE_PATH}/sslcertificates-${CHECKMK_SSLCERTIFICATE_VERSION}.mkp;$(curl -Ls "${REMOTE_URL}/service/rest/v1/search?repository=external&name=${CHECKMK_SSLCERTIFICATE_REMOTE_PATH}/sslcertificates-${CHECKMK_SSLCERTIFICATE_VERSION}.mkp" | jq -r '.items[].assets[].checksum.sha256')
+$(jq -r '.monitoring.url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
+$(jq -r '.monitoring.sslcertificates_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SSLCERTIFICATES_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
