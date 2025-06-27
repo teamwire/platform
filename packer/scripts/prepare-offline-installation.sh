@@ -185,6 +185,7 @@ x11-common
 
 CHECKMK_SHASUM_URL=$(jq -r '.monitoring.sha256' /etc/ansible/facts.d/general_facts.fact)
 CHECKMK_SSLCERTIFICATES_SHASUM_URL=$(jq -r '.monitoring.monitoring.sslcertificates_sha256' /etc/ansible/facts.d/general_facts.fact)
+MYDUMPER_SHASUM_URL=$(jq -r '.db.mydumper_sha256' /etc/ansible/facts.d/general_facts.fact)
 
 # Include Variables for OS Version
 # shellcheck disable=SC1091
@@ -213,6 +214,7 @@ $(jq -r '.nomad.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.nomad.sh
 $(jq -r '.vault.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.vault.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.monitoring.url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 $(jq -r '.monitoring.sslcertificates_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SSLCERTIFICATES_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
+$(jq -r '.db.mydumper_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${MYDUMPER_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
