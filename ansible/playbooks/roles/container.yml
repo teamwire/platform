@@ -1,4 +1,9 @@
 ---
+# This play will verify that only the minimum backend version 19.6 is running
+- name: Import check_backend_version to ensure the backend meets the minimum required version
+  import_playbook: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/playbooks/check_backend_version.yml"
+  when: use_teamwire_registry | default('true') | bool
+
 # This task will check if Vault has been initialized and read the secrets from there if so
 - name: Vault Status check
   hosts: local:hashi_servers

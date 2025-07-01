@@ -93,6 +93,13 @@
       loop: "{{ fact_files_status.results }}"
       when: "not item.stat.exists"
 
+- name: Import check_backend_version to ensure the backend meets the minimum required version
+  import_playbook: check_backend_version.yml
+  when: use_teamwire_registry | default('true') | bool
+
+- name: Resume check overall requirements
+  hosts: all
+  tasks:
     - name: Check if in developer mode
       ansible.builtin.set_fact:
         tw_dev_mode: "{{ lookup('env', 'tw_dev_mode') | ternary(True, False) }}"
