@@ -469,8 +469,8 @@
             - groups['all'] | length() > 1
 
       when:
-        - enable_tls_mysql is defined
-        - enable_tls_mysql | lower == "true"
+        - enable_tls_mysql is undefined or
+          enable_tls_mysql | lower == "true"
 
     - name: Ensure valid configuration combination
       block:
@@ -937,8 +937,8 @@
               - "    ansible-playbook -i {{ 'hosts' if teamwire_platform_dir is defined else 'cluster_hosts' }} {{ 'platform/ansible/' if teamwire_platform_dir is defined }}playbooks/procedures/restart-galera-cluster.yml"
           with_items: "{{ mysql_have_ssl.query_result }}"
           when:
-            - enable_tls_mysql is defined
-            - enable_tls_mysql | lower == "true"
+            - ( enable_tls_mysql is undefined or
+              enable_tls_mysql | lower == "true" )
             - item.Value | lower == "disabled"
             - galera_cluster_init is defined
           register: enable_tls_mysql_true_notify
@@ -950,7 +950,8 @@
               - "    ansible-playbook -i {{ 'hosts' if teamwire_platform_dir is defined else 'cluster_hosts' }} {{ 'platform/ansible/' if teamwire_platform_dir is defined }}playbooks/procedures/restart-galera-cluster.yml"
           with_items: "{{ mysql_have_ssl.query_result }}"
           when:
-            - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
+            - enable_tls_mysql is defined
+            - enable_tls_mysql | lower != "true"
             - item.Value | lower == "yes"
             - galera_cluster_init is defined
           register: enable_tls_mysql_false_notify

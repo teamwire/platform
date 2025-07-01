@@ -175,8 +175,6 @@
     dbname: "{{ item.0.value.dbname }}"
   when:
     - config_done is defined
-    - enable_tls_mysql is defined
-    - enable_tls_mysql | lower == "true"
     - groups['all'] | length > 1
     - groups['management_servers'] | sort | first not in groups['backend_servers']
 
@@ -195,10 +193,7 @@
     username: "{{ item.0.value.username }}"
     password: "{{ item.0.value.password }}"
     dbname: "{{ item.0.value.dbname }}"
-  when:
-    - config_done is defined
-    - enable_tls_mysql is defined
-    - enable_tls_mysql | lower == "true"
+  when: config_done is defined
 
   # Ensure MariaDB UTC timezone definition is present
 - name: Count MariaDB UTC timezone definition
@@ -242,6 +237,17 @@
   ansible.builtin.copy:
     src: mariadb-log
     dest: /etc/logrotate.d/mariadb
+    owner: root
+    group: root
+    mode: 0644
+
+# ------------------------------------------------------------------------------
+# Enable/Disable SSL Connections
+# ------------------------------------------------------------------------------
+- name: Configure /etc/mysql/conf.d/tls.cnf
+  ansible.builtin.template:
+    src: tls.cnf.j2
+    dest: /etc/mysql/conf.d/tls.cnf
     owner: root
     group: root
     mode: 0644

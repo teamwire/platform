@@ -33,8 +33,8 @@
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db"
         tasks_from: tls-connect
       when:
-        - enable_tls_mysql is defined
-        - enable_tls_mysql | lower == "true"
+        - enable_tls_mysql is undefined or
+          enable_tls_mysql | lower == "true"
 
 - name: Configure maxscale connector between the backend_servers and the database_servers
   hosts: backend_servers:management_servers
