@@ -405,6 +405,9 @@
       run_once: true
       when: ENABLE_CSP is defined
 
+# ------------------------------------------------------------------------------
+# Ensure to check the requirements for enable_tls_mysql
+# ------------------------------------------------------------------------------
     - name: Assert enable_tls_mysql is valid
       ansible.builtin.assert:
         that:
@@ -418,28 +421,31 @@
 
     - name: Check if enable_tls_mysql has all required values and can be enabled on the environment
       block:
-        - name: Assert that all conditions for enable_tls_mysql are set
+        - name: Ensure that enable_tls_mysql is not used with an external database
           ansible.builtin.assert:
             that:
               - mysql_host is undefined
               - oracle_host is undefined
+            msg:
+              - "In case you have defined an external database ensure to disable the SSL connection to the database."
+              - 'Set the variable enable_tls_mysql to false.'
+          run_once: true
+
+        - name: Ensure that enable_tls_mysql is not used without an SSL Certificate defined
+          ansible.builtin.assert:
+            that:
               - ssl_server_certificate is defined
               - ssl_intermediate_certificate is defined
               - ssl_root_certificate is defined
               - ssl_keyfile is defined
             msg:
-              - "Please ensure that you are using the mysql installation from the playbooks and no external host."
-              - "Please make sure that you are using a valid ssl certificate."
+              - "Please ensure to define an SSL Certificate in the group_vars/all or to disable enable_tls_mysql."
           run_once: true
-          when:
-            - groups['all'] | length() > 1
 
         - name: Get SSL Certificate purpose
           ansible.builtin.shell: "openssl x509 -noout -in {{ ssl_server_certificate }} -purpose | grep 'SSL client :' | cut -d ' ' -f4"
           register: ssl_server_certificate_purpose
           changed_when: false
-          when:
-            - groups['all'] | length() > 1
 
         - name: Check SSL Certificate purpose
           ansible.builtin.assert:
@@ -464,13 +470,12 @@
               Invalid value for configuration option `mysql_tls_admin_enabled`.
               Please ensure your value is quoted and is either "true" or "false".
           run_once: true
-          when:
-            - mysql_tls_admin_enabled is defined
-            - groups['all'] | length() > 1
+          when: mysql_tls_admin_enabled is defined
 
       when:
         - enable_tls_mysql is undefined or
           enable_tls_mysql | lower == "true"
+        - groups['all'] | length() > 1
 
     - name: Ensure valid configuration combination
       block:
