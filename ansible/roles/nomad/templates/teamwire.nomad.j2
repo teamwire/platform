@@ -58,7 +58,9 @@ job "teamwire" {
 
 		network {
 			mode = "host"
-			port "http" {}
+			port "http" {
+				static = "8088"
+			}
 			port "ws" {
 				static = "8083"
 			}
@@ -397,7 +399,7 @@ job "teamwire" {
 		network {
 			# https://www.nomadproject.io/docs/drivers/docker#using-the-port-map
 			port "http" {
-				to = 9080
+				static = 9080
 			}
 			port "rest" {
 				static = 9081
