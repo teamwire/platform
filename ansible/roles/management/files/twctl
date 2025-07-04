@@ -1071,7 +1071,8 @@ create_report() {
         fi
 
         # Fetch haproxy logs
-        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers -b -m shell -a "${JOURNALCTL} -u haproxy > ${LOG_OUTPUT}/{{ inventory_hostname }}-haproxy.log" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers -b -m shell -a "${JOURNALCTL} -u haproxy > /tmp/{{ inventory_hostname }}-haproxy.log" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers -b -m fetch -a "src=/tmp/{{ inventory_hostname }}-haproxy.log dest=${TMPDIR}/logs/ flat=yes" > /dev/null 2>&1
 
         # Retrieve mariadb slow query logs on cluster envs
         ansible -i "${ANSIBLE_DIR}/cluster_hosts" database_servers -b -m fetch -a "src=/var/log/mysql/mariadb-slow.log dest=${TMPDIR}/logs/{{ inventory_hostname }}-mariadb-slow.log flat=yes" > /dev/null 2>&1
