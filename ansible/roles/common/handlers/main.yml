@@ -75,3 +75,8 @@
   ansible.builtin.service:
     name: systemd-journald
     state: restarted
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved.service
+    state: restarted

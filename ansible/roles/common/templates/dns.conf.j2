@@ -1,0 +1,7 @@
+[Resolve]
+{% if groups['all'] | length > 1 %}
+DNS=127.0.0.1
+{% else %}
+DNS={{ dns_servers | default(ansible_local.general_facts.dns_servers) | join(' ') }}
+{% endif %}
+DNSStubListener=no

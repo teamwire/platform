@@ -24,16 +24,45 @@
   register: dnsmasq_configuration
   when: '"hashi_servers" in groups'
 
-- name: Configure DNS servers
-  ansible.builtin.template:
-    src: resolv.conf.j2
+- name: Install systemd-resolved
+  ansible.builtin.apt:
+    name: systemd-resolved
+    state: present
+    update_cache: true
+
+- name: Replace /etc/resolv.conf with symbolic link
+  ansible.builtin.file:
+    src: /run/systemd/resolve/resolv.conf
     dest: /etc/resolv.conf
-    mode: 0644
-    owner: root
-    group: root
+    state: link
+    force: true
+
+- name: Create resolved.conf.d directory
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Template out config file for resolved
+  ansible.builtin.template:
+    src: dns.conf.j2
+    dest: /etc/systemd/resolved.conf.d/dns.conf
+    mode: '0644'
   when:
-    - dns_servers is defined
-    - ("hashi_servers" not in groups or not dnsmasq_configuration.stat.exists)
+    - groups.all | length == 1
+
+- name: Disable dhcp for dns
+  ansible.builtin.lineinfile:
+    path: /etc/dhcpcd.conf
+    line: "nohook resolv.conf"
+    create: true
+    state: present
+    mode: '0644'
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
 
 - name: Create rc.local for Debian
   ansible.builtin.template:
