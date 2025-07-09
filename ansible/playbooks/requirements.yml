@@ -357,6 +357,16 @@
       run_once: true
       when:
         - allow_tcp_forwarding is defined
+
+    - name: Ensure ENABLE_CSP is configured correctly
+      ansible.builtin.assert:
+        that:
+          - ENABLE_CSP is in ['true', 'false']
+        msg: >-
+          Ensure value for ENABLE_CSP is set to lower quoted true or false when enabled
+      run_once: true
+      when: ENABLE_CSP is defined
+
     - name: Assert enable_tls_mysql is valid
       ansible.builtin.assert:
         that:

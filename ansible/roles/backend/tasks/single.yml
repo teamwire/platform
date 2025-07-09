@@ -94,6 +94,9 @@
       DISABLE_GC_RECONFIGURATION: "{{ disable_gc_reconfiguration | default('false') | lower }}"
       FCM_SERVICE_ACCOUNT_FILE: "{{ '/certs/fcm/customer.json' if fcm_account_file |default() }}"
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+      ENABLE_CSP: "{{ ENABLE_CSP | default('true') | lower }}"
+      CSP_REPORT_THROTTLE: "{{ CSP_REPORT_THROTTLE | default('100/hour') }}"
+      CSP_DIRECTIVES: "{{ CSP_DIRECTIVES | default('') }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
