@@ -20,13 +20,13 @@
 
 - name: Add maxscale repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://dlm.mariadb.com/repo/maxscale/{{ maxscale_version }}/apt {{ ansible_distribution_release }} main"
+    repo: "{{ ansible_local.general_facts.db.maxscale_apt_repository_string }}"
     state: present
     filename: mariadb-maxscale
 
 - name: Install maxscale
   ansible.builtin.package:
-    name: "maxscale={{ maxscale_version }}~{{ ansible_distribution_release }}-1"
+    name: maxscale
     state: present
     allow_downgrade: true
 

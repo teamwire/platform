@@ -187,10 +187,6 @@ CHECKMK_SHASUM_URL=$(jq -r '.monitoring.sha256' /etc/ansible/facts.d/general_fac
 CHECKMK_SSLCERTIFICATES_SHASUM_URL=$(jq -r '.monitoring.monitoring.sslcertificates_sha256' /etc/ansible/facts.d/general_facts.fact)
 MYDUMPER_SHASUM_URL=$(jq -r '.db.mydumper_sha256' /etc/ansible/facts.d/general_facts.fact)
 
-# Include Variables for OS Version
-# shellcheck disable=SC1091
-source /etc/os-release
-
 DOCKER_IMAGES="
 harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/notification-server:${BACKEND_RELEASE}
@@ -266,9 +262,10 @@ fi
 # Configure Maxscale Repository Key
 if [ ! -f /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg ]; then
   MAXSCALE_REPOSITORY_KEY_URL=$(jq -r '.db.maxscale_repository_key_url' /etc/ansible/facts.d/general_facts.fact)
+  MAXSCALE_REPOSITORY_STRING=$(jq -r '.db.maxscale_apt_repository_string' /etc/ansible/facts.d/general_facts.fact)
 
   sudo curl -Ls "${MAXSCALE_REPOSITORY_KEY_URL}" -o /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
-  echo "deb [arch=amd64,arm64] https://dlm.mariadb.com/repo/maxscale/latest/apt ${VERSION_CODENAME} main" | sudo tee /etc/apt/sources.list.d/mariadb-maxscale.list
+  echo "${MAXSCALE_REPOSITORY_STRING}" | sudo tee /etc/apt/sources.list.d/mariadb-maxscale.list
 fi
 
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,
