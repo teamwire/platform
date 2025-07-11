@@ -190,7 +190,7 @@ MYDUMPER_SHASUM_URL=$(jq -r '.db.mydumper_sha256' /etc/ansible/facts.d/general_f
 DOCKER_IMAGES="
 harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/notification-server:${BACKEND_RELEASE}
-harbor.teamwire.eu/teamwire/go-buildenv:latest
+$(jq -r '.go.container' /etc/ansible/facts.d/general_facts.fact)
 harbor.teamwire.eu/teamwire/web2:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/prosody:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jicofo:${BACKEND_RELEASE}
