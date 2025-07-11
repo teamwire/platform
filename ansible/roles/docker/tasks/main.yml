@@ -35,16 +35,14 @@
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 - name: Get Docker repository signing key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/debian/gpg
-    dest: /usr/share/keyrings/docker-archive-keyring.key
+    url: "{{ ansible_local.general_facts.docker.repository_key_url }}"
+    dest: "{{ ansible_local.general_facts.docker.repository_key_destination }}"
     owner: root
     group: root
     mode: 0644
   environment:
     HTTP_PROXY: "{{ http_proxy | default() }}"
     HTTPS_PROXY: "{{ http_proxy | default() }}"
-  register: docker_signing_key
-  notify: Dearmor Docker repository key
   when: not ansible_local.offline_mode.stat.exists
 
 - name: Flush handlers
@@ -52,7 +50,7 @@
 
 - name: Add docker repository
   ansible.builtin.apt_repository:
-    repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+    repo: "{{ ansible_local.general_facts.docker.apt_repository_string }}"
     state: present
     update_cache: true
   when: not ansible_local.offline_mode.stat.exists

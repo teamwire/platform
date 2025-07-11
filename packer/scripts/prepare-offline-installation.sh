@@ -257,9 +257,10 @@ sudo apt-get update -q
 
 # Configure Docker Repository Key
 # https://docs.docker.com/engine/install/debian/#install-using-the-repository
-if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
-  sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
-  sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
+DOCKER_REPOSITORY_KEY_DESTINATION=$(jq -r '.docker.repository_key_destination' /etc/ansible/facts.d/general_facts.fact)
+if [ ! -f "${DOCKER_REPOSITORY_KEY_DESTINATION}" ]; then
+  DOCKER_REPOSITORY_KEY_URL=$(jq -r '.docker.repository_key_url' /etc/ansible/facts.d/general_facts.fact)
+  sudo wget -q -O "${DOCKER_REPOSITORY_KEY_DESTINATION}" "${DOCKER_REPOSITORY_KEY_URL}"
 fi
 
 # Configure Maxscale Repository Key
