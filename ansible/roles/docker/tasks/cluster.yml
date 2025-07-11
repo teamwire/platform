@@ -2,7 +2,7 @@
 - name: Retrieve the hashi-ui container
   when: (private_ip is defined and 'management_servers' in group_names)
   community.docker.docker_image:
-    name: "{{ hashui_container }}"
+    name: "{{ ansible_local.general_facts.hashiui.container }}"
     source: pull
     state: present
 
@@ -10,7 +10,7 @@
   when: (private_ip is defined and 'management_servers' in group_names)
   community.docker.docker_container:
     name: hashi-ui
-    image: "{{ hashui_container }}"
+    image: "{{ ansible_local.general_facts.hashiui.container }}"
     state: started
     restart_policy: always
     log_driver: syslog

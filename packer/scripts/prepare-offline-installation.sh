@@ -196,8 +196,8 @@ harbor.teamwire.eu/teamwire/prosody:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jicofo:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jvb:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/turn:${BACKEND_RELEASE}
-$(awk '/^registry_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
-$(awk '/^hashui_container:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+$(jq -r '.docker_registry.container' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.hashiui.container' /etc/ansible/facts.d/general_facts.fact)
 harbor.teamwire.eu/teamwire/dashboard:${DASHBOARD_RELEASE}
 harbor.teamwire.eu/teamwire/webclient:${WEBCLIENT_RELEASE}
 "
