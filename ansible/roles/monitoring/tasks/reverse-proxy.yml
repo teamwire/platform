@@ -1,0 +1,53 @@
+---
+
+# ------------------------------------------------------------------------------
+# Install and configure the HTTPs Reverse Proxy
+# ------------------------------------------------------------------------------
+- name: Ensure to create nginx mountpoint folder
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "{{ nginx_mountpoint }}/conf.d"
+    - "{{ nginx_mountpoint }}/ssl"
+
+- name: Manage nginx configuration file
+  ansible.builtin.template:
+    src: master_confs/nginx-default.conf.j2
+    dest: "{{ nginx_mountpoint }}/conf.d/default.conf"
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart nginx container
+
+- name: Create the SSL certificate file for nginx
+  ansible.builtin.template:
+    src: master_confs/server_and_intermediate_and_root.crt.j2
+    dest: "{{ nginx_mountpoint }}/ssl/server_and_intermediate_and_root.crt"
+    owner: root
+    group: root
+    mode: 0440
+  notify: Restart nginx container
+
+- name: Retrieve the nginx container
+  community.docker.docker_image:
+    name: "{{ ansible_local.general_facts.monitoring.nginx_container }}"
+    source: pull
+    state: present
+
+- name: Setup checkmk master docker container
+  community.docker.docker_container:
+    name: nginx
+    image: "{{ ansible_local.general_facts.monitoring.nginx_container }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - "{{ nginx_mountpoint }}/conf.d:/etc/nginx/conf.d"
+      - "{{ nginx_mountpoint }}/ssl:/etc/nginx/ssl:ro"
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

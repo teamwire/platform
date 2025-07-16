@@ -71,8 +71,8 @@
 # ------------------------------------------------------------------------------
 
 - name: Configure nullmailer xinetd listener
-  ansible.builtin.copy:
-    src: xinetd-nullmailer
+  ansible.builtin.template:
+    src: xinetd-nullmailer.j2
     dest: /etc/xinetd.d/nullmailer
     owner: root
     group: root

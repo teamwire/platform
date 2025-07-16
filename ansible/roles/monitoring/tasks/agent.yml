@@ -6,10 +6,10 @@
 - name: Configure Autodiscover configuration files
   ansible.builtin.template:
     src: master_confs/autochecks-hosts.mk.j2
-    dest: "/opt/omd/sites/{{ checkmk_site }}/var/check_mk/autochecks/{{ inventory_hostname if groups['all'] | length() > 1 else external_hostname }}.mk"
-    owner: "{{ checkmk_site }}"
-    group: "{{ checkmk_site }}"
-    mode: '0660'
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/var/check_mk/autochecks/{{ inventory_hostname if groups['all'] | length() > 1 else external_hostname }}.mk"
+    owner: 1000
+    group: 1000
+    mode: 0660
   delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
   notify: Update checkmk config
 
@@ -20,6 +20,8 @@
   ansible.builtin.get_url:
     url: "{{ checkmk_agent_pkg_endpoint }}"
     dest: "/var/cache/downloads/checkmk_agent_linux_amd64.deb"
+    owner: root
+    group: root
     mode: 0440
     use_proxy: false
     validate_certs: false
@@ -49,17 +51,6 @@
   with_items:
     - "{{ monitoring_agent_plugins }}"
     - "{{ monitoring_custom_agent_plugins }}"
-
-- name: Copy exchange plugins into agent directory
-  ansible.builtin.copy:
-    src: "{{ monitoring_master_custom_plugin_dir }}{{ item }}"
-    dest: "{{ monitoring_agent_plugin_dir }}{{ item }}"
-    owner: root
-    group: root
-    mode: 0700
-    remote_src: true
-  when: groups['all'] | length() == 1
-  with_items: "{{ monitoring_custom_agent_plugins }}"
 
 - name: Create custom check script folder on agents
   ansible.builtin.file:

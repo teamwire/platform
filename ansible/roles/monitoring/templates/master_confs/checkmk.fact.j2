@@ -1,9 +1,4 @@
-#!/bin/bash
-
-CHECKMK_AGENT_REGISTRATION_SECRET=$(sudo cat /opt/omd/sites/{{ checkmk_site }}/var/check_mk/web/agent_registration/automation.secret)
-
-cat <<EOF
 {
-    "agent_registration_secret" : "$CHECKMK_AGENT_REGISTRATION_SECRET"
+    "agent_registration_secret": "{{ agent_registration_user_secret.content | b64decode }}",
+    "version": "{{ checkmk_container_info.container.Config.Image.split(":")[-1] }}"
 }
-EOF

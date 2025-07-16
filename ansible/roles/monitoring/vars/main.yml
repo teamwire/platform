@@ -1,12 +1,15 @@
 ---
 
 # ------------------------------------------------------------------------------
+# Define Master related variables
+# ------------------------------------------------------------------------------
+checkmk_master_ip: "{{ ansible_default_ipv4.address if groups['all'] | length == 1 else hostvars[groups['monitoring'] | first].private_ip }}"
+checkmk_url: "https://{{ checkmk_master_ip }}:8000/{{ checkmk_site }}/check_mk"
+
+# ------------------------------------------------------------------------------
 # Define Plugin variables
 # ------------------------------------------------------------------------------
-monitoring_master_plugin_dir: "/opt/omd/sites/{{ checkmk_site }}/share/check_mk/agents/plugins/"
 monitoring_master_plugin_endpoint: "{{ checkmk_url }}/agents/plugins/"
-
-monitoring_master_custom_plugin_dir: "/opt/omd/sites/{{ checkmk_site }}/local/share/check_mk/agents/plugins/"
 monitoring_agent_plugin_dir: "/usr/lib/check_mk_agent/plugins/"
 monitoring_agent_custom_check_dir: "/usr/local/bin/monitoring_checks/"
 
@@ -22,4 +25,4 @@ monitoring_custom_agent_plugins:
 # ------------------------------------------------------------------------------
 # Define Agent Package URL
 # ------------------------------------------------------------------------------
-checkmk_agent_pkg_endpoint: "{{ checkmk_url }}/agents/check-mk-agent_{{ ansible_local.general_facts.monitoring.version }}-1_all.deb"
+checkmk_agent_pkg_endpoint: "{{ checkmk_url }}/agents/check-mk-agent_{{ ansible_local.checkmk.version if groups['all'] | length == 1 else hostvars[groups['monitoring'] | first].ansible_local.checkmk.version }}-1_all.deb"

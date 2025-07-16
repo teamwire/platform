@@ -1,167 +1,110 @@
 ---
 
 # ------------------------------------------------------------------------------
-# Install master package
+# Include Tasks for reverse proxy
 # ------------------------------------------------------------------------------
-- name: Fetch checkmk master deb file checksum
-  ansible.builtin.uri:
-    url: "{{ ansible_local.general_facts.monitoring.sha256 }}"
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
-  register: checkmk_shasum
-  when: not ansible_local.offline_mode.stat.exists
-
-- name: Download Checkmk master deb file
-  ansible.builtin.get_url:
-    url: "{{ ansible_local.general_facts.monitoring.url }}"
-    dest: "/var/cache/downloads/check-mk-raw-{{ ansible_local.general_facts.monitoring.version }}.{{ ansible_distribution_release }}_amd64.deb"
-    checksum: "sha256:{{ checkmk_shasum.json['items'][0]['assets'][0]['checksum']['sha256'] }}"
-    mode: 0440
-    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
-  when: not ansible_local.offline_mode.stat.exists
-
-- name: Install checkmk master
-  ansible.builtin.apt:
-    deb: "/var/cache/downloads/check-mk-raw-{{ ansible_local.general_facts.monitoring.version }}.{{ ansible_distribution_release }}_amd64.deb"
+- name: Include Tasks for reverse proxy
+  ansible.builtin.include_tasks: reverse-proxy.yml
 
 # ------------------------------------------------------------------------------
-# Install acl to successfully switch user
+# Create Checkmk Container Mountpoints
 # ------------------------------------------------------------------------------
-- name: Install acl pkg
-  ansible.builtin.apt:
-    name: acl
-    state: present
+- name: Ensure to create checkmk mountpoint folder
+  ansible.builtin.file:
+    path: "{{ checkmk_mountpoint }}"
+    state: directory
+    owner: 1000
+    group: 1000
+    mode: 0755
 
-# ------------------------------------------------------------------------------
-# Create checkmk site and configure it correctly
-# ------------------------------------------------------------------------------
-- name: Check if checkmk site exists
-  ansible.builtin.command: "omd sites"
-  register: checkmk_sites
-  changed_when: "checkmk_site not in checkmk_sites.stdout"
-  notify: Create checkmk site
+- name: Create Directory for container internal Postfix configuration
+  ansible.builtin.file:
+    path: "{{ postfix_mountpoint }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
 
-- name: Check if omd site requires update
-  ansible.builtin.command: "omd version {{ checkmk_site }}"
-  register: omd_site_version
-  changed_when: "ansible_local.general_facts.monitoring.version not in omd_site_version.stdout"
-  when: checkmk_sites is not changed
-  notify:
-    - Update omd site
-    - Ansible facts reload
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
-
-- name: Allow checkmk site user to use cron
-  ansible.builtin.template:
-    src: master_confs/cron-allow.j2
-    dest: /etc/cron.allow
+- name: Copy container internal postfix master.cf
+  ansible.builtin.copy:
+    src: postfix-master.cf
+    dest: "{{ postfix_mountpoint }}/master.cf"
     owner: root
     group: root
     mode: 0644
 
+- name: Fixup the checkmk docker entrypoint script
+  ansible.builtin.copy:
+    src: fix-docker-entrypoint-checkmk_container.sh
+    dest: /usr/local/bin/fix-docker-entrypoint-checkmk_container.sh
+    owner: root
+    group: root
+    mode: 0755
+
+# ------------------------------------------------------------------------------
+# Setup checkmk master docker container
+# ------------------------------------------------------------------------------
+- name: Retrieve the checkmk master container
+  community.docker.docker_image:
+    name: "{{ ansible_local.general_facts.monitoring.container }}"
+    source: pull
+    state: present
+
+- name: Setup checkmk master docker container
+  community.docker.docker_container:
+    name: checkmk
+    image: "{{ ansible_local.general_facts.monitoring.container }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - "/usr/local/bin/fix-docker-entrypoint-checkmk_container.sh:/docker-entrypoint.sh"
+      - "{{ checkmk_mountpoint }}:/omd/sites"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/hosts:/etc/hosts:ro"
+      - "/var/cache/downloads:/var/cache/downloads:ro"
+      - "{{ postfix_mountpoint }}/master.cf:/etc/postfix/master.cf"
+    env:
+      CMK_SITE_ID: "{{ checkmk_site }}"
+      MAIL_RELAY_HOST: "[127.0.1.1]:25"
+
+# ------------------------------------------------------------------------------
+# Ensure omd site is created before continueing configure
+# ------------------------------------------------------------------------------
+- name: Check omd site status
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && omd status"
+  register: check_omd_site_status
+  until: "checkmk_site in check_omd_site_status.stdout"
+  retries: 6
+  delay: 10
+  failed_when: "checkmk_site not in check_omd_site_status.stdout"
+  changed_when: false
+
+# ------------------------------------------------------------------------------
+# Configure omd site
+# ------------------------------------------------------------------------------
 - name: Ensure checkmk omd site is configured as wished
   ansible.builtin.template:
     src: master_confs/omd-site.conf.j2
-    dest: /opt/omd/sites/{{ checkmk_site }}/etc/omd/site.conf
-    owner: "{{ checkmk_site }}"
-    group: "{{ checkmk_site }}"
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/omd/site.conf"
+    owner: 1000
+    group: 1000
     mode: 0644
-  notify: Reload omd site apache config
+  notify: Restart checkmk container
 
 - name: Ensure checkmk apache listen port is configured as wished
   ansible.builtin.template:
     src: master_confs/apache-listen-ports.conf.j2
-    dest: /opt/omd/sites/{{ checkmk_site }}/etc/apache/listen-port.conf
-    owner: "{{ checkmk_site }}"
-    group: "{{ checkmk_site }}"
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/apache/listen-port.conf"
+    owner: 1000
+    group: 1000
     mode: 0644
-  notify: Reload omd site apache config
+  notify: Restart checkmk container
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
-
-- name: Ensure the checkmk site is up and running
-  block:
-    - name: Check the state of the checkmk pages
-      ansible.builtin.command: "omd status {{ checkmk_site }}"
-      changed_when: false
-  rescue:
-    - name: Start checkmk site
-      ansible.builtin.command: "omd start {{ checkmk_site }}"
-      changed_when: false
-
-- name: Create the SSL certificate
-  ansible.builtin.template:
-    src: master_confs/server_and_intermediate_and_root.crt.j2
-    dest: /etc/ssl/certs/server_and_intermediate_and_root.crt
-    mode: 0640
-  notify: Restart apache2
-
-- name: Configure /etc/apache2/ports.conf
-  ansible.builtin.copy:
-    src: apache-ports.conf
-    dest: /etc/apache2/ports.conf
-    owner: root
-    group: root
-    mode: 0644
-  notify: Restart apache2
-
-- name: Configure /etc/apache2/conf-enabled/security.conf
-  ansible.builtin.copy:
-    src: apache-security.conf
-    dest: /etc/apache2/conf-enabled/security.conf
-    owner: root
-    group: root
-    mode: 0755
-  notify: Restart apache2
-
-- name: Ensure apache module ssl is enabled
-  community.general.apache2_module:
-    name: "{{ item }}"
-    state: present
-  with_items:
-    - ssl
-    - headers
-    - rewrite
-  notify: Restart apache2
-
-- name: Deploy apache2 site configuration
-  ansible.builtin.template:
-    src: master_confs/apache-site.conf.j2
-    dest: /etc/apache2/sites-available/000-default.conf
-    owner: root
-    group: root
-    mode: 0644
-  notify: Restart apache2
-
-- name: Create symlink for apache2 site configuration
-  ansible.builtin.file:
-    src: /etc/apache2/sites-available/000-default.conf
-    dest: /etc/apache2/sites-enabled/000-default.conf
-    state: link
-  notify: Restart apache2
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
-
-- name: Ensure apache2 service is enabled and running
-  ansible.builtin.service:
-    name: apache2
-    state: started
-    enabled: true
-
-- name: Install logrotate job for apache2 logs
-  ansible.builtin.copy:
-    src: apache2-log
-    dest: /etc/logrotate.d/apache2
-    owner: root
-    group: root
-    mode: 0644
 
 # ------------------------------------------------------------------------------
 # Ensure passwords are set correctly
@@ -169,39 +112,18 @@
 - name: Ensure cmkadmin password is correctly defined and up to date
   block:
     - name: Check cmkadmin password
-      ansible.builtin.command: "htpasswd -bv /opt/omd/sites/{{ checkmk_site }}/etc/htpasswd cmkadmin {{ monitoring_cmkadmin_password }}"
-      register: check_cmkadmin_pw
+      community.docker.docker_container_exec:
+        container: checkmk
+        command: "htpasswd -bv /omd/sites/{{ checkmk_site }}/etc/htpasswd cmkadmin {{ monitoring_cmkadmin_password }}"
       changed_when: false
       no_log: true
   rescue:
     - name: Update cmkadmin password
-      ansible.builtin.command: "htpasswd -bB /opt/omd/sites/{{ checkmk_site }}/etc/htpasswd cmkadmin {{ monitoring_cmkadmin_password }}"
+      community.docker.docker_container_exec:
+        container: checkmk
+        command: "htpasswd -bB /omd/sites/{{ checkmk_site }}/etc/htpasswd cmkadmin {{ monitoring_cmkadmin_password }}"
       changed_when: false
       no_log: true
-
-# ------------------------------------------------------------------------------
-# Set Facts for checkmk users with authorization secrets
-# ------------------------------------------------------------------------------
-- name: Deploy ansible facts for checkmk users with authorization secrets
-  ansible.builtin.template:
-    src: master_confs/checkmk.fact.j2
-    dest: "/etc/ansible/facts.d/checkmk.fact"
-    mode: 0755
-    owner: root
-    group: root
-  notify: Ansible facts reload
-
-# ------------------------------------------------------------------------------
-# Allow teamwire user to switch to monitoring site user
-# ------------------------------------------------------------------------------
-- name: Configure sudo to allow teamwire user to switch to monitoring site user
-  ansible.builtin.template:
-    src: master_confs/sudo-10-monitoring-master.j2
-    dest: "/etc/sudoers.d/10-monitoring-master"
-    mode: 0440
-    owner: root
-    group: root
-    validate: /usr/sbin/visudo -cf %s
 
 # ------------------------------------------------------------------------------
 # Configure checkmk
@@ -209,10 +131,10 @@
 - name: Configure master conf.d/wato files
   ansible.builtin.template:
     src: "master_confs/{{ item }}.j2"
-    dest: "/opt/omd/sites/{{ checkmk_site }}/etc/check_mk/conf.d/wato/{{ item }}"
-    owner: "{{ checkmk_site }}"
-    group: "{{ checkmk_site }}"
-    mode: '0660'
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/check_mk/conf.d/wato/{{ item }}"
+    owner: 1000
+    group: 1000
+    mode: 0660
   with_items:
     - hosts.mk
     - rules.mk
@@ -223,10 +145,10 @@
 - name: Configure available multisite Tags
   ansible.builtin.template:
     src: master_confs/multisite_tags.mk.j2
-    dest: /opt/omd/sites/{{ checkmk_site }}/etc/check_mk/multisite.d/wato/tags.mk
-    owner: "{{ checkmk_site }}"
-    group: "{{ checkmk_site }}"
-    mode: '0660'
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/check_mk/multisite.d/wato/tags.mk"
+    owner: 1000
+    group: 1000
+    mode: 0660
   notify: Update checkmk config
 
 # ------------------------------------------------------------------------------
@@ -253,11 +175,10 @@
   when: not ansible_local.offline_mode.stat.exists
 
 - name: Check mkp sslcertificate version
-  ansible.builtin.command: "mkp show sslcertificates {{ ansible_local.general_facts.monitoring.sslcertificate_version }}"
-  become_user: "tw_monitoring"
-  become_flags: -i
-  environment:
-    PATH: "/omd/sites/tw_monitoring/lib/perl5/bin:/omd/sites/tw_monitoring/local/bin:/omd/sites/tw_monitoring/bin:/omd/sites/tw_monitoring/local/lib/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && mkp show sslcertificates {{ ansible_local.general_facts.monitoring.sslcertificate_version }}"
+    user: "{{ checkmk_site }}"
   register: check_mkp_sslcertificates
   changed_when: "'No such package' in check_mkp_sslcertificates.stderr"
   failed_when: "check_mkp_sslcertificates.stderr not in [ 'No such package: sslcertificates ' + ansible_local.general_facts.monitoring.sslcertificate_version, '' ]"
@@ -266,9 +187,59 @@
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
-- name: Ensure to create link to be able to download mkp plugins to agent
-  ansible.builtin.file:
-    src: "{{ monitoring_master_custom_plugin_dir }}{{ item }}"
-    dest: "{{ monitoring_master_plugin_dir }}{{ item }}"
-    state: link
+- name: Check if file links for mkp plugins exists
+  ansible.builtin.find:
+    paths: /var/lib/docker/
+    patterns: "{{ item }}"
+    file_type: link
+    recurse: true
+  register: custom_plugin_links
   with_items: "{{ monitoring_custom_agent_plugins }}"
+
+- name: Ensure to create link to be able to download mkp plugins to agent
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: "ln -s /omd/sites/{{ checkmk_site }}/local/share/check_mk/agents/plugins/{{ item }} /omd/sites/{{ checkmk_site }}/share/check_mk/agents/plugins/{{ item }}"
+  when: "custom_plugin_links.results | selectattr('item', 'equalto', item) | map(attribute='files') | sum(start=[]) | selectattr('path', 'search', 'share/check_mk/agents/plugins/' + item) == []"
+  with_items: "{{ monitoring_custom_agent_plugins }}"
+
+# ------------------------------------------------------------------------------
+# Set Facts for checkmk users with authorization secrets
+# Necessary for agent install
+# ------------------------------------------------------------------------------
+- name: Get checkmk container infos
+  community.docker.docker_container_info:
+    name: checkmk
+  register: checkmk_container_info
+
+- name: Get agent_registration secret
+  ansible.builtin.slurp:
+    src: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/var/check_mk/web/agent_registration/automation.secret"
+  register: agent_registration_user_secret
+
+- name: Deploy ansible facts for checkmk users with authorization secrets
+  ansible.builtin.template:
+    src: master_confs/checkmk.fact.j2
+    dest: "/etc/ansible/facts.d/checkmk.fact"
+    mode: 0644
+    owner: root
+    group: root
+  notify: Ansible facts reload
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+# ------------------------------------------------------------------------------
+# Ensure checkmk master is reachable
+# ------------------------------------------------------------------------------
+- name: Ensure checkmk master is reachable
+  ansible.builtin.uri:
+    url: "{{ checkmk_url }}"
+    validate_certs: false
+    follow_redirects: none
+    status_code: 302
+    use_proxy: false
+  register: checkmk_endpoint_state
+  until: checkmk_endpoint_state.status == 302
+  retries: 5
+  delay: 5

@@ -1,12 +1,20 @@
 ---
 
 # ------------------------------------------------------------------------------
-# Define default site variables
+# Define default variables
 # ------------------------------------------------------------------------------
 checkmk_site: "tw_monitoring"
-checkmk_master_ip: "{{ ansible_default_ipv4.address if groups['all'] | length == 1 else hostvars[groups['monitoring'] | first].private_ip }}"
-checkmk_port: "8000"
-checkmk_url: "https://{{ checkmk_master_ip }}:{{ checkmk_port }}/{{ checkmk_site }}/check_mk"
+checkmk_mountpoint: "/srv/checkmk"
+
+# ------------------------------------------------------------------------------
+# Define reverse Proxy Variables
+# ------------------------------------------------------------------------------
+nginx_mountpoint: "/srv/nginx"
+
+# ------------------------------------------------------------------------------
+# Define container internal postfix conf moutpoint
+# ------------------------------------------------------------------------------
+postfix_mountpoint: "/srv/postfix"
 
 # ------------------------------------------------------------------------------
 # Define Database related variables

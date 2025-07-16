@@ -48,139 +48,6 @@ debsums
 apt-listbugs
 libpam-tmpdir
 xinetd
-acl
-python3-rpm
-apache2
-apache2-bin
-apache2-data
-apache2-utils
-libapache2-mod-php8.2
-bc
-binutils
-binutils-common
-binutils-x86-64-linux-gnu
-debugedit
-dialog
-fontconfig
-fontconfig-config
-fonts-dejavu-core
-graphviz
-libabsl20220623
-libann0
-libaom3
-libapr1
-libaprutil1
-libaprutil1-dbd-sqlite3
-libaprutil1-ldap
-libarchive13
-libavahi-client3
-libavahi-common-data
-libavahi-common3
-libavif15
-libbinutils
-libcairo2
-libcdt5
-libcgraph6
-libctf-nobfd0
-libctf0
-libdatrie1
-libdav1d6
-libde265-0
-libdeflate0
-libdw1
-libfontconfig1
-libfreeradius3
-libfribidi0
-libfsverity0
-libgav1-1
-libgd3
-libgomp1
-libgprofng0
-libgraphite2-3
-libgsf-1-114
-libgsf-1-common
-libgts-0.7-5
-libgvc6
-libgvpr2
-libharfbuzz0b
-libheif1
-libice6
-libjbig0
-libjpeg62-turbo
-liblab-gamut1
-liblcms2-2
-libldb2
-liblerc4
-libltdl7
-liblua5.3-0
-libnspr4
-libnss3
-libnuma1
-libopenjp2-7
-libpango-1.0-0
-libpango1.0-0
-libpangocairo-1.0-0
-libpangoft2-1.0-0
-libpangoxft-1.0-0
-libpathplan4
-libpcap0.8
-libpcre3
-libpixman-1-0
-libpoppler126
-libpq5
-librav1e0
-librpm9
-librpmbuild9
-librpmio9
-librpmsign9
-libsm6
-libsmbclient
-libsvtav1enc1
-libtalloc2
-libtdb1
-libtevent0
-libthai-data
-libthai0
-libtiff6
-libwbclient0
-libwebp7
-libx265-199
-libxaw7
-libxcb-render0
-libxcb-shm0
-libxft2
-libxmu6
-libxpm4
-libxrender1
-libxt6
-libyuv0
-php
-php-cgi
-php-common
-php-gd
-php-pear
-php-sqlite3
-php-xml
-php8.2
-php8.2-cgi
-php8.2-cli
-php8.2-common
-php8.2-gd
-php8.2-opcache
-php8.2-readline
-php8.2-sqlite3
-php8.2-xml
-poppler-utils
-psmisc
-rpcbind
-rpm
-rpm-common
-rpm2cpio
-samba-common
-samba-libs
-smbclient
-time
-x11-common
 "
 
 CHECKMK_SHASUM_URL=$(jq -r '.monitoring.sha256' /etc/ansible/facts.d/general_facts.fact)
@@ -200,6 +67,7 @@ $(jq -r '.docker_registry.container' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.hashiui.container' /etc/ansible/facts.d/general_facts.fact)
 harbor.teamwire.eu/teamwire/dashboard:${DASHBOARD_RELEASE}
 harbor.teamwire.eu/teamwire/webclient:${WEBCLIENT_RELEASE}
+$(jq -r '.monitoring.container' /etc/ansible/facts.d/general_facts.fact)
 "
 
 # File URL and SHA256 checksum separated by a semicolon
@@ -208,7 +76,6 @@ $(jq -r '.consul.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul.
 $(jq -r '.consul_template.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul_template.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.nomad.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.nomad.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.vault.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.vault.sha256' /etc/ansible/facts.d/general_facts.fact)
-$(jq -r '.monitoring.url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 $(jq -r '.monitoring.sslcertificates_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SSLCERTIFICATES_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 $(jq -r '.db.mydumper_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${MYDUMPER_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 "
