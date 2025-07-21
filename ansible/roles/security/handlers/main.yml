@@ -17,3 +17,8 @@
 
 - name: Permission handler
   ansible.builtin.command: "chmod 1777 /tmp" # noqa deprecated-command-syntax
+
+- name: Reload sysctl options
+  ansible.builtin.service:
+    name: procps
+    state: restarted
