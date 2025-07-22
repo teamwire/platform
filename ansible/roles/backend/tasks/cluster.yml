@@ -15,7 +15,7 @@
   ansible.builtin.file:
     path: /data/certs/fcm
     owner: daemon
-    group: ssl-cert
+    group: daemon
     mode: 0750
     state: directory
   when:
@@ -29,7 +29,7 @@
     dest: "/data/certs/fcm/customer.json"
     mode: 0440
     owner: daemon
-    group: ssl-cert
+    group: daemon
   when:
     - fcm_account_file is defined
     - fcm_account_file | length > 0
