@@ -592,16 +592,6 @@
 
     - name: Check monitoring requirements
       block:
-        - name: Ensure monitoring group has only one member
-          ansible.builtin.assert:
-            that:
-              - "groups['monitoring'] is defined"
-              - "groups['monitoring'] | length == 1"
-            msg: >-
-              Please ensure to defined the monitoring group in the cluster_hosts file and
-              that the monitoring group only includes one server.
-          when: groups['all'] | length > 1
-
         - name: Ensure that monitoring_email_addresses is correctly defined
           ansible.builtin.assert:
             that:

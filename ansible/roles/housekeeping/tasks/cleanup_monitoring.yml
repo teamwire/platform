@@ -65,32 +65,6 @@
     - ( groups['all'] | length == 1 and mysql_host is undefined ) or
       ( groups['database_servers'] is defined and inventory_hostname == groups['database_servers'] | sort | first )
 
-- name: Cleanup icinga2 database user for monitoring server
-  community.mysql.mysql_user:
-    name: "{{ monitoring_db_web_user }}"
-    host: "{{ item }}"
-    state: absent
-    login_user: root
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-  with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list }}"
-  when:
-    - groups['all'] | length > 1
-    - groups['database_servers'] is defined
-    - inventory_hostname == groups['database_servers'] | sort | first
-    - groups['monitoring'] is defined
-
-- name: Cleanup icingaweb2 database user
-  community.mysql.mysql_user:
-    name: "{{ monitoring_db_web_user }}"
-    host: "{{ item }}"
-    state: absent
-    login_user: root
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-  with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
-  when:
-    - ( groups['all'] | length == 1 and mysql_host is undefined ) or
-      ( groups['database_servers'] is defined and inventory_hostname == groups['database_servers'] | sort | first and groups['monitoring'] is defined )
-
 - name: Cleanup database user icinga2
   community.mysql.mysql_user:
     name: icinga2

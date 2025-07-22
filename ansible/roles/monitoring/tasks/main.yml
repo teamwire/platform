@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------------
 - name: Include monitoring master setup
   ansible.builtin.include_tasks: master.yml
-  when: groups['all'] | length() == 1 or inventory_hostname in groups['monitoring']
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['management_servers']
 
 - name: Include monitoring agent setup
   ansible.builtin.include_tasks: agent.yml

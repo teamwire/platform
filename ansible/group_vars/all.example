@@ -293,8 +293,8 @@ system_email_recipient:
 ## MONITORING
 ##############################################################################
 # To enable on-premise monitoring, please uncomment and set enable_monitoring
-# to true. If running a cluster-setup, please specify the monitoring node in the
-# cluster_hosts file, under the monitoring group.
+# to true. If running a cluster-setup, the monitoring master will be your 
+# management server.
 
 # enable_monitoring: yes
 

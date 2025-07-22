@@ -10,7 +10,7 @@
     owner: 1000
     group: 1000
     mode: 0660
-  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  delegate_to: "{{ groups.management_servers | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
   notify: Update checkmk config
 
 # ------------------------------------------------------------------------------

@@ -35,7 +35,7 @@
     user: "{{ checkmk_site }}"
   listen: Update checkmk config
   run_once: true
-  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  delegate_to: "{{ groups.management_servers | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
 
 - name: Apply and reload the checkmk configuration
   community.docker.docker_container_exec:
@@ -44,7 +44,7 @@
     user: "{{ checkmk_site }}"
   listen: Update checkmk config
   run_once: true
-  delegate_to: "{{ groups.monitoring | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+  delegate_to: "{{ groups.management_servers | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
 
 # ------------------------------------------------------------------------------
 # Reload ansible facts
@@ -57,7 +57,7 @@
 # Register checkmk agent
 # ------------------------------------------------------------------------------
 - name: Register checkmk agent
-  ansible.builtin.command: "cmk-agent-ctl register --hostname {{ external_hostname if groups['all'] | length() == 1 else inventory_hostname }} --server {{ checkmk_master_ip }}:{{ checkmk_agent_reciever_port | default('5665') }} --site tw_monitoring --user agent_registration --trust-cert --password {{ ansible_local.checkmk.agent_registration_secret if groups['all'] | length() == 1 else hostvars[groups['monitoring'] | sort | first].ansible_local.checkmk.agent_registration_secret }}"
+  ansible.builtin.command: "cmk-agent-ctl register --hostname {{ external_hostname if groups['all'] | length() == 1 else inventory_hostname }} --server {{ checkmk_master_ip }}:{{ checkmk_agent_reciever_port | default('5665') }} --site tw_monitoring --user agent_registration --trust-cert --password {{ ansible_local.checkmk.agent_registration_secret if groups['all'] | length() == 1 else hostvars[groups['management_servers'] | sort | first].ansible_local.checkmk.agent_registration_secret }}"
   changed_when: false
   no_log: true
 

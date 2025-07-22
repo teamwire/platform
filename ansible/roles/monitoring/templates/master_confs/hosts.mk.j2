@@ -58,9 +58,6 @@ host_tags.update({'{{ host if host != "localhost" else external_hostname }}': {
 {% if groups['load_balancers'] is defined and host in groups['load_balancers'] %}
   'load_balancers': 'true',
 {% endif -%}
-{% if groups['monitoring'] is defined and host in groups['monitoring'] %}
-  'monitoring': 'true',
-{% endif -%}
 {% if ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in [ "localhost", "127.0.0.1" ] ) or ( groups['database_servers'] is defined and inventory_hostname in groups['database_servers'] ) %}
   'external_db': 'true',
 {% endif -%}
@@ -130,9 +127,6 @@ host_attributes.update({'{{ host if host != "localhost" else external_hostname }
 {% endif -%}
 {% if groups['load_balancers'] is defined and host in groups['load_balancers'] %}
   'tag_load_balancers': 'true',
-{% endif -%}
-{% if groups['monitoring'] is defined and host in groups['monitoring'] %}
-  'tag_monitoring': 'true',
 {% endif -%}
 {% if ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in [ "localhost", "127.0.0.1" ] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined ) %}
   'tag_external_db': 'true',
