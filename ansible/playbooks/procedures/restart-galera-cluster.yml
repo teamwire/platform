@@ -114,17 +114,6 @@
         name: haproxy
         state: stopped
 
-- name: Stop icinga2 on monitoring servers
-  hosts: monitoring
-  tasks:
-    - name: Stop icinga2
-      ansible.builtin.service:
-        name: icinga2
-        state: stopped
-      when:
-        - enable_monitoring is defined
-        - enable_monitoring | lower == "yes"
-
 # ------------------------------------------------------------------------------
 # Stop and Resetup the Galera Cluster
 # ------------------------------------------------------------------------------
@@ -169,14 +158,3 @@
       ansible.builtin.service:
         name: haproxy
         state: started
-
-- name: Start icinga2 on monitoring servers
-  hosts: monitoring
-  tasks:
-    - name: Start icinga2
-      ansible.builtin.service:
-        name: icinga2
-        state: started
-      when:
-        - enable_monitoring is defined
-        - enable_monitoring | lower == "yes"
