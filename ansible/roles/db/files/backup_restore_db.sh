@@ -31,7 +31,7 @@ SCRIPT_NAME=$(basename "$0")
 
 # MAX_THREADS was originally $(grep -c ^processor /proc/cpuinfo), but it caused deadlock issues during the restore.
 # As a fix we need to use only 1 thread to prevent issues. More details in ITOPS-2017.
-MAX_THREADS=1
+MAX_THREADS=2
 
 declare -r FALSE=1
 declare -r TRUE=0
@@ -172,6 +172,7 @@ backup_db() {
     --host=${HOST} \
     --port="${PORT}" \
     --outputdir="${OUTDIR}/tmp" \
+    --default-connection-database "${DB}" \
     --threads="${MAX_THREADS}"
 
   check_prev_exitcode $? "Error while backup"
@@ -241,7 +242,12 @@ backup_db() {
 restore_db() {
 
   # Check if password is set. If pass is not set exit script
-  [ -z "${PASS}" ] && echo "Pass not set!" && exit_on_failure
+  if [ -z "${PASS}" ] && [ ! -e "${HOME}/.my.cnf" ];then
+    echo "Pass not set!"
+    exit_on_failure
+  elif [ -n "${PASS}" ];then
+    create_temp_conf
+  fi
 
   if [ -z "${IN_FILE}" ];then
     echo "You have to specify a path to the dumpfile to recover"
@@ -271,6 +277,7 @@ restore_db() {
     --directory="${DIR_TMP}" \
     --threads="${MAX_THREADS}" \
     --overwrite-tables \
+    --default-connection-database "${DB}" \
     --verbose=3
   else
     myloader --defaults-file="${TMPFILE_PATH}" \
@@ -281,6 +288,7 @@ restore_db() {
     --password="${PASS}" \
     --directory="${DIR_TMP}" \
     --threads="${MAX_THREADS}" \
+    --default-connection-database "${DB}" \
     --verbose=3
   fi
   check_prev_exitcode $? "Error while recovering (dumps) into database"
