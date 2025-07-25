@@ -197,6 +197,18 @@
       when:
         - enable_voip is defined
 
+    - name: Ensure static_frontend_configuration is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - static_frontend_configuration is string
+          - static_frontend_configuration is in ['true', 'false']
+        msg: >-
+          Ensure value from static_frontend_configuration is set to lower quoted true or false
+      run_once: true
+      when:
+        - static_frontend_configuration is defined
+        - groups['all'] | length > 1
+
     - name: Ensure enable_stun is a string when enabled
       ansible.builtin.assert:
         that:
