@@ -739,7 +739,7 @@
         - config_done is defined
 
     - name: Register cert subject organization
-      ansible.builtin.shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O = .*,' | sed 's/. OU.*//' | sed 's/O = //' # noqa risky-shell-pipe
+      ansible.builtin.shell: "openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O\\s*=.*,' | sed 's/. OU.*//' | sed 's/O\\s*=\\s*//'"
       register: cert_subject_org
       when:
         - packer_build_name is not defined
@@ -747,7 +747,7 @@
         - (ssl_certfile is defined or ssl_server_certificate is defined)
 
     - name: Register cert issuer organization
-      ansible.builtin.shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O = .*,' | sed 's/O = //' | sed 's/,//' # noqa risky-shell-pipe
+      ansible.builtin.shell: "openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O\\s*=.*,' | sed 's/. OU.*//' | sed 's/O\\s*=\\s*//'"
       register: cert_issuer_org
       when:
         - packer_build_name is not defined
