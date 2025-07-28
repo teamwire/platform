@@ -166,11 +166,19 @@ frontend https-in
 backend teamwire-backend
     http-response del-header Server
     http-response set-header Connection keep-alive
-    {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend" }} {{ range $index, $service := service "backend" }}
+{% if groups['all'] | length > 1 -%}
+{%- if static_frontend_configuration | default('false') == 'true' -%}
+{% for host in groups['backend_servers'] %}
+    server backend_{{ loop.index0 }} {{ hostvars[host].private_ip }}:8088 check port 8088 inter 3s fall 3 rise 2
+{% endfor -%}
+{%- else -%}
+{% raw %}    {{ if service "backend" }} {{ range $index, $service := service "backend" }}
     server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
-    {{ end }}{% endraw %}
-    {%else%}server teamwire-backend 127.0.0.1:8080 check port 8080
-    {% endif %}
+    {{ end }}    {% endraw -%}
+{%- endif -%}
+{%- else %}
+    server teamwire-backend 127.0.0.1:8080 check port 8080
+{%- endif %}
 
 {% if not (is_legacy_installation | default('True') | lower | bool) %}
 # ----------------------------------------------------
@@ -179,11 +187,19 @@ backend teamwire-backend
 backend teamwire-dashboard
     http-response del-header Server
     http-response set-header Connection keep-alive
-    {% if "frontend_servers" in groups %}{% raw %}{{ if service "dashboard" }} {{ range $index, $service := service "dashboard" }}
-    server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
-    {{ end }}{% endraw %}
-    {%else%}server teamwire-dashboard 127.0.0.1:8099 check port 8099
-    {% endif %}
+{% if groups['all'] | length > 1 -%}
+{%- if static_frontend_configuration | default('false') == 'true' -%}
+{% for host in groups['backend_servers'] %}
+    server dashboard_{{ loop.index0 }} {{ hostvars[host].private_ip }}:8099 check port 8099 inter 3s fall 3 rise 2
+{% endfor -%}
+{%- else -%}
+{% raw %}{{ if service "dashboard" }}{{ range $index, $service := service "dashboard" }}
+    server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}
+{{ end }}{{ end }}    {% endraw -%}
+{%- endif -%}
+{%- else %}
+    server teamwire-dashboard 127.0.0.1:8099 check port 8099
+{%- endif %}
 {% endif %}
 
 {% if not (is_legacy_installation | default('True') | lower | bool) %}
@@ -193,11 +209,19 @@ backend teamwire-dashboard
 backend teamwire-webclient
     http-response del-header Server
     http-response set-header Connection keep-alive
-    {% if "frontend_servers" in groups %}{% raw %}{{ if service "webclient" }} {{ range $index, $service := service "webclient" }}
-    server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
-    {{ end }}{% endraw %}
-    {%else%}server teamwire-webclient 127.0.0.1:8098 check port 8099
-    {% endif %}
+{% if groups['all'] | length > 1 -%}
+{%- if static_frontend_configuration | default('false') == 'true' -%}
+{% for host in groups['backend_servers'] %}
+    server webclient_{{ loop.index0 }} {{ hostvars[host].private_ip }}:8098 check port 8098 inter 3s fall 3 rise 2
+{% endfor -%}
+{%- else -%}
+{% raw %}{{ if service "webclient" }}{{ range $index, $service := service "webclient" }}
+    server backend_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}
+{{ end }}{{ end }}    {% endraw -%}
+{%- endif -%}
+{%- else %}
+    server teamwire-webclient 127.0.0.1:8098 check port 8098
+{%- endif %}
 {% endif %}
 
 {% if websockets_enabled | string() == 'true' %}
@@ -208,12 +232,20 @@ backend teamwire-backend-websockets
     acl hdr_connection_upgrade hdr(Connection)    -i upgrade
     acl hdr_upgrade_websocket hdr(Upgrade)        -i websocket
     http-response del-header Server
-    {% if "frontend_servers" in groups %}{% raw %}{{ if service "backend-websocket" }} {{ range $index, $service := service "backend-websocket" }}
+{% if groups['all'] | length > 1 -%}
+{%- if static_frontend_configuration | default('false') == 'true' -%}
+{% for host in groups['backend_servers'] %}
+    server backend_ws_{{ loop.index0 }} {{ hostvars[host].private_ip }}:8083 check port 8083 inter 3s fall 3 rise 2
+{% endfor -%}
+{%- else -%}
+{% raw %}    {{ if service "backend-websocket" }} {{ range $index, $service := service "backend-websocket" }}
     server backend_ws_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
-    {{ end }}{% endraw %}
-    {%else%}server teamwire-backend_ws 127.0.0.1:8083 check port 8083
-    {% endif %}
-{%endif%}
+    {{ end }}    {% endraw -%}
+{%- endif -%}
+{%- else %}
+    server teamwire-backend_ws 127.0.0.1:8083 check port 8083
+{%- endif %}
+{% endif %}
 
 # ----------------------------------------------------
 # BACKEND: notifications
@@ -223,8 +255,17 @@ backend notifications
     acl hdr_upgrade_websocket  hdr(Upgrade)                    -i websocket
     http-request del-header   X-Powered-By
     http-response del-header Server
-    {% if "frontend_servers" in groups %}{% raw %}{{ if service "notification-server-9080" }}{{ range $index, $service := service "notification-server-9080" }}
+{% if groups['all'] | length > 1 -%}
+{%- if static_frontend_configuration | default('false') == 'true' -%}
+{% for host in groups['backend_servers'] %}
+    server notification_{{ loop.index0 }} {{ hostvars[host].private_ip }}:9080 check port 9080 inter 3s fall 3 rise 2
+{% endfor -%}
+{%- else -%}
+{% raw %}    {{ if service "notification-server-9080" }}{{ range $index, $service := service "notification-server-9080" }}
     server notification-server_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
-    {{ end }}{% endraw %}
-    {%else%}server notifications 127.0.0.1:9080 check port 9080
-    {% endif %}
+    {{ end }}    
+{% endraw -%}
+{%- endif -%}
+{%- else %}
+    server notifications 127.0.0.1:9080 check port 9080
+{% endif %}
