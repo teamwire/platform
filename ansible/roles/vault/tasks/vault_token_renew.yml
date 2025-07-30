@@ -1,0 +1,29 @@
+---
+- name: Copy vault-token-renew.sh to destination
+  ansible.builtin.copy:
+    src: vault-token-renew.sh
+    dest: /usr/local/bin/vault-token-renew.sh
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Copy vault-token-renew.service to destination
+  ansible.builtin.copy:
+    src: vault-token-renew.service
+    dest: /etc/systemd/system/vault-token-renew.service
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Copy vault-token-renew.timer to destination
+  ansible.builtin.copy:
+    src: vault-token-renew.timer
+    dest: /etc/systemd/system/vault-token-renew.timer
+    mode: 0755
+    owner: root
+    group: root
+  notify:
+    - Reload systemd and restart vault-token-renew.timer
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

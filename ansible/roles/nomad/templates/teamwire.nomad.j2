@@ -114,30 +114,10 @@ job "teamwire" {
 				port = "ws"
 			}
 
-{% raw %}
-			template {
-				data = <<EOH
-					AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
-{%- endraw %}{% if mysql_host is defined %}{%raw %}
-					MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{%- endraw %}{%endif %}
-{% if oracle_host is defined %}{%raw %}
-					ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{%- endraw %}{%endif %}{% raw %}
-					REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
-                                        JWT_APP_SECRET = "{{ with secret "secret/voip/jwt_app_secret" }}{{.Data.value}}{{end}}"
-										PROSODY_KEY = "{{ with secret "secret/voip/prosody_key" }}{{.Data.value}}{{end}}"
-				EOH
-				destination = "secrets/file.env"
-				env = true
-			}
-{% endraw %}
 			env {
 				ARCHIVING_CONFIG = "/archiving/archiving.conf"
 				ARCHIVING_GPGHOME = "/archiving/gpg"
-				VAULT_TOKEN = "{{ nomad_server_vault_token | default() }}"
 				VAULT_ADDR = "https://vault.service.consul:8200"
-				VAULT_AES_SECRET_PATH = "secret/database/aes_key"
 				ORG_DEFAULT_ALLOW_USER_REG = "{{ allow_unknown_users|default('true') }}"
 				ORG_DEFAULT_ALLOW_USER_QUERY = "{{ allow_user_query|default('false') }}"
 				MYSQL_HOST = "{{ mysql_host | default() }}"
@@ -256,27 +236,10 @@ job "teamwire" {
 					timeout = "2s"
 				}
 			}
-{% raw %}
-			template {
-			data = <<EOH
-			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
-{% endraw %}{% if mysql_host is defined %}{%raw %}
-			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{% endraw %}{%endif %}{% raw %}
-{% endraw %}{% if oracle_host is defined %}{%raw %}
-			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{% endraw %}{%endif %}{% raw %}
-			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
-			EOH
-			destination = "secrets/file.env"
-			env = true
-			}
-{% endraw %}
+
 			env {
 				MODE = "worker"
-                VAULT_TOKEN = "{{ nomad_server_vault_token | default() }}"
-                VAULT_ADDR = "https://vault.service.consul:8200"
-                VAULT_AES_SECRET_PATH = "secret/database/aes_key"
+				VAULT_ADDR = "https://vault.service.consul:8200"
 				MYSQL_HOST = "{{ mysql_host | default() }}"
 				MYSQL_PORT = "{{ mysql_port | default() }}"
 				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
@@ -354,27 +317,9 @@ job "teamwire" {
 				name = "${TASK}"
 				tags = ["teamwire"]
 			}
-{% raw %}
-			template {
-			data = <<EOH
-			AESKEY = "{{ with secret "secret/database/aes_key"}}{{.Data.value}}{{end}}"
-{% endraw %}{% if mysql_host is defined %}{%raw %}
-			MYSQL_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{% endraw %}{%endif %}{% raw %}
-{% endraw %}{% if oracle_host is defined %}{%raw %}
-			ORA_PASSWORD = "{{ with secret "secret/database/password"}}{{.Data.value}}{{end}}"
-{% endraw %}{%endif %}{% raw %}
-			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
-			EOH
-			destination = "secrets/file.env"
-			env = true
-			}
-{% endraw %}
+
 			env {
 				MODE = "beat"
-				VAULT_TOKEN = "{{ nomad_server_vault_token | default() }}"
-                VAULT_ADDR = "https://vault.service.consul:8200"
-                VAULT_AES_SECRET_PATH = "secret/database/aes_key"
 				MYSQL_HOST = "{{ mysql_host | default() }}"
 				MYSQL_PORT = "{{ mysql_port | default() }}"
 				MYSQL_DATABASE = "{{ teamwire_db_name if mysql_host is defined else '' }}"
@@ -387,6 +332,7 @@ job "teamwire" {
 				CELERY_BEAT_SCHEDULE = "/beat/celerybeat-schedule"
 				FAKE_DB_ENCRYPTION = "{{ fake_db_encryption|default() }}"
 				LOGLEVEL = "{{ beat_loglevel|default() }}"
+				VAULT_ADDR = "https://vault.service.consul:8200"
 				FCM_SERVICE_ACCOUNT_FILE = "{{ '/certs/fcm/customer.json' if fcm_account_file is defined and fcm_account_file | length > 0 else '' }}"
 			}
 
@@ -446,18 +392,12 @@ job "teamwire" {
 				tags = ["teamwire"]
 				port = "rest"
 			}
-{% raw %}
-			template {
-			data = <<EOH
-			REDIS_PASSWORD = "{{ with secret "secret/redis/password"}}{{.Data.value}}{{end}}"
-			EOH
-			destination = "secrets/file.env"
-			env = true
-			}
-{% endraw %}
+
 			env {
 				REDIS_URI = "prod.redis.service.consul:6379:1"
 				LOGLEVEL = "{{ notification_loglevel|default() }}"
+				VAULT_ADDR = "https://vault.service.consul:8200"
+
 			}
 
 			resources {
