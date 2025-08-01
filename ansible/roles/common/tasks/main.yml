@@ -150,6 +150,16 @@
     state: absent
     purge: true
 
+# Ensure glusterfs Galaxy collection is installed
+- name: Install gluster.gluster collection if not present
+  ansible.builtin.command: ansible-galaxy collection install gluster.gluster
+  become: true
+  become_user: teamwire
+  delegate_to: localhost
+  run_once: true
+  when:
+    - packer_build_name is defined
+
 # Configure system-wide proxy
 - name: Enable system-wide proxy
   ansible.builtin.lineinfile:
