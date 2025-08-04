@@ -18,12 +18,6 @@
 # ------------------------------------------------------------------------------
 # Cleanup monitoring handlers
 # ------------------------------------------------------------------------------
-- name: Restart apache
-  ansible.builtin.service:
-    name: apache2
-    state: restarted
-  when: "'apache2' in ansible_facts.packages"
-
 - name: Update apt
   ansible.builtin.apt:
     update_cache: true

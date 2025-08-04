@@ -13,6 +13,12 @@
     state: stopped
   when: "'icinga2' in ansible_facts.packages"
 
+- name: Ensure to stop apache2
+  ansible.builtin.service:
+    name: apache2
+    state: stopped
+  when: "'apache2' in ansible_facts.packages"
+
 # ------------------------------------------------------------------------------
 # Ensure to cleanup all files related to icinga
 # ------------------------------------------------------------------------------
@@ -20,10 +26,13 @@
   ansible.builtin.apt:
     name: "{{ item }}"
     state: absent
+    purge: true
   with_items:
     - icinga2-ido-mysql
     - icingaweb2
     - icingacli
+    - apache2
+    - php
     - php-mysql
     - php-curl
     - php-imagick
@@ -41,14 +50,12 @@
   with_items:
     - /etc/icinga2
     - /etc/icingaweb2
+    - /etc/php
+    - /etc/apache2
     - /var/log/icinga2
+    - /var/log/apache2
     - /etc/logrotate.d/icinga2
-
-- name: Cleanup apache icingaweb2 configuration
-  ansible.builtin.file:
-    path: /etc/apache2/sites-enabled/icinga.conf
-    state: absent
-  notify: Restart apache
+    - /etc/logrotate.d/apache2
 
 # ------------------------------------------------------------------------------
 # Ensure to cleanup the databases and db users
@@ -86,7 +93,6 @@
   with_items:
     - /usr/share/keyrings/icinga-archive-keyring.key
     - /usr/share/keyrings/icinga-archive-keyring.gpg
-  notify: Restart apache
 
 - name: Cleanup icinga2 apt repo and configuration
   ansible.builtin.file:
