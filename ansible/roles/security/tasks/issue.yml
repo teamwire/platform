@@ -1,0 +1,20 @@
+---
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3851] Harden banners and identification
+# ------------------------------------------------------------------------------
+- name: Set legal banner for /etc/issue
+  ansible.builtin.copy:
+    src: legal-banner
+    dest: /etc/issue
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Set legal banner for /etc/issue.net
+  ansible.builtin.copy:
+    src: legal-banner
+    dest: /etc/issue.net
+    owner: root
+    group: root
+    mode: 0644

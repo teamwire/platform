@@ -144,3 +144,6 @@
 
 - name: Include SSH related Tasks
   ansible.builtin.include_tasks: ssh.yml
+
+- name: Include Issue related Tasks
+  ansible.builtin.include_tasks: issue.yml
