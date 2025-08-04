@@ -43,19 +43,12 @@ static_checks['mail_queue_length_single'] = [
 # ------------------------------------------------------------------------------
 # Check Memory and SWAP
 # ------------------------------------------------------------------------------
-#static_checks.setdefault('memory', [])
-
-# Not possible cause of same service name
-#static_checks['memory'] = [
-#{'value': ('mem_used', None, {'levels': (90.0, 100.0), 'average': 5}), 'condition': {}, 'options': {'disabled': False}},
-#] + static_checks['memory']
-
 static_checks.setdefault('memory_linux', [])
 
 static_checks['memory_linux'] = [
-{'value': ('mem_linux', None, {'levels_ram': ('perc_used', (85.0, 90.0)), 'levels_swap': ('perc_used', (75.0, 90.0))}), 'condition': {}, 'options': {'disabled': False, 'description': 'SWAP'}},
+{'value': ('mem_linux', None, {'levels_ram': ('perc_used', (85.0, 90.0)), 'levels_swap': ('perc_used', (80.0, 90.0)), 'levels_committed': 'ignore'}), 'condition': {}, 'options': {'disabled': False, 'description': 'SWAP'}},
 ] + static_checks['memory_linux']
-
+static_checks.setdefault('memory_linux', [])
 
 # ------------------------------------------------------------------------------
 # Check NTP
