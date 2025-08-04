@@ -8,6 +8,7 @@
     mode: og-rwx
   with_items:
     - /etc/crontab
+    - /etc/cron.d # [ITOPS-3852] Harden File Permissions
     - /etc/cron.hourly
     - /etc/cron.daily
     - /etc/cron.weekly
@@ -31,7 +32,7 @@
     create: true
     owner: root
     group: root
-    mode: 0640
+    mode: 0600 # [ITOPS-3852] Harden File Permissions
   with_items:
     - /etc/at.allow
     - /etc/cron.allow

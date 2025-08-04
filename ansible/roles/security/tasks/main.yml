@@ -141,3 +141,6 @@
 - name: Include PAM related Tasks
   ansible.builtin.include_tasks: pam.yml
   when: ansible_distribution_release != "bullseye"
+
+- name: Include SSH related Tasks
+  ansible.builtin.include_tasks: ssh.yml
