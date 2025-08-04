@@ -1233,27 +1233,28 @@ pull_images_base() {
                 docker pull "${PRFX}${VOIPIMG}:${BACKEND_VERSION}" || exit 1
             done
         fi
+
+      # Update BACKEND_FACTS_FILE in JSON format
+      echo "Update Backend version ansible fact"
+      ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
+        "echo '{\"tag\": \"${BACKEND_VERSION}\"}' > '${BACKEND_FACTS_FILE}'"
+
+      # Update DASHBOARD_FACTS_FILE in JSON format
+      echo "Update Dashboard version ansible fact"
+      ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
+        "echo '{\"tag\": \"${DASHBOARD_VERSION}\"}' > '${DASHBOARD_FACTS_FILE}'"
+
+      # Update WEBCLIENT_FACTS_FILE in JSON format
+      echo "Update Webclient version ansible fact"
+      ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
+        "echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'"
+
+      # Update RELEASE_VERSION_FILE with current tag on management host only
+      update_release_version_file
+
     else
         echo "Offline mode is enabled, skipping image pulls."
     fi
-
-    # Update BACKEND_FACTS_FILE in JSON format
-    echo "Update Backend version ansible fact"
-    ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
-      "echo '{\"tag\": \"${BACKEND_VERSION}\"}' > '${BACKEND_FACTS_FILE}'"
-
-    # Update DASHBOARD_FACTS_FILE in JSON format
-    echo "Update Dashboard version ansible fact"
-    ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
-      "echo '{\"tag\": \"${DASHBOARD_VERSION}\"}' > '${DASHBOARD_FACTS_FILE}'"
-
-    # Update WEBCLIENT_FACTS_FILE in JSON format
-    echo "Update Webclient version ansible fact"
-    ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
-      "echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'"
-
-    # Update RELEASE_VERSION_FILE with current tag on management host only
-    update_release_version_file
 }
 
 pull_images_single() {
