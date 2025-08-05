@@ -30,6 +30,12 @@
   ansible.builtin.apt:
     deb: "/var/cache/downloads/checkmk_agent_linux_amd64.deb"
 
+- name: Ensure cmk-agent-ctl-daemon is running and enabled
+  ansible.builtin.service:
+    name: cmk-agent-ctl-daemon
+    state: started
+    enabled: true
+
 - name: Check if agent is registered
   ansible.builtin.command: "cmk-agent-ctl status"
   register: cmk_agent_status
