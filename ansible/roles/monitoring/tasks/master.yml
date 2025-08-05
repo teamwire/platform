@@ -41,6 +41,14 @@
     group: root
     mode: 0755
 
+- name: Copy script to deactivate the xinetd port inside the checkmk container for the agent
+  ansible.builtin.copy:
+    src: kill-xinetd-checkmk_container.sh
+    dest: /usr/local/bin/kill-xinetd-checkmk_container.sh
+    owner: root
+    group: root
+    mode: 0755
+
 # ------------------------------------------------------------------------------
 # Setup checkmk master docker container
 # ------------------------------------------------------------------------------
@@ -59,6 +67,7 @@
     network_mode: host
     volumes:
       - "/usr/local/bin/fix-docker-entrypoint-checkmk_container.sh:/docker-entrypoint.sh"
+      - "/usr/local/bin/kill-xinetd-checkmk_container.sh:/docker-entrypoint.d/pre-start/kill-xinetd-checkmk_container.sh"
       - "{{ checkmk_mountpoint }}:/omd/sites"
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/hosts:/etc/hosts:ro"
