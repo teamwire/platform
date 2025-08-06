@@ -1,0 +1,5 @@
+# ------------------------------------------------------------------------------
+# [ITOPS-3853] Remove unneeded Kernel and packages
+# ------------------------------------------------------------------------------
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";

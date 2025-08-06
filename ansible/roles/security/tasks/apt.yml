@@ -17,3 +17,14 @@
     group: root
     mode: 0644
   when: not ansible_local.offline_mode.stat.exists
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3853] Remove unneeded Kernel and packages
+# ------------------------------------------------------------------------------
+- name: Configure APT to purge unneeded kernel and packages
+  ansible.builtin.copy:
+    src: 50auto-remove-packages
+    dest: /etc/apt/apt.conf.d/50auto-remove-packages
+    owner: root
+    group: root
+    mode: 0644
