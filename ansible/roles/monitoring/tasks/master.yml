@@ -91,6 +91,11 @@
   failed_when: "checkmk_site not in check_omd_site_status.stdout"
   changed_when: false
 
+- name: Ensure the container has enough time to create all necessary files
+  ansible.builtin.pause:
+    seconds: 10
+  when: check_omd_site_status.attempts > 1
+
 # ------------------------------------------------------------------------------
 # Configure omd site
 # ------------------------------------------------------------------------------
