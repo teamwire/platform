@@ -87,33 +87,28 @@
 - name: Include monitoring default variables
   ansible.builtin.include_vars:
     file: ../../monitoring/defaults/main.yml
+
+- name: Ensure only necessary monitoring user exists
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  with_items: "{{ mysql_user_data.query_result }}"
   when:
+    - item.User == monitoring_db_user
+    - item.Host != "localhost"
     - enable_monitoring is defined and enable_monitoring | lower in [ "yes", "true" ]
 
-- name: Cleanup monitoring db users - Single Server
-  block:
-    - name: "Cleanup available monitoring users"
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_user
-        - item.Host != "localhost"
-
-    - name: Cleanup old icinga database users
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_web_user
+- name: Ensure to cleanup all monitoring users
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  with_items: "{{ mysql_user_data.query_result }}"
   when:
-    - enable_monitoring is defined and enable_monitoring | lower in [ "yes", "true" ]
-    - groups['all'] | length == 1
+    - item.User == monitoring_db_user
+    - enable_monitoring is undefined or enable_monitoring | lower not in [ "yes", "true" ]

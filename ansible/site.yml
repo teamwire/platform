@@ -76,6 +76,18 @@
         - config_done is defined
         - enable_monitoring is defined and enable_monitoring | lower in [ "yes", "true" ]
 
+- name: Cleanup monitoring system
+  hosts: all
+  tasks:
+    - name: Include housekeeping jobs to remove monitoring
+      ansible.builtin.include_role:
+        name: housekeeping
+        tasks_from: disable_monitoring
+      when:
+        - config_done is defined
+        - enable_monitoring is undefined or
+          enable_monitoring | lower not in [ "yes", "true" ]
+
 - name: Run security and housekeeping job to remove unused dependencies
   hosts: all
   roles:
