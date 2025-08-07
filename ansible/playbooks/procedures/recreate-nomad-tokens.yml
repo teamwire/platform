@@ -1,0 +1,47 @@
+---
+- name: Recreate Nomad ACL tokens and store them in Vault
+  hosts: management_servers
+  gather_facts: false
+
+  tasks:
+    - name: Ask for nomad bootstrap token
+      ansible.builtin.pause:
+        prompt: "Please provide your Nomad bootstrap root token"
+      register: nomad_secret_input
+      when: nomad_secret_input is undefined
+
+    - name: Set secret_id fact
+      ansible.builtin.set_fact:
+        nomad_secret_id: "{{ nomad_secret_input.user_input }}"
+
+    - name: Create management token
+      ansible.builtin.command:
+        nomad acl token create -name="teamwire" -type="management"
+      environment:
+        NOMAD_TOKEN: "{{ nomad_secret_id }}"
+      register: management_output
+      changed_when: "'Secret ID' in management_output.stdout"
+
+    - name: Extract Secret ID from management token output
+      ansible.builtin.set_fact:
+        management_secret_id: "{{ management_output.stdout | regex_search('Secret ID\\s+=\\s+([a-f0-9\\-]+)', '\\1') | first | default('') }}"
+
+    - name: Create job token
+      ansible.builtin.command: nomad acl token create -name="teamwire" -policy=job-management
+      environment:
+        NOMAD_TOKEN: "{{ nomad_secret_id }}"
+      register: job_output
+      changed_when: "'Secret ID' in job_output.stdout"
+
+    - name: Extract Secret ID from job token output
+      ansible.builtin.set_fact:
+        job_secret_id: "{{ job_output.stdout | regex_search('Secret ID\\s+=\\s+([a-f0-9\\-]+)', '\\1') | first | default('') }}"
+
+    - name: Write job and management tokens to vault
+      ansible.builtin.command: vault write secret/{{ item.secret }} value="{{ item.value }}"
+      with_items:
+        - { secret: 'nomad/job_token', value: "{{ job_secret_id | default('') }}" }
+        - { secret: 'nomad/management_token', value: "{{ management_secret_id | default('') }}" }
+      no_log: true
+      changed_when: true
+      delegate_to: "{{ groups.hashi_servers | sort | first }}"

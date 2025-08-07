@@ -1,5 +1,4 @@
 #!/bin/bash
-VC="$(find /home -name vault-credentials | grep -E '.*')"
 clear -x
 cat << 'FEOF'
 ###############################################################################
@@ -25,8 +24,18 @@ $(last -n 5)
 
 ###############################################################################
 EOF
-if [ "${VC}" != "" ];then
+files=""
+
+for name in "vault-credentials" "nomad-token"; do
+  found="$(find /home -name "${name}" 2>/dev/null | grep -E '.*')"
+  if [ -n "${found}" ]; then
+    files="${files}\n${found}"
+  fi
+done
+
+if [ -n "${files}" ]; then
   echo -e "\033[91;5m!!!ATTENTION!!!\033[0m"
-  echo "Please store the following file offline and then remove it from this server:"
-  echo -e "\033[91;5m${VC}\033[0m"
+  echo "Please store the following file(s) offline and then remove it from this server:"
+  echo -e "\033[91;5m${files}\033[0m\n"
 fi
+

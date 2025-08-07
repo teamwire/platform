@@ -42,6 +42,7 @@ if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
     INSTALLATION=cluster
     INVENTORY_FILE=cluster_hosts
     VAULT_ADDR="https://vault.service.consul:8200"
+
     # Query Consul to obtain Consul peers (Which are also Vault servers)
     VAULT_SERVERS=$(curl -m ${DFLT_TMOUT} -s http://127.0.0.1:8500/v1/status/peers | jq .[] -r | sed "s/:8300//")
     # Obtain the first Vault server's IP address
@@ -108,6 +109,11 @@ if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" == "false" ]]; then
         echo "Invalid Vault token, please check the contents of ~/.vault-token."
         exit 1
     fi
+fi
+
+if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
+    NOMAD_TOKEN="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/nomad/management_token" | jq -r '.data| .[]')"
+    export NOMAD_TOKEN
 fi
 
 fetch_image_versions() {
@@ -1335,7 +1341,7 @@ _get_nomad_environment() {
 }
 status_cluster() {
     if [ "${OPTION}" = "--clean" ]; then
-        curl -m ${DFLT_TMOUT} -XPUT http://127.0.0.1:4646/v1/system/gc
+        curl -m ${DFLT_TMOUT} -XPUT -H "X-Nomad-Token: ${NOMAD_TOKEN}" http://127.0.0.1:4646/v1/system/gc
         echo "Container history cleaned"
     else
         ${NOMAD} status "$(_get_nomad_environment)" && \
