@@ -1,0 +1,38 @@
+---
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3855] Secure mariadb systemd service
+# ------------------------------------------------------------------------------
+- name: Apply mariadb systemd security configuration
+  block:
+    - name: Check if galera cluster is already initialized
+      community.mysql.mysql_query:
+        query: "SHOW STATUS LIKE 'wsrep_cluster_size'"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+      when:
+        - '"database_servers" in groups'
+        - inventory_hostname == groups['database_servers'] | sort | first
+      register: show_galera_cluster_size
+
+    - name: Ensure directory exists /etc/systemd/system/mariadb.service.d
+      ansible.builtin.file:
+        name: /etc/systemd/system/mariadb.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Add systemd override configuration for mariadb
+      ansible.builtin.template:
+        src: mariadb-security.conf.j2
+        dest: /etc/systemd/system/mariadb.service.d/security.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Reload systemd
+        - Restart MariaDB
+  when:
+    - ( groups['all'] | length == 1 and mysql_host is not defined and oracle_host is not defined ) or
+      ( "database_servers" in groups and inventory_hostname in groups['database_servers'] )

@@ -22,3 +22,17 @@
   ansible.builtin.service:
     name: procps
     state: restarted
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart MariaDB
+  ansible.builtin.service:
+    name: mysql
+    state: restarted
+  throttle: 1
+  with_items: "{{ hostvars[groups['database_servers'] | sort | first].show_galera_cluster_size.query_result if groups['all'] | length > 1 }}"
+  when:
+    - groups['all'] | length == 1 or
+      ( "database_servers" in groups and item.Value != "0" )
