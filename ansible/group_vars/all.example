@@ -384,6 +384,17 @@ system_email_recipient:
 # By default, the variable <LOG_LINE_LIMIT> is set to 2000.
 # LOG_LINE_LIMIT: 2000
 
+# Content Security Policy (CSP) configuration
+# You can disable the CSP if wished by uncommenting the setting and setting it to false.
+# Per default it is always set to true.
+# ENABLE_CSP: "true"
+
+# Static frontend configuration
+# By default, cluster setups use consul-template for dynamic service discovery.
+# Set this to true to use static host configuration instead of consul-template.
+# This only affects cluster setups; single server setups are already static.
+# static_frontend_configuration: "false"
+
 ##############################################################################
 ## DEBUGGING
 ##############################################################################

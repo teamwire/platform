@@ -19,3 +19,4 @@
   ansible.builtin.service:
     name: consul-template
     state: restarted
+  when: static_frontend_configuration | default('false') != 'true'

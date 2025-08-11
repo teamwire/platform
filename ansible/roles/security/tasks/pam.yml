@@ -1,0 +1,14 @@
+---
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3652] Implement libpam-tmpdir
+# ------------------------------------------------------------------------------
+- name: Install libpam-tmpdir
+  ansible.builtin.apt:
+    name: libpam-tmpdir
+    state: present
+
+- name: Enable tmpdir via pam-auth-update
+  ansible.builtin.command:
+    cmd: pam-auth-update --enable tmpdir
+  changed_when: false

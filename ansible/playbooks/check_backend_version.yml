@@ -1,0 +1,27 @@
+---
+- name: Extract and check backend versions
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Extract backend versions
+      block:
+        - name: Read backend_version.fact file
+          ansible.builtin.slurp:
+            src: /etc/ansible/facts.d/backend_version.fact
+          register: fact_file
+
+        - name: Check the backend_version fact if the tag is set
+          ansible.builtin.set_fact:
+            backend_fact: "{{ fact_file['content'] | b64decode | from_json }}"
+
+        - name: Set backend_version and platform_version facts
+          ansible.builtin.set_fact:
+            backend_version: "{{ (fact_file.content | b64decode | from_json).tag | regex_search('-(\\d+\\.\\d+)\\.', '\\1') | first }}"
+          when: backend_fact.tag not in [ 'not_set', '1.0.0' ]
+
+        - name: Fail if backend_version < 19.6
+          ansible.builtin.fail:
+            msg: Your backend version is to low, minimal version is 19.6 or greater your backend_version ({{ backend_version }})
+          when:
+            - backend_fact.tag not in [ 'not_set', '1.0.0' ]
+            - backend_version is version('19.6','<')

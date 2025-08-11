@@ -41,10 +41,19 @@
     mode: 0644
   notify: Reload systemd
 
-- name: Enable the Consul Template service
+- name: Start and enable the Consul Template service
   ansible.builtin.service:
     name: consul-template
+    state: started
     enabled: true
+  when: static_frontend_configuration | default('false') != 'true'
+
+- name: Stop and disable the Consul Template service
+  ansible.builtin.service:
+    name: consul-template
+    state: stopped
+    enabled: false
+  when: static_frontend_configuration | default('false') == 'true'
 
 - name: Create Consul Template directories
   ansible.builtin.file:
@@ -78,6 +87,7 @@
         group: root
         mode: 0644
       notify: Restart Consul Template
+  when: static_frontend_configuration | default('false') != 'true'
 
 - name: Write VoIP Consul Template configuration and templates
   block:
@@ -101,6 +111,31 @@
   when:
     - enable_voip is defined
     - enable_voip | string() == 'true'
+    - static_frontend_configuration | default('false') != 'true'
+
+- name: Write cluster HAproxy configuration (static)
+  block:
+    - name: Write HAProxy globals and frontend configuration files (Cluster - static config)
+      ansible.builtin.template:
+        src: "{{ frontend_haproxy_template }}"
+        dest: /etc/haproxy/03-frontend.cfg
+        mode: 0664
+        owner: haproxy
+        group: haproxy
+      notify: Restart haproxy
+
+    - name: Template voip reverse proxy config (Cluster - static config)
+      ansible.builtin.template:
+        src: "20-voip.cfg.j2"
+        dest: "/etc/haproxy/20-voip.cfg"
+        mode: 0644
+        owner: haproxy
+        group: haproxy
+      notify: Restart haproxy
+      when:
+        - enable_voip is defined
+        - enable_voip | string() == 'true'
+  when: static_frontend_configuration | default('false') == 'true'
 
 - name: Remove VoIP Consul Template configuration and templates
   ansible.builtin.file:

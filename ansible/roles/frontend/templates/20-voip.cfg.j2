@@ -3,11 +3,19 @@
 # ----------------------------------------------------
 backend teamwire-voip-web
     http-response del-header Server
-    {% if "frontend_servers" in groups %}{% raw %}{{ if service "voipWeb" }} {{ range $index, $service := service "voipWeb" }}
+{% if groups['all'] | length > 1 -%}
+{%- if static_frontend_configuration | default('false') == 'true' -%}
+{% for host in groups['voip_servers'] %}
+    server backend_voip_web_{{ loop.index0 }} {{ hostvars[host].private_ip }}:7080 check port 7080 inter 3s fall 3 rise 2
+{% endfor -%}
+{%- else -%}
+{% raw %}    {{ if service "voipWeb" }} {{ range $index, $service := service "voipWeb" }}
     server backend_voip_web_{{$index}} {{.Address}}:{{.Port}} check port {{.Port}}{{ end }}
-    {{ end }}{% endraw %}
-    {%else%}server backend_voip_web_0 127.0.0.1:7080 check port 7080
-    {% endif %}
+    {{ end }}    {% endraw -%}
+{%- endif -%}
+{%- else -%}
+    server backend_voip_web_0 127.0.0.1:7080 check port 7080
+{% endif %}
 
 {% if groups['all'] | length > 1 %}
 # ----------------------------------------------------

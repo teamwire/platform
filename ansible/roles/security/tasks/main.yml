@@ -125,3 +125,19 @@
     owner: root
     group: root
     validate: /usr/sbin/visudo -cf %s
+
+- name: Include Package related Tasks
+  ansible.builtin.include_tasks: package.yml
+  when: ansible_distribution_release != "bullseye"
+
+- name: Include APT related Tasks
+  ansible.builtin.include_tasks: apt.yml
+  when: ansible_distribution_release != "bullseye"
+
+- name: Include Kernel related Tasks
+  ansible.builtin.include_tasks: kernel.yml
+  when: ansible_distribution_release != "bullseye"
+
+- name: Include PAM related Tasks
+  ansible.builtin.include_tasks: pam.yml
+  when: ansible_distribution_release != "bullseye"

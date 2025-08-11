@@ -42,28 +42,23 @@
       tag: teamwire-backend
       syslog-facility: "local6"
     env:
-      AESKEY: "{{ aes_key }}"
       ARCHIVING_CONFIG: "/archiving/archiving.conf"
       ARCHIVING_GPGHOME: "/archiving/gpg"
       BIND_HOST: "127.0.0.1"
       BIND_PORT: "8080"
-      VAULT_TOKEN: "{{ VAULT_JOB_TOKEN | default() }}"
+      VAULT_TOKEN: "{{ vault_job_token | default() }}"
       VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
-      VAULT_AES_SECRET_PATH: "secret/database/aes_key"
       ORG_DEFAULT_ALLOW_USER_REG: "{{ allow_unknown_users | default('true') }}"
       ORG_DEFAULT_ALLOW_USER_QUERY: "{{ allow_user_query | default('false') }}"
       MYSQL_HOST: "{{ mysql_host | default() }}"
       MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
       MYSQL_USER: "{{ teamwire_db_user if mysql_host is defined else '' }}"
-      MYSQL_PASSWORD: "{{ teamwire_db_password if mysql_host is defined else '' }}"
       ORA_HOST: "{{ oracle_host | default() }}"
       ORA_PORT: "{{ oracle_port | default() }}"
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
-      ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass | default() }}"
       EMAIL_HOST: "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
       BLOB_DIR: /assets
       DEFAULT_FROM_EMAIL: "{{ sender_address }}"
@@ -85,8 +80,6 @@
       ENABLE_PROXY_FOR_APNS: "{{ ENABLE_PROXY_FOR_APNS | default('false') }}"
       USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false') }}"
       VOIP_URL: "http://localhost:7080"
-      JWT_APP_SECRET: "{{ jwt_app_secret }}"
-      PROSODY_KEY: "{{ prosody_key }}"
       LOGLEVEL: "{{ backend_loglevel | default() }}"
       WORKERS: "{{ workers | default() }}"
       GUNICORN_MAX_REQUESTS: "{{ worker_gunicorn_max_requests | default('500') }}"
@@ -94,6 +87,9 @@
       DISABLE_GC_RECONFIGURATION: "{{ disable_gc_reconfiguration | default('false') | lower }}"
       FCM_SERVICE_ACCOUNT_FILE: "{{ '/certs/fcm/customer.json' if fcm_account_file |default() }}"
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
+      ENABLE_CSP: "{{ ENABLE_CSP | default('true') | lower }}"
+      CSP_REPORT_THROTTLE: "{{ CSP_REPORT_THROTTLE | default('100/hour') }}"
+      CSP_DIRECTIVES: "{{ CSP_DIRECTIVES | default('') }}"
 
 - name: Run the Teamwire backend worker container
   when: config_done is defined
@@ -113,24 +109,19 @@
       syslog-facility: "local6"
     env:
       MODE: worker
-      AESKEY: "{{ aes_key }}"
       BIND_HOST: "127.0.0.1"
       BIND_PORT: "8082"
-      VAULT_TOKEN: "{{ VAULT_JOB_TOKEN | default() }}"
+      VAULT_TOKEN: "{{ vault_job_token | default() }}"
       VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
-      VAULT_AES_SECRET_PATH: "secret/database/aes_key"
       MYSQL_HOST: "{{ mysql_host | default() }}"
       MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
       MYSQL_USER: "{{ teamwire_db_user if mysql_host is defined else '' }}"
-      MYSQL_PASSWORD: "{{ teamwire_db_password if mysql_host is defined else '' }}"
       ORA_HOST: "{{ oracle_host | default() }}"
       ORA_PORT: "{{ oracle_port | default() }}"
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
-      ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass | default() }}"
       EMAIL_HOST: "{{ '127.0.0.1' if fake_email_confirmation is not defined else '' }}"
       NOTIFICATION_SERVER_URL: "http://127.0.0.1:9081"
       BLOB_DIR: /assets
@@ -163,22 +154,17 @@
       syslog-facility: "local6"
     env:
       MODE: beat
-      AESKEY: "{{ aes_key }}"
-      VAULT_TOKEN: "{{ VAULT_JOB_TOKEN | default() }}"
+      VAULT_TOKEN: "{{ vault_job_token | default() }}"
       VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
-      VAULT_AES_SECRET_PATH: "secret/database/aes_key"
       MYSQL_HOST: "{{ mysql_host | default() }}"
       MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
       MYSQL_USER: "{{ teamwire_db_user if mysql_host is defined else '' }}"
-      MYSQL_PASSWORD: "{{ teamwire_db_password if mysql_host is defined else '' }}"
       ORA_HOST: "{{ oracle_host | default() }}"
       ORA_PORT: "{{ oracle_port | default() }}"
       ORA_DATABASE: "{{ teamwire_db_name if oracle_host is defined else '' }}"
       ORA_USER: "{{ teamwire_db_user if oracle_host is defined else '' }}"
-      ORA_PASSWORD: "{{ teamwire_db_password if oracle_host is defined else '' }}"
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass | default() }}"
       CELERY_BEAT_SCHEDULE: /beat/celerybeat-schedule
       FAKE_DB_ENCRYPTION: "{{ fake_db_encryption | default() }}"
       LOGLEVEL: "{{ beat_loglevel | default() }}"
@@ -204,7 +190,7 @@
       syslog-facility: "local6"
     env:
       REDIS_URI: "127.0.0.1:6379:1"
-      REDIS_PASSWORD: "{{ redis_pass | default() }}"
+      VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
       LOGLEVEL: "{{ notification_loglevel | default() }}"
 
 - name: Retrieve the Teamwire dashboard container

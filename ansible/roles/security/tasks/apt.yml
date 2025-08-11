@@ -1,0 +1,19 @@
+---
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3653] Install and manage apt-listbugs
+# ------------------------------------------------------------------------------
+- name: Install apt-listbugs
+  ansible.builtin.apt:
+    name: apt-listbugs
+    state: present
+  when: not ansible_local.offline_mode.stat.exists
+
+- name: Configure apt-listbugs
+  ansible.builtin.copy:
+    src: 10apt-listbugs
+    dest: /etc/apt/apt.conf.d/10apt-listbugs
+    owner: root
+    group: root
+    mode: 0644
+  when: not ansible_local.offline_mode.stat.exists

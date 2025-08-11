@@ -40,6 +40,7 @@ fi
 if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
     # Clustered setup
     INSTALLATION=cluster
+    INVENTORY_FILE=cluster_hosts
     VAULT_ADDR="https://vault.service.consul:8200"
     # Query Consul to obtain Consul peers (Which are also Vault servers)
     VAULT_SERVERS=$(curl -m ${DFLT_TMOUT} -s http://127.0.0.1:8500/v1/status/peers | jq .[] -r | sed "s/:8300//")
@@ -60,6 +61,7 @@ if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
 else
     # Single server installation
     INSTALLATION=single
+    INVENTORY_FILE=hosts
     VAULT_ADDR="https://127.0.0.1:8200"
     VAULT_INITIALIZED=$(curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/sys/health" | jq '.initialized')
     VAULT_SEALED=$(curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/sys/health" | jq '.sealed')
@@ -1071,7 +1073,8 @@ create_report() {
         fi
 
         # Fetch haproxy logs
-        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers -b -m shell -a "${JOURNALCTL} -u haproxy > ${LOG_OUTPUT}/{{ inventory_hostname }}-haproxy.log" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers -b -m shell -a "${JOURNALCTL} -u haproxy > /tmp/{{ inventory_hostname }}-haproxy.log" > /dev/null 2>&1
+        ansible -i "${ANSIBLE_DIR}/cluster_hosts" frontend_servers -b -m fetch -a "src=/tmp/{{ inventory_hostname }}-haproxy.log dest=${TMPDIR}/logs/ flat=yes" > /dev/null 2>&1
 
         # Retrieve mariadb slow query logs on cluster envs
         ansible -i "${ANSIBLE_DIR}/cluster_hosts" database_servers -b -m fetch -a "src=/var/log/mysql/mariadb-slow.log dest=${TMPDIR}/logs/{{ inventory_hostname }}-mariadb-slow.log flat=yes" > /dev/null 2>&1
@@ -1230,11 +1233,29 @@ pull_images_base() {
                 docker pull "${PRFX}${VOIPIMG}:${BACKEND_VERSION}" || exit 1
             done
         fi
+
+      # Update BACKEND_FACTS_FILE in JSON format
+      echo "Update Backend version ansible fact"
+      ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
+        "echo '{\"tag\": \"${BACKEND_VERSION}\"}' > '${BACKEND_FACTS_FILE}'"
+
+      # Update DASHBOARD_FACTS_FILE in JSON format
+      echo "Update Dashboard version ansible fact"
+      ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
+        "echo '{\"tag\": \"${DASHBOARD_VERSION}\"}' > '${DASHBOARD_FACTS_FILE}'"
+
+      # Update WEBCLIENT_FACTS_FILE in JSON format
+      echo "Update Webclient version ansible fact"
+      ansible all -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell -a \
+        "echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'"
+
+      # Update RELEASE_VERSION_FILE with current tag on management host only
+      update_release_version_file
+
     else
         echo "Offline mode is enabled, skipping image pulls."
     fi
 }
-
 
 pull_images_single() {
     pull_images_base
@@ -1263,6 +1284,8 @@ remove_containers_cluster() {
 }
 
 run_migrations_base() {
+    _change_to_platform_ansible_dir
+    ansible-playbook -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" "${ANSIBLE_DIR}/playbooks/check_backend_version.yml" || exit 1
     check_tag "${TAG}"
     get_database_configuration
     check_registry
@@ -1381,28 +1404,7 @@ setup_containers_single() {
     enabled="$(_get_config_value enable_voip)"
     _change_to_platform_ansible_dir
 
-    # Update BACKEND_FACTS_FILE in JSON format
-    echo "Update Backend version ansible fact"
-    sudo bash -c "
-    echo '{\"tag\": \"${BACKEND_VERSION}\"}' > '${BACKEND_FACTS_FILE}'
-    "
-
-    # Update DASHBOARD_FACTS_FILE in JSON format
-    echo "Update Dashboard version ansible fact"
-    sudo bash -c "
-    echo '{\"tag\": \"${DASHBOARD_VERSION}\"}' > '${DASHBOARD_FACTS_FILE}'
-    "
-
-    # Update WEBCLIENT_FACTS_FILE in JSON format
-    echo "Update Webclient version ansible fact"
-    sudo bash -c "
-    echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'
-    "
-
-    # Update RELEASE_VERSION_FILE with current tag on management host only
-    update_release_version_file
-
-    ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
+    ansible-playbook -i "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml" || exit 1
     if [ -z "${enabled}" ]; then
             :
     elif [ "${enabled}" = "true" ]; then
@@ -1418,25 +1420,7 @@ setup_containers_cluster() {
     enabled="$(_get_config_value enable_voip)"
     _change_to_platform_ansible_dir
 
-    # Update BACKEND_FACTS_FILE in JSON format
-    echo "Update Backend version ansible fact"
-    ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
-      "echo '{\"tag\": \"${BACKEND_VERSION}\"}' > '${BACKEND_FACTS_FILE}'"
-
-    # Update DASHBOARD_FACTS_FILE in JSON format
-    echo "Update Dashboard version ansible fact"
-    ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
-      "echo '{\"tag\": \"${DASHBOARD_VERSION}\"}' > '${DASHBOARD_FACTS_FILE}'"
-
-    # Update WEBCLIENT_FACTS_FILE in JSON format
-    echo "Update Webclient version ansible fact"
-    ansible all -i "${ANSIBLE_DIR}/cluster_hosts" -b -m shell -a \
-      "echo '{\"tag\": \"${WEBCLIENT_VERSION}\"}' > '${WEBCLIENT_FACTS_FILE}'"
-
-    # Update RELEASE_VERSION_FILE with current tag on management host only
-    update_release_version_file
-
-    ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml"
+    ansible-playbook -i "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/playbooks/roles/container.yml" || exit 1
     ${NOMAD} run "${NOMAD_JOB}"
 
     # Run additional jobs only if it's not a legacy installation

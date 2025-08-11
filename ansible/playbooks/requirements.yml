@@ -93,6 +93,13 @@
       loop: "{{ fact_files_status.results }}"
       when: "not item.stat.exists"
 
+- name: Import check_backend_version to ensure the backend meets the minimum required version
+  import_playbook: check_backend_version.yml
+  when: use_teamwire_registry | default('true') | bool
+
+- name: Resume check overall requirements
+  hosts: all
+  tasks:
     - name: Check if in developer mode
       ansible.builtin.set_fact:
         tw_dev_mode: "{{ lookup('env', 'tw_dev_mode') | ternary(True, False) }}"
@@ -196,6 +203,18 @@
       run_once: true
       when:
         - enable_voip is defined
+
+    - name: Ensure static_frontend_configuration is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - static_frontend_configuration is string
+          - static_frontend_configuration is in ['true', 'false']
+        msg: >-
+          Ensure value from static_frontend_configuration is set to lower quoted true or false
+      run_once: true
+      when:
+        - static_frontend_configuration is defined
+        - groups['all'] | length > 1
 
     - name: Ensure enable_stun is a string when enabled
       ansible.builtin.assert:
@@ -345,6 +364,16 @@
       run_once: true
       when:
         - allow_tcp_forwarding is defined
+
+    - name: Ensure ENABLE_CSP is configured correctly
+      ansible.builtin.assert:
+        that:
+          - ENABLE_CSP is in ['true', 'false']
+        msg: >-
+          Ensure value for ENABLE_CSP is set to lower quoted true or false when enabled
+      run_once: true
+      when: ENABLE_CSP is defined
+
     - name: Assert enable_tls_mysql is valid
       ansible.builtin.assert:
         that:
