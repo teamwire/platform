@@ -36,3 +36,31 @@
   when:
     - ( groups['all'] | length == 1 and mysql_host is not defined and oracle_host is not defined ) or
       ( "database_servers" in groups and inventory_hostname in groups['database_servers'] )
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3870] Secure haproxy systemd service
+# ------------------------------------------------------------------------------
+- name: Apply haproxy systemd security configuration
+  block:
+    - name: Ensure directory exists /etc/systemd/system/haproxy.service.d
+      ansible.builtin.file:
+        name: /etc/systemd/system/haproxy.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Add systemd override configuration for haproxy
+      ansible.builtin.template:
+        src: haproxy-security.conf.j2
+        dest: /etc/systemd/system/haproxy.service.d/security.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Reload systemd
+        - Restart haproxy
+  when:
+    - groups['all'] | length == 1 or
+      inventory_hostname in groups['frontend_servers'] or
+      inventory_hostname in groups['backend_servers'] and ( enable_tls_mysql is undefined or enable_tls_mysql | lower != "true" )

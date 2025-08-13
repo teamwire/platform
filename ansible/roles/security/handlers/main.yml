@@ -36,3 +36,8 @@
   when:
     - groups['all'] | length == 1 or
       ( "database_servers" in groups and item.Value != "0" )
+
+- name: Restart haproxy
+  ansible.builtin.service:
+    name: haproxy
+    state: restarted
