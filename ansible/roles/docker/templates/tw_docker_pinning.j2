@@ -1,0 +1,7 @@
+{%- for package in ansible_local.general_facts.docker.package_pinning %}
+{%- set package, version = package.split('=') %}
+Package: {{ package }}
+Pin: version {{ version }}*
+Pin-Priority: 1000
+
+{% endfor %}

@@ -55,14 +55,22 @@
     update_cache: true
   when: not ansible_local.offline_mode.stat.exists
 
+- name: Pin docker versions
+  ansible.builtin.template:
+    src: tw_docker_pinning.j2
+    dest: /etc/apt/preferences.d/tw_docker_pinning
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Install docker packages
   ansible.builtin.apt:
-    name: "{{ item.version }}"
+    name: "{{ item.split('=')[0] }}"
     state: present
     force: true
-  loop:
-    - { version: "{{ ansible_local.general_facts.docker_ce.version }}" }
-    - { version: "{{ ansible_local.general_facts.docker_ce_cli.version }}" }
+  loop: "{{ ansible_local.general_facts.docker.package_pinning }}"
+  loop_control:
+    label: "{{ item.split('=')[0] }}"
 
 - name: Install python3-docker
   ansible.builtin.apt:
