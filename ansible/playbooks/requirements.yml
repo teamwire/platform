@@ -24,6 +24,7 @@
         name: "{{ inventory_dir }}/roles/housekeeping"
         tasks_from: ensure_ansible_fact_offline_mode_exists.yml
       when: ansible_local.offline_mode.stat.exists is undefined
+
 # ------------------------------------------------------------------------------
 # Download general Facts file
 # ------------------------------------------------------------------------------
@@ -32,18 +33,18 @@
   tasks:
     - name: Fetch general facts template checksum
       ansible.builtin.uri:
-        url: "https://repo.teamwire.eu/service/rest/v1/search?repository={{ 'internal' if use_internal_package_repository is defined and use_internal_package_repository is truthy else 'external' }}&name=/ftp/general-facts.j2"
+        url: "https://repo.teamwire.eu/service/rest/v1/search?repository=external&name=/ftp/{{ general_facts_file_name if general_facts_file_name is defined else 'general-facts.j2' }}"
         use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
       environment:
         https_proxy: "{{ http_proxy | default() }}"
-      register: general_facts_file
+      register: general_facts_file_checksum
       when: not ansible_local.offline_mode.stat.exists
 
     - name: Fetch general facts template
       ansible.builtin.get_url:
-        url: "https://repo.teamwire.eu/repository/{{ 'internal' if use_internal_package_repository is defined and use_internal_package_repository is truthy else 'external' }}/ftp/general-facts.j2"
+        url: "https://repo.teamwire.eu/repository/external/ftp/{{ general_facts_file_name if general_facts_file_name is defined else 'general-facts.j2' }}"
         dest: "/var/cache/downloads/general-facts.j2"
-        checksum: "sha256:{{ general_facts_file.json['items'][0]['assets'][0]['checksum']['sha256'] }}"
+        checksum: "sha256:{{ general_facts_file_checksum.json['items'][0]['assets'][0]['checksum']['sha256'] }}"
         mode: 0444
         use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
       environment:
