@@ -11,7 +11,7 @@
 
 - name: Set fact for own fcm_account_file
   ansible.builtin.set_fact:
-    mount_fcm: "{{ fcm_account_file |default('') + ':/certs/fcm/customer.json' }}"
+    mount_fcm: "{{ fcm_account_file | default('') + ':/certs/fcm/customer.json' }}"
   when:
     - fcm_account_file is defined
     - fcm_account_file | length > 0
@@ -85,7 +85,7 @@
       GUNICORN_MAX_REQUESTS: "{{ worker_gunicorn_max_requests | default('500') }}"
       CHANNEL_GROUP_EXPIRY: "{{ channel_group_expiry | default('86400') }}"
       DISABLE_GC_RECONFIGURATION: "{{ disable_gc_reconfiguration | default('false') | lower }}"
-      FCM_SERVICE_ACCOUNT_FILE: "{{ '/certs/fcm/customer.json' if fcm_account_file |default() }}"
+      FCM_SERVICE_ACCOUNT_FILE: "{{ '/certs/fcm/customer.json' if fcm_account_file | default() }}"
       EXTERNAL_HOSTNAME: "{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}"
       ENABLE_CSP: "{{ ENABLE_CSP | default('false') | lower }}"
       CSP_REPORT_THROTTLE: "{{ CSP_REPORT_THROTTLE | default('100/hour') }}"
@@ -137,7 +137,7 @@
       USE_APNS_STANDARD_PORT: "{{ USE_APNS_STANDARD_PORT | default('false') }}"
       LOGLEVEL: "{{ worker_loglevel | default() }}"
       DEFAULT_FROM_EMAIL: "{{ sender_address }}"
-      FCM_SERVICE_ACCOUNT_FILE: "{{ '/certs/fcm/customer.json' if fcm_account_file |default() }}"
+      FCM_SERVICE_ACCOUNT_FILE: "{{ '/certs/fcm/customer.json' if fcm_account_file | default() }}"
 
 - name: Run the Teamwire beat container
   when: config_done is defined

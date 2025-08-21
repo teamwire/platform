@@ -12,6 +12,9 @@
   ansible.builtin.get_url:
     url: "{{ ansible_local.general_facts.db.maxscale_repository_key_url }}"
     dest: /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
+    owner: root
+    group: root
+    mode: 0644
     checksum: "sha256:{{ ansible_local.general_facts.db.maxscale_repository_key_sha256 }}"
   environment:
     HTTP_PROXY: "{{ http_proxy | default() }}"

@@ -17,12 +17,12 @@
         - name: Set backend_version and platform_version facts
           ansible.builtin.set_fact:
             backend_version: "{{ (fact_file.content | b64decode | from_json).tag | regex_search('-(\\d+\\.\\d+)\\.', '\\1') | first }}"
-          when: backend_fact.tag not in [ 'not_set', '1.0.0' ]
+          when: backend_fact.tag not in ['not_set', '1.0.0']
 
         - name: Fail if backend_version < 19.6
           ansible.builtin.fail:
             msg: Your backend version is to low, minimal version is 19.6 or greater your backend_version ({{ backend_version }})
           when:
-            - backend_fact.tag not in [ 'not_set', '1.0.0' ]
+            - backend_fact.tag not in ['not_set', '1.0.0']
             - backend_version is version('19.6','<')
       when: use_teamwire_registry | default('true') | bool
