@@ -388,6 +388,16 @@ system_email_recipient:"
 # This only affects cluster setups; single server setups are already static.
 # static_frontend_configuration: "false"
 
+# Disable ssh user restriction
+# By default only the user "teamwire" is allowed to login through ssh
+# Set this to true if you wish to allow other users to login through ssh
+# disable_ssh_user_restriction: "false"
+
+# Enable agent forwarding
+# By default ssh agent forwarding is disabled
+# Set this to true if you wish to enable ssh agent forwarding
+# enable_ssh_agent_forwarding: "false"
+
 ##############################################################################
 ## DEBUGGING
 ##############################################################################

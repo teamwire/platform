@@ -248,6 +248,28 @@
         - static_frontend_configuration is defined
         - groups['all'] | length > 1
 
+    - name: Ensure disable_ssh_user_restriction is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - disable_ssh_user_restriction is string
+          - disable_ssh_user_restriction is in ['true', 'false']
+        msg: >-
+          Ensure value from disable_ssh_user_restriction is set to lower quoted true or false
+      run_once: true
+      when:
+        - disable_ssh_user_restriction is defined
+
+    - name: Ensure enable_ssh_agent_forwarding is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - enable_ssh_agent_forwarding is string
+          - enable_ssh_agent_forwarding is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_ssh_agent_forwarding is set to lower quoted true or false
+      run_once: true
+      when:
+        - enable_ssh_agent_forwarding is defined
+
     - name: Ensure enable_stun is a string when enabled
       ansible.builtin.assert:
         that:
