@@ -1,3 +1,8 @@
+---
+
+# ------------------------------------------------------------------------------
+# Ensure postfix is removed from existing installations
+# ------------------------------------------------------------------------------
 - name: Gather the package facts
   ansible.builtin.package_facts:
     manager: auto
@@ -12,18 +17,8 @@
     - use_nullmailer | lower == "true"
     - "'postfix' in ansible_facts.packages"
 
-- name: Disable nullmailer related services
-  block:
-    - name: Disable nullmailer
-      ansible.builtin.service:
-        name: nullmailer
-        state: stopped
-        enabled: false
-    - name: Disable xinetd
-      ansible.builtin.service:
-        name: xinetd
-        state: stopped
-        enabled: false
-  when:
-    - ( use_nullmailer is undefined or use_nullmailer | lower != "true" )
-    - "'nullmailer' in ansible_facts.packages"
+- name: Remove postfix
+  ansible.builtin.apt:
+    name: postfix
+    state: absent
+    purge: true

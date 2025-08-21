@@ -12,17 +12,6 @@
     name: ssh
     state: reloaded
 
-- name: Rebuild postfix passwd map
-  ansible.builtin.command: postmap /etc/postfix/sasl/passwd
-
-- name: Rebuild postfix generic map
-  ansible.builtin.command: postmap /etc/postfix/generic
-
-- name: Restart postfix
-  ansible.builtin.service:
-    name: postfix
-    state: restarted
-
 - name: Restart dnsmasq
   ansible.builtin.service:
     name: dnsmasq
@@ -35,9 +24,6 @@
 
 - name: New aliases
   ansible.builtin.command: newaliases
-
-- name: Rebuild postfix domain map
-  ansible.builtin.command: postmap /etc/postfix/virtual
 
 - name: Reload dhclient
   ansible.builtin.command: pkill dhclient

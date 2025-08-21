@@ -278,14 +278,10 @@ smtp_port: 587
 smtp_use_tls: "yes"
 
 # Forward system mails to external email address, e.g. "admin@example.com"
-system_email_recipient:
-
-# Use the new mail service nullmailer instead of postfix. Defaults to false
-# use_nullmailer: "true"
+system_email_recipient:"
 
 # In case the smtp_smarthost is configured with a selfsigned certificate
 # you have to set this value to true.
-# This will only work if use_nullmailer is set to true.
 # Defaults to false.
 # allow_selfsigned_smtp_cert: "false"
 
@@ -293,7 +289,7 @@ system_email_recipient:
 ## MONITORING
 ##############################################################################
 # To enable on-premise monitoring, please uncomment and set enable_monitoring
-# to true. If running a cluster-setup, the monitoring master will be your 
+# to true. If running a cluster-setup, the monitoring master will be your
 # management server.
 
 # enable_monitoring: yes

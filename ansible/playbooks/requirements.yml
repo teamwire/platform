@@ -580,8 +580,6 @@
       when:
         - config_done is defined
         - system_email_recipient is not defined
-        - use_nullmailer is defined
-        - use_nullmailer | lower == "true"
 
 # ------------------------------------------------------------------------------
 # Check monitoring requirements
