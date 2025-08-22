@@ -27,3 +27,9 @@
 # Clean OCSP files and tasks
 - name: Clean OCSP files and tasks
   ansible.builtin.include_tasks: clean_ocsp.yml
+
+# Remove hashi ui container
+- name: Remove Hashi-UI Container
+  ansible.builtin.include_tasks: remove_hashiui.yml
+  when:
+    - groups['all'] | length() > 1

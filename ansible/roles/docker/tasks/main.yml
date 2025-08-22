@@ -228,7 +228,3 @@
     - groups['all'] | length() > 1
     - groups.docker_registry is defined
     - not ansible_local.offline_mode.stat.exists
-
-- name: Include cluster
-  ansible.builtin.include_tasks: cluster.yml
-  when: groups['all'] | length() > 1

@@ -1,0 +1,9 @@
+---
+
+# ------------------------------------------------------------------------------
+# Ensure hashi-ui container is stopped
+# ------------------------------------------------------------------------------
+- name: Run hashi-ui in clustered setups
+  community.docker.docker_container:
+    name: hashi-ui
+    state: absent
