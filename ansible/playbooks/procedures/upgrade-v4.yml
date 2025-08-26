@@ -1,25 +1,25 @@
 ---
 
-# Teamwire Platform 3.0 upgrade procedure
+# Teamwire Platform 4.0 upgrade procedure
 #
 - name: Update Python and Ansible
   hosts: all
   vars_files: ../../roles/common/vars/main.yml
 
   pre_tasks:
-    - name: Teamwire Platform 3.0 upgrade.
+    - name: Teamwire Platform 4.0 upgrade.
       ansible.builtin.debug:
         msg:
           - It will determine if your system meets the requirements
           - and reconfigure it accordingly to be able to apply
-          - Teamwire Platform 3.0.
+          - Teamwire Platform 4.0.
 
     - name: Assert current Debian version is supported
       ansible.builtin.assert:
         that:
-          - ansible_distribution_release == 'bullseye' or
-            ansible_distribution_release == 'bookworm'
-        fail_msg: You're using Debian {{ debian_version }}. Only Debian 11 (Bullseye) and 12 (Bookworm) are supported.
+          - ansible_distribution_release == 'bookworm' or
+            ansible_distribution_release == 'trixie'
+        fail_msg: You're using Debian {{ debian_version }}. Only Debian 12 (Bookworm) and 13 (Trixie) are supported.
         success_msg: Debian {{ debian_version }} is supported.
       vars:
         debian_version: "{{ ansible_distribution_version }} ({{ ansible_distribution_release | capitalize }})"
@@ -57,7 +57,7 @@
               - Please run 'git checkout tags/{{ platform_version_applied }}' to checkout the previous platform version.
             success_msg: Platform version {{ platform_version_applied }} is applied.
 
-        - name: Assert at least platform version 2.4.1 is applied
+        - name: Assert at least platform version 3.5.2 is applied
           ansible.builtin.assert:
             that:
               - platform_version_applied is version(platform_v1_version_required, '>=')
@@ -67,12 +67,12 @@
               - Please run 'git checkout tags/{{ platform_v1_version_required }}' to checkout the previous platform version.
             success_msg: Platform version {{ platform_version_applied }} can be upgraded to Platform 3.0.
           vars:
-            platform_v1_version_required: '2.4.1'
+            platform_v1_version_required: '3.5.2'
 
         - name: Assert upgrade hasn't been run already
           ansible.builtin.assert:
             that:
-              - platform_version_applied is version('3.0', '<')
+              - platform_version_applied is version('4.0', '<')
             fail_msg: Upgrade has already been run. Nothing to do.
             success_msg: Upgrade hasn't been run yet.
 
@@ -81,7 +81,7 @@
     - name: Assert upgrade preparations haven't been run already
       ansible.builtin.assert:
         that:
-          - ansible_version.full is version('2.14.6', '<')
+          - ansible_version.full is version('2.18.8', '<')
         fail_msg: Upgrade preparations have already been run. Nothing to do.
         success_msg: Upgrade preparations haven't been run yet.
 
@@ -105,10 +105,10 @@
         - name: Install Ansible
           ansible.builtin.pip:
             name:
-              - pip==23.1.2
-              - cryptography==3.4.8
-              - ansible-core==2.14.6
-              - ansible==7.6.0
+              - pip==25.1.1
+              - cryptography==45.0.6
+              - ansible-core==2.18.8
+              - ansible==11.9.0
           environment:
             HTTP_PROXY: "{{ http_proxy | default() }}"
             HTTPS_PROXY: "{{ http_proxy | default() }}"

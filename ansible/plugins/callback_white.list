@@ -2,4 +2,4 @@ site.yml
 cluster.yml
 galera-bootstrap.yml
 renew-vault-certificate.yml
-upgrade-v3.yml
+upgrade-v4.yml
