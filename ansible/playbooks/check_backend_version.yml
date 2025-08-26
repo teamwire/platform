@@ -25,3 +25,4 @@
           when:
             - backend_fact.tag not in [ 'not_set', '1.0.0' ]
             - backend_version is version('19.6','<')
+      when: use_teamwire_registry | default('true') | bool
