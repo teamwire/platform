@@ -121,6 +121,14 @@
         owner: root
         group: root
 
+    # Ensure glusterfs Galaxy collection is installed
+    - name: Install gluster.gluster collection if not present
+      ansible.builtin.command: ansible-galaxy collection install gluster.gluster
+      become: true
+      become_user: teamwire
+      delegate_to: localhost
+      run_once: true
+
     - name: Display success message
       ansible.builtin.debug:
         msg: Upgrade preparations have been completed.
