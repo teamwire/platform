@@ -19,10 +19,10 @@
         that:
           - ansible_distribution_release == 'bookworm' or
             ansible_distribution_release == 'trixie'
-        fail_msg: You're using Debian {{ debian_version }}. Only Debian 12 (Bookworm) and 13 (Trixie) are supported.
-        success_msg: Debian {{ debian_version }} is supported.
+        fail_msg: You're using {{ debian_version }}. Only Debian 12 (Bookworm) and 13 (Trixie) are supported.
+        success_msg: "{{ debian_version }} is supported."
       vars:
-        debian_version: "{{ ansible_distribution_version }} ({{ ansible_distribution_release | capitalize }})"
+        debian_version: "{{ ansible_lsb.description }}"
 
     - name: Check platform installation status
       ansible.builtin.stat:
