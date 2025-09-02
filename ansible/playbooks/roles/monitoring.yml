@@ -20,7 +20,9 @@
       ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
         tasks_from: cleanup_monitoring
-      when: config_done is defined
+      when:
+        - config_done is defined
+        - ansible_distribution_release == "bookworm"
 
 
 - name: Deploy monitoring system

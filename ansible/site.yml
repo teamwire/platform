@@ -66,7 +66,9 @@
       ansible.builtin.import_role:
         name: housekeeping
         tasks_from: cleanup_monitoring
-      when: config_done is defined
+      when:
+        - config_done is defined
+        - ansible_distribution_release == "bookworm"
 
 - name: Deploy monitoring services
   hosts: all
