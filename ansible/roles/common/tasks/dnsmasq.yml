@@ -23,7 +23,9 @@
     owner: root
     group: root
   when: dns_servers is defined
-  notify: Restart dnsmasq
+  notify:
+    - Restart dnsmasq
+    - Recheck if dnsmasq is already installed (cluster only)
 
 - name: Configure dnsmasq to listen on private_ip and localhost
   ansible.builtin.template:
@@ -38,6 +40,9 @@
     - inventory_hostname not in groups['voip_servers']
   notify: Restart dnsmasq
 
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
 - name: Resolve DNS using dnsmasq
   ansible.builtin.template:
     src: dns.conf.j2
@@ -46,6 +51,17 @@
     owner: root
     group: root
   notify: Restart systemd-resolved
+
+- name: DHCP_6 Configure DHCP client to use local DNS server
+  ansible.builtin.lineinfile:
+    regexp: "^#+prepend domain-name-servers"
+    backrefs: true
+    line: "supersede domain-name-servers 127.0.0.1;"
+    dest: /etc/dhcp/dhclient.conf
+  when:
+    - dhcp_6 | default(true)
+    - ansible_distribution_release == "bookworm"
+  notify: Reload dhclient
 
 # Ensure we have a valid DNS configuration
 - name: Flush handlers

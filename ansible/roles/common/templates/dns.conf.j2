@@ -1,5 +1,5 @@
 [Resolve]
-{% if groups['all'] | length > 1 %}
+{% if groups['all'] | length > 1 and dnsmasq_configuration.stat.exists %}
 DNS=127.0.0.1
 {% else %}
 DNS={{ dns_servers | default(ansible_local.general_facts.dns_servers) | join(' ') }}

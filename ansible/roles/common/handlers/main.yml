@@ -66,3 +66,8 @@
   ansible.builtin.systemd:
     name: systemd-resolved.service
     state: restarted
+
+- name: Recheck if dnsmasq is already installed (cluster only)
+  ansible.builtin.stat:
+    path: /etc/dnsmasq.d/20-upstream
+  register: dnsmasq_configuration
