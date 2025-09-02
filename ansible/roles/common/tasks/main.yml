@@ -36,6 +36,7 @@
     dest: /etc/resolv.conf
     state: link
     force: true
+  notify: Restart systemd-resolved
 
 - name: Create resolved.conf.d directory
   ansible.builtin.file:
@@ -51,6 +52,7 @@
   when:
     - groups.all | length == 1 or
       not dnsmasq_configuration.stat.exists
+  notify: Restart systemd-resolved
 
 - name: Disable dhcp for dns
   ansible.builtin.lineinfile:
@@ -61,10 +63,8 @@
     mode: '0644'
   when: ansible_distribution_release != "bookworm"
 
-- name: Restart systemd-resolved
-  ansible.builtin.systemd:
-    name: systemd-resolved
-    state: restarted
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Create rc.local for Debian
   ansible.builtin.template:
