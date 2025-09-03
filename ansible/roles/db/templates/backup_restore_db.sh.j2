@@ -172,7 +172,9 @@ backup_db() {
     --host=${HOST} \
     --port="${PORT}" \
     --outputdir="${OUTDIR}/tmp" \
+{% if ansible_distribution_release != 'bookworm' %}
     --default-connection-database "${DB}" \
+{% endif %}
     --threads="${MAX_THREADS}"
 
   check_prev_exitcode $? "Error while backup"
@@ -277,7 +279,9 @@ restore_db() {
     --directory="${DIR_TMP}" \
     --threads="${MAX_THREADS}" \
     --overwrite-tables \
+{% if ansible_distribution_release != 'bookworm' %}
     --default-connection-database "${DB}" \
+{% endif %}
     --verbose=3
   else
     myloader --defaults-file="${TMPFILE_PATH}" \
@@ -288,7 +292,9 @@ restore_db() {
     --password="${PASS}" \
     --directory="${DIR_TMP}" \
     --threads="${MAX_THREADS}" \
+{% if ansible_distribution_release != 'bookworm' %}
     --default-connection-database "${DB}" \
+{% endif %}
     --verbose=3
   fi
   check_prev_exitcode $? "Error while recovering (dumps) into database"

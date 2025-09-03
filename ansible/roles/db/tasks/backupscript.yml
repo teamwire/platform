@@ -34,8 +34,8 @@
   when: ansible_distribution_release != "bookworm"
 
 - name: Implement Backup and Restorescript
-  ansible.builtin.copy:
-    src: backup_restore_db.sh
+  ansible.builtin.template:
+    src: backup_restore_db.sh.j2
     dest: /usr/local/bin/backup_restore_db.sh
     owner: root
     group: root
