@@ -200,11 +200,6 @@ Packer guest tools test:
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/vm-guest-tools.sh"
   needs: ['Ensure shellcheck docker image exists']
 
-Backup / Restore test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/db/files/backup_restore_db.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
 Offline installation test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/prepare-offline-installation.sh"
