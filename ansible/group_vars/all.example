@@ -385,9 +385,9 @@ system_email_recipient:
 # LOG_LINE_LIMIT: 2000
 
 # Content Security Policy (CSP) configuration
-# You can disable the CSP if wished by uncommenting the setting and setting it to false.
-# Per default it is always set to true.
-# ENABLE_CSP: "true"
+# You can enable the CSP if wished by uncommenting the setting and setting it to true.
+# Per default it is always set to false.
+# ENABLE_CSP: "false"
 
 # Static frontend configuration
 # By default, cluster setups use consul-template for dynamic service discovery.
