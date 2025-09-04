@@ -12,6 +12,7 @@
     state: present
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
+  throttle: 1
   when:
     - ( groups['all'] | length == 1 and mysql_host is undefined ) or
       ( groups['database_servers'] is defined and inventory_hostname in groups['database_servers'] )
