@@ -17,7 +17,6 @@ lsb-release
 REGULAR_PACKAGES="
 git
 dnsmasq
-mydumper
 mariadb-server
 mariadb-client
 mariadb-backup
@@ -48,10 +47,18 @@ debsums
 apt-listbugs
 libpam-tmpdir
 xinetd
+libc-dev-bin
+libc6-dev
+libcrypt-dev
+libpcre2-16-0
+libpcre2-32-0
+libpcre2-dev
+linux-libc-dev
+rpcsvc-proto
 "
 
 CHECKMK_SHASUM_URL=$(jq -r '.monitoring.sha256' /etc/ansible/facts.d/general_facts.fact)
-CHECKMK_SSLCERTIFICATES_SHASUM_URL=$(jq -r '.monitoring.monitoring.sslcertificates_sha256' /etc/ansible/facts.d/general_facts.fact)
+CHECKMK_SSLCERTIFICATES_SHASUM_URL=$(jq -r '.monitoring.sslcertificate_sha256' /etc/ansible/facts.d/general_facts.fact)
 MYDUMPER_SHASUM_URL=$(jq -r '.db.mydumper_sha256' /etc/ansible/facts.d/general_facts.fact)
 
 DOCKER_IMAGES="
@@ -67,6 +74,7 @@ $(jq -r '.docker_registry.container' /etc/ansible/facts.d/general_facts.fact)
 harbor.teamwire.eu/teamwire/dashboard:${DASHBOARD_RELEASE}
 harbor.teamwire.eu/teamwire/webclient:${WEBCLIENT_RELEASE}
 $(jq -r '.monitoring.container' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.monitoring.nginx_container' /etc/ansible/facts.d/general_facts.fact)
 "
 
 # File URL and SHA256 checksum separated by a semicolon
@@ -75,7 +83,7 @@ $(jq -r '.consul.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul.
 $(jq -r '.consul_template.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul_template.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.nomad.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.nomad.sha256' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.vault.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.vault.sha256' /etc/ansible/facts.d/general_facts.fact)
-$(jq -r '.monitoring.sslcertificates_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SSLCERTIFICATES_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
+$(jq -r '.monitoring.sslcertificate_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SSLCERTIFICATES_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 $(jq -r '.db.mydumper_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${MYDUMPER_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 "
 

@@ -29,6 +29,7 @@
     name: systemd-resolved
     state: present
     update_cache: true
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Replace /etc/resolv.conf with symbolic link
   ansible.builtin.file:

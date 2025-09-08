@@ -57,6 +57,7 @@
     name: "{{ ansible_local.general_facts.monitoring.container }}"
     source: pull
     state: present
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Setup checkmk master docker container
   community.docker.docker_container:
