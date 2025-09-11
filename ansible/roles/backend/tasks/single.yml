@@ -191,6 +191,7 @@
     env:
       REDIS_URI: "127.0.0.1:6379:1"
       VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
+      VAULT_TOKEN: "{{ vault_job_token | default() }}"
       LOGLEVEL: "{{ notification_loglevel | default() }}"
 
 - name: Retrieve the Teamwire dashboard container
