@@ -1,0 +1,65 @@
+---
+- name: Restore MySQL database using mydumper-restore container
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+
+    - name: Ask for backup file location
+      ansible.builtin.pause:
+        prompt: "Pleade provide the path to the backup file"
+      register: backup_path
+
+    - name: Find .tar.gz files in backup directory
+      ansible.builtin.find:
+          paths: "{{ backup_path.user_input }}"
+          patterns: "*.tar.gz"
+          file_type: file
+      register: found_backups
+
+    - name: Fail if no .tar.gz files found
+      ansible.builtin.fail:
+          msg: "No .tar.gz files found in {{ backup_path.user_input }}"
+      when: found_backups.matched == 0
+
+    - name: Read password from vault
+      ansible.builtin.set_fact:
+        db_password: "{{ lookup('pipe', 'twctl secrets read database/password | tr -d \"\\n\"') }}"
+
+    - name: Retrieve mydumper_restore container
+      community.docker.docker_image:
+        name: "harbor.teamwire.eu/teamwire/mydumper-restore:latest"
+        source: pull
+        state: present
+
+    - name: Restore MySQL database from backup using mydumper-restore container
+      community.docker.docker_container:
+        name: mydumper-restore
+        image: harbor.teamwire.eu/teamwire/mydumper-restore:latest
+        state: started
+        restart_policy: no
+        auto_remove: yes
+        env:
+          DB_SOCKET: /var/run/mysqld/mysqld.sock
+          DB_HOST: 127.0.0.1
+          DB_USER: "{{ teamwire_db_user | default('teamwire') }}"
+          DB_PASSWORD: "{{ db_password }}"
+          DB_NAME: "{{ teamwire_db_name | default('teamwire') }}"
+          DUMP_DIR: /dump
+        volumes:
+          - "{{ backup_path }}:/dump"
+          - /var/run/mysqld:/var/run/mysqld:ro
+
+    - name: Check if tables exist after restore
+      community.mysql.mysql_query:
+        login_user: "{{ teamwire_db_user | default('teamwire') }}"
+        login_password: "{{ db_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        login_db: "{{ teamwire_db_name | default('teamwire') }}"
+        query: "SHOW TABLES;"
+      register: db_check
+
+    - name: Fail if no tables were restored
+      fail:
+        msg: "Database restore failed – no tables found in {{ teamwire_db_name }}"
+      when: db_check.query_result[0] | length < 1
