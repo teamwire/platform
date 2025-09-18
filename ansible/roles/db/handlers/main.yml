@@ -8,6 +8,12 @@
     name: mysql
     state: restarted
 
+- name: Restart MariaDB (Single Server)
+  ansible.builtin.service:
+    name: mysql
+    state: restarted
+  when: groups['all'] | length == 1
+
 - name: Restart consul
   ansible.builtin.service:
     name: consul
