@@ -5,3 +5,6 @@ password={{ monitoring_db_password }}
 host={{ mysql_host }}
 port={{ mysql_port }}
 {% endif %}
+{% if ( enable_tls_mysql is defined and enable_tls_mysql | lower != "true" ) or groups['all'] | length == 1 %}
+skip-ssl
+{% endif %}
