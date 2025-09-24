@@ -21,9 +21,6 @@
 {% if groups['docker_registry'] is defined and inventory_hostname in groups['docker_registry'] %}
   {'check_plugin_name': 'mrpe', 'item': 'Container Docker Registry', 'parameters': {}, 'service_labels': {}},
 {% endif %}
-{% if groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] %}
-  {'check_plugin_name': 'mrpe', 'item': 'Container Hashi UI', 'parameters': {}, 'service_labels': {}},
-{% endif %}
   {'check_plugin_name': 'mrpe', 'item': 'OOMs', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'UFW Status', 'parameters': {}, 'service_labels': {}},
 {% if groups['all'] | length() == 1 or ( groups['database_servers'] is defined and inventory_hostname in groups['database_servers'] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined and inventory_hostname in groups['backend_servers'] )%}

@@ -27,10 +27,6 @@ Platform%20Deployment%20Status {{ monitoring_agent_custom_check_dir }}/check_pla
 # Docker registry Container
 Container%20Docker%20Registry sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers docker-registry --status running
 {% endif %}
-{% if groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] %}
-# Hashi UI Container
-Container%20Hashi%20UI sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers hashi-ui --status running
-{% endif %}
 
 # Check UFW
 UFW%20Status sudo {{ monitoring_agent_custom_check_dir }}check_ufw
