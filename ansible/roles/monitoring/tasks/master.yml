@@ -143,6 +143,13 @@
 # ------------------------------------------------------------------------------
 # Configure checkmk
 # ------------------------------------------------------------------------------
+- name: Read nomad management token to check nomad jobs
+  ansible.builtin.command: vault kv get -field=value secret/nomad/management_token
+  register: management_token
+  changed_when: false
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
+  when: groups['all'] | length > 1
+
 - name: Configure master conf.d/wato files
   ansible.builtin.template:
     src: "master_confs/{{ item }}.j2"
