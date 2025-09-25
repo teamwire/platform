@@ -1,6 +1,22 @@
 # Written by Checkmk store
 
 # ------------------------------------------------------------------------------
+# Check Settings
+# ------------------------------------------------------------------------------
+extra_service_conf.setdefault('max_check_attempts', [])
+
+extra_service_conf['max_check_attempts'] = [
+{'value': 3, 'condition': {}, 'options': {'disabled': False}},
+] + extra_service_conf['max_check_attempts']
+
+
+extra_service_conf.setdefault('retry_interval', [])
+
+extra_service_conf['retry_interval'] = [
+{'value': 0.16666666666666666, 'condition': {}, 'options': {'disabled': False}},
+] + extra_service_conf['retry_interval']
+
+# ------------------------------------------------------------------------------
 # Check SSH Connection
 # ------------------------------------------------------------------------------
 active_checks.setdefault('ssh', [])
