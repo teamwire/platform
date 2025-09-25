@@ -1,4 +1,7 @@
 {% if groups['all'] | length() == 1 -%}
+# Check Vault Token Expiry
+Vault%20Token%20Expiry%20Check sudo {{ monitoring_agent_custom_check_dir }}check_vault_token_expiry.sh
+
 # Default Containers
 Container%20Backend sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_backend --status running
 Container%20Worker sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_worker --status running

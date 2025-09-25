@@ -1,5 +1,6 @@
 [
 {% if groups['all'] | length() == 1 %}
+  {'check_plugin_name': 'mrpe', 'item': 'Vault Token Expiry Check', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'Container Backend', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'Container Beat', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'Container Notification Server', 'parameters': {}, 'service_labels': {}},
