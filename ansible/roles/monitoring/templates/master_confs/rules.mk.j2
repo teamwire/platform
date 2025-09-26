@@ -3,6 +3,12 @@
 # ------------------------------------------------------------------------------
 # Check Settings
 # ------------------------------------------------------------------------------
+globals().setdefault('host_check_commands', [])
+
+host_check_commands = [
+{'value': ('service', 'Ping'), 'condition': {}, 'options': {'disabled': False}},
+] + host_check_commands
+
 extra_service_conf.setdefault('max_check_attempts', [])
 
 extra_service_conf['max_check_attempts'] = [
