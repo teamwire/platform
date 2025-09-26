@@ -1,6 +1,22 @@
 ---
 
 # ------------------------------------------------------------------------------
+# Ensure checkmk master is reachable for agents
+# ------------------------------------------------------------------------------
+- name: Ensure checkmk master is reachable
+  ansible.builtin.uri:
+    url: "{{ checkmk_url }}"
+    validate_certs: false
+    follow_redirects: none
+    status_code: 302
+    use_proxy: false
+  register: checkmk_endpoint_state
+  run_once: true
+  until: checkmk_endpoint_state.status == 302
+  retries: 5
+  delay: 5
+
+# ------------------------------------------------------------------------------
 # Generate Autocheck discovery configuration for each agent on master
 # ------------------------------------------------------------------------------
 - name: Configure Autodiscover configuration files

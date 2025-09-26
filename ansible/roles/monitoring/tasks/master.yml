@@ -250,18 +250,3 @@
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
-
-# ------------------------------------------------------------------------------
-# Ensure checkmk master is reachable
-# ------------------------------------------------------------------------------
-- name: Ensure checkmk master is reachable
-  ansible.builtin.uri:
-    url: "{{ checkmk_url }}"
-    validate_certs: false
-    follow_redirects: none
-    status_code: 302
-    use_proxy: false
-  register: checkmk_endpoint_state
-  until: checkmk_endpoint_state.status == 302
-  retries: 5
-  delay: 5
