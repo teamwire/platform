@@ -22,6 +22,19 @@ extra_service_conf['retry_interval'] = [
 {'value': 0.16666666666666666, 'condition': {}, 'options': {'disabled': False}},
 ] + extra_service_conf['retry_interval']
 
+
+extra_host_conf.setdefault('notification_interval', [])
+
+extra_host_conf['notification_interval'] = [
+{'value': 30.0, 'condition': {}, 'options': {'disabled': False}},
+] + extra_host_conf['notification_interval']
+
+extra_service_conf.setdefault('notification_interval', [])
+
+extra_service_conf['notification_interval'] = [
+{'value': 30.0, 'condition': {}, 'options': {'disabled': False}},
+] + extra_service_conf['notification_interval']
+
 # ------------------------------------------------------------------------------
 # Check SSH Connection
 # ------------------------------------------------------------------------------
