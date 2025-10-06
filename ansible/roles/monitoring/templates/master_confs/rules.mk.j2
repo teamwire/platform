@@ -110,18 +110,6 @@ active_checks['httpv2'] = [
 {'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Dashboard Endpoint'}, 'url': 'https://{{ dashboard_hostname if dashboard_hostname is defined }}'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None)}}, 'condition': {'host_tags': { 'single_server': 'true', 'decoupling': 'true' }}, 'options': {'disabled': False}},
 {'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Webclient Endpoint'}, 'url': 'https://{{ webclient_hostname if webclient_hostname is defined }}'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None)}}, 'condition': {'host_tags': { 'single_server': 'true', 'decoupling': 'true' }}, 'options': {'disabled': False}},
 {'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'VoIP Endpoint'}, 'url': 'https://{{ external_hostname[0] if external_hostname is iterable and external_hostname is not string else external_hostname }}:8443'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None)}}, 'condition': {'host_tags': {'single_server': 'true', 'voip_servers': 'true'}}, 'options': {'disabled': False}},
-
-# Cluster Endpoints
-{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Nomad Health Endpoint'}, 'url': 'http://$HOSTADDRESS$:4646/v1/status/leader'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*4647.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': {'hashi_servers': 'true'}}, 'options': {'disabled': False}},
-{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Nomad Health Endpoint'}, 'url': 'http://$HOSTADDRESS$:4646/v1/status/leader'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*4647.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': {'backend_servers': 'true'}}, 'options': {'disabled': False}},
-{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Consul Health Endpoint'}, 'url': 'http://$HOSTADDRESS$:8500/v1/status/leader'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*8300.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': {'single_server': {'$ne': 'true'}}}, 'options': {'disabled': False}},
-{% for job in nomad_jobs %}
-{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Nomad Job {{ job }}'}, 'url': 'http://$HOSTADDRESS$:4646/v1/job/{{ job }}'}], 'standard_settings': {'connection': {'method': ('get', None), 'add_headers': [{'header_name': 'X-Nomad-Token', 'header_value': '{{ management_token.stdout if groups['all'] | length > 1 }}'}]}, 'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*running.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': { {{ "'voip_servers': 'true', 'single_server': {'$ne': 'true' }" if job == 'voip' else "'management_servers': 'true'" }}{{ ", 'decoupling': 'true'" if job == 'dashboard' or job == 'webclient' }} }}, 'options': {'disabled': False}},
-{% endfor %}
-
-
-# Vault Sealed Status check
-{'value': {'endpoints': [{'service_name': {'prefix': 'none', 'name': 'Vault Seal Status'}, 'url': 'https://$HOSTADDRESS$:8200/v1/sys/seal-status'}], 'standard_settings': {'response_time': ('fixed', (0.1, 0.2)), 'server_response': {'expected': [200]}, 'cert': ('no_validation', None), 'content': {'body': ('regex', {'regex': '.*sealed\\":false.*', 'case_insensitive': False, 'multiline': False, 'invert': False})}}}, 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'hashi_servers': 'true'" }}}}, 'options': {'disabled': False}},
 ] + active_checks['httpv2']
 
 
@@ -209,3 +197,25 @@ active_checks['dns'] = [
 {'value': {'hostname': '{{ key }}.redis.service.consul', 'name': 'Redis {{ key }} DNS Resolution', 'server': '$HOSTADDRESS$', 'response_time': (1.0, 2.0), 'timeout': 10}, 'condition': {'host_tags': { 'backend_servers': 'true' }}, 'options': {'disabled': False}},
 {% endfor %}
 ] + active_checks['dns']
+
+# ------------------------------------------------------------------------------
+# Implement checks via custom checks
+# ------------------------------------------------------------------------------
+globals().setdefault('custom_checks', [])
+
+custom_checks = [
+
+# Check if Nomad Job is running
+{% for job in nomad_jobs %}
+{'value': {'service_description': 'Nomad Job {{ job }}', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -u "/v1/job/{{ job }}" -s "running" -p 4646 -k "X-Nomad-Token:{{ management_token.stdout if groups['all'] | length > 1 }}"'}, 'condition': {'host_tags': { {{ "'voip_servers': 'true', 'single_server': {'$ne': 'true' }" if job == 'voip' else "'management_servers': 'true'" }}{{ ", 'decoupling': 'true'" if job == 'dashboard' or job == 'webclient' }} }}, 'options': {'disabled': False}},
+{% endfor %}
+
+# Vault Sealed Status check
+{'value': {'service_description': 'Vault Seal Status', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -S -u "/v1/sys/seal-status" -s "sealed\\":false" -p 8200'}, 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'hashi_servers': 'true'" }}}}, 'options': {'disabled': False}},
+
+# Cluster Endpoints Health Checks
+{'value': {'service_description': 'Nomad Health Endpoint', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -u "/v1/status/leader" -s "4647" -p 4646'}, 'condition': {'host_tags': {'hashi_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': {'service_description': 'Nomad Health Endpoint', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -u "/v1/status/leader" -s "4647" -p 4646'}, 'condition': {'host_tags': {'backend_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': {'service_description': 'Consul Health Endpoint', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -u "/v1/status/leader" -s "8300" -p 8500'}, 'condition': {'host_tags': {'single_server': {'$ne': 'true'}}}, 'options': {'disabled': False}},
+
+] + custom_checks
