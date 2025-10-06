@@ -41,6 +41,10 @@
     mode: 0440
     use_proxy: false
     validate_certs: false
+  register: download_checkmk_agent
+  until: download_checkmk_agent.status_code == 200 or download_checkmk_agent.status_code == 304
+  retries: 6
+  delay: 5
 
 - name: Install checkmk agent
   ansible.builtin.apt:

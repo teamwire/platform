@@ -60,6 +60,10 @@
   ansible.builtin.command: "cmk-agent-ctl register --hostname {{ external_hostname if groups['all'] | length() == 1 else inventory_hostname }} --server {{ checkmk_master_ip }}:{{ checkmk_agent_reciever_port | default('5665') }} --site tw_monitoring --user agent_registration --trust-cert --password {{ ansible_local.checkmk.agent_registration_secret if groups['all'] | length() == 1 else hostvars[groups['management_servers'] | sort | first].ansible_local.checkmk.agent_registration_secret }}"
   changed_when: false
   no_log: true
+  register: register_checkmk_agent
+  until: register_checkmk_agent.rc == 0
+  retries: 6
+  delay: 5
 
 # ------------------------------------------------------------------------------
 # Handlers for HTTPs Reverse Proxy
