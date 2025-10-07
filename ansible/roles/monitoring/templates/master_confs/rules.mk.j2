@@ -96,24 +96,16 @@ static_checks['ntp_time'] = [
 
 
 # ------------------------------------------------------------------------------
-# Check different procs
+# Check Systemd Services
 # ------------------------------------------------------------------------------
-static_checks.setdefault('ps', [])
-
-static_checks['ps'] = [
-{'value': ('ps', 'nullmailer-send', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {}, 'options': {'disabled': False, 'description': 'check-process-nullmailer'}},
-{'value': ('ps', 'xinetd', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {}, 'options': {'disabled': False, 'description': 'check-process-xinetd'}},
-{'value': ('ps', 'rsyslogd', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {}, 'options': {'disabled': False, 'description': 'check-process-rsyslogd'}},
-{'value': ('ps', 'dnsmasq', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'single_server': {'$ne': 'true'}}}, 'options': {'disabled': False}},
-{'value': ('ps', 'keepalived', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'load_balancers': 'true'}}, 'options': {'disabled': False}},
-{'value': ('ps', 'consul-template', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'frontend_servers': 'true'}}, 'options': {'disabled': False}},
-{'value': ('ps', 'maxscale', {'cpu_rescale_max': True, 'levels': (1, 1, 99999, 99999)}), 'condition': {'host_tags': {'backend_servers': 'true'}}, 'options': {'disabled': False}},
-] + static_checks['ps']
-
-
 static_checks.setdefault('systemd_units_services', [])
 
 static_checks['systemd_units_services'] = [
+# General
+{'value': ('systemd_units_services', 'nullmailer', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {}, 'options': {'disabled': False}},
+{'value': ('systemd_units_services', 'xinetd', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {}, 'options': {'disabled': False}},
+{'value': ('systemd_units_services', 'rsyslog', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {}, 'options': {'disabled': False}},
+
 # Single Server
 {'value': ('systemd_units_services', 'redis-server', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'single_server': 'true'}}, 'options': {'disabled': False}},
 
@@ -122,6 +114,13 @@ static_checks['systemd_units_services'] = [
 {'value': ('systemd_units_services', 'redis-server@{{ key }}', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'redis_servers': 'true'}}, 'options': {'disabled': False}},
 {'value': ('systemd_units_services', 'redis-sentinel@{{ key }}', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'redis_servers': 'true'}}, 'options': {'disabled': False}},
 {% endfor %}
+{% if static_frontend_configuration | default('false') != 'true' %}
+{'value': ('systemd_units_services', 'consul-template', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'frontend_servers': 'true'}}, 'options': {'disabled': False}},
+{% endif %}
+{'value': ('systemd_units_services', 'maxscale', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'backend_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': ('systemd_units_services', 'keepalived', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'load_balancers': 'true'}}, 'options': {'disabled': False}},
+{'value': ('systemd_units_services', 'dnsmasq', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'single_server': {'$ne': 'true'}}}, 'options': {'disabled': False}},
+
 ] + static_checks['systemd_units_services']
 
 
