@@ -66,6 +66,14 @@
   delay: 5
 
 # ------------------------------------------------------------------------------
+# Restart omd site
+# ------------------------------------------------------------------------------
+- name: Restart omd site
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && omd restart {{ checkmk_site }}"
+
+# ------------------------------------------------------------------------------
 # Handlers for HTTPs Reverse Proxy
 # ------------------------------------------------------------------------------
 - name: Restart nginx container

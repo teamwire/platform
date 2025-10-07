@@ -226,6 +226,20 @@
   with_items: "{{ monitoring_custom_agent_plugins }}"
 
 # ------------------------------------------------------------------------------
+# Ensure omd site is up and running
+# ------------------------------------------------------------------------------
+- name: Check omd site status
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && omd status -b {{ checkmk_site }} | grep OVERALL"
+  register: checkmk_omd_site_status
+  changed_when: "'0' not in checkmk_omd_site_status.stdout"
+  notify: Restart omd site
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+# ------------------------------------------------------------------------------
 # Set Facts for checkmk users with authorization secrets
 # Necessary for agent install
 # ------------------------------------------------------------------------------
