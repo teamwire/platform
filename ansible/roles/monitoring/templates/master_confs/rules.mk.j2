@@ -111,6 +111,20 @@ static_checks['ps'] = [
 ] + static_checks['ps']
 
 
+static_checks.setdefault('systemd_units_services', [])
+
+static_checks['systemd_units_services'] = [
+# Single Server
+{'value': ('systemd_units_services', 'redis-server', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'single_server': 'true'}}, 'options': {'disabled': False}},
+
+# Cluster Environment
+{% for key, value in redis_instances.items() %}
+{'value': ('systemd_units_services', 'redis-server@{{ key }}', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'redis_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': ('systemd_units_services', 'redis-sentinel@{{ key }}', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'redis_servers': 'true'}}, 'options': {'disabled': False}},
+{% endfor %}
+] + static_checks['systemd_units_services']
+
+
 # ------------------------------------------------------------------------------
 # Check https Endpoints
 # ------------------------------------------------------------------------------
