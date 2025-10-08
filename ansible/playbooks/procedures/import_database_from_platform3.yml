@@ -1,0 +1,93 @@
+---
+- name: Restore MySQL database using mydumper-restore container
+  hosts: localhost
+  gather_facts: false
+  vars:
+    default_db_host: "127.0.0.1"
+    default_db_port: 3307
+    default_db_user: "teamwire"
+    default_db_name: "teamwire"
+    socket_path: "/var/run/mysqld/mysqld.sock"
+
+  tasks:
+
+    - name: Ask for backup directory
+      ansible.builtin.pause:
+        prompt: "Please specify the path to the backup directory.  (e.g. /home/teamwire/backup)"
+      register: backup_path
+
+    - name: Find .tar.gz files in backup directory
+      ansible.builtin.find:
+        paths: "{{ backup_path.user_input }}"
+        patterns: "*.tar.gz"
+        file_type: file
+      register: found_backups
+
+    - name: Fail if no backups found
+      ansible.builtin.fail:
+        msg: "Keine .tar.gz Backups gefunden in {{ backup_path.user_input }}"
+      when: found_backups.matched == 0
+
+    - name: Read DB password from Twctl
+      ansible.builtin.set_fact:
+        db_password: "{{ lookup('pipe', 'twctl secrets read database/password | tr -d \"\\n\"') }}"
+
+    - name: Check if MySQL socket exists
+      ansible.builtin.stat:
+        path: "{{ socket_path }}"
+      register: socket_check
+
+    - name: Set connection parameters dynamically
+      ansible.builtin.set_fact:
+        db_socket: "{{ socket_path if socket_check.stat.exists else '' }}"
+        db_host: "{{ '' if socket_check.stat.exists else default_db_host }}"
+        db_port: "{{ '' if socket_check.stat.exists else default_db_port }}"
+
+    - name: Pull mydumper-restore image
+      community.docker.docker_image:
+        name: "harbor.teamwire.eu/teamwire/mydumper-restore:latest"
+        source: pull
+        state: present
+
+    - name: Restore MySQL database from backup (wait until done)
+      community.docker.docker_container:
+        name: mydumper-restore
+        image: "harbor.teamwire.eu/teamwire/mydumper-restore:latest"
+        state: started
+        restart_policy: false
+        detach: false
+        auto_remove: true
+        network_mode: host
+        env:
+          DB_SOCKET: "{{ db_socket }}"
+          DB_HOST: "{{ db_host }}"
+          DB_PORT: "{{ db_port }}"
+          DB_USER: "{{ default_db_user }}"
+          DB_PASSWORD: "{{ db_password }}"
+          DB_NAME: "{{ default_db_name }}"
+          DUMP_DIR: /dump
+        volumes:
+          - "{{ backup_path.user_input }}:/dump"
+          - /var/run/mysqld:/var/run/mysqld:ro
+
+    - name: Check if tables exist after restore
+      community.mysql.mysql_query:
+        login_user: "{{ default_db_user }}"
+        login_password: "{{ db_password }}"
+        login_unix_socket: "{{ socket_path if socket_check.stat.exists else omit }}"
+        login_host: "{{ default_db_host if not socket_check.stat.exists else omit }}"
+        login_port: "{{ default_db_port if not socket_check.stat.exists else omit }}"
+        login_db: "{{ default_db_name }}"
+        query: "SHOW TABLES;"
+      register: db_check
+      ignore_errors: true
+
+    - name: Fail if no tables were restored
+      ansible.builtin.fail:
+        msg: "Database restore failed – no tables found in {{ default_db_name }}"
+      when: db_check.query_result is not defined or (db_check.query_result[0] | length < 1)
+
+    - name: Print success message
+      ansible.builtin.debug:
+        msg: "✅ Restore successfully completed! Tables in {{ default_db_name }}: {{ db_check.query_result[0] | map(attribute='Tables_in_' + default_db_name) | list }}"
+      when: db_check.query_result is defined and (db_check.query_result[0] | length > 0)
