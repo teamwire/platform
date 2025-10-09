@@ -65,7 +65,7 @@
               - Platform version {{ platform_version_applied }} is applied.
               - Platform version {{ platform_v1_version_required }} has to be applied in order to run this upgrade.
               - Please run 'git checkout tags/{{ platform_v1_version_required }}' to checkout the previous platform version.
-            success_msg: Platform version {{ platform_version_applied }} can be upgraded to Platform 3.0.
+            success_msg: Platform version {{ platform_version_applied }} can be upgraded to Platform 4.0.
           vars:
             platform_v1_version_required: '3.5.2'
 
