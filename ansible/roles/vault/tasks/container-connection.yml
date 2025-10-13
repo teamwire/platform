@@ -65,7 +65,7 @@
 
     - name: Create new job token if old one is invalid or missing
       ansible.builtin.shell: >
-        vault token create -policy nomad-job --ttl=72h -renewable=true -format=json | jq -r .auth.client_token
+        vault token create -policy nomad-job -period=72h -renewable=true -format=json | jq -r .auth.client_token
       register: vault_job_read_token
       when:
         - (groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers'])
