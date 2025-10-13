@@ -12,6 +12,9 @@
 - name: Run nomad acl bootstrap
   ansible.builtin.command: nomad acl bootstrap
   register: bootstrap_output
+  retries: 10
+  delay: 3
+  until: bootstrap_output.rc == 0
   changed_when: "'Secret ID' in bootstrap_output.stdout"
 
 - name: Extract Secret ID from bootstrap output
@@ -45,14 +48,26 @@
 # Enable JWT athentication
     - name: Enable jwt auth method
       ansible.builtin.command: vault auth enable -path 'jwt-nomad' 'jwt'
+      register: enable_jwt
+      retries: 10
+      delay: 3
+      until: enable_jwt.rc == 0
       changed_when: bootstrap_output.changed
 
     - name: Write jwt auth method to vault
       ansible.builtin.command: vault write auth/jwt-nomad/config @/etc/nomad/vault-auth-method-jwt-nomad.json
+      register: write_jwt_config
+      retries: 10
+      delay: 3
+      until: write_jwt_config.rc == 0
       changed_when: bootstrap_output.changed
 
     - name: Write nomad-cluster role to vault
       ansible.builtin.command: vault write auth/jwt-nomad/role/nomad-cluster @/etc/nomad/vault-role-nomad-workloads.json
+      register: write_nomad_role
+      retries: 10
+      delay: 3
+      until: write_nomad_role.rc == 0
       changed_when: bootstrap_output.changed
 
     - name: Remove Vault configuration files
