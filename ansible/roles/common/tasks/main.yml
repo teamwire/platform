@@ -289,13 +289,37 @@
 # SSHD Configuration
 # ------------------------------------------------------------------------------
 - name: Deploy TW SSHD Configuration
-  ansible.builtin.template:
-    src: sshd-teamwire.j2
-    dest: /etc/ssh/sshd_config.d/00-teamwire.conf
-    owner: root
-    group: root
-    mode: '0644'
-    validate: "sshd -t -f %s"
+  block:
+    - name: Deploy Teamwire base SSHD config
+      ansible.builtin.template:
+        src: sshd-teamwire.j2
+        dest: /etc/ssh/sshd_config.d/00-teamwire.conf
+        owner: root
+        group: root
+        mode: '0644'
+        validate: "sshd -t -f %s"
+# ------------------------------------------------------------------------------
+# [ITOPS-3890] SSH Post-Quantum Cryptography enhancement
+# ------------------------------------------------------------------------------
+    - name: Deploy Teamwire ciphers SSHD configuration
+      ansible.builtin.template:
+        src: sshd-ciphers.j2
+        dest: /etc/ssh/sshd_config.d/01-ciphers.conf
+        owner: root
+        group: root
+        mode: '0644'
+        validate: "sshd -t -f %s"
+
+    - name: Restore original SSHD configuration - Debian 12
+      ansible.builtin.copy:
+        src: sshd_config
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        validate: "sshd -t -f %s"
+      when: ansible_distribution_release == 'bookworm'
+
   notify: Reload sshd
 
 # Prepare tmate usage
