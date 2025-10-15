@@ -62,5 +62,4 @@
         - Restart haproxy
   when:
     - groups['all'] | length == 1 or
-      inventory_hostname in groups['frontend_servers'] or
-      inventory_hostname in groups['backend_servers'] and ( enable_tls_mysql is undefined or enable_tls_mysql | lower != "true" )
+      inventory_hostname in groups['frontend_servers']
