@@ -173,6 +173,24 @@
     mode: 0660
   notify: Update checkmk config
 
+- name: Configure apache checkmk global settings
+  ansible.builtin.template:
+    src: master_confs/apache-globals.mk.j2
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/check_mk/apache.d/wato/global.mk"
+    owner: 1000
+    group: 1000
+    mode: 0660
+  notify: Reload the checkmk site
+
+- name: Configure nagios settings
+  ansible.builtin.template:
+    src: master_confs/nagios.cfg.j2
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/nagios/nagios.cfg"
+    owner: 1000
+    group: 1000
+    mode: 0660
+  notify: Reload the checkmk site
+
 # ------------------------------------------------------------------------------
 # Download extra MKP Packages from checkmk exchange
 # ------------------------------------------------------------------------------

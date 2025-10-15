@@ -46,6 +46,12 @@
   run_once: true
   delegate_to: "{{ groups.management_servers | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
 
+- name: Reload the checkmk site
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && cmk -R"
+    user: "{{ checkmk_site }}"
+
 # ------------------------------------------------------------------------------
 # Reload ansible facts
 # ------------------------------------------------------------------------------
