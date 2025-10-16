@@ -25,5 +25,11 @@
   notify:
     - Reload systemd and restart vault-token-renew.timer
 
+- name: Ensure vault-token-renew.timer is started
+  ansible.builtin.systemd:
+    name: vault-token-renew.timer
+    state: started
+    enabled: true
+
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers

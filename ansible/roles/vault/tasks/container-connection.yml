@@ -63,13 +63,20 @@
         - existing_token_raw is defined
         - existing_token_raw['content'] is defined
 
+    - name: Check if token period is missing (set vault_token_needs_recreation flag)
+      ansible.builtin.set_fact:
+        vault_token_needs_recreation: "{{ 'period' not in vault_token_check.stdout }}"
+      when:
+        - vault_token_check is defined
+        - vault_token_check.stdout is defined
+
     - name: Create new job token if old one is invalid or missing
       ansible.builtin.shell: >
-        vault token create -policy nomad-job --ttl=72h -renewable=true -format=json | jq -r .auth.client_token
+        vault token create -policy nomad-job -period=72h -renewable=true -format=json | jq -r .auth.client_token
       register: vault_job_read_token
       when:
         - (groups['all'] | length() == 1 or inventory_hostname in groups['hashi_servers'])
-        - (vault_token_check.rc is not defined or vault_token_check.rc != 0 or revoke_nomad_job_policy.changed)
+        - (vault_token_check.rc is not defined or vault_token_check.rc != 0 or revoke_nomad_job_policy.changed or vault_token_needs_recreation | default(false))
 
     - name: Publish vault job token into token file
       ansible.builtin.copy:
