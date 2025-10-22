@@ -10,7 +10,6 @@
     socket_path: "/var/run/mysqld/mysqld.sock"
 
   tasks:
-
     - name: Ask for backup directory
       ansible.builtin.pause:
         prompt: "Please specify the path to the backup directory.  (e.g. /home/teamwire/backup)"
