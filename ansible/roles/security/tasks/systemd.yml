@@ -63,3 +63,27 @@
   when:
     - groups['all'] | length == 1 or
       inventory_hostname in groups['frontend_servers']
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3857] Secure unattended-upgrades systemd service
+# ------------------------------------------------------------------------------
+- name: Apply unattended-upgrades systemd security configuration
+  block:
+    - name: Ensure directory exists /etc/systemd/system/unattended-upgrades.service.d
+      ansible.builtin.file:
+        name: /etc/systemd/system/unattended-upgrades.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Add systemd override configuration for unattended-upgrades
+      ansible.builtin.template:
+        src: unattended-upgrades-security.conf.j2
+        dest: /etc/systemd/system/unattended-upgrades.service.d/security.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Reload systemd
+        - Restart unattended-upgrades
