@@ -65,28 +65,6 @@
       inventory_hostname in groups['frontend_servers']
 
 # ------------------------------------------------------------------------------
-# [ITOPS-3856] Systemd-analyze security scores ssh.service
-# ------------------------------------------------------------------------------
-- name: Ensure sshd override directory exists
-  ansible.builtin.file:
-    path: /etc/systemd/system/sshd.service.d
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
-
-- name: Create sshd service security file
-  ansible.builtin.copy:
-    src: sshd_security.conf
-    dest: /etc/systemd/system/sshd.service.d/security.conf
-    owner: root
-    group: root
-    mode: 0644
-  notify:
-    - Reload systemd
-    - Restart sshd service
-
-# ------------------------------------------------------------------------------
 # [ITOPS-3857] Secure unattended-upgrades systemd service
 # ------------------------------------------------------------------------------
 - name: Apply unattended-upgrades systemd security configuration
