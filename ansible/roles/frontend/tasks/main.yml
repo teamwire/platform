@@ -13,6 +13,12 @@
     state: present
   register: ha_installed
 
+- name: Check if haproxy can use PQC curves
+  ansible.builtin.shell: dpkg --compare-versions $(dpkg-query -f='${Version}' -W haproxy) gt 3.0
+  register: haproxy_can_use_pqc_curves_check
+  failed_when: false
+  changed_when: false
+
 # This uses systemd's unit file drop-in override mechanism,
 # allowing us to keep vendor's default service unit file together with our customizations
 # https://manpages.debian.org/systemd/systemd.unit.5.en.html
@@ -71,6 +77,8 @@
   with_items:
     - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
     - { src: '{{ frontend_haproxy_template }}', dest: '/etc/haproxy/03-frontend.cfg' }
+  vars:
+    haproxy_can_use_pqc_curves: "{{ haproxy_can_use_pqc_curves_check.rc == 0 }}"
   notify: Restart haproxy
   when: "'frontend_servers' not in groups and groups['all'] | length() == 1"
 
@@ -81,6 +89,8 @@
     mode: 0664
     owner: haproxy
     group: haproxy
+  vars:
+    haproxy_can_use_pqc_curves: "{{ haproxy_can_use_pqc_curves_check.rc == 0 }}"
   notify: Restart haproxy
   when:
     - "'frontend_servers' in groups"
