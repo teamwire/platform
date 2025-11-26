@@ -53,7 +53,16 @@
     name: consul-template
     state: stopped
     enabled: false
+  register: consul_template_disabled
   when: static_frontend_configuration | default('false') == 'true'
+
+- name: Reset failed state of Consul Template service # noqa command-instead-of-module
+  ansible.builtin.command: systemctl reset-failed consul-template
+  changed_when: false
+  failed_when: false
+  when:
+    - static_frontend_configuration | default('false') == 'true'
+    - consul_template_disabled.changed
 
 - name: Create Consul Template directories
   ansible.builtin.file:
