@@ -31,7 +31,7 @@
 
 - name: Install maxscale
   ansible.builtin.package:
-    name: maxscale
+    name: "maxscale={{ ansible_local.general_facts.db.maxscale_version }}"
     state: present
     allow_downgrade: true
 
