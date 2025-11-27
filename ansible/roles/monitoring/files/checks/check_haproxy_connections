@@ -1,0 +1,44 @@
+#!/bin/bash
+# HAProxy connection utilization monitor
+
+HAPROXY_SOCKET="/var/run/haproxy/admin.sock"
+
+# Check if socket exists
+if [[ ! -S "$HAPROXY_SOCKET" ]]; then
+    echo "UNKNOWN - HAProxy socket not found at $HAPROXY_SOCKET"
+    exit 3
+fi
+
+# Get HAProxy stats
+HAPROXY_INFO=$(echo "show info" | socat stdio "$HAPROXY_SOCKET" 2>/dev/null)
+if [[ -z "$HAPROXY_INFO" ]]; then
+    echo "UNKNOWN - Cannot communicate with HAProxy socket"
+    exit 3
+fi
+
+# Parse connection stats
+MAXCONN=$(echo "$HAPROXY_INFO" | grep "^Maxconn:" | awk '{print $2}')
+CURRCONN=$(echo "$HAPROXY_INFO" | grep "^CurrConns:" | awk '{print $2}')
+
+if [[ -z "$MAXCONN" ]] || [[ -z "$CURRCONN" ]] || [[ "$MAXCONN" -eq 0 ]]; then
+    echo "UNKNOWN - Cannot parse HAProxy stats"
+    exit 3
+fi
+
+# Calculate usage
+PCT=$(( (CURRCONN * 100) / MAXCONN ))
+WARN_CONN=$((MAXCONN * 80 / 100))
+CRIT_CONN=$((MAXCONN * 90 / 100))
+PERFDATA="connections=${CURRCONN};${WARN_CONN};${CRIT_CONN};0;${MAXCONN}"
+
+# Check thresholds
+if [[ "$PCT" -ge 90 ]]; then
+    echo "CRITICAL - ${CURRCONN}/${MAXCONN} connections (${PCT}%) | ${PERFDATA}"
+    exit 2
+elif [[ "$PCT" -ge 80 ]]; then
+    echo "WARNING - ${CURRCONN}/${MAXCONN} connections (${PCT}%) | ${PERFDATA}"
+    exit 1
+else
+    echo "OK - ${CURRCONN}/${MAXCONN} connections (${PCT}%) | ${PERFDATA}"
+    exit 0
+fi

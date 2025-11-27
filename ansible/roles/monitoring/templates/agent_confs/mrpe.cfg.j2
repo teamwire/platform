@@ -36,3 +36,8 @@ UFW%20Status sudo {{ monitoring_agent_custom_check_dir }}check_ufw
 
 # Check for OOM's
 OOMs sudo {{ monitoring_agent_custom_check_dir }}check_oom 5
+
+{% if groups['all'] | length() == 1 or (groups['frontend_servers'] is defined and inventory_hostname in groups['frontend_servers']) %}
+# Check HAProxy connections and workers
+HAProxy%20Connections sudo {{ monitoring_agent_custom_check_dir }}check_haproxy_connections
+{% endif %}
