@@ -47,7 +47,7 @@ variables:
 Deploy to hub:
   stage: hub-deploy
   tags:
-  - hub3-runner
+  - hub4-center-shell
   script:
     - eval $(ssh-agent -s)
     - echo "${HUB_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
@@ -105,7 +105,7 @@ Release tag on GitHub:
 Deploy to cloud:
   stage: cloud-deploy
   tags:
-  - prod-cloud
+  - cloud4-core-shell
   script:
     - eval $(ssh-agent -s)
     - echo "${CLOUD_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
@@ -113,7 +113,7 @@ Deploy to cloud:
     - git status
     - git fetch --all
     - git reset --hard remotes/origin/master
-    - ansible-playbook -i cluster_hosts.txt playbooks/cluster.yml
+    - ansible-playbook -i cluster_hosts playbooks/cluster.yml
   rules:
     # Only accept tags what match the regex
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
