@@ -20,14 +20,15 @@
 
 - name: Add maxscale repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64,arm64] https://dlm.mariadb.com/repo/maxscale/latest/apt {{ ansible_distribution_release }} main"
+    repo: "deb [arch=amd64] https://dlm.mariadb.com/repo/maxscale/{{ maxscale_version }}/apt {{ ansible_distribution_release }} main"
     state: present
     filename: mariadb-maxscale
 
 - name: Install maxscale
   ansible.builtin.package:
-    name: maxscale
+    name: "maxscale={{ maxscale_version }}~{{ ansible_distribution_release }}-1"
     state: present
+    allow_downgrade: true
 
 - name: Install logrotate job for Maxscale logs
   ansible.builtin.copy:
