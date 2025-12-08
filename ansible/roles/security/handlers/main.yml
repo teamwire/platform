@@ -32,10 +32,9 @@
     name: mysql
     state: restarted
   throttle: 1
-  with_items: "{{ hostvars[groups['database_servers'] | sort | first].show_galera_cluster_size.query_result if groups['all'] | length > 1 }}"
   when:
     - groups['all'] | length == 1 or
-      ( "database_servers" in groups and item.Value != "0" )
+      ( "database_servers" in groups and galera_cluster_initialized and is_enable_tls_mysql_applied_to_cluster)
 
 - name: Restart unattended-upgrades
   ansible.builtin.service:
