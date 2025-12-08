@@ -38,33 +38,6 @@
       ( "database_servers" in groups and inventory_hostname in groups['database_servers'] )
 
 # ------------------------------------------------------------------------------
-# [ITOPS-3870] Secure haproxy systemd service
-# ------------------------------------------------------------------------------
-- name: Apply haproxy systemd security configuration
-  block:
-    - name: Ensure directory exists /etc/systemd/system/haproxy.service.d
-      ansible.builtin.file:
-        name: /etc/systemd/system/haproxy.service.d
-        state: directory
-        owner: root
-        group: root
-        mode: 0755
-
-    - name: Add systemd override configuration for haproxy
-      ansible.builtin.template:
-        src: haproxy-security.conf.j2
-        dest: /etc/systemd/system/haproxy.service.d/security.conf
-        owner: root
-        group: root
-        mode: 0644
-      notify:
-        - Reload systemd
-        - Restart haproxy
-  when:
-    - groups['all'] | length == 1 or
-      inventory_hostname in groups['frontend_servers']
-
-# ------------------------------------------------------------------------------
 # [ITOPS-3857] Secure unattended-upgrades systemd service
 # ------------------------------------------------------------------------------
 - name: Apply unattended-upgrades systemd security configuration
