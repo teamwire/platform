@@ -117,7 +117,7 @@ static_checks['systemd_units_services'] = [
 {% if static_frontend_configuration | default('false') != 'true' %}
 {'value': ('systemd_units_services', 'consul-template', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'frontend_servers': 'true'}}, 'options': {'disabled': False}},
 {% endif %}
-{'value': ('systemd_units_services', 'maxscale', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'backend_servers': 'true'}}, 'options': {'disabled': False}},
+{'value': ('systemd_units_services', 'maxscale', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'backend_servers': 'true', 'external_db': {'$ne': 'true'}}}, 'options': {'disabled': False}},
 {'value': ('systemd_units_services', 'keepalived', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'load_balancers': 'true'}}, 'options': {'disabled': False}},
 {'value': ('systemd_units_services', 'dnsmasq', {'states': {'active': 0, 'inactive': 2, 'failed': 2}, 'states_default': 2, 'else': 2}), 'condition': {'host_tags': {'single_server': {'$ne': 'true'}}}, 'options': {'disabled': False}},
 
