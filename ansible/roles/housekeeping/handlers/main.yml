@@ -14,3 +14,11 @@
     state: stopped
   when: "inventory_hostname in groups['backend_servers'] and inventory_hostname not in groups['frontend_servers']"
   listen: Disable or Reload HA-Proxy Service
+
+# ------------------------------------------------------------------------------
+# Cleanup monitoring handlers
+# ------------------------------------------------------------------------------
+- name: Update apt
+  ansible.builtin.apt:
+    update_cache: true
+  when: not ansible_local.offline_mode.stat.exists

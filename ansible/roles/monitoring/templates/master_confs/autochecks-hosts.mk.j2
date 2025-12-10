@@ -1,0 +1,36 @@
+[
+{% if groups['all'] | length() == 1 %}
+  {'check_plugin_name': 'mrpe', 'item': 'Vault Token Expiry Check', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container Backend', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container Beat', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container Notification Server', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container Worker', 'parameters': {}, 'service_labels': {}},
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+  {'check_plugin_name': 'mrpe', 'item': 'Container Dashboard', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container Webclient', 'parameters': {}, 'service_labels': {}},
+{% endif %}
+{% if enable_voip is defined and enable_voip | lower == "true" %}
+  {'check_plugin_name': 'mrpe', 'item': 'Container VoIP JVB', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container VoIP Jicofo', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container VoIP Prosody', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'Container VoIP Web', 'parameters': {}, 'service_labels': {}},
+{% endif %}
+{% endif %}
+{% if groups['all'] | length == 1 or ( groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] ) %}
+  {'check_plugin_name': 'mrpe', 'item': 'Platform Deployment Status', 'parameters': {}, 'service_labels': {}},
+{% endif %}
+{% if groups['docker_registry'] is defined and inventory_hostname in groups['docker_registry'] %}
+  {'check_plugin_name': 'mrpe', 'item': 'Container Docker Registry', 'parameters': {}, 'service_labels': {}},
+{% endif %}
+  {'check_plugin_name': 'mrpe', 'item': 'OOMs', 'parameters': {}, 'service_labels': {}},
+  {'check_plugin_name': 'mrpe', 'item': 'UFW Status', 'parameters': {}, 'service_labels': {}},
+{% if groups['all'] | length() == 1 or ( groups['database_servers'] is defined and inventory_hostname in groups['database_servers'] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined and inventory_hostname in groups['backend_servers'] )%}
+  {'check_plugin_name': 'mysql_ping', 'item': 'mysql', 'parameters': {}, 'service_labels': {}},
+{% endif %}
+
+{% for disk in ansible_mounts %}
+{% if disk.fstype not in ['fuse.glusterfs'] %}
+  {'check_plugin_name': 'df', 'item': '{{ disk.mount }}', 'parameters': {'mountpoint_for_block_devices': 'volume_name', 'item_appearance': 'mountpoint'}, 'service_labels': {}},
+{% endif %}
+{% endfor %}
+]

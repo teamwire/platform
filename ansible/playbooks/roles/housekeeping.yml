@@ -27,11 +27,6 @@
       ansible.builtin.include_vars:
         file: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db/defaults/main.yml"
 
-    - name: Get variables for monitoring db users
-      ansible.builtin.import_role:
-        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/monitoring"
-        tasks_from: database-configuration
-
     - name: Cleanup mysql users
       ansible.builtin.import_role:
         name: "../../roles/housekeeping"
@@ -45,4 +40,18 @@
       ansible.builtin.import_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
         tasks_from: mysql_tls_configuration
-      when: enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
+      when:
+        - enable_tls_mysql is defined
+        - enable_tls_mysql | lower != "true"
+
+- name: Cleanup monitoring system
+  hosts: all
+  tasks:
+    - name: Include housekeeping jobs to remove monitoring
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
+        tasks_from: disable_monitoring
+      when:
+        - config_done is defined
+        - enable_monitoring is undefined
+          or enable_monitoring | lower not in [ "yes", "true" ]

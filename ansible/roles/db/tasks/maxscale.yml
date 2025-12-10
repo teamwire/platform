@@ -4,13 +4,18 @@
   ansible.builtin.include_role:
     name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
     tasks_from: disable_galera_haproxy_configuration
-  when: enable_tls_mysql is defined and enable_tls_mysql | lower == "true"
+  when:
+    - enable_tls_mysql is undefined or
+      enable_tls_mysql | lower == "true"
 
 - name: Get gpg key for maxscale repository
-  ansible.builtin.apt_key:
-    id: "{{ maxscale_gpg_key_id }}"
-    keyserver: keyserver.ubuntu.com
-    keyring: /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg
+  ansible.builtin.get_url:
+    url: "{{ ansible_local.general_facts.db.maxscale_repository_key_url }}"
+    dest: /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
+    owner: root
+    group: root
+    mode: 0644
+    checksum: "sha256:{{ ansible_local.general_facts.db.maxscale_repository_key_sha256 }}"
   environment:
     HTTP_PROXY: "{{ http_proxy | default() }}"
     HTTPS_PROXY: "{{ http_proxy | default() }}"
@@ -20,13 +25,13 @@
 
 - name: Add maxscale repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://dlm.mariadb.com/repo/maxscale/{{ maxscale_version }}/apt {{ ansible_distribution_release }} main"
+    repo: "{{ ansible_local.general_facts.db.maxscale_apt_repository_string }}"
     state: present
     filename: mariadb-maxscale
 
 - name: Install maxscale
   ansible.builtin.package:
-    name: "maxscale={{ maxscale_version }}~{{ ansible_distribution_release }}-1"
+    name: "maxscale={{ ansible_local.general_facts.db.maxscale_version }}"
     state: present
     allow_downgrade: true
 
@@ -43,7 +48,9 @@
     name: maxscale
     enabled: true
     state: started
-  when: enable_tls_mysql is defined and enable_tls_mysql | lower == "true"
+  when:
+    - enable_tls_mysql is undefined or
+      enable_tls_mysql | lower == "true"
 
 - name: Check if maxscale secret file exists
   ansible.builtin.stat:

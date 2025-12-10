@@ -22,16 +22,10 @@ secrets:
     path: secret/redis/password
   smtp_smartpass:
     path: secret/smtp/password
+  monitoring_cmkadmin_password:
+    path: secret/monitoring/cmkadmin_password
   monitoring_db_password:
     path: secret/monitoring/db_password
-  monitoring_db_web_password:
-    path: secret/monitoring/db_web_password
-  icinga_admin_password:
-    path: secret/monitoring/icinga_admin_password
-  icinga_salt:
-    path: secret/monitoring/icinga_salt
-  icinga_api_password:
-    path: secret/monitoring/icinga_api_password
   reportfile_password:
     path: secret/reportfile/password
   voip_jvb_password:

@@ -1,0 +1,4 @@
+{
+    "agent_registration_secret": "{{ agent_registration_user_secret.content | b64decode }}",
+    "version": "{{ checkmk_container_info.container.Config.Image.split(":")[-1] }}"
+}

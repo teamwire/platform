@@ -1,0 +1,139 @@
+---
+# Bootstrap nomad to use ACLS
+- name: Wait for Nomad leader to be elected
+  ansible.builtin.uri:
+    url: http://nomad.service.consul:4646/v1/status/leader
+    return_content: true
+  register: nomad_leader
+  until: nomad_leader.status == 200 and nomad_leader.content != '""'
+  retries: 30
+  delay: 2
+
+- name: Run nomad acl bootstrap
+  ansible.builtin.command: nomad acl bootstrap
+  register: bootstrap_output
+  retries: 10
+  delay: 3
+  until: bootstrap_output.rc == 0
+  changed_when: "'Secret ID' in bootstrap_output.stdout"
+
+- name: Extract Secret ID from bootstrap output
+  ansible.builtin.set_fact:
+    nomad_secret_id: "{{ bootstrap_output.stdout | regex_search('Secret ID\\s+=\\s+([a-f0-9\\-]+)', '\\1') | first | default('') }}"
+
+- name: Write bootstrap token to file
+  ansible.builtin.template:
+    src: token_credentials.j2
+    dest: "{{ inventory_dir + '/nomad-token' }}"
+    owner: teamwire
+    group: teamwire
+    mode: 0644
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Configure Vault for Nomad ACL's
+  block:
+    - name: Copy configuration files for vault
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: /etc/nomad/
+        owner: root
+        group: root
+        mode: 0644
+      with_items:
+        - vault-auth-method-jwt-nomad.json
+        - vault-role-nomad-workloads.json
+
+# Enable JWT athentication
+    - name: Enable jwt auth method
+      ansible.builtin.command: vault auth enable -path 'jwt-nomad' 'jwt'
+      register: enable_jwt
+      retries: 10
+      delay: 3
+      until: enable_jwt.rc == 0
+      changed_when: bootstrap_output.changed
+
+    - name: Write jwt auth method to vault
+      ansible.builtin.command: vault write auth/jwt-nomad/config @/etc/nomad/vault-auth-method-jwt-nomad.json
+      register: write_jwt_config
+      retries: 10
+      delay: 3
+      until: write_jwt_config.rc == 0
+      changed_when: bootstrap_output.changed
+
+    - name: Write nomad-cluster role to vault
+      ansible.builtin.command: vault write auth/jwt-nomad/role/nomad-cluster @/etc/nomad/vault-role-nomad-workloads.json
+      register: write_nomad_role
+      retries: 10
+      delay: 3
+      until: write_nomad_role.rc == 0
+      changed_when: bootstrap_output.changed
+
+    - name: Remove Vault configuration files
+      ansible.builtin.file:
+        path: "/etc/nomad/{{ item }}"
+        state: absent
+      with_items:
+        - vault-auth-method-jwt-nomad.json
+        - vault-role-nomad-workloads.json
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
+
+- name: Copy configuration files for nomad
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/nomad/
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - job-management.hcl
+
+- name: Add nomad management acl
+  ansible.builtin.command: nomad acl policy apply job-management /etc/nomad/job-management.hcl
+  environment:
+    NOMAD_TOKEN: "{{ nomad_secret_id }}"
+  changed_when: false
+
+- name: Create management token
+  ansible.builtin.command: nomad acl token create -name="teamwire" -type="management"
+  environment:
+    NOMAD_TOKEN: "{{ nomad_secret_id }}"
+  register: management_output
+  changed_when: "'Secret ID' in management_output.stdout"
+
+- name: Extract Secret ID from management token output
+  ansible.builtin.set_fact:
+    management_secret_id: "{{ management_output.stdout | regex_search('Secret ID\\s+=\\s+([a-f0-9\\-]+)', '\\1') | first | default('') }}"
+
+- name: Create job token
+  ansible.builtin.command: nomad acl token create -name="teamwire" -policy=job-management
+  environment:
+    NOMAD_TOKEN: "{{ nomad_secret_id }}"
+  register: job_output
+  changed_when: "'Secret ID' in job_output.stdout"
+
+- name: Extract Secret ID from job token output
+  ansible.builtin.set_fact:
+    job_secret_id: "{{ job_output.stdout | regex_search('Secret ID\\s+=\\s+([a-f0-9\\-]+)', '\\1') | first | default('') }}"
+
+- name: Write job and management tokens to vault
+  ansible.builtin.command: vault write secret/"{{ item.secret }}" value="{{ item.value }}" # noqa no-changed-when
+  no_log: true
+  with_items:
+    - { secret: 'nomad/job_token', value: "{{ job_secret_id | default('') }}" }
+    - { secret: 'nomad/management_token', value: "{{ management_secret_id | default('') }}" }
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
+
+- name: Remove Nomad configuration files
+  ansible.builtin.file:
+    path: "/etc/nomad/{{ item }}"
+    state: absent
+  with_items:
+    - job-management.hcl
+
+- name: Create bootstrap_nomad fact file if missing
+  ansible.builtin.file:
+    path: /etc/ansible/facts.d/bootstrap_nomad
+    state: touch
+    mode: '0644'

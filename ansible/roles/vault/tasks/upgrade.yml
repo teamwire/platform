@@ -12,7 +12,7 @@
 
     - name: Extract new Vault version over existing one
       ansible.builtin.unarchive:
-        src: /var/cache/downloads/vault_{{ vault_version }}_linux_amd64.zip
+        src: /var/cache/downloads/vault_{{ ansible_local.general_facts.vault.version }}_linux_amd64.zip
         dest: /usr/local/bin
         mode: 0755
         copy: false
@@ -52,7 +52,7 @@
     - name: Verify upgrade on standby nodes succeeded
       ansible.builtin.assert:
         that:
-          - vault_upgraded_version is version(vault_version, '==')
+          - vault_upgraded_version is version(ansible_local.general_facts.vault.version, '==')
           - vault_upgraded_ha_mode == 'standby'
 
   when: vault_ha_enabled and vault_ha_mode == 'standby'
@@ -67,7 +67,7 @@
 
     - name: Extract new Vault version over existing one
       ansible.builtin.unarchive:
-        src: /var/cache/downloads/vault_{{ vault_version }}_linux_amd64.zip
+        src: /var/cache/downloads/vault_{{ ansible_local.general_facts.vault.version }}_linux_amd64.zip
         dest: /usr/local/bin
         mode: 0755
         copy: false
@@ -108,7 +108,7 @@
     - name: Verify upgrade on previously active node succeeded
       ansible.builtin.assert:
         that:
-          - vault_upgraded_version is version(vault_version, '==')
+          - vault_upgraded_version is version(ansible_local.general_facts.vault.version, '==')
           - vault_upgraded_ha_mode == 'standby'
 
   when: not vault_ha_enabled or vault_ha_mode == 'active'

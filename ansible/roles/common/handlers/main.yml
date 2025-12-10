@@ -4,24 +4,13 @@
 
 - name: Restart NTP
   ansible.builtin.service:
-    name: ntp
+    name: ntpsec
     state: restarted
 
 - name: Reload sshd
   ansible.builtin.service:
     name: ssh
     state: reloaded
-
-- name: Rebuild postfix passwd map
-  ansible.builtin.command: postmap /etc/postfix/sasl/passwd
-
-- name: Rebuild postfix generic map
-  ansible.builtin.command: postmap /etc/postfix/generic
-
-- name: Restart postfix
-  ansible.builtin.service:
-    name: postfix
-    state: restarted
 
 - name: Restart dnsmasq
   ansible.builtin.service:
@@ -35,9 +24,6 @@
 
 - name: New aliases
   ansible.builtin.command: newaliases
-
-- name: Rebuild postfix domain map
-  ansible.builtin.command: postmap /etc/postfix/virtual
 
 - name: Reload dhclient
   ansible.builtin.command: pkill dhclient
@@ -75,3 +61,13 @@
   ansible.builtin.service:
     name: systemd-journald
     state: restarted
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved.service
+    state: restarted
+
+- name: Recheck if dnsmasq is already installed (cluster only)
+  ansible.builtin.stat:
+    path: /etc/dnsmasq.d/20-upstream
+  register: dnsmasq_configuration

@@ -1,0 +1,2 @@
+# Define Folders to check (Needs to be array over all folders where the Certificates are saved)
+CERT_DIRS="/var/lib/vault/ssl{{ ' /data/certs/apns' if apns_certificate is defined or apns_certificate_2 is defined or apns_certificate_3 is defined }}"

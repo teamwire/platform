@@ -1,11 +1,21 @@
 [mariadb]
-require_secure_transport = on
+{% if ansible_distribution_release != "bookworm" %}
+ssl = {{ '0' if ( enable_tls_mysql is defined and enable_tls_mysql != "true" ) or groups['all'] | length == 1 else '1' }}
+{% endif %}
+require_secure_transport = {{ 'off' if ( enable_tls_mysql is defined and enable_tls_mysql != "true" ) or groups['all'] | length == 1 else 'on' }}
+{% if ( enable_tls_mysql is undefined or enable_tls_mysql == "true" ) and groups['all'] | length > 1 %}
 ssl-cert = /etc/mysql/ssl/server.pem
 ssl-key = /etc/mysql/ssl/private_key.pem
 ssl-ca = /etc/mysql/ssl/intermediate_and_root.pem
 ssl-cipher = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305
 tls_version = TLSv1.2,TLSv1.3
+{% endif %}
 
 [client-mariadb]
+{% if (( enable_tls_mysql is defined and enable_tls_mysql != "true" ) or groups['all'] | length == 1) and ansible_distribution_release != "bookworm" %}
+skip-ssl = true
+{% else %}
 ssl-ca = /etc/mysql/ssl/intermediate_and_root.pem
 ssl
+skip-ssl-verify-server-cert
+{% endif %}

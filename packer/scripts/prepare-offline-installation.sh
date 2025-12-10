@@ -17,7 +17,6 @@ lsb-release
 REGULAR_PACKAGES="
 git
 dnsmasq
-mydumper
 mariadb-server
 mariadb-client
 mariadb-backup
@@ -39,72 +38,53 @@ libterm-readkey-perl
 socat
 patch
 python3-docker
-mlock
 libcap2-bin
-icinga2
-icinga2-bin
-icinga2-common
-icinga2-doc
-icinga2-ido-mysql
-icingaweb2-common
-icingacli
-php-icinga
-icinga-php-library
-icinga-php-thirdparty
-icingaweb2
-monitoring-plugins
-nagios-plugins-contrib
-libredis-perl
-libmonitoring-plugin-perl
-liblwp-useragent-determined-perl
-libdbd-mysql-perl
 dnsutils
-apache2
-libapache2-mod-php
-php
-php-mysql
-php-curl
-php-imagick
-php-intl
-php-gd
-php-xml
-jq
 gnupg2
 maxscale
 nullmailer
 debsums
 apt-listbugs
 libpam-tmpdir
+xinetd
+libc-dev-bin
+libc6-dev
+libcrypt-dev
+libpcre2-16-0
+libpcre2-32-0
+libpcre2-dev
+linux-libc-dev
+rpcsvc-proto
 "
 
-CONSUL_VERSION=$(awk '/^consul_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
-CONSUL_TEMPLATE_VERSION=$(awk '/^consul_template_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
-NOMAD_VERSION=$(awk '/^nomad_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
-VAULT_VERSION=$(awk '/^vault_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
+CHECKMK_SHASUM_URL=$(jq -r '.monitoring.sha256' /etc/ansible/facts.d/general_facts.fact)
+CHECKMK_SSLCERTIFICATES_SHASUM_URL=$(jq -r '.monitoring.sslcertificate_sha256' /etc/ansible/facts.d/general_facts.fact)
+MYDUMPER_SHASUM_URL=$(jq -r '.db.mydumper_sha256' /etc/ansible/facts.d/general_facts.fact)
 
 DOCKER_IMAGES="
 harbor.teamwire.eu/teamwire/backend:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/notification-server:${BACKEND_RELEASE}
-harbor.teamwire.eu/teamwire/go-buildenv:latest
+$(jq -r '.go.container' /etc/ansible/facts.d/general_facts.fact)
 harbor.teamwire.eu/teamwire/web2:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/prosody:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jicofo:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/jvb:${BACKEND_RELEASE}
 harbor.teamwire.eu/teamwire/turn:${BACKEND_RELEASE}
-$(awk '/^registry_version:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
-$(awk '/^hashui_container:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/docker/vars/main.yml)
+$(jq -r '.docker_registry.container' /etc/ansible/facts.d/general_facts.fact)
 harbor.teamwire.eu/teamwire/dashboard:${DASHBOARD_RELEASE}
 harbor.teamwire.eu/teamwire/webclient:${WEBCLIENT_RELEASE}
+$(jq -r '.monitoring.container' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.monitoring.nginx_container' /etc/ansible/facts.d/general_facts.fact)
 "
 
 # File URL and SHA256 checksum separated by a semicolon
 DOWNLOADS="
-https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip;$(awk '/^consul_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/consul/vars/main.yml)
-https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip;$(awk '/^consul_template_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/frontend/vars/main.yml)
-https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip;$(awk '/^nomad_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/nomad/vars/main.yml)
-https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip;$(awk '/^vault_checksum:/ { gsub("\"",""); print $2 }' ~teamwire/platform/ansible/roles/vault/vars/main.yml)
-https://repo.teamwire.eu/external/ftp/icinga_packages.txt;$(curl -Ls https://repo.teamwire.eu/external/ftp/checksum_icinga_packages)
-https://repo.teamwire.eu/external/ftp/check_ntp_time-latest;$(curl -Ls https://repo.teamwire.eu/external/ftp/checksum_check_ntp_time-latest)
+$(jq -r '.consul.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul.sha256' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.consul_template.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.consul_template.sha256' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.nomad.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.nomad.sha256' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.vault.url' /etc/ansible/facts.d/general_facts.fact);$(jq -r '.vault.sha256' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.monitoring.sslcertificate_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${CHECKMK_SSLCERTIFICATES_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
+$(jq -r '.db.mydumper_url' /etc/ansible/facts.d/general_facts.fact);$(curl -Ls "${MYDUMPER_SHASUM_URL}" | jq -r '.items[].assets[].checksum.sha256')
 "
 
 if [ -z "${OFFLINE_INSTALLATION}" ] ; then
@@ -147,36 +127,19 @@ sudo apt-get update -q
 
 # Configure Docker Repository Key
 # https://docs.docker.com/engine/install/debian/#install-using-the-repository
-if [ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]; then
-  sudo wget -q -O /usr/share/keyrings/docker-archive-keyring.key https://download.docker.com/linux/debian/gpg
-  sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/docker-archive-keyring.key
-fi
-
-# Configure Icinga2 Repository and Key
-# https://icinga.com/docs/icinga-2/latest/doc/02-installation/01-Debian/#debian-repository
-if [ ! -f /usr/share/keyrings/icinga-archive-keyring.key ]; then
-  sudo wget -q -O /usr/share/keyrings/icinga-archive-keyring.key https://packages.icinga.com/icinga.key
-  sudo gpg --no-tty --batch --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg /usr/share/keyrings/icinga-archive-keyring.key
-fi
-
-if [ ! -f /etc/apt/sources.list.d/icinga2.list ]; then
-  DIST=$(awk -F"[)(]+" '/VERSION=/ {print $2}' /etc/os-release)
-  echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.key] https://packages.icinga.com/debian icinga-${DIST} main" | sudo tee /etc/apt/sources.list.d/icinga2.list
-fi
-
-if [ ! -f /etc/apt/preferences.d/tw_monitoring_pinning ]; then
-  cd ~/platform/ansible
-  ansible localhost -i hosts -m template -b -a "src=roles/monitoring/templates/tw_monitoring_pinning.j2 dest=/etc/apt/preferences.d/tw_monitoring_pinning owner=root group=root mode=0644" -e @roles/monitoring/defaults/main.yml
+DOCKER_REPOSITORY_KEY_DESTINATION=$(jq -r '.docker.repository_key_destination' /etc/ansible/facts.d/general_facts.fact)
+if [ ! -f "${DOCKER_REPOSITORY_KEY_DESTINATION}" ]; then
+  DOCKER_REPOSITORY_KEY_URL=$(jq -r '.docker.repository_key_url' /etc/ansible/facts.d/general_facts.fact)
+  sudo wget -q -O "${DOCKER_REPOSITORY_KEY_DESTINATION}" "${DOCKER_REPOSITORY_KEY_URL}"
 fi
 
 # Configure Maxscale Repository Key
 if [ ! -f /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg ]; then
-  MAXSCALE_GPG_KEY_ID=$(grep "maxscale_gpg_key_id" ~teamwire/platform/ansible/roles/db/defaults/main.yml | sed -e 's/"//g' | cut -d ':' -f2 | sed -e 's/^0x//')
-  source /etc/os-release
+  MAXSCALE_REPOSITORY_KEY_URL=$(jq -r '.db.maxscale_repository_key_url' /etc/ansible/facts.d/general_facts.fact)
+  MAXSCALE_REPOSITORY_STRING=$(jq -r '.db.maxscale_apt_repository_string' /etc/ansible/facts.d/general_facts.fact)
 
-  sudo gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys "${MAXSCALE_GPG_KEY_ID}"
-  sudo gpg --export "${MAXSCALE_GPG_KEY_ID}" | sudo tee /etc/apt/trusted.gpg.d/mariadb-maxscale.gpg
-  echo "deb [arch=amd64,arm64] https://dlm.mariadb.com/repo/maxscale/latest/apt ${VERSION_CODENAME} main" | sudo tee /etc/apt/sources.list.d/mariadb-maxscale.list
+  sudo curl -Ls "${MAXSCALE_REPOSITORY_KEY_URL}" -o /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
+  echo "${MAXSCALE_REPOSITORY_STRING}" | sudo tee /etc/apt/sources.list.d/mariadb-maxscale.list
 fi
 
 # For whatever reason, APT downloads slightly different package dependencies when downloading all regular packages at once,

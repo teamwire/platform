@@ -37,12 +37,3 @@
     group: "{{ mysql_ssl_group }}"
   when: inventory_hostname in groups['database_servers']
   notify: Update MySQL Certificates
-
-- name: Configure /etc/mysql/conf.d/tls.cnf
-  ansible.builtin.template:
-    src: tls.cnf.j2
-    dest: /etc/mysql/conf.d/tls.cnf
-    owner: "{{ mysql_ssl_owner }}"
-    group: "{{ mysql_ssl_group }}"
-    mode: 0644
-  when: inventory_hostname in groups['database_servers']

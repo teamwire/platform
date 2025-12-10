@@ -4,8 +4,8 @@
 		"dockerhub_password": "",
 		"dockerhub_username": "",
 		"http_directory": "",
-		"iso_url": "https://cdimage.debian.org/cdimage/release/12.8.0/amd64/iso-cd/debian-12.8.0-amd64-netinst.iso",
-		"iso_checksum": "f4f7de1665cdcd00b2e526da6876f3e06a37da3549e9f880602f64407f602983a571c142eb0de0eacfc9c1d0f534e9339cdce04eb9daddc6ddfa8cf34853beed",
+		"iso_url": "https://cdimage.debian.org/cdimage/release/13.0.0/amd64/iso-cd/debian-13.0.0-amd64-netinst.iso",
+		"iso_checksum": "069d47e9013cb1d651d30540fe8ef6765e5d60c8a14c8854dfb82e50bbb171255d2e02517024a392e46255dcdd18774f5cbd7e9f3a47aa1b489189475de62675",
 		"iso_checksum_type": "sha512",
 		"vm_name": "localhost",
 		"offline_installation": "",
@@ -172,6 +172,7 @@
 				"scripts/make-unique.sh",
 				"scripts/prepare-offline-installation.sh",
 				"scripts/fix-network.sh",
+				"scripts/set-grub-password.sh",
 				"scripts/shrink-image.sh"
 			],
 			"environment_vars": [

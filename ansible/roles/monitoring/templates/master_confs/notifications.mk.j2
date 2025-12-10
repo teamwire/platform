@@ -1,0 +1,27 @@
+# Written by Checkmk store
+
+notification_rules += [{
+  'description': 'Notify all contacts of a host/service via HTML email',
+  'comment': '',
+  'docu_url': '',
+  'disabled': False,
+  'allow_disable': False,
+  'contact_object': True,
+  'contact_all': False,
+  'contact_all_with_email': False,
+  'contact_emails': [
+{% for recipient in monitoring_email_addresses %}
+  '{{ recipient }}'{% if not loop.last %}, {% endif %}
+{% endfor %}
+  ],
+  'rule_id': 'c1dd5d0c-c111-4182-afe8-d63d0ce03bc8',
+  'notify_plugin': (
+    'mail', {
+      'from': {'address': '{{ monitoring_sender_address }}'},
+      'host_subject': '{{ monitoring_mail_subject_tag }} $HOSTNAME$ - $EVENT_TXT$',
+      'service_subject': '{{ monitoring_mail_subject_tag }} $HOSTNAME$/$SERVICEDESC$ $EVENT_TXT$',
+      'elements': ['address', 'abstime', 'longoutput', 'graph'],
+      'bulk_sort_order': 'newest_first'
+    }
+  )
+}]

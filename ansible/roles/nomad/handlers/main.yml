@@ -3,3 +3,10 @@
   ansible.builtin.service:
     name: nomad
     state: restarted
+
+# ------------------------------------------------------------------------------
+# Reload ansible facts
+# ------------------------------------------------------------------------------
+- name: Ansible facts reload
+  ansible.builtin.setup:
+    filter: ansible_local

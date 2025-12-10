@@ -18,7 +18,7 @@
   ansible.builtin.file:
     path: /data/certs
     owner: daemon
-    group: ssl-cert
+    group: daemon
     mode: 0750
     state: directory
   when: config_done is defined
@@ -28,7 +28,7 @@
   ansible.builtin.file:
     path: /data/certs/apns
     owner: daemon
-    group: ssl-cert
+    group: daemon
     mode: 0750
     state: directory
   when:
@@ -42,7 +42,7 @@
     dest: /data/certs/apns/aps-production.pem
     mode: 0440
     owner: daemon
-    group: ssl-cert
+    group: daemon
   when:
     - config_done is defined
     - apns_certificate is defined
@@ -55,7 +55,7 @@
     dest: "/data/certs/apns/{{ apns_certificate_2 | basename }}"
     mode: 0440
     owner: daemon
-    group: ssl-cert
+    group: daemon
   when: apns_certificate_2 is defined
   run_once: true
   register: apns2_source
@@ -66,7 +66,7 @@
     dest: "/data/certs/apns/{{ apns_certificate_3 | basename }}"
     mode: 0440
     owner: daemon
-    group: ssl-cert
+    group: daemon
   when: apns_certificate_3 is defined
   run_once: true
   register: apns3_source
@@ -84,13 +84,5 @@
     - (apns_source.changed or apns2_source.changed or apns3_source.changed)
     - ansible_play_hosts | length() == 1
     - "'teamwire_worker' in docker_procs.stdout"
-
-- name: Include haproxy
-  ansible.builtin.include_tasks: "haproxy.yml"
-  when:
-    - mysql_host is not defined
-    - "'database_servers' in groups"
-    - groups['database_servers'] | length > 1
-    - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
 
 # The cluster backend deployment is delegated to the nomad servers

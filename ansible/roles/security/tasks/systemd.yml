@@ -1,0 +1,95 @@
+---
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3855] Secure mariadb systemd service
+# ------------------------------------------------------------------------------
+- name: Apply mariadb systemd security configuration
+  block:
+    - name: Check for restart requirements in a cluster
+      block:
+        - name: Check if galera cluster is already initialized
+          community.mysql.mysql_query:
+            query: "SHOW STATUS LIKE 'wsrep_cluster_size'"
+            login_user: root
+            login_unix_socket: /var/run/mysqld/mysqld.sock
+          when:
+            - inventory_hostname == groups['database_servers'] | sort | first
+          register: show_galera_cluster_size
+
+        - name: Set fact if galera cluster is initialized
+          ansible.builtin.set_fact:
+            galera_cluster_initialized: '{{ true if item.Value != "0" else false }}'
+          with_items: "{{ hostvars[groups['database_servers'] | sort | first].show_galera_cluster_size.query_result }}"
+
+        - name: Check the state of ssl the running mysql server
+          community.mysql.mysql_query:
+            query: "SHOW VARIABLES LIKE 'have_ssl'"
+            login_user: root
+            login_unix_socket: /var/run/mysqld/mysqld.sock
+          when:
+            - inventory_hostname == groups['database_servers'] | sort | first
+          register: mysql_have_ssl
+
+        - name: Set fact if state of ssl matches enable_tls_mysql set to true
+          ansible.builtin.set_fact:
+            is_enable_tls_mysql_applied_to_cluster: '{{ true if item.Value | lower == "yes" else false }}'
+          with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
+          when:
+            - enable_tls_mysql is undefined or
+              enable_tls_mysql | lower == "true"
+
+        - name: Set fact if state of ssl matches enable_tls_mysql set to false
+          ansible.builtin.set_fact:
+            is_enable_tls_mysql_applied_to_cluster: '{{ true if item.Value | lower == "disabled" else false }}'
+          with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
+          when:
+            - enable_tls_mysql is defined
+            - enable_tls_mysql | lower != "true"
+      when:
+        - '"database_servers" in groups'
+
+    - name: Ensure directory exists /etc/systemd/system/mariadb.service.d
+      ansible.builtin.file:
+        name: /etc/systemd/system/mariadb.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Add systemd override configuration for mariadb
+      ansible.builtin.template:
+        src: mariadb-security.conf.j2
+        dest: /etc/systemd/system/mariadb.service.d/security.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Reload systemd
+        - Restart MariaDB
+  when:
+    - ( groups['all'] | length == 1 and mysql_host is not defined and oracle_host is not defined ) or
+      ( "database_servers" in groups and inventory_hostname in groups['database_servers'] )
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3857] Secure unattended-upgrades systemd service
+# ------------------------------------------------------------------------------
+- name: Apply unattended-upgrades systemd security configuration
+  block:
+    - name: Ensure directory exists /etc/systemd/system/unattended-upgrades.service.d
+      ansible.builtin.file:
+        name: /etc/systemd/system/unattended-upgrades.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Add systemd override configuration for unattended-upgrades
+      ansible.builtin.template:
+        src: unattended-upgrades-security.conf.j2
+        dest: /etc/systemd/system/unattended-upgrades.service.d/security.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Reload systemd
+        - Restart unattended-upgrades

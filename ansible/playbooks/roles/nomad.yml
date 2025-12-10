@@ -21,3 +21,19 @@
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/nomad"
       when:
         - groups['all'] | length() > 1
+
+- name: Configure nomad acl
+  hosts: management_servers
+  tasks:
+    - name: Check if bootstrap_nomad fact file exists
+      ansible.builtin.stat:
+        path: /etc/ansible/facts.d/bootstrap_nomad
+      register: nomad_fact_file
+
+    - name: Deploy and configure the nomad role
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/nomad"
+        tasks_from: acl-integration
+      when:
+        - groups['all'] | length() > 1
+        - not nomad_fact_file.stat.exists

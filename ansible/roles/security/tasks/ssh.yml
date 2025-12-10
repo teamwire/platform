@@ -1,0 +1,10 @@
+---
+# ------------------------------------------------------------------------------
+# [ITOPS-3852] Harden File Permissions
+# ------------------------------------------------------------------------------
+- name: Harden ssh file permissions
+  ansible.builtin.file:
+    name: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0600

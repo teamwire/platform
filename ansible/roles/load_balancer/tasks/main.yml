@@ -5,7 +5,7 @@
       - keepalived
 
 - name: Allow incoming keepalived multicast traffic
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     src: 224.0.0.18
 

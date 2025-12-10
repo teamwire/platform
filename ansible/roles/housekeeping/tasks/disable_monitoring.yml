@@ -1,0 +1,24 @@
+---
+
+- name: Ensure to stop the checkmk container
+  community.docker.docker_container:
+    name: checkmk
+    state: absent
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['management_servers']
+
+- name: Ensure to stop the nginx container
+  community.docker.docker_container:
+    name: nginx
+    state: absent
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['management_servers']
+
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Ensure to stop and disable the checkmk agent
+  ansible.builtin.service:
+    name: cmk-agent-ctl-daemon
+    state: stopped
+    enabled: false
+  when: "'check-mk-agent' in ansible_facts.packages"

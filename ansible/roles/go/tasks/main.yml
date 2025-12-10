@@ -23,7 +23,7 @@
   when: not ansible_local.offline_mode.stat.exists
 
 - name: Build golang binarys
-  ansible.builtin.shell: docker run --rm -e GOFILE={{ item }} -v /usr/local/bin:/dest -v /usr/local/src/go:/src {{ 'harbor.teamwire.eu/' if use_teamwire_registry | default('true') | bool else '' }}teamwire/go-buildenv:latest # noqa command-instead-of-shell
+  ansible.builtin.shell: docker run --rm -e GOFILE={{ item }} -v /usr/local/bin:/dest -v /usr/local/src/go:/src {{ ansible_local.general_facts.go.container }} # noqa command-instead-of-shell
   when: copysrc.changed # noqa no-handler
   with_items: "{{ gosource }}"
   become: true

@@ -1,5 +1,8 @@
 ---
 
+# ------------------------------------------------------------------------------
+# Setup nullmailer
+# ------------------------------------------------------------------------------
 - name: Install the relay mail service
   ansible.builtin.apt:
     pkg:
@@ -9,12 +12,6 @@
 - name: Ensure nullmailer is started
   ansible.builtin.service:
     name: nullmailer
-    state: started
-    enabled: true
-
-- name: Ensure nullmailer is started
-  ansible.builtin.service:
-    name: xinetd
     state: started
     enabled: true
 
@@ -45,6 +42,7 @@
     owner: root
     group: root
     mode: '0644'
+  when: config_done is defined
   notify: Restart nullmailer
 
 - name: Set the default domain for mail
@@ -54,8 +52,8 @@
     owner: root
     group: root
     mode: '0644'
+  when: config_done is defined
   notify: Restart nullmailer
-
 
 - name: Set the remotes confg for mail
   ansible.builtin.template:
@@ -64,15 +62,15 @@
     owner: mail
     group: mail
     mode: '0600'
+  when: config_done is defined
   notify: Restart nullmailer
 
 # ------------------------------------------------------------------------------
 # Configure xinetd to listen on 127.0.0.1:25
 # ------------------------------------------------------------------------------
-
 - name: Configure nullmailer xinetd listener
-  ansible.builtin.copy:
-    src: xinetd-nullmailer
+  ansible.builtin.template:
+    src: xinetd-nullmailer.j2
     dest: /etc/xinetd.d/nullmailer
     owner: root
     group: root

@@ -1,0 +1,5 @@
+{
+  "jwks_url": "http://127.0.0.1:4646/.well-known/jwks.json",
+  "jwt_supported_algs": ["RS256", "EdDSA"],
+  "default_role": "nomad-cluster"
+}

@@ -1,3 +1,8 @@
 #!/bin/sh
 
 apt-get -qqy autoremove
+
+# ------------------------------------------------------------------------------
+# [ITOPS-3853] Remove unneeded Kernel and packages configurations
+# ------------------------------------------------------------------------------
+apt -qqy purge ~c

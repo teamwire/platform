@@ -61,7 +61,7 @@
         - ansible_local.vault is defined
         - ansible_local.vault.initialized == "true"
         - vault_binary.stat.exists
-        - vault_version is version(vault_version_current, '>')
+        - ansible_local.general_facts.vault.version is version(vault_version_current, '>')
 
     - name: Ask for credentials
       block:

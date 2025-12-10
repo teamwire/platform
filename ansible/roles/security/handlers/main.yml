@@ -22,3 +22,21 @@
   ansible.builtin.service:
     name: procps
     state: restarted
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart MariaDB
+  ansible.builtin.service:
+    name: mysql
+    state: restarted
+  throttle: 1
+  when:
+    - groups['all'] | length == 1 or
+      ( "database_servers" in groups and galera_cluster_initialized and is_enable_tls_mysql_applied_to_cluster)
+
+- name: Restart unattended-upgrades
+  ansible.builtin.service:
+    name: unattended-upgrades
+    state: restarted

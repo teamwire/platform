@@ -1,0 +1,101 @@
+---
+- name: Restore MySQL database using mydumper-restore container
+  hosts: localhost
+  gather_facts: false
+  vars:
+    default_db_host: "127.0.0.1"
+    default_db_port: 3307
+    default_db_user: "teamwire"
+    default_db_name: "teamwire"
+    socket_path: "/var/run/mysqld/mysqld.sock"
+
+  tasks:
+    - name: Ask for backup directory
+      ansible.builtin.pause:
+        prompt: "Please specify the path to the backup directory.  (e.g. /home/teamwire/backup)"
+      register: backup_path
+
+    - name: Find .tar.gz files in backup directory
+      ansible.builtin.find:
+        paths: "{{ backup_path.user_input }}"
+        patterns: "*.tar.gz"
+        file_type: file
+      register: found_backups
+
+    - name: Fail if no backups found
+      ansible.builtin.fail:
+        msg: "No .tar.gz Backups found in {{ backup_path.user_input }}"
+      when: found_backups.matched == 0
+
+    - name: Read DB password from Twctl
+      ansible.builtin.set_fact:
+        db_password: "{{ lookup('pipe', 'twctl secrets read database/password | tr -d \"\\n\"') }}"
+
+    - name: Check if MySQL socket exists
+      ansible.builtin.stat:
+        path: "{{ socket_path }}"
+      register: socket_check
+
+    - name: Set connection parameters dynamically
+      ansible.builtin.set_fact:
+        db_socket: "{{ socket_path if socket_check.stat.exists else '' }}"
+        db_host: "{{ '' if socket_check.stat.exists else default_db_host }}"
+        db_port: "{{ '' if socket_check.stat.exists else default_db_port }}"
+
+    - name: Pull mydumper-restore image
+      community.docker.docker_image:
+        name: "harbor.teamwire.eu/teamwire/mydumper-restore:latest"
+        source: pull
+        state: present
+
+    - name: Restore MySQL database from backup (wait until done)
+      block:
+        - name: Run mydumper-restore container
+          community.docker.docker_container:
+            name: mydumper-restore
+            image: "harbor.teamwire.eu/teamwire/mydumper-restore:latest"
+            state: started
+            detach: false
+            auto_remove: false
+            network_mode: host
+            env:
+              DB_SOCKET: "{{ db_socket }}"
+              DB_HOST: "{{ db_host }}"
+              DB_PORT: "{{ db_port }}"
+              DB_USER: "{{ default_db_user }}"
+              DB_PASSWORD: "{{ db_password }}"
+              DB_NAME: "{{ default_db_name }}"
+              DUMP_DIR: /dump
+            volumes:
+              - "{{ backup_path.user_input }}:/dump:ro"
+              - /var/run/mysqld:/var/run/mysqld:ro
+          register: restore_container_result
+
+        - name: Extract verification message from container log
+          ansible.builtin.set_fact:
+            verification_message: "{{ restore_container_result.container.Output | regex_search('✅ VERIFICATION SUCCESS.*') }}"
+
+      rescue:
+        - name: ❌ Restore Failed! Dumping container logs for debugging.
+          ansible.builtin.debug:
+            msg: |
+              The mydumper-restore container failed. See logs below.
+              --- DOCKER LOGS ---
+              {{ lookup('community.docker.docker_container_log', container_name='mydumper-restore') }}
+              --- END DOCKER LOGS ---
+
+        - name: Fail the playbook
+          ansible.builtin.fail:
+            msg: "Container 'mydumper-restore' failed during execution."
+
+      always:
+        - name: Ensure mydumper-restore container is removed
+          community.docker.docker_container:
+            name: mydumper-restore
+            state: absent
+          ignore_errors: true
+
+    - name: Verify the database import
+      ansible.builtin.debug:
+        msg: "{{ verification_message | default('✅ Restore complete, but specific verification message not found in logs.') }}"
+      when: verification_message is defined

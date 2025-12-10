@@ -31,7 +31,7 @@
 - name: Local registry container
   community.docker.docker_container:
     name: docker-registry
-    image: "{{ registry_version }}"
+    image: "{{ ansible_local.general_facts.docker_registry.container }}"
     state: started
     restart_policy: always
     network_mode: host

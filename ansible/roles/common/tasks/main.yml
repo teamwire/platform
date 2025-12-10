@@ -24,16 +24,48 @@
   register: dnsmasq_configuration
   when: '"hashi_servers" in groups'
 
-- name: Configure DNS servers
-  ansible.builtin.template:
-    src: resolv.conf.j2
+- name: Install systemd-resolved
+  ansible.builtin.apt:
+    name: systemd-resolved
+    state: present
+    update_cache: true
+  when: not ansible_local.offline_mode.stat.exists
+
+- name: Replace /etc/resolv.conf with symbolic link
+  ansible.builtin.file:
+    src: /run/systemd/resolve/resolv.conf
     dest: /etc/resolv.conf
-    mode: 0644
-    owner: root
-    group: root
+    state: link
+    force: true
+  notify: Restart systemd-resolved
+
+- name: Create resolved.conf.d directory
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Template out config file for resolved
+  ansible.builtin.template:
+    src: dns.conf.j2
+    dest: /etc/systemd/resolved.conf.d/dns.conf
+    mode: '0644'
   when:
-    - dns_servers is defined
-    - ("hashi_servers" not in groups or not dnsmasq_configuration.stat.exists)
+    - groups.all | length == 1 or
+      not dnsmasq_configuration.stat.exists
+  notify: Restart systemd-resolved
+
+- name: Disable dhcp for dns
+  ansible.builtin.lineinfile:
+    path: /etc/dhcpcd.conf
+    line: "nohook resolv.conf"
+    create: true
+    state: present
+    mode: '0644'
+  when: ansible_distribution_release != "bookworm"
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Create rc.local for Debian
   ansible.builtin.template:
@@ -100,7 +132,6 @@
       - bsd-mailx
       - unzip
       - patch
-      - mlock
       - libcap2-bin
       - curl
       - jq
@@ -121,6 +152,16 @@
     name: mlocate # sucks IO heavily
     state: absent
     purge: true
+
+# Ensure glusterfs Galaxy collection is installed
+- name: Install gluster.gluster collection if not present
+  ansible.builtin.command: ansible-galaxy collection install gluster.gluster
+  become: true
+  become_user: teamwire
+  delegate_to: localhost
+  run_once: true
+  when:
+    - packer_build_name is defined
 
 # Configure system-wide proxy
 - name: Enable system-wide proxy
@@ -170,17 +211,12 @@
   ansible.builtin.include_role:
     name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/housekeeping"
     tasks_from: clean_mail_service.yml
+  when:
+    - ansible_distribution_release == "bookworm"
 
 # send outgoing mail over smarthost
-- name: Include postfix
-  ansible.builtin.include_tasks: postfix.yml
-  when: use_nullmailer is undefined or use_nullmailer | lower != "true"
-
 - name: Include mail configuration
   ansible.builtin.include_tasks: mail.yml
-  when:
-    - use_nullmailer is defined
-    - use_nullmailer | lower == "true"
 
 # install ntp and set timezone to UTC
 - name: Set timezone to UTC
@@ -194,11 +230,11 @@
 
 - name: Install the NTP daemon
   ansible.builtin.apt:
-    pkg: ntp
+    pkg: ntpsec
 
 - name: Enable and start the NTP daemon
   ansible.builtin.service:
-    name: ntp
+    name: ntpsec
     state: started
     enabled: true
 
@@ -232,12 +268,12 @@
     state: present
 
 - name: Allow incoming SSH access
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     name: OpenSSH
 
 - name: Configure default firewall policy
-  community.general.system.ufw:
+  community.general.ufw:
     state: enabled
     policy: reject
 
@@ -253,13 +289,37 @@
 # SSHD Configuration
 # ------------------------------------------------------------------------------
 - name: Deploy TW SSHD Configuration
-  ansible.builtin.template:
-    src: sshd-teamwire.j2
-    dest: /etc/ssh/sshd_config.d/00-teamwire.conf
-    owner: root
-    group: root
-    mode: '0644'
-    validate: "sshd -t -f %s"
+  block:
+    - name: Deploy Teamwire base SSHD config
+      ansible.builtin.template:
+        src: sshd-teamwire.j2
+        dest: /etc/ssh/sshd_config.d/00-teamwire.conf
+        owner: root
+        group: root
+        mode: '0644'
+        validate: "sshd -t -f %s"
+# ------------------------------------------------------------------------------
+# [ITOPS-3890] SSH Post-Quantum Cryptography enhancement
+# ------------------------------------------------------------------------------
+    - name: Deploy Teamwire ciphers SSHD configuration
+      ansible.builtin.template:
+        src: sshd-ciphers.j2
+        dest: /etc/ssh/sshd_config.d/01-ciphers.conf
+        owner: root
+        group: root
+        mode: '0644'
+        validate: "sshd -t -f %s"
+
+    - name: Restore original SSHD configuration - Debian 12
+      ansible.builtin.copy:
+        src: sshd_config
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        validate: "sshd -t -f %s"
+      when: ansible_distribution_release == 'bookworm'
+
   notify: Reload sshd
 
 # Prepare tmate usage

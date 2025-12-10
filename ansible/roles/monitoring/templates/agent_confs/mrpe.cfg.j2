@@ -1,0 +1,38 @@
+{% if groups['all'] | length() == 1 -%}
+# Check Vault Token Expiry
+Vault%20Token%20Expiry%20Check sudo {{ monitoring_agent_custom_check_dir }}check_vault_token_expiry.sh
+
+# Default Containers
+Container%20Backend sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_backend --status running
+Container%20Worker sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_worker --status running
+Container%20Beat sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_beat --status running
+Container%20Notification%20Server sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_notification_server --status running
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+Container%20Dashboard sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_dashboard --status running
+Container%20Webclient sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_webclient --status running
+{% endif %}
+
+{% if enable_voip is defined and enable_voip | lower == "true" -%}
+# VoIP Containers
+Container%20VoIP%20Web sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_web --status running
+Container%20VoIP%20JVB sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_jvb --status running
+Container%20VoIP%20Jicofo sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_jicofo --status running
+Container%20VoIP%20Prosody sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers teamwire_prosody --status running
+{%- endif %}
+{%- endif %}
+
+{% if groups['all'] | length == 1 or ( groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] ) %}
+# check platform deployment state {{ monitoring_agent_custom_check_dir }}/check_platform_deployment.sh
+Platform%20Deployment%20Status {{ monitoring_agent_custom_check_dir }}/check_platform_deployment.sh
+{% endif %}
+
+{% if groups['docker_registry'] is defined and inventory_hostname in groups['docker_registry'] %}
+# Docker registry Container
+Container%20Docker%20Registry sudo {{ monitoring_agent_custom_check_dir }}check_docker.py --containers docker-registry --status running
+{% endif %}
+
+# Check UFW
+UFW%20Status sudo {{ monitoring_agent_custom_check_dir }}check_ufw
+
+# Check for OOM's
+OOMs sudo {{ monitoring_agent_custom_check_dir }}check_oom 5

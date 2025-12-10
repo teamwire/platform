@@ -11,9 +11,9 @@
         that: "ansible_version.full is version_compare('{{ required_ansible_version }}', '==')"
         fail_msg:
           - Ansible {{ required_ansible_version }} is required.
-          - Please run the Platform 3.0 upgrade preparation script.
-          - If running a single-server setup, run "ansible-playbook -i hosts playbooks/procedures/upgrade-v3.yml"
-          - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v3.yml"
+          - Please run the Platform 4.0 upgrade preparation script.
+          - If running a single-server setup, run "ansible-playbook -i hosts playbooks/procedures/upgrade-v4.yml"
+          - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v4.yml"
         success_msg: Ansible {{ ansible_version.full }} matches expected version.
 
 - name: Ensure ansible fact for offline_mode is defined
@@ -24,6 +24,38 @@
         name: "{{ inventory_dir }}/roles/housekeeping"
         tasks_from: ensure_ansible_fact_offline_mode_exists.yml
       when: ansible_local.offline_mode.stat.exists is undefined
+
+# ------------------------------------------------------------------------------
+# Download general Facts file
+# ------------------------------------------------------------------------------
+- name: Download general ansible facts file
+  hosts: all
+  tasks:
+    - name: Fetch general facts template checksum
+      ansible.builtin.uri:
+        url: "https://repo.teamwire.eu/service/rest/v1/search?repository=external&name=/ftp/{{ general_facts_file_name if general_facts_file_name is defined else 'general-facts.j2' }}"
+        use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+      environment:
+        https_proxy: "{{ http_proxy | default() }}"
+      register: general_facts_file_checksum
+      when: not ansible_local.offline_mode.stat.exists
+
+    - name: Fetch general facts template
+      ansible.builtin.get_url:
+        url: "https://repo.teamwire.eu/repository/external/ftp/{{ general_facts_file_name if general_facts_file_name is defined else 'general-facts.j2' }}"
+        dest: "/var/cache/downloads/general-facts.j2"
+        checksum: "sha256:{{ general_facts_file_checksum.json['items'][0]['assets'][0]['checksum']['sha256'] }}"
+        mode: 0444
+        use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+      environment:
+        https_proxy: "{{ http_proxy | default() }}"
+      when: not ansible_local.offline_mode.stat.exists
+
+    - name: Render general ansible fact file
+      ansible.builtin.template:
+        src: /var/cache/downloads/general-facts.j2
+        dest: /etc/ansible/facts.d/general_facts.fact
+        mode: 0444
 
 - name: Check overall requirements
   hosts: all
@@ -216,6 +248,28 @@
         - static_frontend_configuration is defined
         - groups['all'] | length > 1
 
+    - name: Ensure disable_ssh_user_restriction is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - disable_ssh_user_restriction is string
+          - disable_ssh_user_restriction is in ['true', 'false']
+        msg: >-
+          Ensure value from disable_ssh_user_restriction is set to lower quoted true or false
+      run_once: true
+      when:
+        - disable_ssh_user_restriction is defined
+
+    - name: Ensure enable_ssh_agent_forwarding is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - enable_ssh_agent_forwarding is string
+          - enable_ssh_agent_forwarding is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_ssh_agent_forwarding is set to lower quoted true or false
+      run_once: true
+      when:
+        - enable_ssh_agent_forwarding is defined
+
     - name: Ensure enable_stun is a string when enabled
       ansible.builtin.assert:
         that:
@@ -374,6 +428,9 @@
       run_once: true
       when: ENABLE_CSP is defined
 
+# ------------------------------------------------------------------------------
+# Ensure to check the requirements for enable_tls_mysql
+# ------------------------------------------------------------------------------
     - name: Assert enable_tls_mysql is valid
       ansible.builtin.assert:
         that:
@@ -387,28 +444,31 @@
 
     - name: Check if enable_tls_mysql has all required values and can be enabled on the environment
       block:
-        - name: Assert that all conditions for enable_tls_mysql are set
+        - name: Ensure that enable_tls_mysql is not used with an external database
           ansible.builtin.assert:
             that:
               - mysql_host is undefined
               - oracle_host is undefined
+            msg:
+              - "In case you have defined an external database ensure to disable the SSL connection to the database."
+              - 'Set the variable enable_tls_mysql to false.'
+          run_once: true
+
+        - name: Ensure that enable_tls_mysql is not used without an SSL Certificate defined
+          ansible.builtin.assert:
+            that:
               - ssl_server_certificate is defined
               - ssl_intermediate_certificate is defined
               - ssl_root_certificate is defined
               - ssl_keyfile is defined
             msg:
-              - "Please ensure that you are using the mysql installation from the playbooks and no external host."
-              - "Please make sure that you are using a valid ssl certificate."
+              - "Please ensure to define an SSL Certificate in the group_vars/all or to disable enable_tls_mysql."
           run_once: true
-          when:
-            - groups['all'] | length() > 1
 
         - name: Get SSL Certificate purpose
           ansible.builtin.shell: "openssl x509 -noout -in {{ ssl_server_certificate }} -purpose | grep 'SSL client :' | cut -d ' ' -f4"
           register: ssl_server_certificate_purpose
           changed_when: false
-          when:
-            - groups['all'] | length() > 1
 
         - name: Check SSL Certificate purpose
           ansible.builtin.assert:
@@ -433,13 +493,12 @@
               Invalid value for configuration option `mysql_tls_admin_enabled`.
               Please ensure your value is quoted and is either "true" or "false".
           run_once: true
-          when:
-            - mysql_tls_admin_enabled is defined
-            - groups['all'] | length() > 1
+          when: mysql_tls_admin_enabled is defined
 
       when:
-        - enable_tls_mysql is defined
-        - enable_tls_mysql | lower == "true"
+        - enable_tls_mysql is undefined or
+          enable_tls_mysql | lower == "true"
+        - groups['all'] | length() > 1
 
     - name: Ensure valid configuration combination
       block:
@@ -543,8 +602,63 @@
       when:
         - config_done is defined
         - system_email_recipient is not defined
-        - use_nullmailer is defined
-        - use_nullmailer | lower == "true"
+
+# ------------------------------------------------------------------------------
+# Check monitoring requirements
+# ------------------------------------------------------------------------------
+    - name: Check enable_monitoring variable value
+      ansible.builtin.assert:
+        that:
+          - enable_monitoring | lower in ["yes", "no", "true", "false"]
+        msg: >-
+          Please ensure the enable_monitoring is set to "yes" or "no"
+      when: enable_monitoring is defined
+      run_once: true
+      delegate_to: localhost
+
+    - name: Check monitoring requirements
+      block:
+        - name: Ensure that monitoring_email_addresses is correctly defined
+          ansible.builtin.assert:
+            that:
+              - monitoring_email_addresses is defined
+              - monitoring_email_addresses | type_debug == 'list'
+            msg: >-
+              Please ensure to define a list of at least one value for monitoring_email_addresses.
+              Checkout the group_vars/all.example to see the correct syntax for the variable.
+
+        - name: Ensure that monitoring_sender_address is correctly defined
+          ansible.builtin.assert:
+            that:
+              - monitoring_sender_address is string
+              - monitoring_sender_address | regex_search('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+            msg: >-
+              Please ensure the value set for monitoring_sender_address is a valid email address and does not include any Display name.
+              A valid value would be 'test@example.com'
+          when: monitoring_sender_address is defined
+
+        - name: Ensure that mail is enabled for monitoring
+          ansible.builtin.assert:
+            that:
+              - smtp_smarthost is defined
+              - ( sender_address or monitoring_sender_address is defined )
+            msg: >-
+              Please ensure to add a mail configuration to the group_vars/all to use the monitoring
+
+        - name: Ensure that database authentication is defined if external database is used
+          ansible.builtin.assert:
+            that:
+              -
+              - monitoring_db_user is defined
+              - monitoring_db_password is defined
+            msg: >-
+              The environment is using an external Database. Please ensure to specify a monitoring_db_user and monitoring_db_password.
+          when:
+            - ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in ["localhost", "127.0.0.1"] ) or
+              ( groups['all'] | length > 1 and groups['database_servers'] is undefined )
+      run_once: true
+      delegate_to: localhost
+      when: enable_monitoring is defined and enable_monitoring | lower in ["yes", "true"]
 
     - name: Get current git tag
       ansible.builtin.command: "git describe --always --tags" # noqa command-instead-of-module
@@ -651,7 +765,8 @@
         - config_done is defined
 
     - name: Register cert subject organization
-      ansible.builtin.shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O = .*,' | sed 's/. OU.*//' | sed 's/O = //' # noqa risky-shell-pipe
+      ansible.builtin.shell: "openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -subject -noout | grep -Po 'O\\s*=.*,' | sed 's/. OU.*//' | sed 's/O\\s*=\\s*//'"
+      changed_when: false
       register: cert_subject_org
       when:
         - packer_build_name is not defined
@@ -659,7 +774,8 @@
         - (ssl_certfile is defined or ssl_server_certificate is defined)
 
     - name: Register cert issuer organization
-      ansible.builtin.shell: openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O = .*,' | sed 's/O = //' | sed 's/,//' # noqa risky-shell-pipe
+      ansible.builtin.shell: "openssl x509 -in {{ ssl_certfile if ssl_certfile is defined else ssl_server_certificate }} -issuer -noout | grep -Po 'O\\s*=.*,' | sed 's/. OU.*//' | sed 's/O\\s*=\\s*//'"
+      changed_when: false
       register: cert_issuer_org
       when:
         - packer_build_name is not defined
@@ -847,8 +963,8 @@
               - "    ansible-playbook -i {{ 'hosts' if teamwire_platform_dir is defined else 'cluster_hosts' }} {{ 'platform/ansible/' if teamwire_platform_dir is defined }}playbooks/procedures/restart-galera-cluster.yml"
           with_items: "{{ mysql_have_ssl.query_result }}"
           when:
-            - enable_tls_mysql is defined
-            - enable_tls_mysql | lower == "true"
+            - ( enable_tls_mysql is undefined or
+              enable_tls_mysql | lower == "true" )
             - item.Value | lower == "disabled"
             - galera_cluster_init is defined
           register: enable_tls_mysql_true_notify
@@ -860,7 +976,8 @@
               - "    ansible-playbook -i {{ 'hosts' if teamwire_platform_dir is defined else 'cluster_hosts' }} {{ 'platform/ansible/' if teamwire_platform_dir is defined }}playbooks/procedures/restart-galera-cluster.yml"
           with_items: "{{ mysql_have_ssl.query_result }}"
           when:
-            - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
+            - enable_tls_mysql is defined
+            - enable_tls_mysql | lower != "true"
             - item.Value | lower == "yes"
             - galera_cluster_init is defined
           register: enable_tls_mysql_false_notify

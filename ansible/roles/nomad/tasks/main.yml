@@ -16,9 +16,9 @@
 
 - name: Download Nomad
   ansible.builtin.get_url:
-    url: https://releases.hashicorp.com/nomad/{{ nomad_version }}/nomad_{{ nomad_version }}_linux_amd64.zip
-    dest: /var/cache/downloads/nomad_{{ nomad_version }}_linux_amd64.zip
-    checksum: sha256:{{ nomad_checksum }}
+    url: "{{ ansible_local.general_facts.nomad.url }}"
+    dest: /var/cache/downloads/nomad_{{ ansible_local.general_facts.nomad.version }}_linux_amd64.zip
+    checksum: sha256:{{ ansible_local.general_facts.nomad.sha256 }}
     mode: 0440
     use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
   register: nomad_downloaded
@@ -27,12 +27,12 @@
 
 - name: Install/Update the Nomad binary
   ansible.builtin.unarchive:
-    src: /var/cache/downloads/nomad_{{ nomad_version }}_linux_amd64.zip
+    src: /var/cache/downloads/nomad_{{ ansible_local.general_facts.nomad.version }}_linux_amd64.zip
     dest: /usr/local/bin
     mode: 0755
     copy: false
   notify: Restart Nomad agent
-  when: not nomad_binary.stat.exists or nomad_version_current is version(nomad_version, '<')
+  when: not nomad_binary.stat.exists or nomad_version_current is version(ansible_local.general_facts.nomad.version, '<')
 
 - name: Create Nomad config firectory
   ansible.builtin.file:
@@ -91,11 +91,11 @@
 
     - name: Verify upgrade succeeded
       ansible.builtin.assert:
-        that: nomad_upgraded_version is version(nomad_version, '==')
+        that: nomad_upgraded_version is version(ansible_local.general_facts.nomad.version, '==')
 
   when:
     - nomad_binary.stat.exists
-    - nomad_version_current is version(nomad_version, '<')
+    - nomad_version_current is version(ansible_local.general_facts.nomad.version, '<')
 
 - name: Include vault-integration
   ansible.builtin.include_tasks: vault-integration.yml

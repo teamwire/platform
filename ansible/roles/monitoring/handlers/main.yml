@@ -1,19 +1,88 @@
-- name: Restart icinga2
-  ansible.builtin.service:
-    name: icinga2
-    state: restarted
+---
 
-- name: Restart nagios-nrpe-server
-  ansible.builtin.service:
-    name: nagios-nrpe-server
-    state: restarted
+# ------------------------------------------------------------------------------
+# Trigger Container restart to reload the apache configuration
+# ------------------------------------------------------------------------------
+- name: Restart checkmk container
+  ansible.builtin.command: "docker restart checkmk"
 
-- name: Restart apache
-  ansible.builtin.service:
-    name: apache2
-    state: restarted
+# ------------------------------------------------------------------------------
+# Install & Enable MKP Packages
+# ------------------------------------------------------------------------------
+- name: Install MKP Package
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && mkp add /var/cache/downloads/sslcertificates-{{ ansible_local.general_facts.monitoring.sslcertificate_version }}.mkp"
+    user: "{{ checkmk_site }}"
+  register: mkp_add_sslcertificates
+  listen: Install mkp package
 
-- name: Update apt
-  ansible.builtin.apt:
-    update_cache: true
-  when: not ansible_local.offline_mode.stat.exists
+- name: Enable MKP Package
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && mkp enable {{ mkp_add_sslcertificates.stdout }}"
+    user: "{{ checkmk_site }}"
+  listen: Install mkp package
+  notify: Update checkmk config
+
+# ------------------------------------------------------------------------------
+# Update checkmk site configuration
+# ------------------------------------------------------------------------------
+- name: Check the checkmk configuration
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && cmk -U"
+    user: "{{ checkmk_site }}"
+  listen: Update checkmk config
+  run_once: true
+  delegate_to: "{{ groups.management_servers | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+
+- name: Apply and reload the checkmk configuration
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && cmk -O"
+    user: "{{ checkmk_site }}"
+  listen: Update checkmk config
+  run_once: true
+  delegate_to: "{{ groups.management_servers | sort | first if groups['all'] | length() > 1 else inventory_hostname }}"
+
+- name: Reload the checkmk site
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && cmk -R"
+    user: "{{ checkmk_site }}"
+
+# ------------------------------------------------------------------------------
+# Reload ansible facts
+# ------------------------------------------------------------------------------
+- name: Ansible facts reload
+  ansible.builtin.setup:
+    filter: ansible_local
+
+# ------------------------------------------------------------------------------
+# Register checkmk agent
+# ------------------------------------------------------------------------------
+- name: Register checkmk agent
+  ansible.builtin.command: "cmk-agent-ctl register --hostname {{ external_hostname if groups['all'] | length() == 1 else inventory_hostname }} --server {{ checkmk_master_ip }}:{{ checkmk_agent_reciever_port | default('5665') }} --site tw_monitoring --user agent_registration --trust-cert --password {{ ansible_local.checkmk.agent_registration_secret if groups['all'] | length() == 1 else hostvars[groups['management_servers'] | sort | first].ansible_local.checkmk.agent_registration_secret }}"
+  changed_when: false
+  no_log: true
+  register: register_checkmk_agent
+  until: register_checkmk_agent.rc == 0
+  retries: 6
+  delay: 5
+
+# ------------------------------------------------------------------------------
+# Restart omd site
+# ------------------------------------------------------------------------------
+- name: Restart omd site
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && omd restart {{ checkmk_site }}"
+
+# ------------------------------------------------------------------------------
+# Handlers for HTTPs Reverse Proxy
+# ------------------------------------------------------------------------------
+- name: Restart nginx container
+  community.docker.docker_container:
+    name: nginx
+    restart: true

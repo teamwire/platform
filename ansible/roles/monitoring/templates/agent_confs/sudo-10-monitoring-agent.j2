@@ -1,0 +1,1 @@
+cmk-agent ALL=(root) NOPASSWD: {{ monitoring_agent_custom_check_dir | regex_replace('/$', '') }}

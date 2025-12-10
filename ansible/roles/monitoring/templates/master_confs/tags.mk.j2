@@ -1,0 +1,63 @@
+# Written by Checkmk store
+
+tag_config.update({
+  'tag_groups': [
+    {'id': 'criticality', 'title': 'Criticality', 'tags': [
+      {'id': 'prod', 'title': 'Productive system', 'aux_tags': []},
+      {'id': 'critical', 'title': 'Business critical', 'aux_tags': []},
+      {'id': 'test', 'title': 'Test system', 'aux_tags': []},
+      {'id': 'offline', 'title': 'Do not monitor this host', 'aux_tags': []}
+    ]},
+    {'id': 'networking', 'title': 'Networking Segment', 'tags': [
+      {'id': 'lan', 'title': 'Local network (low latency)', 'aux_tags': []},
+      {'id': 'wan', 'title': 'WAN (high latency)', 'aux_tags': []},
+      {'id': 'dmz', 'title': 'DMZ (low latency, secure access)', 'aux_tags': []}
+    ]},
+    {'id': 'single_server', 'title': 'Single Server Environment', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'management_servers', 'title': 'Management Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'hashi_servers', 'title': 'Hashi Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'redis_servers', 'title': 'Redis Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'database_servers', 'title': 'Database Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'storage_servers', 'title': 'Storage Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'docker_registry', 'title': 'Docker Registry Server', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'loghost', 'title': 'Log Server', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'backend_servers', 'title': 'Backend Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'voip_servers', 'title': 'VoIP Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'video_servers', 'title': 'Video Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'frontend_servers', 'title': 'Frontend Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'load_balancers', 'title': 'Load Balancer Servers', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'external_db', 'title': 'External Database', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+    {'id': 'decoupling', 'title': 'Decoupled Environment', 'tags': [
+      {'id': 'true', 'title': 'true', 'aux_tags': []}
+    ], 'topic': 'Teamwire'},
+  ],
+  'aux_tags': []
+})

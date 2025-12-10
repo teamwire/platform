@@ -7,6 +7,9 @@ VERSION=v1
 ENDPOINT=allocations
 URI="${SCHEME}://${HOST}:${PORT}/${VERSION}/${ENDPOINT}"
 
+NOMAD_TOKEN="$(twctl secrets read nomad/management_token)"
+export NOMAD_TOKEN
+
 # Get information over JVB Users
 JVB_AUTH_PASSWORD="$1"
 JVB_USERS=$(find /data/voip/ -maxdepth 1 -name 'jvb[0-9]*' -type d -exec basename {} \;)
@@ -18,7 +21,7 @@ for JVB_USER in ${JVB_USERS}; do
   GROUP_NAME="voip-prosodys"
 
   # Fetch container allocation ID as bash array
-  allocations=($(curl -s ${URI} | jq -r ".[] | select ( (.Name | contains( \"${JOB_NAME}.${GROUP_NAME}\" )) and (.ClientStatus | contains( \"running\" ))) | .ID"))
+  allocations=($(curl -s -H "X-Nomad-Token: ${NOMAD_TOKEN}" ${URI} | jq -r ".[] | select ( (.Name | contains( \"${JOB_NAME}.${GROUP_NAME}\" )) and (.ClientStatus | contains( \"running\" ))) | .ID"))
 
   # Execute command on first element of array
   nomad alloc exec ${allocations[0]} prosodyctl --config /config/prosody.cfg.lua register "${JVB_USER}" auth.meet.jitsi "${JVB_AUTH_PASSWORD}"

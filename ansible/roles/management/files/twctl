@@ -42,6 +42,7 @@ if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
     INSTALLATION=cluster
     INVENTORY_FILE=cluster_hosts
     VAULT_ADDR="https://vault.service.consul:8200"
+
     # Query Consul to obtain Consul peers (Which are also Vault servers)
     VAULT_SERVERS=$(curl -m ${DFLT_TMOUT} -s http://127.0.0.1:8500/v1/status/peers | jq .[] -r | sed "s/:8300//")
     # Obtain the first Vault server's IP address
@@ -108,6 +109,11 @@ if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" == "false" ]]; then
         echo "Invalid Vault token, please check the contents of ~/.vault-token."
         exit 1
     fi
+fi
+
+if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
+    NOMAD_TOKEN="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/nomad/management_token" | jq -r '.data| .[]')"
+    export NOMAD_TOKEN
 fi
 
 fetch_image_versions() {
@@ -850,28 +856,15 @@ connectivity_test() {
                 echo "WARNING: sender_address is undefined or empty. Ensure to define a sender_address within the group_vars/all else the E-Mail sending may failed!"
             fi
         fi
-        local use_nullmailer
-        use_nullmailer="$(_get_config_value use_nullmailer)"
         if [ -n "${mail_recipient}" ]; then
             local mail_test_response
             mail_test_response="$(raw_smtp_connect "${mail_recipient}" "${mail_sender}" | tail -n 2 | head -n 1)"
-            if [ "${use_nullmailer}" == "true" ]; then
-                if [[ ${mail_test_response} =~ ^.*Accepted\ message.*$ ]]; then
-                    test_server_condition_for_preflight_check    "" \
-                                "Local mail test: Send Test Mail to local mail service. For more information check 'sudo journalctl -u nullmailer'"
-                else
-                    test_server_condition_for_preflight_check    "/bin/false" \
-                                "Local Mailserver rejected the E-Mail. For more informations check 'sudo journalctl -u nullmailer'"
-                fi
+            if [[ ${mail_test_response} =~ ^.*Accepted\ message.*$ ]]; then
+                test_server_condition_for_preflight_check    "" \
+                            "Local mail test: Send Test Mail to local mail service. For more information check 'sudo journalctl -u nullmailer'"
             else
-                local mail_message_id
-                mail_message_id="$(echo "${mail_test_response}" |  awk -v RS='\r\n' '{print $6}')"
-                local mail_message_status
-                mail_message_status="$(sleep 2 && sudo grep "${mail_message_id}" /var/log/mail.log | grep -oP 'status=\K.*')"
-                test_server_condition_for_preflight_check    "" \
-                                "Local mail test 1/2: ${mail_test_response}"
-                test_server_condition_for_preflight_check    "" \
-                                "Local mail test 2/2: ${mail_message_status}"
+                test_server_condition_for_preflight_check    "/bin/false" \
+                            "Local Mailserver rejected the E-Mail. For more informations check 'sudo journalctl -u nullmailer'"
             fi
         else
             test_server_condition_for_preflight_check    "/bin/false" \
@@ -1335,7 +1328,7 @@ _get_nomad_environment() {
 }
 status_cluster() {
     if [ "${OPTION}" = "--clean" ]; then
-        curl -m ${DFLT_TMOUT} -XPUT http://127.0.0.1:4646/v1/system/gc
+        curl -m ${DFLT_TMOUT} -XPUT -H "X-Nomad-Token: ${NOMAD_TOKEN}" http://127.0.0.1:4646/v1/system/gc
         echo "Container history cleaned"
     else
         ${NOMAD} status "$(_get_nomad_environment)" && \

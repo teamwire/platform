@@ -1,0 +1,141 @@
+# Created by HostStorage
+
+all_hosts += [
+{% for host in groups.all | sort %}
+  '{{ host if host != "localhost" else external_hostname }}',
+{% endfor %}
+]
+
+{% for host in groups.all | sort %}
+host_tags.update({'{{ host if host != "localhost" else external_hostname }}': {
+  'site': 'monitoring',
+  'address_family': 'ip-v4-only',
+  'ip-v4': 'ip-v4',
+  'agent': 'all-agents',
+  'tcp': 'tcp',
+  'checkmk-agent': 'checkmk-agent',
+  'piggyback': 'auto-piggyback',
+  'snmp_ds': 'no-snmp',
+  'criticality': 'prod',
+  'networking': 'lan',
+{% if groups['all'] | length() == 1 %}
+  'single_server': 'true',
+{% endif %}
+{% if groups['management_servers'] is defined and host in groups['management_servers'] %}
+  'management_servers': 'true',
+{% endif -%}
+{% if groups['hashi_servers'] is defined and host in groups['hashi_servers'] %}
+  'hashi_servers': 'true',
+{% endif -%}
+{% if groups['redis_servers'] is defined and host in groups['redis_servers'] %}
+  'redis_servers': 'true',
+{% endif -%}
+{% if groups['database_servers'] is defined and host in groups['database_servers'] %}
+  'database_servers': 'true',
+{% endif -%}
+{% if groups['storage_servers'] is defined and host in groups['storage_servers'] %}
+  'storage_servers': 'true',
+{% endif -%}
+{% if groups['docker_registry'] is defined and host in groups['docker_registry'] %}
+  'docker_registry': 'true',
+{% endif -%}
+{% if groups['loghost'] is defined and host in groups['loghost'] %}
+  'loghost': 'true',
+{% endif -%}
+{% if groups['backend_servers'] is defined and host in groups['backend_servers'] %}
+  'backend_servers': 'true',
+{% endif -%}
+{% if enable_voip is defined and enable_voip | lower == "true" %}
+  {% if groups['all'] | length() == 1 or ( groups['voip_servers'] is defined and host in groups['voip_servers'] ) %}
+  'voip_servers': 'true',
+{% endif %}{% endif -%}
+{% if enable_jvb_cluster is defined and enable_jvb_cluster | lower == 'true' and groups['video_servers'] is defined and host in groups['video_servers'] %}
+  'video_servers': 'true',
+{% endif %}
+{% if groups['frontend_servers'] is defined and host in groups['frontend_servers'] %}
+  'frontend_servers': 'true',
+{% endif -%}
+{% if groups['load_balancers'] is defined and host in groups['load_balancers'] %}
+  'load_balancers': 'true',
+{% endif -%}
+{% if ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in [ "localhost", "127.0.0.1" ] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined ) %}
+  'external_db': 'true',
+{% endif -%}
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+  'decoupling': 'true',
+{% endif -%}
+}})
+
+{% endfor %}
+
+host_labels.update({
+{% for host in groups.all | sort %}
+  '{{ host if host != "localhost" else external_hostname }}': {},
+{% endfor %}
+})
+
+# ipaddresses
+ipaddresses.update({
+{% for host in groups.all | sort %}
+  '{{ host if host != "localhost" else external_hostname }}': '{{ hostvars[host].private_ip if groups['all'] | length() > 1 else ansible_default_ipv4.address }}',
+{% endfor %}
+})
+
+# Host attributes (needed for WATO)
+{% for host in groups.all | sort %}
+host_attributes.update({'{{ host if host != "localhost" else external_hostname }}': {
+  'ipaddress': '{{ hostvars[host].private_ip if groups['all'] | length() > 1 else ansible_default_ipv4.address }}',
+  'labels': {},
+  'tag_address_family': 'ip-v4-only',
+  'tag_agent': 'all-agents',
+{% if groups['all'] | length() == 1 %}
+  'tag_single_server': 'single_server',
+{% endif %}
+{% if groups['management_servers'] is defined and host in groups['management_servers'] %}
+  'tag_management_servers': 'true',
+{% endif -%}
+{% if groups['hashi_servers'] is defined and host in groups['hashi_servers'] %}
+  'tag_hashi_servers': 'true',
+{% endif -%}
+{% if groups['redis_servers'] is defined and host in groups['redis_servers'] %}
+  'tag_redis_servers': 'true',
+{% endif -%}
+{% if groups['database_servers'] is defined and host in groups['database_servers'] %}
+  'tag_database_servers': 'true',
+{% endif -%}
+{% if groups['storage_servers'] is defined and host in groups['storage_servers'] %}
+  'tag_storage_servers': 'true',
+{% endif -%}
+{% if groups['docker_registry'] is defined and host in groups['docker_registry'] %}
+  'tag_docker_registry': 'true',
+{% endif -%}
+{% if groups['loghost'] is defined and host in groups['loghost'] %}
+  'tag_loghost': 'true',
+{% endif -%}
+{% if groups['backend_servers'] is defined and host in groups['backend_servers'] %}
+  'tag_backend_servers': 'true',
+{% endif -%}
+{% if enable_voip is defined and enable_voip | lower == "true" %}
+  {% if groups['all'] | length() == 1 or ( groups['voip_servers'] is defined and host in groups['voip_servers'] ) %}
+  'tag_voip_servers': 'true',
+{% endif %}{% endif -%}
+{% if enable_jvb_cluster is defined and enable_jvb_cluster | lower == 'true' and groups['video_servers'] is defined and host in groups['video_servers'] %}
+  'tag_video_servers': 'true',
+{% endif %}
+{% if groups['frontend_servers'] is defined and host in groups['frontend_servers'] %}
+  'tag_frontend_servers': 'true',
+{% endif -%}
+{% if groups['load_balancers'] is defined and host in groups['load_balancers'] %}
+  'tag_load_balancers': 'true',
+{% endif -%}
+{% if ( groups['all'] | length == 1 and mysql_host is defined and mysql_host not in [ "localhost", "127.0.0.1" ] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined ) %}
+  'tag_external_db': 'true',
+{% endif -%}
+{% if is_legacy_installation is defined and not (is_legacy_installation | default('True') | lower | bool) %}
+  'tag_decoupling': 'true',
+{% endif -%}
+}})
+
+{% endfor %}
+
+folder_attributes.update({})

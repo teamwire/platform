@@ -13,6 +13,12 @@
     state: present
   register: ha_installed
 
+- name: Check if haproxy can use PQC curves
+  ansible.builtin.shell: dpkg --compare-versions $(dpkg-query -f='${Version}' -W haproxy) gt 3.0
+  register: haproxy_can_use_pqc_curves_check
+  failed_when: false
+  changed_when: false
+
 # This uses systemd's unit file drop-in override mechanism,
 # allowing us to keep vendor's default service unit file together with our customizations
 # https://manpages.debian.org/systemd/systemd.unit.5.en.html
@@ -71,6 +77,8 @@
   with_items:
     - { src: '{{ globals_haproxy_template }}', dest: '/etc/haproxy/01-globals.cfg' }
     - { src: '{{ frontend_haproxy_template }}', dest: '/etc/haproxy/03-frontend.cfg' }
+  vars:
+    haproxy_can_use_pqc_curves: "{{ haproxy_can_use_pqc_curves_check.rc == 0 }}"
   notify: Restart haproxy
   when: "'frontend_servers' not in groups and groups['all'] | length() == 1"
 
@@ -81,6 +89,8 @@
     mode: 0664
     owner: haproxy
     group: haproxy
+  vars:
+    haproxy_can_use_pqc_curves: "{{ haproxy_can_use_pqc_curves_check.rc == 0 }}"
   notify: Restart haproxy
   when:
     - "'frontend_servers' in groups"
@@ -174,21 +184,21 @@
 
 # open firewall ports for the web server
 - name: Add Firewall Rule allow 80
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     port: 80
     proto: tcp
   when: config_done is defined
 
 - name: Add Firewall Rule allow 443
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     port: 443
     proto: tcp
   when: ssl_keyfile is defined
 
 - name: Add Firewall Rule allow 8443
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     port: 8443
     proto: tcp
@@ -198,7 +208,7 @@
     - enable_voip | string() == 'true'
 
 - name: Add Firewall Rule allow 4443
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     port: 4443
     proto: tcp
@@ -208,7 +218,7 @@
     - enable_voip | string() == 'true'
 
 - name: Add Firewall Rule allow 10000
-  community.general.system.ufw:
+  community.general.ufw:
     rule: allow
     port: 10000
     proto: any

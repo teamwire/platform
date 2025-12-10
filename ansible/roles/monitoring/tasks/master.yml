@@ -1,438 +1,284 @@
 ---
-# Redis instance values are required for dynamic redis monitoring
-- name: Include redis
-  ansible.builtin.include_vars: ../../roles/redis/defaults/main.yml
-  when: redis_instances is not defined
 
-# Nomad job list is required for job status monitoring
-- name: Include nomad
-  ansible.builtin.include_vars: ../../roles/nomad/defaults/main.yml
-  when: nomad_jobs is not defined
+# ------------------------------------------------------------------------------
+# Include Tasks for reverse proxy
+# ------------------------------------------------------------------------------
+- name: Include Tasks for reverse proxy
+  ansible.builtin.include_tasks: reverse-proxy.yml
 
-- name: Install icinga2 Web UI and tools
-  ansible.builtin.apt:
-    name: "{{ item }}"
-    state: present
-  with_items:
-    - icinga2-ido-mysql
-    - icingaweb2
-    - icingacli
-    - python3-mysqldb
-    - mariadb-client
-
-- name: Configure Icinga MySQL adapter
-  ansible.builtin.template:
-    src: ido-mysql-conf.j2
-    dest: /etc/icinga2/features-available/ido-mysql.conf
-    mode: 0640
-  notify:
-    - Restart icinga2
-    - Restart apache
-
-- name: Create Icinga Web 2 log directory
+# ------------------------------------------------------------------------------
+# Create Checkmk Container Mountpoints
+# ------------------------------------------------------------------------------
+- name: Ensure to create checkmk mountpoint folder
   ansible.builtin.file:
-    dest: /var/log/icingaweb2
+    path: "{{ checkmk_mountpoint }}"
     state: directory
+    owner: 1000
+    group: 1000
     mode: 0755
-    group: icingaweb2
 
-- name: Activate icinga2 features
-  community.general.monitoring.icinga2_feature:
-    name: "{{ item }}"
-    state: present
-  with_items:
-    - ido-mysql
-    - command
-  notify:
-    - Restart icinga2
-    - Restart apache
+- name: Create Directory for container internal Postfix configuration
+  ansible.builtin.file:
+    path: "{{ postfix_mountpoint }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
 
-- name: Install icinga2 Web UI PHP/Apache requirements
-  ansible.builtin.apt:
-    name:
-      - apache2
-      - libapache2-mod-php
-      - php
-      - php-mysql
-      - php-curl
-      - php-imagick
-      - php-intl
-      - php-gd
-      - php-xml
-
-- name: Set Apache listening port
+- name: Copy container internal postfix master.cf
   ansible.builtin.copy:
-    src: "{{ apache_ports_config }}"
-    dest: /etc/apache2/ports.conf
+    src: postfix-master.cf
+    dest: "{{ postfix_mountpoint }}/master.cf"
     owner: root
     group: root
     mode: 0644
-  notify: Restart apache
 
-- name: Disable MPM event module
-  community.general.web_infrastructure.apache2_module:
-    name: mpm_event
-    state: absent
-    force: true
-    ignore_configcheck: true
-  notify: Restart apache
+- name: Fixup the checkmk docker entrypoint script
+  ansible.builtin.copy:
+    src: fix-docker-entrypoint-checkmk_container.sh
+    dest: /usr/local/bin/fix-docker-entrypoint-checkmk_container.sh
+    owner: root
+    group: root
+    mode: 0755
 
-- name: Add user www-data to the icingaweb2 group
-  ansible.builtin.user:
-    name: www-data
-    groups: icingaweb2
+- name: Copy script to deactivate the xinetd port inside the checkmk container for the agent
+  ansible.builtin.copy:
+    src: kill-xinetd-checkmk_container.sh
+    dest: /usr/local/bin/kill-xinetd-checkmk_container.sh
+    owner: root
+    group: root
+    mode: 0755
 
-# Gather package facts to determine PHP version
-- name: Determine PHP version
+# ------------------------------------------------------------------------------
+# Setup checkmk master docker container
+# ------------------------------------------------------------------------------
+- name: Retrieve the checkmk master container
+  community.docker.docker_image:
+    name: "{{ ansible_local.general_facts.monitoring.container }}"
+    source: pull
+    state: present
+  when: not ansible_local.offline_mode.stat.exists
+
+- name: Setup checkmk master docker container
+  community.docker.docker_container:
+    name: checkmk
+    image: "{{ ansible_local.general_facts.monitoring.container }}"
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - "/usr/local/bin/fix-docker-entrypoint-checkmk_container.sh:/docker-entrypoint.sh"
+      - "/usr/local/bin/kill-xinetd-checkmk_container.sh:/docker-entrypoint.d/pre-start/kill-xinetd-checkmk_container.sh"
+      - "{{ checkmk_mountpoint }}:/omd/sites"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/hosts:/etc/hosts:ro"
+      - "/var/cache/downloads:/var/cache/downloads:ro"
+      - "{{ postfix_mountpoint }}/master.cf:/etc/postfix/master.cf"
+    env:
+      CMK_SITE_ID: "{{ checkmk_site }}"
+      MAIL_RELAY_HOST: "[127.0.1.1]:25"
+
+# ------------------------------------------------------------------------------
+# Ensure omd site is created before continueing configure
+# ------------------------------------------------------------------------------
+- name: Check omd site status
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && omd status"
+  register: check_omd_site_status
+  until: "checkmk_site in check_omd_site_status.stdout"
+  retries: 12
+  delay: 10
+  failed_when: "checkmk_site not in check_omd_site_status.stdout"
+  changed_when: false
+
+- name: Ensure the container has enough time to create all necessary files
+  ansible.builtin.pause:
+    seconds: 10
+  when: check_omd_site_status.attempts > 1
+
+# ------------------------------------------------------------------------------
+# Configure omd site
+# ------------------------------------------------------------------------------
+- name: Ensure checkmk omd site is configured as wished
+  ansible.builtin.template:
+    src: master_confs/omd-site.conf.j2
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/omd/site.conf"
+    owner: 1000
+    group: 1000
+    mode: 0644
+  notify: Restart checkmk container
+
+- name: Ensure checkmk apache listen port is configured as wished
+  ansible.builtin.template:
+    src: master_confs/apache-listen-ports.conf.j2
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/apache/listen-port.conf"
+    owner: 1000
+    group: 1000
+    mode: 0644
+  notify: Restart checkmk container
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+# ------------------------------------------------------------------------------
+# Ensure passwords are set correctly
+# ------------------------------------------------------------------------------
+- name: Ensure cmkadmin password is correctly defined and up to date
   block:
-    - name: Gather package facts
-      ansible.builtin.package_facts:
-        manager: apt
-    - name: Determine PHP version
-      ansible.builtin.set_fact:
-        php_version: "{{ ansible_facts.packages['php'][0].version | regex_search('\\d+:(\\d+\\.\\d+).*', '\\1') | first }}"
+    - name: Check cmkadmin password
+      community.docker.docker_container_exec:
+        container: checkmk
+        command: "htpasswd -bv /omd/sites/{{ checkmk_site }}/etc/htpasswd cmkadmin {{ monitoring_cmkadmin_password }}"
+      changed_when: false
+      no_log: true
+  rescue:
+    - name: Update cmkadmin password
+      community.docker.docker_container_exec:
+        container: checkmk
+        command: "htpasswd -bB /omd/sites/{{ checkmk_site }}/etc/htpasswd cmkadmin {{ monitoring_cmkadmin_password }}"
+      changed_when: false
+      no_log: true
 
-- name: Check if mode php is enabled
-  ansible.builtin.stat:
-    path: /etc/apache2/mods-enabled/php{{ php_version }}.load
-  register: mod_php
+# ------------------------------------------------------------------------------
+# Configure checkmk
+# ------------------------------------------------------------------------------
+- name: Read nomad management token to check nomad jobs
+  ansible.builtin.command: vault kv get -field=value secret/nomad/management_token
+  register: management_token
+  changed_when: false
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
+  when: groups['all'] | length > 1
 
-- name: Enable PHP module for Apache
-  community.general.apache2_module:
-    name: "php{{ php_version }}"
-    state: present
-    force: true
-    identifier: php_module
-    ignore_configcheck: true
-  notify: Restart apache
-  when: not mod_php.stat.exists
+- name: Configure master conf.d/wato files
+  ansible.builtin.template:
+    src: "master_confs/{{ item }}.j2"
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/check_mk/conf.d/wato/{{ item }}"
+    owner: 1000
+    group: 1000
+    mode: 0660
+  with_items:
+    - hosts.mk
+    - rules.mk
+    - tags.mk
+    - notifications.mk
+  notify: Update checkmk config
 
-- name: Find out timezone
+- name: Configure available multisite Tags
+  ansible.builtin.template:
+    src: master_confs/multisite_tags.mk.j2
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/check_mk/multisite.d/wato/tags.mk"
+    owner: 1000
+    group: 1000
+    mode: 0660
+  notify: Update checkmk config
+
+- name: Configure apache checkmk global settings
+  ansible.builtin.template:
+    src: master_confs/apache-globals.mk.j2
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/check_mk/apache.d/wato/global.mk"
+    owner: 1000
+    group: 1000
+    mode: 0660
+  notify: Reload the checkmk site
+
+- name: Configure nagios settings
+  ansible.builtin.template:
+    src: master_confs/nagios.cfg.j2
+    dest: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/nagios/nagios.cfg"
+    owner: 1000
+    group: 1000
+    mode: 0660
+  notify: Reload the checkmk site
+
+# ------------------------------------------------------------------------------
+# Download extra MKP Packages from checkmk exchange
+# ------------------------------------------------------------------------------
+- name: Fetch checkmk master deb file checksum
+  ansible.builtin.uri:
+    url: "{{ ansible_local.general_facts.monitoring.sslcertificate_sha256 }}"
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+  environment:
+    https_proxy: "{{ http_proxy | default() }}"
+  register: checkmk_sslcertificate_shasum
+  when: not ansible_local.offline_mode.stat.exists
+
+- name: Download checkmk sslcertificate mkp
+  ansible.builtin.get_url:
+    url: "{{ ansible_local.general_facts.monitoring.sslcertificate_url }}"
+    dest: "/var/cache/downloads/sslcertificates-{{ ansible_local.general_facts.monitoring.sslcertificate_version }}.mkp"
+    checksum: "sha256:{{ checkmk_sslcertificate_shasum.json['items'][0]['assets'][0]['checksum']['sha256'] }}"
+    mode: 0444
+    use_proxy: '{{ "yes" if http_proxy is defined else omit }}'
+  environment:
+    https_proxy: "{{ http_proxy | default() }}"
+  when: not ansible_local.offline_mode.stat.exists
+
+- name: Check mkp sslcertificate version
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && mkp show sslcertificates {{ ansible_local.general_facts.monitoring.sslcertificate_version }}"
+    user: "{{ checkmk_site }}"
+  register: check_mkp_sslcertificates
+  changed_when: "'No such package' in check_mkp_sslcertificates.stderr"
+  failed_when: "check_mkp_sslcertificates.stderr not in [ 'No such package: sslcertificates ' + ansible_local.general_facts.monitoring.sslcertificate_version, '' ]"
+  notify: Install mkp package
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Check if file links for mkp plugins exists
+  ansible.builtin.find:
+    paths: /var/lib/docker/
+    patterns: "{{ item }}"
+    file_type: link
+    recurse: true
+  register: custom_plugin_links
+  with_items: "{{ monitoring_custom_agent_plugins }}"
+
+- name: Ensure to create link to be able to download mkp plugins to agent
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: "ln -s /omd/sites/{{ checkmk_site }}/local/share/check_mk/agents/plugins/{{ item }} /omd/sites/{{ checkmk_site }}/share/check_mk/agents/plugins/{{ item }}"
+  when: "custom_plugin_links.results | selectattr('item', 'equalto', item) | map(attribute='files') | sum(start=[]) | selectattr('path', 'search', 'share/check_mk/agents/plugins/' + item) == []"
+  with_items: "{{ monitoring_custom_agent_plugins }}"
+
+# ------------------------------------------------------------------------------
+# Ensure omd site is up and running
+# ------------------------------------------------------------------------------
+- name: Check omd site status
+  community.docker.docker_container_exec:
+    container: checkmk
+    command: bash -c "source ~/.profile && omd status -b {{ checkmk_site }} | grep OVERALL"
+  register: checkmk_omd_site_status
+  changed_when: "'0' not in checkmk_omd_site_status.stdout"
+  notify: Restart omd site
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+# ------------------------------------------------------------------------------
+# Set Facts for checkmk users with authorization secrets
+# Necessary for agent install
+# ------------------------------------------------------------------------------
+- name: Get checkmk container infos
+  community.docker.docker_container_info:
+    name: checkmk
+  register: checkmk_container_info
+
+- name: Get agent_registration secret
   ansible.builtin.slurp:
-    src: /etc/timezone
-  register: etc_timezone
+    src: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/var/check_mk/web/agent_registration/automation.secret"
+  register: agent_registration_user_secret
 
-- name: Set default timezone in php.ini
-  ansible.builtin.replace:
-    dest: /etc/php/{{ php_version }}/apache2/php.ini
-    regexp: '^;date.timezone ='
-    replace: 'date.timezone = "{{ etc_timezone["content"] | b64decode | regex_replace("\n") }}"'
-
-- name: Ensure apache rewrite module is enabled
-  community.general.web_infrastructure.apache2_module:
-    name: rewrite
-    state: present
-  notify: Restart apache
-
-- name: Ensure Apache configuration for Icingaweb2 UI exists
-  ansible.builtin.copy:
-    src: "{{ apache_icinga_vhost_conf }}"
-    dest: /etc/apache2/sites-enabled/icinga.conf
+- name: Deploy ansible facts for checkmk users with authorization secrets
+  ansible.builtin.template:
+    src: master_confs/checkmk.fact.j2
+    dest: "/etc/ansible/facts.d/checkmk.fact"
+    mode: 0644
     owner: root
     group: root
-    mode: 0644
-  notify: Restart apache
+  notify: Ansible facts reload
 
-- name: Disable default Apache configuration
-  ansible.builtin.file:
-    path: /etc/apache2/sites-enabled/000-default.conf
-    state: absent
-  notify: Restart apache
-
-- name: Configure Icinga salt
-  ansible.builtin.lineinfile:
-    dest: /etc/icinga2/constants.conf
-    regexp: "^const TicketSalt = \"\"$"
-    line: "const TicketSalt = \"{{ icinga_salt }}\""
-    backrefs: true
-  notify:
-    - Restart icinga2
-    - Restart apache
-
-- name: Create Icinga PKI
-  ansible.builtin.command: /usr/sbin/icinga2 pki new-ca
-  register: icingia_pki
-  args:
-    creates: /var/lib/icinga2/ca/ca.*
-
-- name: Create Icinga certificate
-  ansible.builtin.command: /usr/sbin/icinga2 pki new-cert --cn {{ inventory_hostname }} --key /etc/icinga2/pki/{{ inventory_hostname }}.key --csr /etc/icinga2/pki/{{ inventory_hostname }}.csr --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
-  register: icinga_cert
-  args:
-    creates: /etc/icinga2/pki/{{ inventory_hostname }}.*
-
-- name: Sign Icinga CSR # noqa no-handler
-  when: icinga_cert.changed
-  ansible.builtin.command: /usr/sbin/icinga2 pki sign-csr --csr /etc/icinga2/pki/{{ inventory_hostname }}.csr --cert /etc/icinga2/pki/{{ inventory_hostname }}.crt
-
-- name: Copy Icinga CA certificate # noqa no-handler
-  ansible.builtin.command: cp -vR --preserve=all /var/lib/icinga2/ca/ca.crt /etc/icinga2/pki
-  when: icingia_pki.changed
-  args:
-    creates: /etc/icinga2/pki/ca.crt
-
-# ------------------------------------------------------------------------------
-# Check if database is already created
-# ------------------------------------------------------------------------------
-- name: Register first installation var if external database is in use
-  ansible.builtin.command: mysql -u {{ monitoring_db_user }} -h {{ mysql_host }} -p{{ monitoring_db_password }} {{ monitoring_db_name }} -e 'SELECT count(*) FROM information_schema.tables WHERE table_schema = "{{ monitoring_db_name }}";'
-  register: isfirstextinstallion
-  changed_when: isfirstextinstallion.stdout_lines[1] | int == 0
-  when:
-    - monitoring_db_external is defined
-    - monitoring_db_external
-
-- name: Check if its the first installation on external database
-  ansible.builtin.debug:
-    msg: "{{ isfirstextinstallion.stdout_lines[1] }}"
-  register: firstinstalldb
-  changed_when: isfirstextinstallion.stdout_lines[1] | int == 0
-  when:
-    - isfirstextinstallion.stdout_lines is defined
-    - isfirstextinstallion.stdout_lines[1] | int == 0
-
-# ------------------------------------------------------------------------------
-# Create Databases on integrated database servers
-# ------------------------------------------------------------------------------
-- name: Create Icinga databases # noqa no-handler
-  community.mysql.mysql_db:
-    name: "{{ item }}"
-    state: present
-    login_user: root
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-  no_log: true
-  with_items:
-    - "{{ monitoring_db_name }}"
-    - "{{ monitoring_db_web_name }}"
-  register: database_created
-  when:
-    - isfirstextinstallion.changed == false # noqa literal-compare
-    - monitoring_db_external is undefined
-  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
-
-- name: "Create Icinga database user {{ monitoring_db_user }}"
-  community.mysql.mysql_user:
-    name: "{{ monitoring_db_user }}"
-    password: "{{ monitoring_db_password }}"
-    host: "{{ item }}"
-    priv: "{{ monitoring_db_name }}.*:ALL"
-    state: present
-    login_user: root
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-  no_log: true
-  with_items:
-    - "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
-    - "{{ groups['database_servers'] | map('extract', hostvars, 'private_ip') | list + ['localhost'] if groups['all'] | length > 1 else 'localhost' }}"
-  delegate_to: "{{ monitoring_db_host }}"
-  when: monitoring_db_external is undefined
-
-- name: "Create Icingaweb database user {{ monitoring_db_web_user }}"
-  community.mysql.mysql_user:
-    name: "{{ monitoring_db_web_user }}"
-    password: "{{ monitoring_db_web_password }}"
-    host: "{{ item }}"
-    priv: "{{ monitoring_db_web_name }}.*:ALL"
-    state: present
-    login_user: root
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-  no_log: true
-  with_items: "{{ groups['monitoring'] | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else 'localhost' }}"
-  delegate_to: "{{ monitoring_db_host }}"
-  when: monitoring_db_external is undefined
-
-- name: Fetch the Icinga DB schemas # noqa no-handler
-  ansible.builtin.fetch:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    flat: true
-  with_items:
-    - { src: '/usr/share/icinga2-ido-mysql/schema/mysql.sql', dest: '/home/teamwire/icinga2.sql'}
-    - { src: '/usr/share/icingaweb2/schema/mysql.schema.sql', dest: '/home/teamwire/icingaweb2.sql'}
-  when: database_created.changed or firstinstalldb.changed
-
-- name: Copy the Icinga DB schemas to the database server # noqa no-handler
-  ansible.builtin.copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: 0644
-  with_items:
-    - { src: '/home/teamwire/icinga2.sql', dest: '/tmp/icinga2.sql'}
-    - { src: '/home/teamwire/icingaweb2.sql', dest: '/tmp/icingaweb2.sql'}
-  when:
-    - database_created.changed
-    - monitoring_db_external is undefined
-  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
-
-- name: Import Icinga databases # noqa no-handler
-  community.mysql.mysql_db:
-    name: "{{ item.db }}"
-    state: import
-    target: "{{ item.target }}"
-    login_user: root
-    login_host: "{{ hostvars[monitoring_db_host].private_ip if monitoring_db_host != 'localhost' else '127.0.0.1' }}"
-    login_password: "{{ mysql_root_password }}"
-  loop:
-    - { db: '{{ monitoring_db_name }}', target: '/tmp/icinga2.sql' }
-    - { db: '{{ monitoring_db_web_name }}', target: '/tmp/icingaweb2.sql' }
-  loop_control:
-    label: "{{ item.db }}"
-  when:
-    - database_created.changed
-    - monitoring_db_external is undefined
-  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
-
-- name: Import Icinga database on external database server monitor DB # noqa no-handler
-  community.mysql.mysql_db:
-    state: import
-    name: "{{ monitoring_db_name }}"
-    login_user: "{{ monitoring_db_user }}"
-    login_password: "{{ monitoring_db_password }}"
-    login_host: "{{ mysql_host }}"
-    login_port: "{{ mysql_port | int }}"
-    target: "/home/teamwire/icinga2.sql"
-  when:
-    - firstinstalldb.changed
-    - monitoring_db_external is defined
-    - monitoring_db_external
-
-- name: Import Icinga database on external database server monitor_web DB  # noqa no-handler
-  community.mysql.mysql_db:
-    state: import
-    name: "{{ monitoring_db_web_name }}"
-    login_user: "{{ monitoring_db_web_user }}"
-    login_password: "{{ monitoring_db_web_password }}"
-    login_host: "{{ mysql_host }}"
-    login_port: "{{ mysql_port | int }}"
-    target: "/home/teamwire/icingaweb2.sql"
-  when:
-    - firstinstalldb.changed
-    - monitoring_db_external is defined
-    - monitoring_db_external
-
-- name: Delete the Icinga DB schemas from the database server # noqa no-handler
-  ansible.builtin.file:
-    dest: "{{ item }}"
-    state: absent
-  with_items:
-    - "/tmp/icinga2.sql"
-    - "/tmp/icingaweb2.sql"
-  when:
-    - database_created.changed
-    - monitoring_db_external is undefined
-  delegate_to: "{{ monitoring_db_host if monitoring_db_host != 'localhost' else inventory_hostname }}"
-
-- name: Delete the Icinga DB schemas from localhost # noqa no-handler
-  ansible.builtin.file:
-    dest: "{{ playbook_dir }}/{{ item }}"
-    state: absent
-  with_items:
-    - "/home/teamwire/icinga2.sql"
-    - "/home/teamwire/icingaweb2.sql"
-  when: database_created.changed
-  delegate_to: localhost
-  become: false
-
-- name: Encrypt Icinga web admin user passworda # noqa no-handler
-  ansible.builtin.command: 'openssl passwd -1 "{{ icinga_admin_password }}"'
-  register: icinga_admin_password
-  when: database_created.changed or firstinstalldb.changed
-
-- name: Add admin user to Icinga web database # noqa no-handler
-  ansible.builtin.command: mysql --user='{{ monitoring_db_web_user }}' --password='{{ monitoring_db_web_password }}' --host='{{ monitoring_db_host }}' --port='{{ monitoring_db_port }}' '{{ monitoring_db_web_name }}' --execute="INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('admin', 1, '{{ icinga_admin_password.stdout }}');"
-  when: database_created.changed or firstinstalldb.changed
-
-- name: Generate Icinga configuration files
-  ansible.builtin.template:
-    src: "{{ item }}.j2"
-    dest: /etc/icinga2/conf.d/{{ item }}
-    owner: nagios
-    group: nagios
-    mode: 0644
-  notify:
-    - Restart icinga2
-    - Restart apache
-  with_items:
-    - api-users.conf
-    - users.conf
-    - groups.conf
-    - services.conf
-    - hosts.conf
-    - notifications.conf
-
-- name: Remove old apt check config
-  ansible.builtin.file:
-    path: /etc/icinga2/conf.d/apt.conf
-    state: absent
-  notify:
-    - Restart icinga2
-    - Restart apache
-
-- name: Enable monitoring module
-  ansible.builtin.command: /usr/bin/icingacli module enable monitoring
-  args:
-    creates: /etc/icingaweb2/enabledModules/monitoring
-
-- name: Ensure monitoring module directory exists
-  ansible.builtin.file:
-    path: "/etc/icingaweb2/modules/monitoring"
-    owner: www-data
-    group: icingaweb2
-    mode: 0755
-    state: directory
-
-- name: Generate icingaweb2 configuration files
-  ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: 0664
-  with_items:
-    - { src: 'config.ini.j2', dest: '/etc/icingaweb2/config.ini' }
-    - { src: 'resources.ini.j2', dest: '/etc/icingaweb2/resources.ini' }
-    - { src: 'authentication.ini.j2', dest: '/etc/icingaweb2/authentication.ini' }
-    - { src: 'roles.ini.j2', dest: '/etc/icingaweb2/roles.ini' }
-    - { src: 'module-config.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/config.ini' }
-    - { src: 'backends.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/backends.ini' }
-    - { src: 'commandtransports.ini.j2', dest: '/etc/icingaweb2/modules/monitoring/commandtransports.ini' }
-
-- name: Configure sender address for notifications
-  ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: 0755
-  with_items:
-    - { src: 'mail-host-notification.j2', dest: '/etc/icinga2/scripts/mail-host-notification.sh' }
-    - { src: 'mail-service-notification.j2', dest: '/etc/icinga2/scripts/mail-service-notification.sh' }
-  notify:
-    - Restart icinga2
-    - Restart apache
-
-- name: Configure Icinga2 zones
-  ansible.builtin.template:
-    src: zones.conf.j2
-    dest: /etc/icinga2/zones.conf
-    owner: nagios
-    group: nagios
-    mode: 0640
-  notify:
-    - Restart icinga2
-    - Restart apache
-
-- name: Create new zone dir
-  ansible.builtin.file:
-    path: /etc/icinga2/zones.d/{{ inventory_hostname }}
-    owner: nagios
-    group: nagios
-    mode: 0755
-    state: directory
-
-- name: Copy files from old to new dir
-  ansible.builtin.shell: 'sudo mv /etc/icinga2/conf.d/* /etc/icinga2/zones.d/{{ inventory_hostname }}' # noqa no-changed-when
-  become: true
-
-- name: Install logrotate job for apache2 logs
-  ansible.builtin.copy:
-    src: apache2-log
-    dest: /etc/logrotate.d/apache2
-    owner: root
-    group: root
-    mode: 0644
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

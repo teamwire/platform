@@ -28,6 +28,8 @@
 - name: Clean OCSP files and tasks
   ansible.builtin.include_tasks: clean_ocsp.yml
 
-# Ensure only one mail service is enabled
-- name: Clean running mailservices
-  ansible.builtin.include_tasks: clean_mail_service.yml
+# Remove hashi ui container
+- name: Remove Hashi-UI Container
+  ansible.builtin.include_tasks: remove_hashiui.yml
+  when:
+    - groups['all'] | length() > 1

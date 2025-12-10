@@ -1,13 +1,18 @@
-{% if ansible_play_hosts | length() == 1 %}  
+{% if ansible_play_hosts | length() == 1 %}
 storage "file" {
   path = "/var/lib/vault/store/"
 }
 {%endif %}
-{% if ansible_play_hosts | length() != 1 %}  
+{% if ansible_play_hosts | length() != 1 %}
 storage "consul" {
   address = "127.0.0.1:8500"
   path = "vault/"
 }
+
+service_registration "consul" {
+  address      = "127.0.0.1:8500"
+}
+
 cluster_name = "Vault Cluster"
 {%endif %}
 

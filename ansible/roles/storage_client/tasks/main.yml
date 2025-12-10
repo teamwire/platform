@@ -73,7 +73,7 @@
   ansible.posix.mount:
     name: /data
     fstype: glusterfs
-    src: "{{ groups['storage_servers'] |sort |first }}:/data"
+    src: "{{ groups['storage_servers'] | sort | first }}:/data"
     opts: "{% for host in storage[1:] %}backupvolfile-server={{ host }},{% endfor %}direct-io-mode=disable"
     state: mounted
   when:

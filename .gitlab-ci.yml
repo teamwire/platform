@@ -47,7 +47,7 @@ variables:
 Deploy to hub:
   stage: hub-deploy
   tags:
-  - hub3-runner
+  - hub4-center-shell
   script:
     - eval $(ssh-agent -s)
     - echo "${HUB_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
@@ -105,7 +105,7 @@ Release tag on GitHub:
 Deploy to cloud:
   stage: cloud-deploy
   tags:
-  - prod-cloud
+  - cloud4-core-shell
   script:
     - eval $(ssh-agent -s)
     - echo "${CLOUD_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
@@ -198,11 +198,6 @@ Packer unique test:
 Packer guest tools test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/vm-guest-tools.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
-Backup / Restore test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/db/files/backup_restore_db.sh"
   needs: ['Ensure shellcheck docker image exists']
 
 Offline installation test:

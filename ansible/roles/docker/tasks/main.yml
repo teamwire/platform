@@ -35,53 +35,50 @@
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 - name: Get Docker repository signing key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/debian/gpg
-    dest: /usr/share/keyrings/docker-archive-keyring.key
+    url: "{{ ansible_local.general_facts.docker.repository_key_url }}"
+    dest: "{{ ansible_local.general_facts.docker.repository_key_destination }}"
     owner: root
     group: root
     mode: 0644
   environment:
     HTTP_PROXY: "{{ http_proxy | default() }}"
     HTTPS_PROXY: "{{ http_proxy | default() }}"
-  register: docker_signing_key
-  notify: Dearmor Docker repository key
   when: not ansible_local.offline_mode.stat.exists
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
+- name: Remove old docker repository line
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+    state: absent
+    update_cache: true
+    filename: download_docker_com_linux_debian
+  when: not ansible_local.offline_mode.stat.exists
+
 - name: Add docker repository
   ansible.builtin.apt_repository:
-    repo: deb [arch=amd64 signed-by={{ (docker_signing_key.dest | splitext)[0] }}.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+    repo: "{{ ansible_local.general_facts.docker.apt_repository_string }}"
     state: present
     update_cache: true
   when: not ansible_local.offline_mode.stat.exists
 
-- name: Get checksum for docker version from repo.teamwire.eu
-  ansible.builtin.get_url:
-    url: "{{ docker_checksum_package_file_url }}"
-    dest: "{{ docker_checksum_file_path }}"
-    mode: 0444
-  when: not ansible_local.offline_mode.stat.exists
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
-
-- name: Get docker version from repo.teamwire.eu
-  ansible.builtin.get_url:
-    url: "{{ docker_package_file_url }}"
-    dest: "{{ docker_package_file_path }}"
+- name: Pin docker versions
+  ansible.builtin.template:
+    src: tw_docker_pinning.j2
+    dest: /etc/apt/preferences.d/tw_docker_pinning
+    owner: root
+    group: root
     mode: 0644
-    checksum: "sha256: {{ lookup('file', docker_checksum_file_path) }}"
-  when: not ansible_local.offline_mode.stat.exists
-  environment:
-    https_proxy: "{{ http_proxy | default() }}"
 
 - name: Install docker packages
   ansible.builtin.apt:
-    pkg: "{{ item }}"
+    name: "{{ item.split('=')[0] }}"
     state: present
     force: true
-  with_items: "{{ lookup('ansible.builtin.template', docker_package_file_path).splitlines() }}"
+  loop: "{{ ansible_local.general_facts.docker.package_pinning }}"
+  loop_control:
+    label: "{{ item.split('=')[0] }}"
 
 - name: Install python3-docker
   ansible.builtin.apt:
@@ -239,7 +236,3 @@
     - groups['all'] | length() > 1
     - groups.docker_registry is defined
     - not ansible_local.offline_mode.stat.exists
-
-- name: Include cluster
-  ansible.builtin.include_tasks: cluster.yml
-  when: groups['all'] | length() > 1

@@ -51,7 +51,7 @@
   loop_control:
     label: "{{ item.value.username }}"
 
-- name: Cleanup existing teamwire database users if TLS enabled
+- name: Cleanup existing teamwire database userss
   community.mysql.mysql_user:
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
@@ -65,81 +65,35 @@
     - "item.Host not in db_host"
     - item.Host != "localhost"
     - item.Host != hostvars[groups['management_servers'] | sort | first].private_ip
-    - enable_tls_mysql is defined and enable_tls_mysql | lower == "true"
 
-- name: Cleanup existing teamwire database users if TLS undefined or disabled
+# ------------------------------------------------------------------------------
+# Cleanup monitoring database users
+# ------------------------------------------------------------------------------
+- name: Include monitoring default variables
+  ansible.builtin.include_vars:
+    file: ../../monitoring/defaults/main.yml
+
+- name: Ensure only necessary monitoring user exists
   community.mysql.mysql_user:
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
     name: "{{ item.User }}"
     host: "{{ item.Host }}"
     state: absent
-  throttle: 1
   with_items: "{{ mysql_user_data.query_result }}"
   when:
-    - item.User == db_username
-    - "item.Host not in db_host"
-    - enable_tls_mysql is undefined or enable_tls_mysql | lower != "true"
+    - item.User == monitoring_db_user
+    - item.Host != "localhost"
+    - enable_monitoring is defined and enable_monitoring | lower in [ "yes", "true" ]
 
-# ------------------------------------------------------------------------------
-# Cleanup available monitoring users
-# ------------------------------------------------------------------------------
-- name: Cleanup monitoring db users - Single Server
-  block:
-    - name: "Cleanup available users {{ monitoring_db_user }}"
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_user
-        - item.Host != "localhost"
-
-    - name: "Cleanup available users {{ monitoring_db_web_user }}"
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_web_user
-        - item.Host != "localhost"
+- name: Ensure to cleanup all monitoring users
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  with_items: "{{ mysql_user_data.query_result }}"
   when:
-    - enable_monitoring is defined
-    - groups['all'] | length == 1
-
-- name: Cleanup monitoring db users - Cluster
-  block:
-    - name: "Cleanup available users {{ monitoring_db_user }}"
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      throttle: 1
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_user
-        - not ( item.Host in groups['monitoring'] | map('extract',hostvars,'private_ip') or item.Host in groups['database_servers'] | map('extract',hostvars,'private_ip') or item.Host == 'localhost' )
-
-    - name: "Cleanup available users {{ monitoring_db_web_user }}"
-      community.mysql.mysql_user:
-        login_user: root
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        name: "{{ item.User }}"
-        host: "{{ item.Host }}"
-        state: absent
-      throttle: 1
-      with_items: "{{ mysql_user_data.query_result }}"
-      when:
-        - item.User == monitoring_db_web_user
-        - item.Host not in groups['monitoring'] | map('extract',hostvars,'private_ip')
-  when:
-    - enable_monitoring is defined
-    - groups['all'] | length > 1
+    - item.User == monitoring_db_user
+    - enable_monitoring is undefined or enable_monitoring | lower not in [ "yes", "true" ]
