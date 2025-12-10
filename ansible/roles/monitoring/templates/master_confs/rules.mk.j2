@@ -155,7 +155,7 @@ active_checks['cert'] = [
 static_checks.setdefault('mysql_connections', [])
 
 static_checks['mysql_connections'] = [
-{'value': ('mysql_connections', 'mysql', {'perc_conn_threads': (90.0, 85.0)}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'database_servers': 'true'" }}, 'external_db': {'$ne': 'external_db'} }}, 'options': {'disabled': False}},
+{'value': ('mysql_connections', 'mysql', {'perc_conn_threads': (90.0, 85.0)}), 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'database_servers': 'true'" }}, 'external_db': {'$ne': 'true'} }}, 'options': {'disabled': False}},
 ] + static_checks['mysql_connections']
 
 
