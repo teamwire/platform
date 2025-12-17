@@ -124,3 +124,11 @@
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
   when: ansible_distribution_release == 'bullseye'
+
+# ------------------------------------------------------------------------------
+# Update apt cache
+# ------------------------------------------------------------------------------
+- name: Update apt repositories and cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: not ansible_local.offline_mode.stat.exists
