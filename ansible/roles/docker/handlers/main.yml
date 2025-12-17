@@ -21,3 +21,11 @@
 - name: Create local registry credentials
   ansible.builtin.command: "htpasswd -Bbc {{ registry_dir }}/htpasswd {{ local_registry_username }} {{ local_registry_password }}"
   no_log: true
+
+# ------------------------------------------------------------------------------
+# Update apt cache
+# ------------------------------------------------------------------------------
+- name: Update apt repositories and cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: not ansible_local.offline_mode.stat.exists
