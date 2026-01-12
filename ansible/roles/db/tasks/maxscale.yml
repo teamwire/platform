@@ -34,14 +34,18 @@
         HTTP_PROXY: "{{ http_proxy | default() }}"
         HTTPS_PROXY: "{{ http_proxy | default() }}"
 
+- name: Add maxscale repository
+  ansible.builtin.copy:
+    content: |
+      {{ ansible_local.general_facts.db.maxscale_apt_repository_string }}
+    dest: /etc/apt/sources.list.d/mariadb-maxscale.list
+    owner: root
+    group: root
+    mode: 0644
+  notify: Update apt repositories and cache
+
 - name: Trigger handlers
   ansible.builtin.meta: flush_handlers
-
-- name: Add maxscale repository
-  ansible.builtin.apt_repository:
-    repo: "{{ ansible_local.general_facts.db.maxscale_apt_repository_string }}"
-    state: present
-    filename: mariadb-maxscale
 
 - name: Install maxscale
   ansible.builtin.package:

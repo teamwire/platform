@@ -45,23 +45,18 @@
     HTTPS_PROXY: "{{ http_proxy | default() }}"
   when: not ansible_local.offline_mode.stat.exists
 
+- name: Add docker repository
+  ansible.builtin.copy:
+    content: |
+      {{ ansible_local.general_facts.docker.apt_repository_string }}
+    dest: /etc/apt/sources.list.d/download_docker_com_linux_debian.list
+    owner: root
+    group: root
+    mode: 0644
+  notify: Update apt repositories and cache
+
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
-
-- name: Remove old docker repository line
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
-    state: absent
-    update_cache: true
-    filename: download_docker_com_linux_debian
-  when: not ansible_local.offline_mode.stat.exists
-
-- name: Add docker repository
-  ansible.builtin.apt_repository:
-    repo: "{{ ansible_local.general_facts.docker.apt_repository_string }}"
-    state: present
-    update_cache: true
-  when: not ansible_local.offline_mode.stat.exists
 
 - name: Pin docker versions
   ansible.builtin.template:
