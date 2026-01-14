@@ -1,0 +1,33 @@
+- name: Enable tmpfs /tmp partition on debian 13
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check if system is debian 13
+      ansible.builtin.assert:
+        that: ansible_distribution_release == "trixie"
+        fail_msg: "Operating System is not Debian 13. Procedure will not be applied"
+
+    - name: Check what kind of FS Type /tmp currently is
+      ansible.builtin.command:
+        cmd: "stat -f -c %T /tmp"
+      changed_when: false
+      register: tmpfs_fs_type
+
+    - name: Check if the procedure is necessary to be executed
+      ansible.builtin.assert:
+        that: tmpfs_fs_type.stdout != "tmpfs"
+        fail_msg: "/tmp is already tmpfs. Procedure will not be applied"
+
+    - name: Enable tmpfs /tmp partition
+      ansible.builtin.systemd:
+        name: tmp.mount
+        masked: false
+
+    - name: Ensure configuration to cleanup /tmp files on reboot is in place
+      ansible.builtin.file:
+        path: /etc/tmpfiles.d/tmp.conf
+        state: absent
+
+    - name: Inform that reboot is necessary
+      ansible.builtin.debug:
+        msg: Please ensure to reboot the machine/s to apply the changes.
