@@ -404,3 +404,15 @@
     owner: root
     group: root
   notify: Restart systemd-journald
+
+# ------------------------------------------------------------------------------
+# Configure /etc/login.defs
+# ------------------------------------------------------------------------------
+- name: Configure /etc/login.defs
+  ansible.builtin.template:
+    src: login.defs.j2
+    dest: /etc/login.defs
+    mode: 0644
+    owner: root
+    group: root
+  when: ansible_distribution_release != "bookworm"
