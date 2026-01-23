@@ -22,3 +22,8 @@ innodb_buffer_pool_size: 0
 # Set owner for ssl certificate path/files
 mysql_ssl_owner: "{{ 'mysql' if inventory_hostname in groups['database_servers'] else 'root' }}"
 mysql_ssl_group: "{{ 'mysql' if inventory_hostname in groups['database_servers'] else 'root' }}"
+
+# Set path for mysql certificates
+mysql_ssl_server_certificate: "/var/lib/vault/ssl/vault.crt"
+mysql_ssl_keyfile: "/var/lib/vault/ssl/vault.pem"
+mysql_ssl_ca: "/etc/ssl/certs/vault-rootCA.pem"
