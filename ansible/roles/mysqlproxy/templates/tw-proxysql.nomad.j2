@@ -1,0 +1,114 @@
+job "teamwire-proxysql" {
+  datacenters = ["dc1"]
+  type        = "service"
+  priority    = 90
+
+  # ------------------------------------------------------
+  # GLOBAL CONSTRAINTS (Matched to Backend AND Management)
+  # ------------------------------------------------------
+  constraint {
+    attribute = "${attr.kernel.name}"
+    value     = "linux"
+  }
+
+  constraint {
+    attribute = "${node.class}"
+    operator  = "regexp"
+    value     = "(backend|management)_servers"
+  }
+
+  constraint {
+    attribute = "${meta.groups}"
+    operator  = "regexp"
+    value     = "(backend|management)_servers"
+  }
+
+  # ------------------------------------------------------
+  # ROLLING UPDATE STRATEGY
+  # ------------------------------------------------------
+  update {
+    max_parallel = 1
+    stagger      = "30s"
+    auto_revert  = true
+    canary       = 0
+  }
+
+  vault {
+    policies    = ["nomad-job"]
+    change_mode = "restart"
+  }
+
+  group "proxysql" {
+    count = {{ groups['backend_servers'] | union(groups['management_servers']) | length }}
+
+    constraint {
+      operator = "distinct_hosts"
+      value    = "true"
+    }
+
+    restart {
+      interval = "5m"
+      attempts = 10
+      delay    = "25s"
+      mode     = "delay"
+    }
+
+    network {
+      mode = "host"
+      port "mysql" { static = 3308 }
+      port "admin" { static = 6032 }
+    }
+
+    task "proxysql" {
+      driver = "docker"
+
+      config {
+        image = "{{ local_registry | default() }}{{ ansible_local.general_facts.proxysql.container }}"
+
+        auth {
+           username = "{{ docker_registry_username }}"
+           password = "{{ docker_registry_password }}"
+        }
+
+        network_mode = "host"
+
+        logging {
+           type = "syslog"
+           config {
+              tag = "teamwire-proxysql"
+              syslog-facility = "local6"
+           }
+        }
+
+        volumes = [
+          "/data/proxysql/proxysql.cnf:/etc/proxysql.cnf"
+        ]
+      }
+
+      service {
+        name = "tw-proxysql"
+        port = "mysql"
+        tags = ["proxysql", "mysql"]
+
+        check {
+          name     = "ProxySQL Traffic Port Alive"
+          type     = "tcp"
+          port     = "mysql"
+          interval = "10s"
+          timeout  = "2s"
+        }
+      }
+
+      service {
+        name = "tw-proxysql-admin"
+        port = "admin"
+        tags = ["proxysql", "admin"]
+      }
+
+      resources {
+        cpu    = {{ proxysql_cpu_alloc | default('100') }}
+        memory = {{ proxysql_ram_alloc | default('128') }}
+      }
+    }
+  }
+}
