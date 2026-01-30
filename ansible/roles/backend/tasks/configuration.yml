@@ -83,6 +83,16 @@
     - mysql_port is not defined
     - "'database_servers' in groups"
     - groups['database_servers'] | length > 1
+    - use_proxysql is not defined
+
+- name: Determine MariaDB port (ProxySQL)
+  ansible.builtin.set_fact:
+    mysql_port: 3308
+  when:
+    - mysql_port is not defined
+    - "'database_servers' in groups"
+    - groups['database_servers'] | length > 1
+    - use_proxysql is defined
 
 - name: Fetch VAULT_JOB_TOKEN
   ansible.builtin.slurp:

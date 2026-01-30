@@ -44,6 +44,9 @@
 - name: Include container.yml
   ansible.builtin.import_playbook: roles/container.yml
 
+- name: Include mysqlproxy.yml
+  ansible.builtin.import_playbook: roles/mysqlproxy.yml
+
 - name: Include loghost.yml
   ansible.builtin.import_playbook: roles/loghost.yml
 

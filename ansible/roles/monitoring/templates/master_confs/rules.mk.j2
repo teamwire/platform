@@ -236,6 +236,11 @@ custom_checks = [
 {'value': {'service_description': 'Nomad Job {{ job }}', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -u "/v1/job/{{ job }}" -s "running" -p 4646 -k "X-Nomad-Token:{{ management_token.stdout if groups['all'] | length > 1 }}"'}, 'condition': {'host_tags': { {{ "'voip_servers': 'true', 'single_server': {'$ne': 'true' }" if job == 'voip' else "'management_servers': 'true'" }}{{ ", 'decoupling': 'true'" if job == 'dashboard' or job == 'webclient' }} }}, 'options': {'disabled': False}},
 {% endfor %}
 
+# Check if ProxySQL Nomad Job is running
+{% if use_proxysql is defined %}
+{'value': {'service_description': 'Nomad Job teamwire-proxysql', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -u "/v1/job/teamwire-proxysql" -s "running" -p 4646 -k "X-Nomad-Token:{{ management_token.stdout if groups['all'] | length > 1 }}"'}, 'condition': {'host_tags': { 'management_servers': 'true', 'backend_servers': 'true', 'single_server': {'$ne': 'true'} }}, 'options': {'disabled': False}},
+{% endif %}
+
 # Vault Sealed Status check
 {'value': {'service_description': 'Vault Seal Status', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -S -u "/v1/sys/seal-status" -s "sealed\\":false" -p 8200'}, 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'hashi_servers': 'true'" }}}}, 'options': {'disabled': False}},
 
