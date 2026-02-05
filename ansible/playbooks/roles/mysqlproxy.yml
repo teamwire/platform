@@ -21,3 +21,5 @@
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/mysqlproxy"
       when:
         - groups['all'] | length() > 1
+        - mysql_host is not defined
+        - oracle_host is not defined
