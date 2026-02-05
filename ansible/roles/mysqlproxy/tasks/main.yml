@@ -53,6 +53,7 @@
   become_user: teamwire
   delegate_to: localhost
   run_once: true
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Tag and Push proxySQL image to local registry
   community.docker.docker_image:

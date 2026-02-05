@@ -75,6 +75,7 @@ harbor.teamwire.eu/teamwire/dashboard:${DASHBOARD_RELEASE}
 harbor.teamwire.eu/teamwire/webclient:${WEBCLIENT_RELEASE}
 $(jq -r '.monitoring.container' /etc/ansible/facts.d/general_facts.fact)
 $(jq -r '.monitoring.nginx_container' /etc/ansible/facts.d/general_facts.fact)
+$(jq -r '.proxysql.container' /etc/ansible/facts.d/general_facts.fact)
 "
 
 # File URL and SHA256 checksum separated by a semicolon
