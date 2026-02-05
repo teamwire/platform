@@ -64,6 +64,9 @@
   become_user: teamwire
   delegate_to: localhost
   run_once: true
+  when:
+    - config_done is defined
+    - groups.docker_registry is defined
 
 - name: Read nomad management token
   ansible.builtin.command: vault kv get -field=value secret/nomad/management_token
