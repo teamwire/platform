@@ -1,13 +1,8 @@
 
 admin_variables =
 {
-    # Allow passing admin password via variable, default to 'admin'
-    admin_credentials = "admin:{{ proxysql_admin_password | default('admin') }}"
-
-    # 0.0.0.0 is usually required for containerized environments if you want to access
-    # the admin interface from outside the specific container namespace,
-    # though 127.0.0.1 works if using strictly host networking and local access only.
-    mysql_ifaces      = "{{ proxysql_admin_interface | default('127.0.0.1:6032') }}"
+    admin_credentials = "admin:{{ mysql_maxscale_monitor_password }}"
+    mysql_ifaces      = "127.0.0.1:6032"
 }
 
 mysql_variables =
@@ -36,10 +31,7 @@ mysql_variables =
 
 mysql_servers =
 (
-    # Logic adapted to match MaxScale template:
-    # 1. Defaults to using the 'database_servers' group.
-    # 2. Looks up 'private_ip' in hostvars for each host (like your MaxScale config).
-    # 3. Allows manual override via 'proxysql_backend_nodes' list if needed.
+
 {% set db_hosts = proxysql_backend_nodes | default(groups['database_servers'] | sort) %}
 {% for host in db_hosts %}
     {% set db_ip = hostvars[host]['private_ip'] if (host in hostvars and 'private_ip' in hostvars[host]) else host %}
