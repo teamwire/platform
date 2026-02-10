@@ -9,25 +9,43 @@
       enable_tls_mysql | lower == "true"
 
 - name: Get gpg key for maxscale repository
-  ansible.builtin.get_url:
-    url: "{{ ansible_local.general_facts.db.maxscale_repository_key_url }}"
-    dest: /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
+  block:
+    - name: Download gpg key from primary URL
+      ansible.builtin.get_url:
+        url: "{{ ansible_local.general_facts.db.maxscale_repository_key_url }}"
+        dest: /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
+        owner: root
+        group: root
+        mode: 0644
+        checksum: "sha256:{{ ansible_local.general_facts.db.maxscale_repository_key_sha256 }}"
+      environment:
+        HTTP_PROXY: "{{ http_proxy | default() }}"
+        HTTPS_PROXY: "{{ http_proxy | default() }}"
+  rescue:
+    - name: Download gpg key from backup URL
+      ansible.builtin.get_url:
+        url: "{{ ansible_local.general_facts.db.maxscale_repository_key_backup_url }}"
+        dest: /etc/apt/trusted.gpg.d/mariadb-maxscale.asc
+        owner: root
+        group: root
+        mode: 0644
+        checksum: "sha256:{{ ansible_local.general_facts.db.maxscale_repository_key_sha256 }}"
+      environment:
+        HTTP_PROXY: "{{ http_proxy | default() }}"
+        HTTPS_PROXY: "{{ http_proxy | default() }}"
+
+- name: Add maxscale repository
+  ansible.builtin.copy:
+    content: |
+      {{ ansible_local.general_facts.db.maxscale_apt_repository_string }}
+    dest: /etc/apt/sources.list.d/mariadb-maxscale.list
     owner: root
     group: root
     mode: 0644
-    checksum: "sha256:{{ ansible_local.general_facts.db.maxscale_repository_key_sha256 }}"
-  environment:
-    HTTP_PROXY: "{{ http_proxy | default() }}"
-    HTTPS_PROXY: "{{ http_proxy | default() }}"
+  notify: Update apt repositories and cache
 
 - name: Trigger handlers
   ansible.builtin.meta: flush_handlers
-
-- name: Add maxscale repository
-  ansible.builtin.apt_repository:
-    repo: "{{ ansible_local.general_facts.db.maxscale_apt_repository_string }}"
-    state: present
-    filename: mariadb-maxscale
 
 - name: Install maxscale
   ansible.builtin.package:

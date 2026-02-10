@@ -53,6 +53,8 @@ client {
   node_class = "backend_servers"
 {% elif 'video_servers' in group_names and inventory_hostname in groups['video_servers'] %}
   node_class = "video_servers"
+{% elif 'management_servers' in group_names and inventory_hostname in groups['management_servers'] %}
+  node_class = "management_servers"
 {% else %}
   node_class = "node_not_in_group_backend_servers"
 {% endif %}

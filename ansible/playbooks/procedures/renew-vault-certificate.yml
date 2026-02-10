@@ -56,6 +56,22 @@
         state: restarted
       when: groups['all'] | length() == 1 or groups['all'] | length() > 1 and inventory_hostname in groups['hashi_servers']
 
+- name: Deploy and configure MySQL SSL Certificates
+  hosts: database_servers
+  serial: 1
+  tasks:
+    - name: Include TLS DB Configuration
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/db"
+        tasks_from: tls-connect
+
+# Handlers needs to be flushed
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
+- name: Renew Vault SSL certificate message
+  hosts: management_servers
+  tasks:
     - name: Vault certificate info
       ansible.builtin.debug:
         msg:

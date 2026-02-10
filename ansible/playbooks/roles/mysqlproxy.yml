@@ -1,0 +1,24 @@
+---
+# This task will check if Vault has been initialized and read the secrets from there if so
+- name: Vault Status check
+  hosts: local:hashi_servers
+  tasks:
+    - name: Include vault role
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
+        tasks_from: secrets
+      when:
+        - ansible_local.vault is defined
+        - ansible_local.vault.initialized == "true"
+        - secrets_read is not defined
+
+- name: Configure ProxySQL
+  hosts: local:management_servers
+  serial: 1
+  tasks:
+    - name: Deploy and configure ProxySQL
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/mysqlproxy"
+      when:
+        - groups['all'] | length() > 1
+        - groups.database_servers is defined

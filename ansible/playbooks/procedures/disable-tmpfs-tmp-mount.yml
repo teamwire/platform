@@ -1,0 +1,48 @@
+- name: Disable tmpfs /tmp partition on debian 13
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check if system is debian 13
+      ansible.builtin.assert:
+        that: ansible_distribution_release == "trixie"
+        fail_msg: "Operating System is not Debian 13. Procedure will not be applied"
+
+    - name: Check what kind of FS Type /tmp currently is
+      ansible.builtin.command:
+        cmd: "stat -f -c %T /tmp"
+      changed_when: false
+      register: tmpfs_fs_type
+
+    - name: Check if the procedure is necessary to be executed
+      ansible.builtin.assert:
+        that: tmpfs_fs_type.stdout == "tmpfs"
+        fail_msg: "/tmp is no tmpfs. Procedure will not be applied"
+
+    - name: Disable tmpfs /tmp partition
+      ansible.builtin.systemd:
+        name: tmp.mount
+        masked: true
+
+    - name: Ensure configuration to cleanup /tmp files on reboot is in place
+      ansible.builtin.copy:
+        content: |
+          #  This file is part of systemd.
+          #
+          #  systemd is free software; you can redistribute it and/or modify it
+          #  under the terms of the GNU Lesser General Public License as published by
+          #  the Free Software Foundation; either version 2.1 of the License, or
+          #  (at your option) any later version.
+
+          # See tmpfiles.d(5) for details.
+
+          # Clear tmp directories separately, to make them easier to override
+          D /tmp 1777 root root 10d
+          q /var/tmp 1777 root root 30d
+        dest: /etc/tmpfiles.d/tmp.conf
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: Inform that reboot is necessary
+      ansible.builtin.debug:
+        msg: Please ensure to reboot the machine/s to apply the changes.

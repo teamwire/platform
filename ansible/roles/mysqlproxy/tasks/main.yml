@@ -1,0 +1,87 @@
+- name: Create the ProxySQL directory
+  ansible.builtin.file:
+    path: /data/proxysql
+    owner: teamwire
+    group: teamwire
+    mode: 0750
+    state: directory
+  when: config_done is defined
+  run_once: true
+
+- name: Register docker registry
+  ansible.builtin.set_fact:
+    local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
+  when:
+    - config_done is defined
+    - groups.docker_registry is defined
+
+- name: Write ProxySQL nomad job
+  ansible.builtin.template:
+    src: tw-proxysql.nomad.j2
+    dest: /data/proxysql/tw-proxysql.nomad
+    owner: teamwire
+    group: root
+    mode: 0644
+  run_once: true
+  when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+
+- name: Write ProxySQL config file
+  ansible.builtin.template:
+    src: proxysql.cnf.j2
+    dest: /data/proxysql/proxysql.cnf
+    owner: teamwire
+    group: root
+    mode: 0644
+  run_once: true
+
+- name: Login to the docker registry
+  community.docker.docker_login:
+    registry_url: "{{ 'https://harbor.teamwire.eu' if use_teamwire_registry | default('true') | bool else 'https://index.docker.io/v1/' }}"
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+  when: not ansible_local.offline_mode.stat.exists
+  become: true
+  become_user: teamwire
+  delegate_to: localhost
+  run_once: true
+
+- name: Pull ProxySQL docker image
+  community.docker.docker_image:
+    name: "{{ ansible_local.general_facts.proxysql.container }}"
+    source: pull
+  become: true
+  become_user: teamwire
+  delegate_to: localhost
+  run_once: true
+  when: not ansible_local.offline_mode.stat.exists
+
+- name: Tag and Push proxySQL image to local registry
+  community.docker.docker_image:
+    name: "{{ ansible_local.general_facts.proxysql.container }}"
+    repository: "{{ local_registry }}{{ ansible_local.general_facts.proxysql.container }}"
+    source: local
+    push: true
+  become: true
+  become_user: teamwire
+  delegate_to: localhost
+  run_once: true
+  when:
+    - config_done is defined
+    - groups.docker_registry is defined
+
+- name: Read nomad management token
+  ansible.builtin.command: vault kv get -field=value secret/nomad/management_token
+  register: management_token
+  changed_when: false
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
+  when: groups['all'] | length > 1
+
+- name: Run ProxySQL nomad job
+  ansible.builtin.command:
+    cmd: nomad job run -detach /data/proxysql/tw-proxysql.nomad
+  become: true
+  become_user: teamwire
+  run_once: true
+  changed_when: true
+  environment:
+    NOMAD_TOKEN: "{{ management_token.stdout }}"
