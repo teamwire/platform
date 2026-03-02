@@ -215,6 +215,11 @@ Login banner test:
   script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/management/files/motd.sh"
   needs: ['Ensure shellcheck docker image exists']
 
+Monitoring nomad job script test:
+  stage: shellcheck
+  script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/monitoring/files/checks/check_nomad_job.sh"
+  needs: ['Ensure shellcheck docker image exists']
+
 # ------------------------------------------------------------------------------
 #
 # GO LINT TEST
