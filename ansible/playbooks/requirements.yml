@@ -454,36 +454,6 @@
               - 'Set the variable enable_tls_mysql to false.'
           run_once: true
 
-        - name: Ensure that enable_tls_mysql is not used without an SSL Certificate defined
-          ansible.builtin.assert:
-            that:
-              - ssl_server_certificate is defined
-              - ssl_intermediate_certificate is defined
-              - ssl_root_certificate is defined
-              - ssl_keyfile is defined
-            msg:
-              - "Please ensure to define an SSL Certificate in the group_vars/all or to disable enable_tls_mysql."
-          run_once: true
-
-        - name: Get SSL Certificate purpose
-          ansible.builtin.shell: "openssl x509 -noout -in {{ ssl_server_certificate }} -purpose | grep 'SSL client :' | cut -d ' ' -f4"
-          register: ssl_server_certificate_purpose
-          changed_when: false
-
-        - name: Check SSL Certificate purpose
-          ansible.builtin.assert:
-            that:
-              - hostvars[groups['management_servers'][0]].ssl_server_certificate_purpose.stdout == "Yes"
-            msg:
-              - "To use enable_tls_mysql you have to ensure that your Certificate can also be used as a Client certificate."
-              - "You can check which purposes are supported for you Certificate with following command."
-              - "The purpose 'SSL client' has to be 'Yes'"
-              - "    openssl x509 -noout -in {{ ssl_server_certificate }} -purpose"
-          run_once: true
-          when:
-            - ssl_server_certificate_purpose is defined
-            - ssl_server_certificate_purpose is not skipped
-
         - name: Assert if mysql_tls_admin_enabled is valid
           ansible.builtin.assert:
             that:
