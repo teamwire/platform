@@ -128,6 +128,45 @@
   notify: mysql_root_user_update
 
 # ------------------------------------------------------------------------------
+# MySQL backup user
+# ------------------------------------------------------------------------------
+- name: Create backup database user
+  community.mysql.mysql_user:
+    name: "{{ backup_username }}"
+    password: "{{ backup_password }}"
+    host: "{{ hostvars[groups['management_servers'] | sort | first].private_ip if groups['management_servers'] is defined else 'localhost' }}"
+    priv: "{{ dbname }}.*:ALL/*.*:RELOAD,SLAVE MONITOR,BINLOG MONITOR,BINLOG ADMIN"
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
+  loop: "{{ mysql_databases | dict2items | subelements('value.hosts') }}"
+  vars:
+    backup_username: "{{ item.0.value.backup_username }}"
+    backup_password: "{{ item.0.value.backup_password }}"
+    dbname: "{{ item.0.value.dbname }}"
+  when: config_done is defined
+
+- name: Allow backup database user to localhost for maxscale connections
+  community.mysql.mysql_user:
+    name: "{{ backup_username }}"
+    host: "localhost"
+    password: "{{ mysql_backup_user_password }}"
+    priv: "{{ dbname }}.*:ALL/*.*:RELOAD,SLAVE MONITOR,BINLOG MONITOR,BINLOG ADMIN"
+    state: present
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
+  loop: "{{ mysql_databases | dict2items | subelements('value.hosts') }}"
+  vars:
+    backup_username: "{{ item.0.value.backup_username }}"
+    password: "{{ item.0.value.password }}"
+    dbname: "{{ item.0.value.dbname }}"
+  when:
+    - config_done is defined
+    - use_proxysql is undefined
+    - groups['all'] | length > 1
+
+# ------------------------------------------------------------------------------
 # MySQL teamwire user/database
 # ------------------------------------------------------------------------------
 - name: Create Teamwire database(s)

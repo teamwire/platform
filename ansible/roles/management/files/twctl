@@ -645,6 +645,7 @@ webclient() {
 get_database_configuration() {
     AESKEY="$(vault_read_secrets database/aes_key)"
     DB_PASSWORD="$(vault_read_secrets database/password)"
+    MYSQL_BACKUP_USER_PASSWORD="$(vault_read_secrets dbserver/mysql_backup_user_password)"
     REDIS_PASSWORD="$(vault_read_secrets redis/password)"
 
     if [ -z "${DB_PASSWORD}" ] || [ -z "${AESKEY}" ]; then
@@ -663,6 +664,7 @@ get_database_configuration() {
         MYSQL_PORT="$(_get_config_value mysql_port)"
         MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
         MYSQL_USER="$(_get_config_value teamwire_db_user)"
+        MYSQL_BACKUP_USER="$(_get_config_value teamwire_db_backup_user)"
         ORA_HOST="$(_get_config_value oracle_host)"
         ORA_PORT="$(_get_config_value oracle_port)"
         ORA_DATABASE="$(_get_config_value teamwire_db_name)"
@@ -682,6 +684,9 @@ get_database_configuration() {
 
         if [ -z "${MYSQL_USER}" ] && [ -z "${ORA_USER}" ]; then
             MYSQL_USER=teamwire
+        fi
+        if [ -z "${MYSQL_BACKUP_USER}" ]; then
+            MYSQL_BACKUP_USER="backup"
         fi
     fi
 
@@ -1168,11 +1173,11 @@ backupdb() {
     fi
 
     # Inject PASS environment var
-    export PASS=${MYSQL_PASS}
+    export PASS=${MYSQL_BACKUP_USER_PASSWORD}
 
     /usr/local/bin/backup_restore_db.sh -t backup \
         -o "${FILENAME}" -h "${MYSQL_HOST}" \
-        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}" -P "${MYSQL_PORT}"
+        -u "${MYSQL_BACKUP_USER}" -d "${MYSQL_DATABASE}" -P "${MYSQL_PORT}"
 }
 
 restoredb() {
@@ -1189,10 +1194,10 @@ restoredb() {
     fi
 
     # Inject PASS environment var
-    export PASS=${MYSQL_PASS}
+    export PASS=${MYSQL_BACKUP_USER_PASSWORD}
 
     /usr/local/bin/backup_restore_db.sh -t restore \
-        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}" \
+        -u "${MYSQL_BACKUP_USER}" -d "${MYSQL_DATABASE}" \
         -f -i "${FILENAME}" -h "${MYSQL_HOST}" -P "${MYSQL_PORT}"
 }
 

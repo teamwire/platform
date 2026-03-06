@@ -70,12 +70,26 @@ mysql_users =
         password          = "{{ teamwire_db_password }}"
         default_hostgroup = 10
         active            = 1
+    },
+    {
+        username          = "{{ teamwire_db_backup_user | default('backup') }}"
+        password          = "{{ mysql_backup_user_password }}"
+        default_hostgroup = 10
+        active            = 1
     }
 )
 
 # Read/Write Splitting Rules
 mysql_query_rules =
 (
+    {
+        rule_id               = 50
+        active                = 1
+        username              = "{{ teamwire_db_backup_user | default('backup') }}"
+        destination_hostgroup = 10
+        apply                 = 1
+        comment               = "FORCE MYDUMPER TO STAY ON WRITER"
+    },
     # Rule 100: Send 'SELECT ... FOR UPDATE' to Writer (HG10)
     {
         rule_id               = 100
