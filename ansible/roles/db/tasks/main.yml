@@ -185,7 +185,7 @@
     name: "{{ username }}"
     host: "{{ item.1 }}"
     password: "{{ password }}"
-    priv: "{{ dbname }}.*:ALL/*.*:RELOAD,SLAVE MONITOR,BINLOG MONITOR,BINLOG ADMIN"
+    priv: "{{ dbname }}.*:ALL"
     state: present
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
@@ -202,7 +202,7 @@
     name: "{{ username }}"
     host: "{{ hostvars[groups['management_servers'] | sort | first].private_ip }}"
     password: "{{ password }}"
-    priv: "{{ dbname }}.*:ALL/*.*:RELOAD,SLAVE MONITOR,BINLOG MONITOR,BINLOG ADMIN"
+    priv: "{{ dbname }}.*:ALL"
     state: present
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
@@ -222,7 +222,7 @@
     name: "{{ username }}"
     host: "localhost"
     password: "{{ password }}"
-    priv: "{{ dbname }}.*:ALL/*.*:RELOAD,SLAVE MONITOR,BINLOG MONITOR,BINLOG ADMIN"
+    priv: "{{ dbname }}.*:ALL"
     state: present
     login_user: root
     login_unix_socket: /var/run/mysqld/mysqld.sock
