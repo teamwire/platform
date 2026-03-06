@@ -81,7 +81,7 @@ static_checks['mail_queue_length_single'] = [
 static_checks.setdefault('memory_linux', [])
 
 static_checks['memory_linux'] = [
-{'value': ('mem_linux', None, {'levels_ram': ('perc_used', (85.0, 90.0)), 'levels_swap': ('perc_used', (80.0, 90.0)), 'levels_committed': 'ignore'}), 'condition': {}, 'options': {'disabled': False, 'description': 'SWAP'}},
+{'value': ('mem_linux', None, {'levels_ram': ('perc_used', (85.0, 90.0)), 'levels_committed': 'ignore'}), 'condition': {}, 'options': {'disabled': False, 'description': 'SWAP'}},
 ] + static_checks['memory_linux']
 static_checks.setdefault('memory_linux', [])
 
