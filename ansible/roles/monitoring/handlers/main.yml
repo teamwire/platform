@@ -24,6 +24,10 @@
     user: "{{ checkmk_site }}"
   listen: Install mkp package
   notify: Update checkmk config
+  register: enable_mkp_result
+  until: enable_mkp_result is succeeded
+  retries: 3
+  delay: 5
 
 # ------------------------------------------------------------------------------
 # Update checkmk site configuration

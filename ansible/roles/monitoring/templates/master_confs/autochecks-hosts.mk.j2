@@ -24,6 +24,9 @@
 {% endif %}
   {'check_plugin_name': 'mrpe', 'item': 'OOMs', 'parameters': {}, 'service_labels': {}},
   {'check_plugin_name': 'mrpe', 'item': 'UFW Status', 'parameters': {}, 'service_labels': {}},
+{% if groups['all'] | length() == 1 or (groups['frontend_servers'] is defined and inventory_hostname in groups['frontend_servers']) %}
+  {'check_plugin_name': 'mrpe', 'item': 'HAProxy Connections', 'parameters': {}, 'service_labels': {}},
+{% endif %}
 {% if groups['all'] | length() == 1 or ( groups['database_servers'] is defined and inventory_hostname in groups['database_servers'] ) or ( groups['all'] | length > 1 and groups['database_servers'] is undefined and inventory_hostname in groups['backend_servers'] )%}
   {'check_plugin_name': 'mysql_ping', 'item': 'mysql', 'parameters': {}, 'service_labels': {}},
 {% endif %}
