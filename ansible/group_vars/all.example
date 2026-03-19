@@ -119,8 +119,9 @@ webclient_hostname: ""
 # enable_stun: "true"
 
 # VOIP_VIDEO_RAM
-# Here you can lower the memory limit of voip containers on your own responsibility.
-# The recommended value is 3584, but a value between 256 and 3584 is permitted.
+# Here you can adjust the memory limit of the video bridge containers on your own responsibility.
+# The recommended value is 3584, but values greater than 256 are permitted depending on the
+# available resources.
 # Uncomment the following line and set your value.
 # VOIP_VIDEO_RAM: 400
 

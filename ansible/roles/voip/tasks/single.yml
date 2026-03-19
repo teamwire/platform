@@ -203,6 +203,7 @@
       ENABLE_COLIBRI_WEBSOCKET: "1"
       PUBLIC_URL: "https://{{ external_hostname | first if external_hostname | first | length() > 1 else external_hostname }}:8443"
       JVB_WS_SERVER_ID: "172.18.0.5"
+      VIDEOBRIDGE_MAX_MEMORY: "{{ (VOIP_VIDEO_RAM | default(400, true)) ~ 'm' }}"
     jvb_advertise_ips_env_var:
       JVB_ADVERTISE_IPS: "{{ jvb_public_ip }}"
   when: config_done is defined
