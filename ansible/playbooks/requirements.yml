@@ -494,7 +494,26 @@
           Invalid value for configuration option `enable_tls_mysql`.
           Please ensure your value is quoted and is either "true" or "false".
       run_once: true
-      when: enable_tls_mysql is defined
+      when:
+        - enable_tls_mysql is defined
+        - not (use_proxysql is defined and
+               groups['all'] | length > 1 and
+               groups.database_servers is defined)
+
+    - name: Assert enable_tls_mysql is valid with proxysql
+      ansible.builtin.assert:
+        that:
+          - enable_tls_mysql is string
+          - enable_tls_mysql | lower == "true"
+        msg: >-
+          Invalid value for configuration option `enable_tls_mysql` with proxysql.
+          Please ensure your value is quoted and is either "true" or undefined.
+      run_once: true
+      when:
+        - enable_tls_mysql is defined
+        - use_proxysql is defined
+        - groups['all'] | length() > 1
+        - groups.database_servers is defined
 
     - name: Check if enable_tls_mysql has all required values and can be enabled on the environment
       block:
