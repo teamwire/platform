@@ -268,9 +268,10 @@ sender_address:
 # The name of the outgoing mail server, e.g. "mail.example.com"
 smtp_smarthost:
 
-# The credentials (user name and password) for the outgoing mail server -
-# if you do not set these values authentication will be disabled.
-smtp_smartuser:
+# The username required for SMTP AUTH when connecting to the smtp_smarthost.
+# To skip authentication for outgoing mail ensure the smtp_smartuser
+# remains commented.
+# smtp_smartuser: "mail_user@example.com"
 
 # The port to connect to. Defaults to 587 (submission)
 smtp_port: 587
