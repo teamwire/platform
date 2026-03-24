@@ -10,6 +10,7 @@ MYSQL_PORT="{{ mysql_port | default() }}"
 {% endif %}
 MYSQL_DATABASE="{{ teamwire_db_name if mysql_host is defined else '' }}"
 MYSQL_USER="{{ teamwire_db_user if mysql_host is defined else '' }}"
+MYSQL_BACKUP_USER="{{ teamwire_db_backup_user | default('backup') }}"
 ORA_HOST="{{ oracle_host | default() }}"
 ORA_PORT="{{ oracle_port | default() }}"
 ORA_DATABASE="{{ teamwire_db_name if oracle_host is defined else '' }}"

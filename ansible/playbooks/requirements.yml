@@ -428,6 +428,27 @@
       when: ENABLE_CSP is defined
 
 # ------------------------------------------------------------------------------
+# Ensure to check the database user names
+# ------------------------------------------------------------------------------
+    - name: Ensure that the database user are individually named
+      ansible.builtin.assert:
+        that:
+          - teamwire_db_user | default('teamwire') != teamwire_db_backup_user | default('backup')
+        msg: >-
+          Ensure to individually name the Database users for the application and the backup
+          The default value for the teamwire_db_user is "teamwire" and the default value for
+          the teamwire_db_backup_user is "backup".
+          Current Values:
+            teamwire_db_user: "{{ teamwire_db_user | default('teamwire') }}"
+            teamwire_db_backup_user: "{{ teamwire_db_backup_user | default('backup') }}"
+      run_once: true
+      when:
+        - teamwire_db_user is defined or
+          teamwire_db_backup_user is defined
+        - mysql_host is undefined
+        - oracle_host is undefined
+
+# ------------------------------------------------------------------------------
 # Ensure to check the requirements for enable_tls_mysql
 # ------------------------------------------------------------------------------
     - name: Assert enable_tls_mysql is valid

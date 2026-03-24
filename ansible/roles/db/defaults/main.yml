@@ -5,6 +5,8 @@ mysql_databases:
     username: "{{ teamwire_db_user | default('teamwire') }}"
     password: "{{ teamwire_db_password }}"
     hosts: "{{ (groups['backend_servers']) | map('extract', hostvars, 'private_ip') | list if groups['all'] | length > 1 else ['localhost'] }}"
+    backup_username: "{{ teamwire_db_backup_user | default('backup') }}"
+    backup_password: "{{ mysql_backup_user_password }}"
 
 optimizer_search_depth_value: 0
 

@@ -23,6 +23,7 @@
     group: root
     mode: 0644
   run_once: true
+  register: teamwire_proxysql_nomad_file
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
 
 - name: Write ProxySQL config file
@@ -33,6 +34,7 @@
     group: root
     mode: 0644
   run_once: true
+  notify: Restart teamwire-proxysql nomad job
 
 - name: Login to the docker registry
   community.docker.docker_login:
