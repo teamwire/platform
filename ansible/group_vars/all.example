@@ -252,6 +252,18 @@ allow_user_query: "no"
 # The default value is "true".
 # mysql_tls_admin_enabled: "true"
 
+# The default ProxySQL RAM allocation 256 can be overridden.
+# On backend servers, the value is used as defined. On the management server,
+# it is automatically multiplied by a factor of 1.5.
+# Uncomment the following line and set the desired value, for example:
+# proxysql_ram_alloc: 512
+
+# If the backend and management servers should use the same amount of memory,
+# this value can be set. In that case, both will use the same allocation.
+# If this variable is defined, proxysql_ram_alloc must be commented out.
+# Uncomment the following line and set a value greater than 256, for example:
+# proxysql_mgm_alloc: 512
+
 ##############################################################################
 ## MAIL
 ##############################################################################

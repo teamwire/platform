@@ -407,6 +407,40 @@
       run_once: true
       when: VOIP_VIDEO_RAM is defined
 
+    - name: Assert that proxysql_ram_alloc is an integer
+      ansible.builtin.assert:
+        that:
+          - proxysql_ram_alloc is integer
+        msg: >-
+          Please make sure that proxysql_ram_alloc is an unquoted integer
+      run_once: true
+      when:
+        - proxysql_ram_alloc is defined
+        - groups['all'] | length() > 1
+
+    - name: Assert that proxysql_ram_alloc is undefined when proxysql_mgm_alloc is defined
+      ansible.builtin.assert:
+        that:
+          - proxysql_ram_alloc is not defined
+        msg: >-
+          Please ensure that proxysql_ram_alloc is undefined when proxysql_mgm_alloc is defined
+      run_once: true
+      when:
+        - proxysql_mgm_alloc is defined
+        - groups['all'] | length() > 1
+
+    - name: Assert that proxysql_mgm_alloc is an integer and greater or equal 256
+      ansible.builtin.assert:
+        that:
+          - proxysql_mgm_alloc is integer
+          - proxysql_mgm_alloc|int >= 256
+        msg: >-
+          Please make sure that proxysql_mgm_alloc is an unquoted integer and the value is greater or equal 256
+      run_once: true
+      when:
+        - proxysql_mgm_alloc is defined
+        - groups['all'] | length() > 1
+
     - name: Ensure allow_tcp_forwarding is set to yes or no when enabled
       ansible.builtin.assert:
         that:

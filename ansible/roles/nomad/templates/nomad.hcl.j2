@@ -59,7 +59,7 @@ client {
   node_class = "node_not_in_group_backend_servers"
 {% endif %}
   meta = {
-    "groups" = "{{ group_names | join(',') }}{{ ( ',' + tw_environments[inventory_hostname] | default() ) if tw_environments[inventory_hostname] is defined }}"
+    "groups" = "{{ (group_names + (['proxysql_backend'] if inventory_hostname in groups['backend_servers'] and inventory_hostname not in groups['management_servers'] else []) + (['proxysql_management'] if inventory_hostname in groups['management_servers'] else [])) | join(',') ~ (',' + tw_environments[inventory_hostname] if tw_environments[inventory_hostname] is defined ) }}"
   }
 }
 
