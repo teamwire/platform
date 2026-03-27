@@ -25,6 +25,7 @@
   run_once: true
   register: teamwire_proxysql_nomad_file
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+  notify: Run ProxySQL nomad job
 
 - name: Write ProxySQL config file
   ansible.builtin.template:
@@ -96,12 +97,5 @@
   environment:
     NOMAD_TOKEN: "{{ management_token.stdout }}"
 
-- name: Run ProxySQL nomad job
-  ansible.builtin.command:
-    cmd: nomad job run -detach /data/proxysql/tw-proxysql.nomad
-  become: true
-  become_user: teamwire
-  run_once: true
-  changed_when: true
-  environment:
-    NOMAD_TOKEN: "{{ management_token.stdout }}"
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
