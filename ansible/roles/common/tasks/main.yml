@@ -111,6 +111,14 @@
     - config_done is defined
     - not ansible_local.offline_mode.stat.exists
 
+- name: Configure APT to keep existing configuration files
+  ansible.builtin.copy:
+    src: 90keep-old-config
+    dest: /etc/apt/apt.conf.d/90keep-old-config
+    mode: '0644'
+    owner: root
+    group: root
+
 - name: Automatically remove obsolete packages
   ansible.builtin.copy:
     src: apt-autoremove

@@ -19,6 +19,9 @@
 {% if groups['all'] | length == 1 or ( groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] ) %}
   {'check_plugin_name': 'mrpe', 'item': 'Platform Deployment Status', 'parameters': {}, 'service_labels': {}},
 {% endif %}
+{% if use_proxysql is defined and groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] and groups['database_servers'] is defined %}
+  {'check_plugin_name': 'mrpe', 'item': 'Nomad Job teamwire-proxysql', 'parameters': {}, 'service_labels': {}},
+{% endif %}
 {% if groups['docker_registry'] is defined and inventory_hostname in groups['docker_registry'] %}
   {'check_plugin_name': 'mrpe', 'item': 'Container Docker Registry', 'parameters': {}, 'service_labels': {}},
 {% endif %}

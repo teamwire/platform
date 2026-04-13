@@ -47,6 +47,7 @@
   ansible.builtin.set_fact:
     db_username: "{{ item.value.username }}"
     db_host: "{{ item.value.hosts }}"
+    backup_username: "{{ item.value.backup_username }}"
   loop: "{{ mysql_databases | dict2items }}"
   loop_control:
     label: "{{ item.value.username }}"
@@ -64,6 +65,54 @@
     - item.User == db_username
     - "item.Host not in db_host"
     - item.Host != "localhost"
+    - item.Host != hostvars[groups['management_servers'] | sort | first].private_ip
+
+# ------------------------------------------------------------------------------
+# Cleanup available backup users
+# ------------------------------------------------------------------------------
+- name: Cleanup available backup users - Single Server
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  throttle: 1
+  with_items: "{{ mysql_user_data.query_result }}"
+  when:
+    - groups['all'] | length == 1
+    - item.User == backup_username
+    - item.Host != "localhost"
+
+- name: Cleanup available backup users - Cluster
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  throttle: 1
+  with_items: "{{ mysql_user_data.query_result }}"
+  when:
+    - groups['all'] | length > 1
+    - item.User == backup_username
+    - use_proxysql is undefined
+    - item.Host != "localhost"
+    - item.Host != hostvars[groups['management_servers'] | sort | first].private_ip
+
+- name: Cleanup available backup users - Cluster with proxysql
+  community.mysql.mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ item.User }}"
+    host: "{{ item.Host }}"
+    state: absent
+  throttle: 1
+  with_items: "{{ mysql_user_data.query_result }}"
+  when:
+    - groups['all'] | length > 1
+    - item.User == backup_username
+    - use_proxysql is defined
     - item.Host != hostvars[groups['management_servers'] | sort | first].private_ip
 
 # ------------------------------------------------------------------------------

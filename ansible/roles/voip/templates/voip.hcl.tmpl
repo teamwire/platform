@@ -425,6 +425,7 @@ job "voip" {
                 JVB_AUTH_USER                   = "jvb${NOMAD_ALLOC_INDEX}"
                 USERNAME                        = "jvb${NOMAD_ALLOC_INDEX}"
                 MUC_NICKNAME                    = "jvb${NOMAD_ALLOC_INDEX}"
+                VIDEOBRIDGE_MAX_MEMORY          = "{{ (VOIP_VIDEO_RAM | default(400, true)) ~ 'm' }}"
 {% if jvb_public_ip is defined %}
                 JVB_ADVERTISE_IPS               = "{{ jvb_public_ip }}"
 {% endif %}
@@ -432,7 +433,7 @@ job "voip" {
 
             resources {
                 cpu    = 900 #900
-                memory = {{ VOIP_VIDEO_RAM if VOIP_VIDEO_RAM is defined and VOIP_VIDEO_RAM is integer and VOIP_VIDEO_RAM | int <= 3584 else 400}}
+                memory = {{ VOIP_VIDEO_RAM if VOIP_VIDEO_RAM is defined and VOIP_VIDEO_RAM is integer and VOIP_VIDEO_RAM | int else 400}}
             }
         }
     }

@@ -397,16 +397,49 @@
           when: user_input.user_input | lower != "yes"
       run_once: true
 
-    - name: Assert that VOIP_VIDEO_RAM is an integer and has value between 256 and 3584
+    - name: Assert that VOIP_VIDEO_RAM is an integer and greater 256
       ansible.builtin.assert:
         that:
           - VOIP_VIDEO_RAM is integer
-          - VOIP_VIDEO_RAM|int <= 3584
           - VOIP_VIDEO_RAM|int >= 256
         msg: >-
-          Please make sure that VOIP_VIDEO_RAM is an unquoted integer and the value is between 256 and 3584
+          Please make sure that VOIP_VIDEO_RAM is an unquoted integer and greater 256
       run_once: true
       when: VOIP_VIDEO_RAM is defined
+
+    - name: Assert that proxysql_ram_alloc is an integer
+      ansible.builtin.assert:
+        that:
+          - proxysql_ram_alloc is integer
+        msg: >-
+          Please make sure that proxysql_ram_alloc is an unquoted integer
+      run_once: true
+      when:
+        - proxysql_ram_alloc is defined
+        - groups['all'] | length() > 1
+
+    - name: Assert that proxysql_ram_alloc is undefined when proxysql_mgm_alloc is defined
+      ansible.builtin.assert:
+        that:
+          - proxysql_ram_alloc is not defined
+        msg: >-
+          Please ensure that proxysql_ram_alloc is undefined when proxysql_mgm_alloc is defined
+      run_once: true
+      when:
+        - proxysql_mgm_alloc is defined
+        - groups['all'] | length() > 1
+
+    - name: Assert that proxysql_mgm_alloc is an integer and greater or equal 256
+      ansible.builtin.assert:
+        that:
+          - proxysql_mgm_alloc is integer
+          - proxysql_mgm_alloc|int >= 256
+        msg: >-
+          Please make sure that proxysql_mgm_alloc is an unquoted integer and the value is greater or equal 256
+      run_once: true
+      when:
+        - proxysql_mgm_alloc is defined
+        - groups['all'] | length() > 1
 
     - name: Ensure allow_tcp_forwarding is set to yes or no when enabled
       ansible.builtin.assert:
@@ -429,6 +462,27 @@
       when: ENABLE_CSP is defined
 
 # ------------------------------------------------------------------------------
+# Ensure to check the database user names
+# ------------------------------------------------------------------------------
+    - name: Ensure that the database user are individually named
+      ansible.builtin.assert:
+        that:
+          - teamwire_db_user | default('teamwire') != teamwire_db_backup_user | default('backup')
+        msg: >-
+          Ensure to individually name the Database users for the application and the backup
+          The default value for the teamwire_db_user is "teamwire" and the default value for
+          the teamwire_db_backup_user is "backup".
+          Current Values:
+            teamwire_db_user: "{{ teamwire_db_user | default('teamwire') }}"
+            teamwire_db_backup_user: "{{ teamwire_db_backup_user | default('backup') }}"
+      run_once: true
+      when:
+        - teamwire_db_user is defined or
+          teamwire_db_backup_user is defined
+        - mysql_host is undefined
+        - oracle_host is undefined
+
+# ------------------------------------------------------------------------------
 # Ensure to check the requirements for enable_tls_mysql
 # ------------------------------------------------------------------------------
     - name: Assert enable_tls_mysql is valid
@@ -440,7 +494,26 @@
           Invalid value for configuration option `enable_tls_mysql`.
           Please ensure your value is quoted and is either "true" or "false".
       run_once: true
-      when: enable_tls_mysql is defined
+      when:
+        - enable_tls_mysql is defined
+        - not (use_proxysql is defined and
+               groups['all'] | length > 1 and
+               groups.database_servers is defined)
+
+    - name: Assert enable_tls_mysql is valid with proxysql
+      ansible.builtin.assert:
+        that:
+          - enable_tls_mysql is string
+          - enable_tls_mysql | lower == "true"
+        msg: >-
+          Invalid value for configuration option `enable_tls_mysql` with proxysql.
+          Please ensure your value is quoted and is either "true" or undefined.
+      run_once: true
+      when:
+        - enable_tls_mysql is defined
+        - use_proxysql is defined
+        - groups['all'] | length() > 1
+        - groups.database_servers is defined
 
     - name: Check if enable_tls_mysql has all required values and can be enabled on the environment
       block:

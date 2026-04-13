@@ -398,6 +398,19 @@ is_legacy_installation() {
     fi
 }
 
+check_if_external_database_is_used() {
+    local check_mysql_host
+    local check_oracle_host
+    check_mysql_host="$(_get_config_value mysql_host)"
+    check_oracle_host="$(_get_config_value oracle_host)"
+
+    if [[ -n "${check_mysql_host}" || -n "${check_oracle_host}" ]]; then
+      return 0
+    else
+      return 1
+    fi
+}
+
 voip_start_cluster() {
     ${NOMAD} run /data/voip/voip.hcl
 }
@@ -642,9 +655,58 @@ webclient() {
     esac
 }
 
+proxysql_start_cluster() {
+    ${NOMAD} run /data/proxysql/tw-proxysql.nomad
+}
+
+proxysql_restart_cluster() {
+    ${NOMAD} job restart -on-error=fail teamwire-proxysql
+}
+
+proxysql_stop_cluster() {
+    ${NOMAD} job stop teamwire-proxysql
+}
+
+proxysql_status_cluster() {
+    ${NOMAD} status teamwire-proxysql
+}
+
+proxysql() {
+    if [ "${INSTALLATION}" != "cluster" ]; then
+        echo "The twctl proxysql command is only available in a cluster environment."
+        exit 1
+    elif check_if_external_database_is_used; then
+        echo "The twctl proxysql command is only available in a cluster environment without external database."
+        exit 1
+    fi
+    case ${OPTION} in
+        start)
+            "proxysql_start_${INSTALLATION}"
+            ;;
+        stop)
+            "proxysql_stop_${INSTALLATION}"
+            ;;
+        restart)
+            "proxysql_restart_${INSTALLATION}"
+            ;;
+        status)
+            "proxysql_status_${INSTALLATION}"
+            ;;
+        *)
+            echo "Managing proxysql containers"
+            echo "Usage: twctl proxysql {start|stop|restart|status}"
+            echo "       start   : Starts the proxysql containers if not already running"
+            echo "       stop    : Stops the proxysql containers"
+            echo "       restart : Restart the proxysql containers"
+            echo "       status  : Shows the status of proxysql containers"
+            ;;
+    esac
+}
+
 get_database_configuration() {
     AESKEY="$(vault_read_secrets database/aes_key)"
     DB_PASSWORD="$(vault_read_secrets database/password)"
+    MYSQL_BACKUP_USER_PASSWORD="$(vault_read_secrets dbserver/mysql_backup_user_password)"
     REDIS_PASSWORD="$(vault_read_secrets redis/password)"
 
     if [ -z "${DB_PASSWORD}" ] || [ -z "${AESKEY}" ]; then
@@ -663,6 +725,7 @@ get_database_configuration() {
         MYSQL_PORT="$(_get_config_value mysql_port)"
         MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
         MYSQL_USER="$(_get_config_value teamwire_db_user)"
+        MYSQL_BACKUP_USER="$(_get_config_value teamwire_db_backup_user)"
         ORA_HOST="$(_get_config_value oracle_host)"
         ORA_PORT="$(_get_config_value oracle_port)"
         ORA_DATABASE="$(_get_config_value teamwire_db_name)"
@@ -682,6 +745,9 @@ get_database_configuration() {
 
         if [ -z "${MYSQL_USER}" ] && [ -z "${ORA_USER}" ]; then
             MYSQL_USER=teamwire
+        fi
+        if [ -z "${MYSQL_BACKUP_USER}" ]; then
+            MYSQL_BACKUP_USER="backup"
         fi
     fi
 
@@ -783,7 +849,7 @@ help() {
     echo "voip            Manage voip containers {start|stop|restart|status}"
     echo "dashboard       Manage dashboard containers {start|stop|restart|status}"
     echo "webclient       Manage webclient containers {start|stop|restart|status}"
-
+    echo "proxysql        Manage proxysql containers {start|stop|restart|status}"
 }
 
 test_server_condition_for_preflight_check() {
@@ -1030,6 +1096,9 @@ create_report() {
         if [ -n "${CHECK_SSL}" ]; then
             report_map["Validate certificates from webserver"]=$(for name in $(_get_config_value_array external_hostname); do echo -en "${name}:\n"; ansible frontend_servers -i "${ANSIBLE_DIR}/cluster_hosts" -m shell -a "timeout 10 openssl s_client -quiet -connect localhost:443 -servername ${name} -verify_return_error 2>&1"; done)
         fi
+        if ! check_if_external_database_is_used; then
+            report_map["Show proxysql containers"]="$(nomad job status teamwire-proxysql)"
+        fi
 
         # Fetch Logs for Cluster environments
         # Ensure that logs on cluster are first written to /data
@@ -1063,6 +1132,11 @@ create_report() {
                 fi
                 ansible -i "${ANSIBLE_DIR}/cluster_hosts" ${HOST_GROUP} -b -m shell -a "${JOURNALCTL} -t ${syslog_identifier} > ${LOG_OUTPUT}/{{ inventory_hostname }}-${syslog_identifier}.log" > /dev/null 2>&1
             done
+        fi
+
+        # Fetch proxysql logs
+        if ! check_if_external_database_is_used; then
+          ansible -i "${ANSIBLE_DIR}/cluster_hosts" management_servers,backend_servers -b -m shell -a "${JOURNALCTL} -t teamwire-proxysql > ${LOG_OUTPUT}/{{ inventory_hostname }}-teamwire-proxysql.log" > /dev/null 2>&1
         fi
 
         # Fetch haproxy logs
@@ -1168,11 +1242,11 @@ backupdb() {
     fi
 
     # Inject PASS environment var
-    export PASS=${MYSQL_PASS}
+    export PASS=${MYSQL_BACKUP_USER_PASSWORD}
 
     /usr/local/bin/backup_restore_db.sh -t backup \
         -o "${FILENAME}" -h "${MYSQL_HOST}" \
-        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}" -P "${MYSQL_PORT}"
+        -u "${MYSQL_BACKUP_USER}" -d "${MYSQL_DATABASE}" -P "${MYSQL_PORT}"
 }
 
 restoredb() {
@@ -1189,10 +1263,10 @@ restoredb() {
     fi
 
     # Inject PASS environment var
-    export PASS=${MYSQL_PASS}
+    export PASS=${MYSQL_BACKUP_USER_PASSWORD}
 
     /usr/local/bin/backup_restore_db.sh -t restore \
-        -u "${MYSQL_USER}" -d "${MYSQL_DATABASE}" \
+        -u "${MYSQL_BACKUP_USER}" -d "${MYSQL_DATABASE}" \
         -f -i "${FILENAME}" -h "${MYSQL_HOST}" -P "${MYSQL_PORT}"
 }
 
@@ -1627,6 +1701,11 @@ while [ $# -gt 0 ]; do
             ;;
         webclient)
             TASK="webclient"
+            OPTION="$2"
+            shift
+            ;;
+        proxysql)
+            TASK="proxysql"
             OPTION="$2"
             shift
             ;;

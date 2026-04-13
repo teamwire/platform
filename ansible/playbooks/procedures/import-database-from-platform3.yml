@@ -5,7 +5,7 @@
   vars:
     default_db_host: "127.0.0.1"
     default_db_port: 3307
-    default_db_user: "teamwire"
+    default_db_user: "backup"
     default_db_name: "teamwire"
     socket_path: "/var/run/mysqld/mysqld.sock"
 
@@ -29,7 +29,7 @@
 
     - name: Read DB password from Twctl
       ansible.builtin.set_fact:
-        db_password: "{{ lookup('pipe', 'twctl secrets read database/password | tr -d \"\\n\"') }}"
+        db_password: "{{ lookup('pipe', 'twctl secrets read dbserver/mysql_backup_user_password | tr -d \"\\n\"') }}"
 
     - name: Check if MySQL socket exists
       ansible.builtin.stat:

@@ -119,8 +119,9 @@ webclient_hostname: ""
 # enable_stun: "true"
 
 # VOIP_VIDEO_RAM
-# Here you can lower the memory limit of voip containers on your own responsibility.
-# The recommended value is 3584, but a value between 256 and 3584 is permitted.
+# Here you can adjust the memory limit of the video bridge containers on your own responsibility.
+# The recommended value is 3584, but values greater than 256 are permitted depending on the
+# available resources.
 # Uncomment the following line and set your value.
 # VOIP_VIDEO_RAM: 400
 
@@ -251,6 +252,18 @@ allow_user_query: "no"
 # The default value is "true".
 # mysql_tls_admin_enabled: "true"
 
+# The default ProxySQL RAM allocation 256 can be overridden.
+# On backend servers, the value is used as defined. On the management server,
+# it is automatically multiplied by a factor of 1.5.
+# Uncomment the following line and set the desired value, for example:
+# proxysql_ram_alloc: 512
+
+# If the backend and management servers should use the same amount of memory,
+# this value can be set. In that case, both will use the same allocation.
+# If this variable is defined, proxysql_ram_alloc must be commented out.
+# Uncomment the following line and set a value greater than 256, for example:
+# proxysql_mgm_alloc: 512
+
 ##############################################################################
 ## MAIL
 ##############################################################################
@@ -267,9 +280,10 @@ sender_address:
 # The name of the outgoing mail server, e.g. "mail.example.com"
 smtp_smarthost:
 
-# The credentials (user name and password) for the outgoing mail server -
-# if you do not set these values authentication will be disabled.
-smtp_smartuser:
+# The username required for SMTP AUTH when connecting to the smtp_smarthost.
+# To skip authentication for outgoing mail ensure the smtp_smartuser
+# remains commented.
+# smtp_smartuser: "mail_user@example.com"
 
 # The port to connect to. Defaults to 587 (submission)
 smtp_port: 587

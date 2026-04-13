@@ -1,0 +1,18 @@
+---
+
+- name: Restart teamwire-proxysql nomad job
+  ansible.builtin.command:
+    cmd: nomad job restart -on-error=fail teamwire-proxysql
+  environment:
+    NOMAD_TOKEN: "{{ management_token.stdout }}"
+  when: teamwire_proxysql_nomad_file is not changed
+
+- name: Run ProxySQL nomad job
+  ansible.builtin.command:
+    cmd: nomad job run -detach /data/proxysql/tw-proxysql.nomad
+  become: true
+  become_user: teamwire
+  run_once: true
+  changed_when: true
+  environment:
+    NOMAD_TOKEN: "{{ management_token.stdout }}"

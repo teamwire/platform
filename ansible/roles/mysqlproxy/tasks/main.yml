@@ -23,7 +23,9 @@
     group: root
     mode: 0644
   run_once: true
+  register: teamwire_proxysql_nomad_file
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
+  notify: Run ProxySQL nomad job
 
 - name: Write ProxySQL config file
   ansible.builtin.template:
@@ -33,6 +35,7 @@
     group: root
     mode: 0644
   run_once: true
+  notify: Restart teamwire-proxysql nomad job
 
 - name: Login to the docker registry
   community.docker.docker_login:
@@ -76,12 +79,23 @@
   delegate_to: "{{ groups.hashi_servers | sort | first }}"
   when: groups['all'] | length > 1
 
-- name: Run ProxySQL nomad job
-  ansible.builtin.command:
-    cmd: nomad job run -detach /data/proxysql/tw-proxysql.nomad
-  become: true
-  become_user: teamwire
-  run_once: true
-  changed_when: true
+- name: Check value Memory Oversubscription
+  ansible.builtin.shell: nomad operator scheduler get-config | grep "Memory Oversubscription" | awk -F'=' '{print $2}' | xargs
+  register: memory_oversubscription_value
+  changed_when: false
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
+  when: groups['all'] | length > 1
   environment:
     NOMAD_TOKEN: "{{ management_token.stdout }}"
+
+- name: Set Memory Oversubscription to true
+  ansible.builtin.command: nomad operator scheduler set-config -memory-oversubscription=true
+  delegate_to: "{{ groups.hashi_servers | sort | first }}"
+  when:
+    - groups['all'] | length > 1
+    - memory_oversubscription_value.stdout == "false"
+  environment:
+    NOMAD_TOKEN: "{{ management_token.stdout }}"
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
