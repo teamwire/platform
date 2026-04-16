@@ -77,6 +77,7 @@
     env:
       CMK_SITE_ID: "{{ checkmk_site }}"
       MAIL_RELAY_HOST: "[127.0.1.1]:25"
+      CMK_LIVESTATUS_TCP: "off"
 
 # ------------------------------------------------------------------------------
 # Ensure omd site is created before continueing configure
@@ -242,6 +243,18 @@
     command: "ln -s /omd/sites/{{ checkmk_site }}/local/share/check_mk/agents/plugins/{{ item }} /omd/sites/{{ checkmk_site }}/share/check_mk/agents/plugins/{{ item }}"
   when: "custom_plugin_links.results | selectattr('item', 'equalto', item) | map(attribute='files') | sum(start=[]) | selectattr('path', 'search', 'share/check_mk/agents/plugins/' + item) == []"
   with_items: "{{ monitoring_custom_agent_plugins }}"
+
+# ------------------------------------------------------------------------------
+# Ensure xinetd configuration inside the container for livestatus is removed
+# ------------------------------------------------------------------------------
+- name: Ensure mk-livestatus configuration file is not present
+  ansible.builtin.file:
+    name: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/etc/xinetd.d/mk-livestatus"
+    state: absent
+  notify: Restart omd site
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
 
 # ------------------------------------------------------------------------------
 # Ensure omd site is up and running
