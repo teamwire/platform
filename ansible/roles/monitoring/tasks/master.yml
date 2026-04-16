@@ -228,9 +228,14 @@
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
+- name: Get checkmk container infos
+  community.docker.docker_container_info:
+    name: checkmk
+  register: checkmk_container_info
+
 - name: Check if file links for mkp plugins exists
   ansible.builtin.find:
-    paths: /var/lib/docker/
+    paths: "{{ checkmk_container_info.container.GraphDriver.Data.UpperDir }}"
     patterns: "{{ item }}"
     file_type: link
     recurse: true
@@ -274,11 +279,6 @@
 # Set Facts for checkmk users with authorization secrets
 # Necessary for agent install
 # ------------------------------------------------------------------------------
-- name: Get checkmk container infos
-  community.docker.docker_container_info:
-    name: checkmk
-  register: checkmk_container_info
-
 - name: Get agent_registration secret
   ansible.builtin.slurp:
     src: "{{ checkmk_mountpoint }}/{{ checkmk_site }}/var/check_mk/web/agent_registration/automation.secret"
