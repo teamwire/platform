@@ -28,6 +28,9 @@ RELEASE_FILE=/usr/local/share/twctl/teamwire-release
 RELEASE_VERSION_FILE=/etc/ansible/facts.d/backend_stack_version.fact
 DFLT_TMOUT=10
 
+# Set path to ansible configuration via env variable
+export ANSIBLE_CONFIG="${ANSIBLE_DIR}/ansible.cfg"
+
 # Set http proxy for the OpenSSL client if one is set
 PROXY_CHECK=$(apt-config dump Acquire::http::Proxy | awk '{print $2}' | tr -d \;\")
 
