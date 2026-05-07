@@ -104,4 +104,3 @@ lb2
 
 [load_balancers:vars]
 loadbalancer_external_ip=10.0.1.2
-loadbalancer_password="12secr34"
