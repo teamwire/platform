@@ -1196,7 +1196,7 @@ create_report() {
     report_map["Show twctl connectivity output"]=$(twctl connectivity 2>&1)
 
     if [ -n "${CHECK_SSL}" ]; then
-      report_map["Validate certificates locally"]=$(openssl verify -CAfile "${SSL_ROOT}" "${SSL_INTERMEDIATE}" "${SSL_CERTIFICATE}")
+      report_map["Validate certificates locally"]=$(openssl verify -CAfile "${SSL_ROOT}" -untrusted "${SSL_INTERMEDIATE}" "${SSL_CERTIFICATE}")
       report_map["Compare keyfile and certificate SHASUM"]=$(echo -e "Key: ${SSL_KEYFILE_SHA} \nCertificate: ${SSL_CERTIFICATE_SHA} \nKey and Certificate ${SSL_SHA_MSG}")
     fi
 
