@@ -42,4 +42,6 @@ secrets:
     path: secret/voip/prosody_key
   stun_password:
     path: secret/voip/stun_password
+  loadbalancer_password:
+    path: secret/loadbalancer/loadbalancer_password
 vault_certificate_ttl: 17532h
