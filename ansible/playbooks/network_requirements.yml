@@ -1,0 +1,111 @@
+---
+
+- name: Check required network connections
+  hosts: all
+  any_errors_fatal: true
+  gather_subset:
+    - '!all'
+    - '!min'
+    - 'local'
+  tasks:
+# ------------------------------------------------------------------------------
+# Connection checks
+# ------------------------------------------------------------------------------
+    - name: Check DNS Servers
+      ansible.builtin.command: "dig teamwire.eu @{{ item }} +short +time=5 +tries=1"
+      register: dns_check
+      failed_when: dns_check.stdout == "" or dns_check.rc != 0
+      changed_when: false
+      ignore_errors: true
+      with_items: "{{ dns_servers | default(ansible_local.general_facts.dns_servers) }}"
+
+    - name: Check endpoints for all environments # noqa command-instead-of-module
+      ansible.builtin.command: 'curl -s -o /dev/null -L --connect-timeout 5 --max-time 15 --retry 1 -w "%{http_code} %{http_version}\n" {{ item }}'
+      environment:
+        http_proxy: "{{ http_proxy | default('') }}"
+        https_proxy: "{{ http_proxy | default('') }}"
+      register: curl_check
+      failed_when:
+        - curl_check.rc != 0 or curl_check.stdout.split()[0] == "000"
+      changed_when: false
+      ignore_errors: true
+      with_items: "{{ ansible_local.general_facts.network_url_check.all_environment }}"
+
+    - name: Check endpoints necessary for cluster environments # noqa command-instead-of-module
+      ansible.builtin.command: 'curl -s -o /dev/null -L --connect-timeout 5 --max-time 15 --retry 1 -w "%{http_code} %{http_version}\n" {{ item }}'
+      environment:
+        http_proxy: "{{ http_proxy | default('') }}"
+        https_proxy: "{{ http_proxy | default('') }}"
+      register: curl_cluster_check
+      failed_when:
+        - curl_cluster_check.rc != 0 or curl_cluster_check.stdout.split()[0] == "000"
+      changed_when: false
+      ignore_errors: true
+      with_items: "{{ ansible_local.general_facts.network_url_check.cluster }}"
+      when: groups['all'] | length > 1
+
+    - name: Check Teamwire Registry connectivity # noqa command-instead-of-module
+      ansible.builtin.command: 'curl -s -o /dev/null -L --connect-timeout 5 --max-time 15 --retry 1 -w "%{http_code} %{http_version}\n" {{ item }}'
+      environment:
+        http_proxy: "{{ http_proxy | default('') }}"
+        https_proxy: "{{ http_proxy | default('') }}"
+      register: curl_teamwire_registry_check
+      failed_when:
+        - curl_teamwire_registry_check.rc != 0 or curl_teamwire_registry_check.stdout.split()[0] == "000"
+      changed_when: false
+      ignore_errors: true
+      with_items: "{{ ansible_local.general_facts.network_url_check.teamwire_registry }}"
+      when: use_teamwire_registry | default('true') | bool
+
+# ------------------------------------------------------------------------------
+# Evaluate what failed where
+# ------------------------------------------------------------------------------
+    - name: Filter Failed Items per Host
+      ansible.builtin.set_fact:
+        failed_dns: "{{ dns_check.results | default([]) | selectattr('failed', 'defined') | selectattr('failed', 'sameas', true) | map(attribute='item') | list }}"
+        failed_urls: >-
+          {{
+            (curl_check.results | default([]) +
+             curl_cluster_check.results | default([]) +
+             curl_teamwire_registry_check.results | default([]) )
+            | selectattr('failed', 'defined')
+            | selectattr('failed', 'sameas', true)
+            | map(attribute='item') | list
+          }}
+
+# ------------------------------------------------------------------------------
+# Report back to shell what items failed
+# ------------------------------------------------------------------------------
+    - name: Display DNS Request Failures
+      ansible.builtin.debug:
+        msg: "The request to the following DNS Server/s failed: {{ failed_dns }}"
+      when: failed_dns | length > 0
+
+    - name: Display URL Request Failures
+      ansible.builtin.debug:
+        msg: "The following URL/s were unreachable: {{ failed_urls }}"
+      when: failed_urls | length > 0
+
+# ------------------------------------------------------------------------------
+# Display prompt
+# ------------------------------------------------------------------------------
+    - name: Confirm to proceed after failed connectivity checks
+      ansible.builtin.pause:
+        prompt: "Network Requirement check failed! For more detail check the tasks above. Do you want to continue anyway? (Yes/No)"
+      run_once: true
+      delegate_to: localhost
+      register: network_connectivity_pause
+      when:
+        - network_connectivity_pause is not defined
+        - ( ansible_play_hosts | map('extract', hostvars) | selectattr('failed_dns', 'defined') | selectattr('failed_dns', 'ne', []) | list | length > 0 or
+          ansible_play_hosts | map('extract', hostvars) | selectattr('failed_urls', 'defined') | selectattr('failed_urls', 'ne', []) | list | length > 0 )
+
+    - name: Abort playbook run if user did not confirm to proceed after failed connectivity checks
+      ansible.builtin.fail:
+        msg: "Playbook aborted. Input was {{ network_connectivity_pause.user_input }}"
+      run_once: true
+      delegate_to: localhost
+      when:
+        - ( ansible_play_hosts | map('extract', hostvars) | selectattr('failed_dns', 'defined') | selectattr('failed_dns', 'ne', []) | list | length > 0 or
+          ansible_play_hosts | map('extract', hostvars) | selectattr('failed_urls', 'defined') | selectattr('failed_urls', 'ne', []) | list | length > 0 )
+        - network_connectivity_pause.user_input | lower != "yes"
