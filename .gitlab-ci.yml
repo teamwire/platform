@@ -56,7 +56,7 @@ Deploy to hub:
     - git status
     - git fetch --all
     - git reset --hard remotes/origin/master
-    - ansible-playbook -i cluster_hosts playbooks/cluster.yml
+    - "ansible-playbook -i cluster_hosts playbooks/cluster.yml -e '{\"network_connectivity_pause\": {\"user_input\": \"no\"}}'"
   rules:
     # Only accept tags what match the regex
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
@@ -114,7 +114,7 @@ Deploy to cloud:
     - git status
     - git fetch --all
     - git reset --hard remotes/origin/master
-    - ansible-playbook -i cluster_hosts playbooks/cluster.yml
+    - "ansible-playbook -i cluster_hosts playbooks/cluster.yml -e '{\"network_connectivity_pause\": {\"user_input\": \"no\"}}'"
   rules:
     # Only accept tags what match the regex
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
@@ -253,29 +253,29 @@ Build VMware offline image:
 
       echo "Querying Nexus REST API for latest release..."
       RESPONSE=$(curl -sL "${NEXUS_URL}/service/rest/v1/search/assets?repository=external&group=/release&sort=name&direction=desc")
-      
+
       echo "API response (first 5 items):"
       echo "${RESPONSE}" | jq '.items[:5] | .[].path' 2>/dev/null || echo "${RESPONSE}" | head -30
-      
+
       DOWNLOAD_URL=$(echo "${RESPONSE}" \
         | jq -r '[.items[] | select(.path | startswith("/release/teamwire-prod-"))] | sort_by(.lastModified) | last | .downloadUrl')
-      
+
       if [ -z "${DOWNLOAD_URL}" ] || [ "${DOWNLOAD_URL}" = "null" ]; then
         echo "ERROR: Could not find any teamwire-prod release in Nexus"
         exit 1
       fi
-      
+
       echo "Latest release URL: ${DOWNLOAD_URL}"
-      
+
       eval "$(curl -sfL "${DOWNLOAD_URL}")"
-      
+
       echo "BACKEND_VERSION=${BACKEND_VERSION}"
       echo "DASHBOARD_VERSION=${DASHBOARD_VERSION}"
       echo "WEBCLIENT_VERSION=${WEBCLIENT_VERSION}"
-      
+
       TEAMWIRE_PROD_VERSION=$(basename "${DOWNLOAD_URL}" | sed -E 's/^teamwire-prod-//; s/-[0-9]{4}-[0-9]{2}-[0-9]{2}-.*$//')
       echo "TEAMWIRE_PROD_VERSION=${TEAMWIRE_PROD_VERSION}"
-    
+
     - cd packer
     - ./build-vmware.sh
         --password "${OFFLINE_IMAGE_PASSWORD}"
@@ -292,23 +292,23 @@ Build VMware offline image:
       DEBIAN_MAJOR="${DEBIAN_VERSION%%.*}"
       OVA_NAME="teamwire-server-vmware-debian-${DEBIAN_VERSION}-platform-${PLATFORM_VERSION}-offline-teamwire-prod-${TEAMWIRE_PROD_VERSION}-${BUILD_TIMESTAMP}.ova"
       IMAGES_URL="${NEXUS_URL}/repository/${NEXUS_REPO}/images/${DEBIAN_MAJOR}"
-      
+
       echo "Uploading ${OVA_NAME} to ${IMAGES_URL}/"
       curl -sSf -u "${NEXUS_USER}:${NEXUS_PASS}" \
         --upload-file teamwire-server.ova \
         "${IMAGES_URL}/${OVA_NAME}"
       echo "OVA upload complete."
-      
+
       echo "Updating checksum files..."
       for ALGO in sha256 sha512; do
         SUMS_FILE="$(echo "${ALGO}" | tr '[:lower:]' '[:upper:]')SUMS"
-        
+
         echo "[${ALGO}] Downloading existing ${SUMS_FILE} and updating it with the new image checksum..."
         curl -sfL -u "${NEXUS_USER}:${NEXUS_PASS}" \
           -o "${SUMS_FILE}" \
           "${IMAGES_URL}/${SUMS_FILE}" || : > "${SUMS_FILE}"
         "${ALGO}sum" teamwire-server.ova | awk -v name="${OVA_NAME}" '{print $1"  "name}' >> "${SUMS_FILE}"
-        
+
         echo "[${ALGO}] Uploading updated checksum file..."
         curl -sSf -u "${NEXUS_USER}:${NEXUS_PASS}" \
           --upload-file "${SUMS_FILE}" \

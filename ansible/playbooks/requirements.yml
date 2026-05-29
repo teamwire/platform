@@ -57,6 +57,12 @@
         dest: /etc/ansible/facts.d/general_facts.fact
         mode: 0444
 
+- name: Include tasks to check network requirements
+  ansible.builtin.import_playbook: network_requirements.yml
+  when:
+    - not ansible_local.offline_mode.stat.exists
+    - config_done is defined
+
 - name: Check overall requirements
   hosts: all
   tasks:
