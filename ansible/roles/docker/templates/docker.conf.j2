@@ -11,7 +11,7 @@ ExecStart=/usr/bin/dockerd -H unix:// --userland-proxy=false
 {%- for host in groups['hashi_servers'] | sort %}
  --dns {{ hostvars[host].private_ip }}{% endfor %}
  {% else %}
- {%- for dns_server in dns_servers | sort %}
+ {%- for dns_server in dns_servers | default(ansible_local.general_facts.dns_servers) | sort %}
  --dns {{ dns_server }}{% endfor %}
 {%- endif %}
 {%- endif %}
