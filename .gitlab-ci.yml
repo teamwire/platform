@@ -246,7 +246,6 @@ Build VMware offline image:
     - imagebuild
   variables:
     NEXUS_URL: "https://nexus.teamwire.eu"
-    NEXUS_REPO: "external"
   script:
     - |
       set -euo pipefail
@@ -290,33 +289,15 @@ Build VMware offline image:
       PLATFORM_VERSION="${CI_COMMIT_TAG:-$(git rev-parse --short HEAD)}"
       DEBIAN_VERSION=$(jq -r '.variables.iso_url' teamwire-server.json | grep -oP 'release/\K[0-9]+\.[0-9]+')
       DEBIAN_MAJOR="${DEBIAN_VERSION%%.*}"
+      DEBIAN_CODENAME=$(curl -s https://debian.pages.debian.net/distro-info-data/debian.csv | awk -F',' -v ver="${DEBIAN_MAJOR}" '$1 == ver {print $3}')
       OVA_NAME="teamwire-server-vmware-debian-${DEBIAN_VERSION}-platform-${PLATFORM_VERSION}-offline-teamwire-prod-${TEAMWIRE_PROD_VERSION}-${BUILD_TIMESTAMP}.ova"
-      IMAGES_URL="${NEXUS_URL}/repository/${NEXUS_REPO}/images/${DEBIAN_MAJOR}"
 
-      echo "Uploading ${OVA_NAME} to ${IMAGES_URL}/"
-      curl -sSf -u "${NEXUS_USER}:${NEXUS_PASS}" \
-        --upload-file teamwire-server.ova \
-        "${IMAGES_URL}/${OVA_NAME}"
-      echo "OVA upload complete."
+      echo "Target: ${IMAGE_PATH}/${DEBIAN_CODENAME}"
+      rsync -vhP --timeout=120 --inplace teamwire-server.ova -e "ssh -p ${IMAGE_SERVER_SSH_PORT}" "${IMAGE_SERVER_SSH_USER}@${IMAGE_SERVER}:${IMAGE_PATH}/${DEBIAN_CODENAME}/${OVA_NAME}"
 
       echo "Updating checksum files..."
-      for ALGO in sha256 sha512; do
-        SUMS_FILE="$(echo "${ALGO}" | tr '[:lower:]' '[:upper:]')SUMS"
-
-        echo "[${ALGO}] Downloading existing ${SUMS_FILE} and updating it with the new image checksum..."
-        curl -sfL -u "${NEXUS_USER}:${NEXUS_PASS}" \
-          -o "${SUMS_FILE}" \
-          "${IMAGES_URL}/${SUMS_FILE}" || : > "${SUMS_FILE}"
-        "${ALGO}sum" teamwire-server.ova | awk -v name="${OVA_NAME}" '{print $1"  "name}' >> "${SUMS_FILE}"
-
-        echo "[${ALGO}] Uploading updated checksum file..."
-        curl -sSf -u "${NEXUS_USER}:${NEXUS_PASS}" \
-          --upload-file "${SUMS_FILE}" \
-          "${IMAGES_URL}/${SUMS_FILE}"
-        rm -f "${SUMS_FILE}"
-        echo "[${ALGO}] Checksum updated."
-      done
-      echo "Checksum update complete."
+      echo "Target: ${IMAGE_PATH}"
+      ssh -p "${IMAGE_SERVER_SSH_PORT}" "${IMAGE_SERVER_SSH_USER}@${IMAGE_SERVER}" "make -C ${MAKEFILE_PATH} shasums TARGET_DIR=${IMAGE_PATH}/${DEBIAN_CODENAME}"
   after_script:
     - rm -f packer/teamwire-server.ova
     - rm -rf packer/output-teamwire-server-vmware
@@ -324,4 +305,3 @@ Build VMware offline image:
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
       when: manual
       allow_failure: true
-
