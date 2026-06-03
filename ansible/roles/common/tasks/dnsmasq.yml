@@ -1,10 +1,3 @@
-- name: Ensure dns_servers are configured before installing dnsmasq
-  ansible.builtin.fail:
-    msg: "DNS servers are not defined. Please check the configuration file"
-  when:
-    - config_done is defined
-    - dns_servers is not defined
-
 - name: Install dnsmasq
   ansible.builtin.apt:
     pkg: dnsmasq
@@ -22,7 +15,6 @@
     mode: 0644
     owner: root
     group: root
-  when: dns_servers is defined
   notify:
     - Restart dnsmasq
     - Recheck if dnsmasq is already installed (cluster only)
@@ -35,7 +27,6 @@
     owner: root
     group: root
   when:
-    - dns_servers is defined
     - enable_voip is defined and enable_voip | string() == 'true'
     - inventory_hostname not in groups['voip_servers']
   notify: Restart dnsmasq

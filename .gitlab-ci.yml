@@ -22,6 +22,7 @@ stages:
   - ansible-lint
   - shellcheck
   - Golint
+  - imagebuild
 
 default:
   tags:
@@ -55,7 +56,7 @@ Deploy to hub:
     - git status
     - git fetch --all
     - git reset --hard remotes/origin/master
-    - ansible-playbook -i cluster_hosts playbooks/cluster.yml
+    - "ansible-playbook -i cluster_hosts playbooks/cluster.yml -e '{\"network_connectivity_pause\": {\"user_input\": \"no\"}}'"
   rules:
     # Only accept tags what match the regex
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
@@ -113,7 +114,7 @@ Deploy to cloud:
     - git status
     - git fetch --all
     - git reset --hard remotes/origin/master
-    - ansible-playbook -i cluster_hosts playbooks/cluster.yml
+    - "ansible-playbook -i cluster_hosts playbooks/cluster.yml -e '{\"network_connectivity_pause\": {\"user_input\": \"no\"}}'"
   rules:
     # Only accept tags what match the regex
     # (the regex matches strings like "1.2", "3.14.7", "2.0.1", etc., but not strings like "1." or "3.14.")
@@ -231,3 +232,76 @@ Archiving test:
   script: /bin/bash -c "$GOLINT_CMD ansible/roles/go/files/archiving.go"
   needs: ['Ensure golint docker image exists']
 
+# ------------------------------------------------------------------------------
+#
+# Packer Image Build
+#
+# ------------------------------------------------------------------------------
+
+Build VMware offline image:
+  stage: imagebuild
+  tags:
+    - platform
+    - linux
+    - imagebuild
+  variables:
+    NEXUS_URL: "https://nexus.teamwire.eu"
+  script:
+    - |
+      set -euo pipefail
+
+      echo "Querying Nexus REST API for latest release..."
+      RESPONSE=$(curl -sL "${NEXUS_URL}/service/rest/v1/search/assets?repository=external&group=/release&sort=name&direction=desc")
+
+      echo "API response (first 5 items):"
+      echo "${RESPONSE}" | jq '.items[:5] | .[].path' 2>/dev/null || echo "${RESPONSE}" | head -30
+
+      DOWNLOAD_URL=$(echo "${RESPONSE}" \
+        | jq -r '[.items[] | select(.path | startswith("/release/teamwire-prod-"))] | sort_by(.lastModified) | last | .downloadUrl')
+
+      if [ -z "${DOWNLOAD_URL}" ] || [ "${DOWNLOAD_URL}" = "null" ]; then
+        echo "ERROR: Could not find any teamwire-prod release in Nexus"
+        exit 1
+      fi
+
+      echo "Latest release URL: ${DOWNLOAD_URL}"
+
+      eval "$(curl -sfL "${DOWNLOAD_URL}")"
+
+      echo "BACKEND_VERSION=${BACKEND_VERSION}"
+      echo "DASHBOARD_VERSION=${DASHBOARD_VERSION}"
+      echo "WEBCLIENT_VERSION=${WEBCLIENT_VERSION}"
+
+      TEAMWIRE_PROD_VERSION=$(basename "${DOWNLOAD_URL}" | sed -E 's/^teamwire-prod-//; s/-[0-9]{4}-[0-9]{2}-[0-9]{2}-.*$//')
+      echo "TEAMWIRE_PROD_VERSION=${TEAMWIRE_PROD_VERSION}"
+
+    - cd packer
+    - ./build-vmware.sh
+        --password "${OFFLINE_IMAGE_PASSWORD}"
+        --offline-installation
+        --backend-release "${BACKEND_VERSION}"
+        --dashboard-release "${DASHBOARD_VERSION}"
+        --webclient-release "${WEBCLIENT_VERSION}"
+        --dockerhub-username "${DOCKERHUB_USERNAME}"
+        --dockerhub-password "${DOCKERHUB_PASSWORD}"
+    - |
+      BUILD_TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
+      PLATFORM_VERSION="${CI_COMMIT_TAG:-$(git rev-parse --short HEAD)}"
+      DEBIAN_VERSION=$(jq -r '.variables.iso_url' teamwire-server.json | grep -oP 'release/\K[0-9]+\.[0-9]+')
+      DEBIAN_MAJOR="${DEBIAN_VERSION%%.*}"
+      DEBIAN_CODENAME=$(curl -s https://debian.pages.debian.net/distro-info-data/debian.csv | awk -F',' -v ver="${DEBIAN_MAJOR}" '$1 == ver {print $3}')
+      OVA_NAME="teamwire-server-vmware-debian-${DEBIAN_VERSION}-platform-${PLATFORM_VERSION}-offline-teamwire-prod-${TEAMWIRE_PROD_VERSION}-${BUILD_TIMESTAMP}.ova"
+
+      echo "Target: ${IMAGE_PATH}/${DEBIAN_CODENAME}"
+      rsync -vhP --timeout=120 --inplace teamwire-server.ova -e "ssh -p ${IMAGE_SERVER_SSH_PORT}" "${IMAGE_SERVER_SSH_USER}@${IMAGE_SERVER}:${IMAGE_PATH}/${DEBIAN_CODENAME}/${OVA_NAME}"
+
+      echo "Updating checksum files..."
+      echo "Target: ${IMAGE_PATH}"
+      ssh -p "${IMAGE_SERVER_SSH_PORT}" "${IMAGE_SERVER_SSH_USER}@${IMAGE_SERVER}" "make -C ${MAKEFILE_PATH} shasums TARGET_DIR=${IMAGE_PATH}/${DEBIAN_CODENAME}"
+  after_script:
+    - rm -f packer/teamwire-server.ova
+    - rm -rf packer/output-teamwire-server-vmware
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
+      when: manual
+      allow_failure: true
