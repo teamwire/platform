@@ -1,0 +1,77 @@
+## /etc/audit/rules.d/audit.rules
+
+
+# These rules are for just a starting configuration. They are not a complete
+
+
+# Delete all existing rules
+-D
+
+# Set buffer size to reduce likelihood of lost events
+-b 8192
+
+# Failure mode: 1=silent, 2=printk
+-f 1
+
+# Rate limiting (messages per second)
+-r 500
+
+# === TTY Login Monitoring ===
+# Monitor login/logout events
+-w /var/log/faillog -p wa -k logins
+-w /var/log/lastlog -p wa -k logins
+-w /var/log/tallylog -p wa -k logins
+-w /var/run/utmp -p wa -k session
+-w /var/log/wtmp -p wa -k session
+-w /var/log/btmp -p wa -k session
+
+# Monitor successful/failed logins via PAM
+-w /etc/pam.d/ -p wa -k pam_config
+-w /etc/login.defs -p wa -k login_config
+-w /etc/securetty -p wa -k login_config
+
+# === SSH/sFTP Login Monitoring ===
+# Monitor SSH configuration
+-w /etc/ssh -p wa -k sshd_conf
+
+# Monitor SSH login attempts
+-w /var/log/auth.log -p wa -k sshd_log
+-w /var/log/secure -p wa -k sftp_log_integrity
+
+# Monitor SSH keys
+-w /root/.ssh/ -p wa -k ssh_keys
+
+# Monitor TTY input activity
+-a always,exit -F arch=b64 -S ioctl -F a1=0x5412 -k ssh_tty_input
+
+# Monitor user command execution
+-a always,exit -F arch=b64 -S execve -F auid>=1000 -F auid!=unset -k user_commands
+
+# Monitor SFTP file operations
+-a always,exit -F arch=b64 -S open,openat,creat,unlink,rename,chmod,chown -F exe=/usr/lib/openssh/sftp-server -k sftp_actions
+
+# === Sudo Usage Monitoring ===
+# Monitor sudo usage and configuration
+-w /etc/sudoers -p wa -k sudoers
+-w /etc/sudoers.d/ -p wa -k sudoers
+-w /var/log/sudo.log -p wa -k sudo_log
+
+# Capture all sudo commands
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/sudo -k sudo_commands
+-a always,exit -F arch=b32 -S execve -F path=/usr/bin/sudo -k sudo_commands
+
+# === Package Installation Monitoring ===
+# Monitor APT activity
+-w /usr/bin/apt -p x -k package_install
+-w /usr/bin/apt-get -p x -k package_install
+-w /usr/bin/aptitude -p x -k package_install
+-w /usr/bin/dpkg -p x -k package_install
+
+# Monitor package management logs
+-w /var/log/dpkg.log -p wa -k package_log
+-w /var/log/apt/history.log -p wa -k package_log
+-w /var/log/apt/term.log -p wa -k package_log
+
+# Monitor repository list changes
+-w /etc/apt/sources.list -p wa -k apt_sources
+-w /etc/apt/sources.list.d/ -p wa -k apt_sources

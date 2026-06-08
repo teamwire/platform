@@ -55,6 +55,7 @@ libpcre2-32-0
 libpcre2-dev
 linux-libc-dev
 rpcsvc-proto
+auditd
 "
 
 CHECKMK_SHASUM_URL=$(jq -r '.monitoring.sha256' /etc/ansible/facts.d/general_facts.fact)

@@ -31,3 +31,8 @@ LogLevel VERBOSE
 AllowUsers teamwire
 {% endif -%}
 AllowAgentForwarding {{ 'yes' if enable_ssh_agent_forwarding is defined and enable_ssh_agent_forwarding == "true" else 'no' }}
+
+# ------------------------------------------------------------------------------
+# [ITOPS-5544] Ensure sFTP is logging for auditd
+# ------------------------------------------------------------------------------
+Subsystem sftp /usr/lib/openssh/sftp-server -l INFO -f AUTHPRIV
