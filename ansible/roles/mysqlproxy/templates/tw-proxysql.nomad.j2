@@ -130,8 +130,13 @@ job "teamwire-proxysql" {
           }
         }
         volumes = [
+          {% if inventory_hostname in groups['backend_servers'] and inventory_hostname in groups['management_servers'] %}
           "/data/proxysql/proxysql.cnf:/etc/proxysql.cnf"
+          {% else %}
+          "/data/proxysql/proxysql_manager.cnf:/etc/proxysql.cnf"
+          {% endif %}
         ]
+
       }
 
       service {

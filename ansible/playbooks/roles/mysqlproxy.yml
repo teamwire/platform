@@ -12,6 +12,15 @@
         - ansible_local.vault.initialized == "true"
         - secrets_read is not defined
 
+- name: Reconfigure ProxySQL
+  hosts: local:backend_servers
+  tasks:
+    - name: Write ProxySQL config files
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/mysqlproxy"
+        tasks_from: reconfigure_proxysql
+      when: use_proxysql | default(false) | bool
+
 - name: Configure ProxySQL
   hosts: local:management_servers
   serial: 1
