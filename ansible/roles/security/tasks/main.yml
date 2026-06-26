@@ -151,3 +151,6 @@
 - name: Include Systemd related Tasks
   ansible.builtin.include_tasks: systemd.yml
   when: ansible_distribution_release != "bullseye"
+
+- name: Include Auditd related Tasks
+  ansible.builtin.include_tasks: auditd.yml

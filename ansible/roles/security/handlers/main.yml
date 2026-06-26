@@ -40,3 +40,8 @@
   ansible.builtin.service:
     name: unattended-upgrades
     state: restarted
+
+- name: Restart auditd
+  ansible.builtin.service:
+    name: auditd
+    state: restarted
