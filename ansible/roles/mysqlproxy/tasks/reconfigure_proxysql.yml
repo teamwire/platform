@@ -1,0 +1,52 @@
+---
+- name: Check if ProxySQL config exists
+  ansible.builtin.stat:
+    path: /data/proxysql/proxysql.cnf
+  register: proxysql_conf_status
+  run_once: true
+
+- name: Write ProxySQL Configs if config Exists
+  block:
+
+    - name: Register docker registry
+      ansible.builtin.set_fact:
+        local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
+
+    - name: Write ProxySQL config files
+      ansible.builtin.template:
+        src: "{{ inventory_dir }}/roles/mysqlproxy/templates/{{ item.src }}"
+        dest: "/data/proxysql/{{ item.dest }}"
+        owner: teamwire
+        group: root
+        mode: 0644
+      loop:
+        - { src: 'proxysql.cnf.j2', dest: 'proxysql.cnf' }
+        - { src: 'proxysql_manager.cnf.j2', dest: 'proxysql_manager.cnf' }
+        - { src: 'tw-proxysql.nomad.j2', dest: 'tw-proxysql.nomad' }
+      run_once: true
+
+    - name: Determine ProxySQL container name
+      ansible.builtin.shell: |
+        docker ps --format '{{ '{{' }}.Names{{ '}}' }}' | grep 'proxysql' | head -n1
+      register: detected_container
+      changed_when: false
+
+    - name: Execute SQL commands in the ProxySQL container
+      throttle: 1
+      community.docker.docker_container_exec:
+        container: "{{ detected_container.stdout | trim }}"
+        command: >
+          mysql -u admin -h 127.0.0.1 -P 6032 -p"{{ mysql_maxscale_monitor_password }}" -e "
+          DELETE FROM mysql_servers WHERE hostgroup_id = 20;
+          LOAD MYSQL SERVERS TO RUNTIME;
+          DELETE FROM mysql_query_rules;
+          LOAD MYSQL QUERY RULES TO RUNTIME;
+          UPDATE global_variables SET variable_value = 'false' WHERE variable_name = 'mysql-multiplexing';
+          LOAD MYSQL VARIABLES TO RUNTIME;
+          SELECT 1;
+          SELECT * FROM stats_mysql_connection_pool;
+          SAVE MYSQL SERVERS TO DISK;
+          SAVE MYSQL QUERY RULES TO DISK;
+          SAVE MYSQL VARIABLES TO DISK;
+          "
+  when: proxysql_conf_status.stat.exists

@@ -33,6 +33,7 @@
       environment:
         HTTP_PROXY: "{{ http_proxy | default() }}"
         HTTPS_PROXY: "{{ http_proxy | default() }}"
+  when: not ansible_local.offline_mode.stat.exists
 
 - name: Add maxscale repository
   ansible.builtin.copy:

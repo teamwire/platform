@@ -1,0 +1,45 @@
+---
+
+# ------------------------------------------------------------------------------
+# [ITOPS-5544] Install and manage auditd
+# ------------------------------------------------------------------------------
+- name: Install auditd
+  ansible.builtin.apt:
+    name: auditd
+    state: present
+
+- name: Configure auditd
+  ansible.builtin.copy:
+    src: audit.rules
+    dest: /etc/audit/rules.d/audit.rules
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart auditd
+
+- name: Configure auditd syslog plugin
+  ansible.builtin.copy:
+    src: audit.rsyslog
+    dest: /etc/audit/plugins.d/syslog.conf
+    owner: root
+    group: root
+    mode: '0640'
+  when: syslog_servers is defined
+  notify: Restart auditd
+
+- name: Configure auditd main config file
+  ansible.builtin.copy:
+    src: auditd.conf
+    dest: /etc/audit/auditd.conf
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Restart auditd
+
+- name: Configure logrotate for auditd
+  ansible.builtin.copy:
+    src: audit.logrotate
+    dest: /etc/logrotate.d/audit
+    owner: root
+    group: root
+    mode: '0644'

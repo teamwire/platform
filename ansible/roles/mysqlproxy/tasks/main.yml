@@ -27,13 +27,16 @@
   when: ansible_local.vault is defined and ansible_local.vault.initialized == "true"
   notify: Run ProxySQL nomad job
 
-- name: Write ProxySQL config file
+- name: Write ProxySQL config files
   ansible.builtin.template:
-    src: proxysql.cnf.j2
-    dest: /data/proxysql/proxysql.cnf
+    src: "{{ inventory_dir }}/roles/mysqlproxy/templates/{{ item.src }}"
+    dest: "/data/proxysql/{{ item.dest }}"
     owner: teamwire
     group: root
-    mode: 0644
+    mode: '0644'
+  loop:
+    - { src: 'proxysql.cnf.j2', dest: 'proxysql.cnf' }
+    - { src: 'proxysql_manager.cnf.j2', dest: 'proxysql_manager.cnf' }
   run_once: true
   notify: Restart teamwire-proxysql nomad job
 

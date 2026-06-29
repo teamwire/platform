@@ -1,0 +1,6 @@
+active = yes
+direction = out
+path = /sbin/audisp-syslog
+type = always
+args = LOG_INFO
+format = string
