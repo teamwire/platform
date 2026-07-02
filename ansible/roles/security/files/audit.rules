@@ -44,9 +44,6 @@
 # Monitor TTY input activity
 -a always,exit -F arch=b64 -S ioctl -F a1=0x5412 -k ssh_tty_input
 
-# Monitor user command execution
--a always,exit -F arch=b64 -S execve -F auid>=1000 -F auid!=unset -k user_commands
-
 # Monitor SFTP file operations
 -a always,exit -F arch=b64 -S open,openat,creat,unlink,rename,chmod,chown -F exe=/usr/lib/openssh/sftp-server -k sftp_actions
 
