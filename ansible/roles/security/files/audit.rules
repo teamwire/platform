@@ -72,3 +72,21 @@
 # Monitor repository list changes
 -w /etc/apt/sources.list -p wa -k apt_sources
 -w /etc/apt/sources.list.d/ -p wa -k apt_sources
+
+# === Exploit Check Monitoring ===
+# Watch for shells spawned by processes that were NOT started by a logged-in user
+-a always,exit -F arch=b64 -S execve -F auid=unset -F path=/bin/bash -k unauthenticated_shell
+-a always,exit -F arch=b64 -S execve -F auid=unset -F path=/bin/sh   -k unauthenticated_shell
+
+# Watch for memory modifications that allow code execution (Mprotect / Mmap)
+-a always,exit -F arch=b64 -S mprotect -F a2=7 -k memory_tampering
+-a always,exit -F arch=b64 -S mmap -F a2=7 -k memory_tampering
+
+# Monitor system calls that change process user/group IDs
+-a always,exit -F arch=b64 -S setuid -S setgid -S setreuid -k privilege_escalation
+
+# Monitor kernel module loading and unloading
+-a always,exit -F arch=b64 -S init_module -S finit_module -S delete_module -k kernel_modules
+
+# Monitor process tampering and injection attempts
+-a always,exit -F arch=b64 -S ptrace -k process_injection
