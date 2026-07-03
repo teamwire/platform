@@ -30,11 +30,11 @@ default:
     - lint
 
 variables:
-  ANSIBLE_LINT_IMAGE: "cytopia/ansible-lint:6-0.12"
+  ANSIBLE_LINT_IMAGE: "harbor.teamwire.eu/proxy/cytopia/ansible-lint:6-0.12"
   ANSIBLE_LINT_CMD: "docker run --rm -v $(pwd):/data $ANSIBLE_LINT_IMAGE"
-  SHELLCHECK_IMAGE: "koalaman/shellcheck:v0.7.1"
+  SHELLCHECK_IMAGE: "harbor.teamwire.eu/proxy/koalaman/shellcheck:v0.7.1"
   SHELLCHECK_CMD: "docker run --rm -v $(pwd):/mnt $SHELLCHECK_IMAGE"
-  GOLINT_IMAGE: "cytopia/golint:latest-0.3"
+  GOLINT_IMAGE: "harbor.teamwire.eu/proxy/cytopia/golint:latest-0.3"
   GOLINT_CMD: "docker run --rm -v $(pwd):/data $GOLINT_IMAGE"
   PY_COLORS: '1'
   ANSIBLE_FORCE_COLOR: '1'
