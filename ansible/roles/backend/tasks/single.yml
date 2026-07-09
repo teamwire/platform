@@ -47,7 +47,7 @@
       BIND_HOST: "127.0.0.1"
       BIND_PORT: "8080"
       VAULT_TOKEN: "{{ vault_job_token | default() }}"
-      VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
+      VAULT_ADDR: "https://127.0.0.1:8200"
       ORG_DEFAULT_ALLOW_USER_REG: "{{ allow_unknown_users | default('true') }}"
       ORG_DEFAULT_ALLOW_USER_QUERY: "{{ allow_user_query | default('false') }}"
       MYSQL_HOST: "{{ mysql_host | default() }}"
@@ -112,7 +112,7 @@
       BIND_HOST: "127.0.0.1"
       BIND_PORT: "8082"
       VAULT_TOKEN: "{{ vault_job_token | default() }}"
-      VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
+      VAULT_ADDR: "https://127.0.0.1:8200"
       MYSQL_HOST: "{{ mysql_host | default() }}"
       MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
@@ -155,7 +155,7 @@
     env:
       MODE: beat
       VAULT_TOKEN: "{{ vault_job_token | default() }}"
-      VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
+      VAULT_ADDR: "https://127.0.0.1:8200"
       MYSQL_HOST: "{{ mysql_host | default() }}"
       MYSQL_PORT: "{{ mysql_port | default() }}"
       MYSQL_DATABASE: "{{ teamwire_db_name if mysql_host is defined else '' }}"
@@ -190,7 +190,7 @@
       syslog-facility: "local6"
     env:
       REDIS_URI: "127.0.0.1:6379:1"
-      VAULT_ADDR: "https://{{ ansible_default_ipv4.address }}:8200"
+      VAULT_ADDR: "https://127.0.0.1:8200"
       VAULT_TOKEN: "{{ vault_job_token | default() }}"
       LOGLEVEL: "{{ notification_loglevel | default() }}"
 

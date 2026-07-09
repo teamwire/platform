@@ -33,3 +33,10 @@
   ansible.builtin.include_tasks: remove_hashiui.yml
   when:
     - groups['all'] | length() > 1
+
+# Remove the Hashi stack hardening marker now that it's no longer needed.
+# It only ever lives on the control node (single-server host or a management
+# server in a cluster), so there's nothing to do on any other host.
+- name: Remove the Hashi stack hardening marker
+  ansible.builtin.include_tasks: remove_hashicorp_hardening_marker.yml
+  when: groups['all'] | length() == 1 or inventory_hostname in groups['management_servers']
