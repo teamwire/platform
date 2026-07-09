@@ -222,11 +222,6 @@ allow_user_query: "no"
 # mysql_host:
 # mysql_port:
 
-# When using an Oracle database, uncomment the following lines and add the
-# values matching your setup.
-# oracle_host:
-# oracle_port: 1521
-
 # enable_auto_calculation_innodb enables the automatic and optimal calculation
 # of the required RAM (in gigabytes) for the variable innodb_buffer_pool_size.
 # Please remember that you should not set autocalculation and manual configuration

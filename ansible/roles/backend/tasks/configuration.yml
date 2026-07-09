@@ -6,30 +6,10 @@
     - config_done is defined
     - aes_key is defined and aes_key == None
 
-- name: Set Teamwire DB user from deprecated oracle_user config setting
-  ansible.builtin.set_fact:
-    teamwire_db_user: "{{ oracle_user }}"
-  when: oracle_user is defined
-
-- name: Check Oracle database user
-  ansible.builtin.debug:
-    msg: "Usage of oracle_user is deprecated, please set teamwire_db_user"
-  when: oracle_user is defined
-
 - name: Configure default Teamwire DB user name
   ansible.builtin.set_fact:
     teamwire_db_user: teamwire
   when: teamwire_db_user is not defined
-
-- name: Set Teamwire DB name from deprecated oracle_database config setting
-  ansible.builtin.set_fact:
-    teamwire_db_name: "{{ oracle_database }}"
-  when: oracle_database is defined
-
-- name: Check Oracle database
-  ansible.builtin.debug:
-    msg: "Usage of oracle_database is deprecated, please set teamwire_db_name"
-  when: oracle_database is defined
 
 - name: Configure default Teamwire DB name
   ansible.builtin.set_fact:
@@ -42,7 +22,6 @@
   when:
     - mysql_host is not defined
     - "'database_servers' not in groups"
-    - oracle_host is not defined
 
 - name: Determine MariaDB host (Single MariaDB server)
   ansible.builtin.set_fact:
@@ -66,7 +45,6 @@
   when:
     - mysql_port is not defined
     - "'database_servers' not in groups"
-    - oracle_host is not defined
 
 - name: Determine MariaDB port (Single MariaDB server)
   ansible.builtin.set_fact:

@@ -19,7 +19,6 @@
         that:
           - groups['all'] | length() > 1
           - mysql_host is undefined
-          - oracle_host is undefined
         msg:
           - "You can only bootstrap galera if your setup hits following requirement:"
           - "  - It is a cluster setup"

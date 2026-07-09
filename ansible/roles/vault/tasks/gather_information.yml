@@ -113,8 +113,9 @@
               ansible.builtin.set_fact:
                 teamwire_db_password: "{{ pause_entry.user_input }}"
               when: pause_entry.user_input is defined
-          when: (mysql_host is defined and teamwire_db_password is undefined) or
-                (oracle_host is defined and teamwire_db_password is undefined)
+          when:
+            - mysql_host is defined
+            - teamwire_db_password is undefined
 
         - name: Ask for existing AES key
           block:
