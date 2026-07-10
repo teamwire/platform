@@ -24,7 +24,7 @@ REDIS_INSTANCES=(
 REDIS_HOST_{{ key }}="127.0.0.1"
 REDIS_PORT_{{ key }}="{{ value.server_port }}"
 {% if value.password is not none %}
-REDIS_PASSWORD_{{ key }}='{{ value.password }}'
+export REDIS_PASSWORD_{{ key }}='{{ value.password }}'
 {% endif %}
 {% endfor %}
 
@@ -33,7 +33,7 @@ REDIS_PASSWORD_{{ key }}='{{ value.password }}'
 REDIS_HOST_sentinel_{{ key }}="127.0.0.1"
 REDIS_PORT_sentinel_{{ key }}="{{ value.sentinel_port }}"
 {% if value.password is not none %}
-REDIS_PASSWORD_sentinel_{{ key }}='{{ value.password }}'
+export REDIS_PASSWORD_sentinel_{{ key }}='{{ value.password }}'
 {% endif %}
 {% endfor %}
 {% endif %}
