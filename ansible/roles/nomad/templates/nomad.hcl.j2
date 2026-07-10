@@ -8,7 +8,13 @@ log_level = "DEBUG"
 data_dir = "/var/lib/nomad"
 
 name = "{{ inventory_hostname }}"
-bind_addr = "0.0.0.0"
+bind_addr = "{{ private_ip }}"
+
+addresses {
+  # The HTTP API also needs to be reachable on localhost for the local
+  # nomad CLI and for local health checks (e.g. from Consul).
+  http = "127.0.0.1 {{ private_ip }}"
+}
 
 # Don't call home
 disable_update_check = true

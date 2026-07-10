@@ -1,7 +1,8 @@
 {
 	"data_dir": "/var/lib/consul",
+	"bind_addr": "{{ private_ip }}",
 	"advertise_addr": "{{ private_ip }}",
-	"client_addr": "0.0.0.0",
+	"client_addr": "127.0.0.1 {{ private_ip }}",
 	"ui": true,
 	"retry_join": [ {% for srv in groups['hashi_servers'] | sort %}"{{ srv }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
 	"rejoin_after_leave": true,

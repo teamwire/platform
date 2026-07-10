@@ -3,3 +3,4 @@ cluster.yml
 galera-bootstrap.yml
 renew-vault-certificate.yml
 upgrade-v4.yml
+update-hashicorp-config.yml

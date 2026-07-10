@@ -16,6 +16,53 @@
           - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v4.yml"
         success_msg: Ansible {{ ansible_version.full }} matches expected version.
 
+- name: Check Hashi stack hardening has been applied
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Check platform installation status
+      ansible.builtin.stat:
+        path: /etc/platform_version
+      register: platform_version_file
+
+    - name: Assert Hashi stack hardening requirement
+      block:
+        - name: Gather applied platform information
+          ansible.builtin.slurp:
+            src: /etc/platform_version
+          register: platform_version_applied
+
+        - name: Determine applied platform version
+          ansible.builtin.set_fact:
+            # Content in /etc/platform_version could look like the following examples
+            # 4.1.0
+            # 4.1.0(incomplete)
+            # 4.1.0-33-g62419ec(incomplete)
+            platform_version_applied: "{{ platform_version_content | regex_search('(\\d+\\.\\d+(\\.\\d+)?).*', '\\1') | first }}"
+          vars:
+            platform_version_content: "{{ platform_version_applied.content | b64decode | trim }}"
+
+        - name: Check if the Hashi stack hardening marker exists
+          ansible.builtin.stat:
+            path: /etc/ansible/facts.d/hashicorp_hardening_applied.fact
+          register: hashicorp_hardening_marker
+
+        - name: Assert the Hashi stack has been hardened
+          ansible.builtin.assert:
+            that:
+              - platform_version_applied is version('4.4.0', '>=') or
+                hashicorp_hardening_marker.stat.exists
+            fail_msg:
+              - "Platform version {{ platform_version_applied }} is applied."
+              - "The Hashi stack (Consul, Nomad, Vault) must be hardened to only listen on the private and loopback network interfaces before continuing."
+              - "Please run the following procedure first (2 Vault unseal keys will be required):"
+              - "  Single-server setup:  ansible-playbook -i hosts playbooks/procedures/update-hashicorp-config.yml"
+              - "  Clustered setup:      ansible-playbook -i cluster_hosts playbooks/procedures/update-hashicorp-config.yml"
+            success_msg: Platform version {{ platform_version_applied }} already has the hardened Hashi stack.
+      when:
+        - platform_version_file.stat.exists
+        - not (ansible_local.offline_mode.stat.exists | default(false))
+
 - name: Ensure ansible fact for offline_mode is defined
   hosts: all
   tasks:

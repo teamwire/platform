@@ -23,7 +23,7 @@ api_addr = "https://{{ private_ip }}:8200"
 {%endif %}
 
 listener "tcp" {
- address = "0.0.0.0:8200"
+ address = "127.0.0.1:8200"
 {% if ansible_local.vault is defined and ansible_local.vault.initialized == "true" %}
  tls_disable = 0
 {% else %}
@@ -32,3 +32,16 @@ listener "tcp" {
  tls_cert_file = "/var/lib/vault/ssl/vault.crt"
  tls_key_file = "/var/lib/vault/ssl/vault.pem"
 }
+
+{% if ansible_play_hosts | length() != 1 %}
+listener "tcp" {
+ address = "{{ private_ip }}:8200"
+{% if ansible_local.vault is defined and ansible_local.vault.initialized == "true" %}
+ tls_disable = 0
+{% else %}
+ tls_disable = 1
+{% endif %}
+ tls_cert_file = "/var/lib/vault/ssl/vault.crt"
+ tls_key_file = "/var/lib/vault/ssl/vault.pem"
+}
+{% endif %}

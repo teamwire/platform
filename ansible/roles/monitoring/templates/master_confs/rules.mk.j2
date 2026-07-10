@@ -237,7 +237,11 @@ custom_checks = [
 {% endfor %}
 
 # Vault Sealed Status check
-{'value': {'service_description': 'Vault Seal Status', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -S -u "/v1/sys/seal-status" -s "sealed\\":false" -p 8200'}, 'condition': {'host_tags': { {{ "'single_server': 'true'" if groups['all'] | length() == 1 else "'hashi_servers': 'true'" }}}}, 'options': {'disabled': False}},
+{% if groups['all'] | length() == 1%}
+{'value': {'service_description': 'Vault Seal Status', 'command_line': '$USER1$/check_http -H "127.0.0.1" -S -u "/v1/sys/seal-status" -s "sealed\\":false" -p 8200'}, 'condition': {'host_tags': { 'single_server': 'true' }}, 'options': {'disabled': False}},
+{% else %}
+{'value': {'service_description': 'Vault Seal Status', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -S -u "/v1/sys/seal-status" -s "sealed\\":false" -p 8200'}, 'condition': {'host_tags': { 'hashi_servers': 'true' }}, 'options': {'disabled': False}},
+{% endif %}
 
 # Cluster Endpoints Health Checks
 {'value': {'service_description': 'Nomad Health Endpoint', 'command_line': '$USER1$/check_http -H "$HOSTADDRESS$" -u "/v1/status/leader" -s "4647" -p 4646'}, 'condition': {'host_tags': {'hashi_servers': 'true'}}, 'options': {'disabled': False}},
