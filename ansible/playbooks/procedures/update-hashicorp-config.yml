@@ -1,0 +1,116 @@
+---
+# Rolls out configuration changes to Consul, Nomad and Vault across the Hashi
+# stack, one host at a time, restarting each service as needed.
+#
+# Nomad in particular MUST be restarted serially across its full host set
+# (hashi_servers plus backend/management/voip/video servers) - restarting it
+# everywhere at once brings the whole stack down. Consul is rolled out
+# together with it on the same hosts, in the same order, for the same reason.
+# Vault only runs on the hashi_servers and is unsealed after each restart
+# before moving on to the next host.
+
+- name: Ask for Vault unseal keys
+  hosts: hashi_servers:local
+  gather_facts: false
+  tasks:
+    - name: Provide first unseal key
+      ansible.builtin.pause:
+        prompt: "Please provide first unseal key"
+      register: pause_entry_01
+      run_once: true
+
+    - name: Provide second unseal key
+      ansible.builtin.pause:
+        prompt: "Please provide a second unseal key. Make sure it differs from the first key you've provided"
+      register: pause_entry_02
+      run_once: true
+
+    - name: Verify unseal keys have been provided
+      ansible.builtin.fail:
+        msg: Unseal keys are required. Please ensure you've provided two different unseal keys.
+      when: >
+        not pause_entry_01.user_input or
+        not pause_entry_02.user_input or
+        pause_entry_01.user_input == pause_entry_02.user_input
+      run_once: true
+
+    - name: Save unseal keys on all Hashi servers
+      ansible.builtin.set_fact:
+        vault_unseal_keys: ["{{ pause_entry_01.user_input }}", "{{ pause_entry_02.user_input }}"]
+      delegate_facts: true
+      delegate_to: "{{ item }}"
+      loop: "{{ ansible_play_hosts }}"
+      run_once: true
+
+- name: Roll Nomad and Vault on the Hashi servers, one host at a time
+  hosts: hashi_servers:local
+  serial: 1
+  tasks:
+
+    - name: Deploy and configure the nomad role
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/nomad"
+      when: groups['all'] | length() > 1
+
+    - name: Render updated Vault configuration
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/vault"
+        tasks_from: reconfigure
+
+  handlers:
+    - name: Restart Vault to apply new configuration
+      ansible.builtin.service:
+        name: vault
+        state: restarted
+
+    - name: Unseal Vault
+      ansible.builtin.command: vault operator unseal "{{ item }}" # noqa no-changed-when
+      no_log: true
+      loop: "{{ vault_unseal_keys[:2] }}"
+      environment:
+        VAULT_ADDR: "https://127.0.0.1:8200"
+
+    - name: Wait until Vault is unsealed and available
+      ansible.builtin.command: vault status
+      register: vault_status_check
+      until: vault_status_check.rc == 0
+      retries: 12
+      delay: 5
+      changed_when: false
+      environment:
+        VAULT_ADDR: "https://127.0.0.1:8200"
+
+- name: Roll out Consul one host at a time
+  hosts: all
+  serial: 1
+  tasks:
+    - name: Deploy and configure the consul role
+      ansible.builtin.import_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/consul"
+      when: groups['all'] | length() > 1
+
+    - name: Wait until Consul is responding locally
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 8500
+      when: groups['all'] | length() > 1
+
+# This marks the environment as hardened on the control node (the machine
+# ansible-playbook/twctl is run from), not on every managed host - it isn't
+# a per-host property, and hosts outside this procedure's scope (e.g. pure
+# Consul-agent hosts) would otherwise never get marked.
+- name: Mark the Hashi stack as hardened
+  hosts: local:management_servers
+  tasks:
+    - name: Create hashicorp_hardening_applied ansible fact
+      ansible.builtin.copy:
+        dest: /etc/ansible/facts.d/hashicorp_hardening_applied.fact
+        content: |
+          {
+              "stat":{
+                  "exists": true
+              }
+          }
+        owner: root
+        group: root
+        mode: 0644

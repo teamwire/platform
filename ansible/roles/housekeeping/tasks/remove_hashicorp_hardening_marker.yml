@@ -1,0 +1,5 @@
+---
+- name: Remove hashicorp_hardening_applied ansible fact
+  ansible.builtin.file:
+    path: /etc/ansible/facts.d/hashicorp_hardening_applied.fact
+    state: absent

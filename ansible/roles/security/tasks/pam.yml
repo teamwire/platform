@@ -12,3 +12,15 @@
   ansible.builtin.command:
     cmd: pam-auth-update --enable tmpdir
   changed_when: false
+
+# ------------------------------------------------------------------------------
+# [ITOPS-6197] Enable audit module for pam sshd configuration
+# ------------------------------------------------------------------------------
+- name: Deploy pam sshd configuration
+  ansible.builtin.copy:
+    src: pamd-sshd
+    dest: /etc/pam.d/sshd
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload sshd

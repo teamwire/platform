@@ -3,6 +3,71 @@
 # Ensure we can parse all command output
 export LANG=C
 
+# --- Security hardening helpers ---------------------------------------------
+# Private directory for twctl's own temp files (Vault/Nomad token config,
+# report password file, migration env-file). It is created here at startup and
+# independently of $TMPDIR, so these files can never end up inside a directory
+# that another function later archives with 'tar -C "$TMPDIR"' (e.g. the
+# report). The whole directory is removed on exit.
+_TWCTL_TMPDIR="$(mktemp -d)"
+chmod 700 "${_TWCTL_TMPDIR}"
+_cleanup_tmpfiles() {
+    [ -n "${_TWCTL_TMPDIR}" ] && rm -rf "${_TWCTL_TMPDIR}"
+}
+trap _cleanup_tmpfiles EXIT
+
+# Create a private (mode 0600) temp file inside _TWCTL_TMPDIR and return its
+# path. '-p' makes mktemp place it there regardless of the $TMPDIR env var.
+_new_tmpfile() {
+    local f
+    f="$(mktemp -p "${_TWCTL_TMPDIR}")" || return 1
+    chmod 600 "${f}"
+    printf '%s' "${f}"
+}
+
+# Reject values containing characters that could break out of a shell command
+# string or a URL. Used for values that are later embedded in command strings
+# (e.g. release tags, journalctl time arguments). $1=value $2=name.
+_reject_shell_metachars() {
+    case "$1" in
+        *[!A-Za-z0-9._/+:\ -]*)
+            echo "ERROR: invalid characters in ${2}." >&2
+            exit 1
+            ;;
+    esac
+}
+
+# curl wrapper that passes the Vault token via a private --config file instead
+# of a command-line header, so the token is never visible in the process list.
+_vault_hdr_cfg=""
+vault_curl() {
+    if [ -z "${_vault_hdr_cfg}" ] && [ -n "${VAULT_TOKEN:-}" ]; then
+        _vault_hdr_cfg="$(_new_tmpfile)"
+        # printf is a bash builtin, so the token is not exposed via argv.
+        printf 'header = "X-Vault-Token: %s"\n' "${VAULT_TOKEN}" > "${_vault_hdr_cfg}"
+    fi
+    if [ -n "${_vault_hdr_cfg}" ]; then
+        curl --config "${_vault_hdr_cfg}" "$@"
+    else
+        curl "$@"
+    fi
+}
+
+# Same idea for the Nomad management token.
+_nomad_hdr_cfg=""
+nomad_curl() {
+    if [ -z "${_nomad_hdr_cfg}" ] && [ -n "${NOMAD_TOKEN:-}" ]; then
+        _nomad_hdr_cfg="$(_new_tmpfile)"
+        printf 'header = "X-Nomad-Token: %s"\n' "${NOMAD_TOKEN}" > "${_nomad_hdr_cfg}"
+    fi
+    if [ -n "${_nomad_hdr_cfg}" ]; then
+        curl --config "${_nomad_hdr_cfg}" "$@"
+    else
+        curl "$@"
+    fi
+}
+# ---------------------------------------------------------------------------
+
 # Define colors
 RED='\033[0;31m'
 GRN='\033[0;32m'
@@ -55,7 +120,7 @@ if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
 
     if [ "${UID}" != "0" ] && [ ! -r "${CLUSTER_CONFIG_DIR}" ]; then
         # Try to grant read permissions to the required files
-        sudo chgrp -R teamwire "${CLUSTER_CONFIG_DIR}"
+        sudo chgrp -R -h teamwire "${CLUSTER_CONFIG_DIR}"
     fi
 
     NOMAD_JOB="${CLUSTER_CONFIG_DIR}/teamwire.nomad"
@@ -93,9 +158,8 @@ BLACKLIST=("show-tags" "pull" "migrate" "setup" "start" "stop" "rm" "backupdb" "
 WHITELIST_ENV=("development" "development3" "master" "staging" "production")
 
 if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" != "false" && "$2" != "unseal" ]]; then
-    REQUEST_PARAMETERS="$*"
     for task in "${BLACKLIST[@]}"; do
-        if [[ "${REQUEST_PARAMETERS}" == *"${task}"* ]]; then
+        if [[ "$1" == "${task}" ]]; then
             echo "Vault must be unsealed. Please run twctl secrets unseal."
             exit 1
         fi
@@ -107,7 +171,7 @@ if [ "${VAULT_INITIALIZED}" == "true" ] && [ -f ~/.vault-token ]; then
 fi
 
 if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" == "false" ]]; then
-    VAULT_AUTH_CHECK="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/secret | jq -r .errors[])"
+    VAULT_AUTH_CHECK="$(vault_curl -m ${DFLT_TMOUT} -s ${VAULT_ADDR}/v1/secret | jq -r .errors[])"
     if [ "${VAULT_AUTH_CHECK}" == "permission denied" ]; then
         echo "Invalid Vault token, please check the contents of ~/.vault-token."
         exit 1
@@ -115,7 +179,7 @@ if [[ "${VAULT_INITIALIZED}" == "true"  && "${VAULT_SEALED}" == "false" ]]; then
 fi
 
 if [ -d "${CLUSTER_CONFIG_DIR}" ]; then
-    NOMAD_TOKEN="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/nomad/management_token" | jq -r '.data| .[]')"
+    NOMAD_TOKEN="$(vault_curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/secret/nomad/management_token" | jq -r '.data| .[]')"
     export NOMAD_TOKEN
 fi
 
@@ -146,7 +210,7 @@ get_release_file() {
         sudo mkdir -p /usr/local/share/twctl
     fi
 
-    if ! sudo curl -L -s -f -o "${RELEASE_FILE}" "${RELEASE_FILE_URL}"; then
+    if ! sudo curl -L -s -f --proto '=https' --proto-redir '=https' -o "${RELEASE_FILE}" "${RELEASE_FILE_URL}"; then
         echo "ERROR: The release file for the provided tag (${TAG}) was not found."
         echo "       Please ensure that the tag is correct and try again."
         exit 1
@@ -177,33 +241,44 @@ fetch_image_base() {
         echo "ERROR: Missing required version information in ${RELEASE_FILE}."
         exit 1
     fi
+
+    # Reject version strings containing characters that could break out of the
+    # shell/ansible command strings these values are later embedded into.
+    local _v
+    for _v in "${BACKEND_VERSION}" "${DASHBOARD_VERSION}" "${WEBCLIENT_VERSION}"; do
+        case "${_v}" in
+            *[!A-Za-z0-9._-]*)
+                echo "ERROR: Invalid version string in ${RELEASE_FILE}."
+                exit 1
+                ;;
+        esac
+    done
 }
 
 vault_read_secrets() {
     local secret_path
     secret_path=$1
     local secret
-    secret="$(curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/${secret_path}" | jq -r '.data| .[]')"
+    secret="$(vault_curl -m ${DFLT_TMOUT} -s "${VAULT_ADDR}/v1/secret/${secret_path}" | jq -r '.data| .[]')"
     echo "${secret}"
 }
 
-# `vault_list` is just a wrapper function needed
-# for `get_vault_secret_recursive` function to make
-# the code more readable.
-vault_list() {
-    echo "curl -m ${DFLT_TMOUT} -s --header \"X-Vault-Token: ${VAULT_TOKEN}\" --request LIST ${VAULT_ADDR}/v1/secret/$1 | jq -r '.data.keys | map(\"- \(.)\") | .[]'"
+# List the key names directly under secret/<path> (one per line).
+# Replaces the previous eval-based implementation.
+vault_list_keys() {
+    vault_curl -m ${DFLT_TMOUT} -s --request LIST "${VAULT_ADDR}/v1/secret/$1" \
+        | jq -r '.data.keys | .[]' 2>/dev/null
 }
 
 get_vault_secret_recursive() {
-    mapfile -t vault_secr < <(curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: ${VAULT_TOKEN}" --request LIST "${VAULT_ADDR}/v1/secret/" | jq -r '.data.keys | .[]')
-    for toplevel in "${vault_secr[@]}"; do
-        sub="$(vault_list "${toplevel}")"
-        sublevel=$(eval "${sub} | sed ':a;N;$!ba;s/\n//g'")
-        mapfile -t key < <( echo -n "${sublevel//- / }" | sed -e 's/^ //' -e '/^$/d' -e 's/ /\n/g' )
-        for k in "${key[@]}"; do
+    local toplevel k
+    while IFS= read -r toplevel; do
+        [ -z "${toplevel}" ] && continue
+        while IFS= read -r k; do
+            [ -z "${k}" ] && continue
             echo "${toplevel}${k}"
-        done
-    done
+        done < <(vault_list_keys "${toplevel}")
+    done < <(vault_list_keys "")
 }
 
 vault_status_single() {
@@ -226,7 +301,7 @@ vault_status_cluster() {
 }
 
 vault_seal() {
-        curl -m ${DFLT_TMOUT} -s --header "X-Vault-Token: ${VAULT_TOKEN}" --request PUT \
+        vault_curl -m ${DFLT_TMOUT} -s --request PUT \
             ${VAULT_ADDR}/v1/sys/seal | jq -r '.errors | .[]'
 }
 
@@ -238,7 +313,8 @@ vault_unseal_single() {
         echo "======================================"
         echo "Vault Seal Status"
         echo "--------------------------------------"
-        curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"${vault_unseal_key}\"}" ${VAULT_ADDR}/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+        printf '%s' "${vault_unseal_key}" | jq -Rsc '{key: .}' \
+            | vault_curl -m ${DFLT_TMOUT} -s --request PUT --data @- ${VAULT_ADDR}/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
                 | awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
     fi
 }
@@ -257,7 +333,8 @@ vault_unseal_cluster() {
             echo "======================================"
             echo "${VAULT_SERVER_NAME}[${VAULT_SERVER_IP}] Vault Seal Status"
             echo "--------------------------------------"
-            curl -m ${DFLT_TMOUT} -s --insecure --request PUT --data "{\"key\":\"${vault_unseal_key}\"}" https://"${VAULT_SERVER_IP}":8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
+            printf '%s' "${vault_unseal_key}" | jq -Rsc '{key: .}' \
+                | curl -m ${DFLT_TMOUT} -s --request PUT --data @- https://"${VAULT_SERVER_IP}":8200/v1/sys/unseal | jq -r '. | to_entries[] | ["\(.key):",.value] | @tsv' \
                 | awk -v FS="\t" 'BEGIN{printf"%-29.30s %s\n","Key","Value";printf"%-29.30s %s\n","-----","--------"}{printf "%-29.30s %s\n",$1,$2}'
         fi
     done
@@ -422,7 +499,7 @@ voip_start_single() {
     is_stun_Enabled
     for CONTAINER in ${VOIP_CONTAINERS}; do
         c=$(docker start "${CONTAINER}")
-        printf "${c:0:15}\t...${GRN}start [done]${NOC}\n"
+        printf '%s\t...%bstart [done]%b\n' "${c:0:15}" "${GRN}" "${NOC}"
     done
 }
 
@@ -434,7 +511,7 @@ voip_restart_single() {
     is_stun_Enabled
     for CONTAINER in ${VOIP_CONTAINERS}; do
         c=$(docker restart "${CONTAINER}")
-        printf "${c:0:15}\t...${GRN}restart [done]${NOC}\n"
+        printf '%s\t...%brestart [done]%b\n' "${c:0:15}" "${GRN}" "${NOC}"
     done
 }
 
@@ -446,7 +523,7 @@ voip_stop_single() {
     is_stun_Enabled
     for CONTAINER in ${VOIP_CONTAINERS}; do
         c=$(docker stop "${CONTAINER}")
-        printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+        printf '%s\t...%bshutdown [done]%b\n' "${c:0:15}" "${RED}" "${NOC}"
     done
 }
 
@@ -457,9 +534,9 @@ voip_remove_single() {
         if [ "$(docker ps -q -f name="${CONTAINER}")" ]; then
             c=$(docker stop "${CONTAINER}")
             docker rm "${CONTAINER}"
-            printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
+            printf '%s\t...%bshutdown and remove [done]%b\n' "${c:0:15}" "${RED}" "${NOC}"
         else
-            printf "${CONTAINER}\t...${YELLOW}not running, skipping...${NOC}\n"
+            printf '%s\t...%bnot running, skipping...%b\n' "${CONTAINER}" "${YLW}" "${NOC}"
         fi
     done
 }
@@ -518,7 +595,7 @@ dashboard_start_cluster() {
 
 dashboard_start_single() {
     c=$(docker start "teamwire_dashboard")
-    printf "${c:0:15}\t...${GRN}start [done]${NOC}\n"
+    printf '%s\t...%bstart [done]%b\n' "${c:0:15}" "${GRN}" "${NOC}"
 }
 
 
@@ -528,7 +605,7 @@ dashboard_restart_cluster() {
 
 dashboard_restart_single() {
     c=$(docker restart "teamwire_dashboard")
-    printf "${c:0:15}\t...${GRN}restart [done]${NOC}\n"
+    printf '%s\t...%brestart [done]%b\n' "${c:0:15}" "${GRN}" "${NOC}"
 }
 
 
@@ -538,13 +615,13 @@ dashboard_stop_cluster() {
 
 dashboard_stop_single() {
     c=$(docker stop "teamwire_dashboard")
-    printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+    printf '%s\t...%bshutdown [done]%b\n' "${c:0:15}" "${RED}" "${NOC}"
 }
 
 dashboard_remove_single() {
     c=$(docker stop "teamwire_dashboard")
     docker rm "dashboard"
-    printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
+    printf '%s\t...%bshutdown and remove [done]%b\n' "${c:0:15}" "${RED}" "${NOC}"
 }
 
 dashboard_status_cluster() {
@@ -591,7 +668,7 @@ webclient_start_cluster() {
 
 webclient_start_single() {
     c=$(docker start "teamwire_webclient")
-    printf "${c:0:15}\t...${GRN}start [done]${NOC}\n"
+    printf '%s\t...%bstart [done]%b\n' "${c:0:15}" "${GRN}" "${NOC}"
 }
 
 
@@ -601,7 +678,7 @@ webclient_restart_cluster() {
 
 webclient_restart_single() {
     c=$(docker restart "teamwire_webclient")
-    printf "${c:0:15}\t...${GRN}restart [done]${NOC}\n"
+    printf '%s\t...%brestart [done]%b\n' "${c:0:15}" "${GRN}" "${NOC}"
 }
 
 
@@ -611,13 +688,13 @@ webclient_stop_cluster() {
 
 webclient_stop_single() {
     c=$(docker stop "teamwire_webclient")
-    printf "${c:0:15}\t...${RED}shutdown [done]${NOC}\n"
+    printf '%s\t...%bshutdown [done]%b\n' "${c:0:15}" "${RED}" "${NOC}"
 }
 
 webclient_remove_single() {
     c=$(docker stop "teamwire_webclient")
     docker rm "webclient"
-    printf "${c:0:15}\t...${RED}shutdown and remove [done]${NOC}\n"
+    printf '%s\t...%bshutdown and remove [done]%b\n' "${c:0:15}" "${RED}" "${NOC}"
 }
 
 webclient_status_cluster() {
@@ -719,6 +796,7 @@ get_database_configuration() {
     fi
 
     if [ "${INSTALLATION}" == "cluster" ]; then
+        # shellcheck source=/dev/null
         . "${CLUSTER_CONFIG_DIR}/cluster.conf"
         if [ -z "${MYSQL_HOST}" ] && [ -z "${ORA_HOST}" ]; then
             MYSQL_HOST=galera.service.consul
@@ -781,14 +859,15 @@ case ${OPTION} in
                  echo "Entries do not match, exiting"
                  exit 1
                 else
-                 curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" --request POST --data "{\"value\":\"${ENTRY}\"}" ${VAULT_ADDR}/v1/secret/"${INPUT}"
+                 printf '%s' "${ENTRY}" | jq -Rsc '{value: .}' \
+                   | vault_curl -m ${DFLT_TMOUT} -s --request POST --data @- ${VAULT_ADDR}/v1/secret/"${INPUT}"
                 fi
                 ;;
         list)
                 get_vault_secret_recursive
                 ;;
         delete)
-                curl -m ${DFLT_TMOUT} -s --header "X-VAULT-TOKEN: ${VAULT_TOKEN}" --request DELETE ${VAULT_ADDR}/v1/secret/"${INPUT}"
+                vault_curl -m ${DFLT_TMOUT} -s --request DELETE ${VAULT_ADDR}/v1/secret/"${INPUT}"
                 ;;
         unseal)
                 "vault_unseal_${INSTALLATION}"
@@ -863,6 +942,9 @@ test_server_condition_for_preflight_check() {
         INFO='\033[0;34m'
         ENDMSG='\033[0m'
 
+        # NOTE: $1 is always a static command string defined inside this script
+        # (see connectivity_test). It never contains user-controlled input, so
+        # this eval is not a command-injection vector.
         eval "$1"
         local condition_to_test
         condition_to_test=$?
@@ -1002,20 +1084,28 @@ create_report() {
     # Ensure LOG_LINE_LIMIT is correctly defined if not set
     local LOG_LINE_LIMIT
     LOG_LINE_LIMIT=$(_get_config_value LOG_LINE_LIMIT)
-    if [[ -z "${LOG_LINE_LIMIT}" ]] || [[ "${LOG_LINE_LIMIT}" == "" ]]; then
+    if [[ -z "${LOG_LINE_LIMIT}" ]] || ! [[ "${LOG_LINE_LIMIT}" =~ ^[0-9]+$ ]]; then
         LOG_LINE_LIMIT=2000
     fi
 
-    # Decide which kind of logs should be fetched
+    # Validate user supplied time arguments before they are embedded into the
+    # journalctl command string (defence against command injection).
+    _reject_shell_metachars "${SINCE}" "--since argument"
+    _reject_shell_metachars "${UNTIL}" "--until argument"
+
+    # Decide which kind of logs should be fetched.
+    # SINCE/UNTIL are single quoted; combined with the validation above this
+    # prevents them from injecting additional shell commands, while still
+    # allowing values that contain spaces (e.g. '2025-05-02 06:00:00').
     if [ "${FULL}" ] && [ -n "${SINCE}" ] && [ -n "${UNTIL}" ]; then
         echo "Please ensure to either set --full or set until and/or since."
         exit 1
     elif [ -n "${SINCE}" ] && [ -n "${UNTIL}" ]; then
-        JOURNALCTL="journalctl -q --since ${SINCE} --until ${UNTIL}"
+        JOURNALCTL="journalctl -q --since '${SINCE}' --until '${UNTIL}'"
     elif [ -n "${SINCE}" ] && [ -z "${UNTIL}" ]; then
-        JOURNALCTL="journalctl -q --since ${SINCE}"
+        JOURNALCTL="journalctl -q --since '${SINCE}'"
     elif [ -n "${UNTIL}" ] && [ -z "${SINCE}" ]; then
-        JOURNALCTL="journalctl -q --until ${UNTIL}"
+        JOURNALCTL="journalctl -q --until '${UNTIL}'"
     elif [ "${FULL}" ]; then
         # Include all logs from today only
         JOURNALCTL="journalctl -q --since today"
@@ -1210,15 +1300,30 @@ create_report() {
     cp -f "${ANSIBLE_DIR}/cluster_hosts" "${ANSIBLE_DIR}/hosts" "${ANSIBLE_DIR}/group_vars/all" "${TMPDIR}" 2>/dev/null
 
     REPORT_PASS=$(vault_read_secrets reportfile/password)
-    if [ "${REPORT_PASS}" != "reportfile_password" ]; then
-        REPORT="${REPORT}.enc"
-        if [[ ! $(</etc/debian_version) =~ ^[9] ]];then
-            sudo tar JcP -C "${TMPDIR}" . | openssl enc -e -aes-256-cbc -iter 1000000 -out "${REPORT}" -k "${REPORT_PASS}"
-        else
-            sudo tar JcP -C "${TMPDIR}" . | openssl enc -e -aes-256-cbc -out "${REPORT}" -k "${REPORT_PASS}"
-        fi
+
+    if [ -z "${REPORT_PASS}" ] || [ "${REPORT_PASS}" = "reportfile_password" ]; then
+        # No usable encryption password configured: warn and write the report
+        # unencrypted. The archive contains sensitive data (group_vars/all,
+        # hosts, git diff, Vault status); set 'reportfile/password' in Vault to
+        # obtain an encrypted report instead.
+        echo
+        echo "WARNING: No report encryption password is configured in Vault"
+        echo "         (secret path 'reportfile/password'). The report contains"
+        echo "         sensitive data and will be written UNENCRYPTED."
+        echo
+        sudo tar JcfP "${REPORT}" -C "${TMPDIR}" .
     else
-       sudo tar JcfP "${REPORT}" -C "${TMPDIR}" .
+        REPORT="${REPORT}.enc"
+        # Pass the password via a private file instead of -k so it never appears
+        # in the process list. Key derivation is identical to -k, so reports stay
+        # decryptable with the usual 'openssl enc -d -aes-256-cbc [-iter 1000000]'.
+        _report_pass_file="$(_new_tmpfile)"
+        printf '%s' "${REPORT_PASS}" > "${_report_pass_file}"
+        if [[ ! $(</etc/debian_version) =~ ^[9] ]];then
+            sudo tar JcP -C "${TMPDIR}" . | openssl enc -e -aes-256-cbc -iter 1000000 -out "${REPORT}" -pass file:"${_report_pass_file}"
+        else
+            sudo tar JcP -C "${TMPDIR}" . | openssl enc -e -aes-256-cbc -out "${REPORT}" -pass file:"${_report_pass_file}"
+        fi
     fi
 
     rm -rf "${TMPDIR}"
@@ -1244,10 +1349,9 @@ backupdb() {
         exit 1
     fi
 
-    # Inject PASS environment var
-    export PASS=${MYSQL_BACKUP_USER_PASSWORD}
-
-    /usr/local/bin/backup_restore_db.sh -t backup \
+    # Provide the password only to the invoked command's environment (not to
+    # twctl's own environment) so it is not exposed via /proc/<pid>/environ.
+    PASS="${MYSQL_BACKUP_USER_PASSWORD}" /usr/local/bin/backup_restore_db.sh -t backup \
         -o "${FILENAME}" -h "${MYSQL_HOST}" \
         -u "${MYSQL_BACKUP_USER}" -d "${MYSQL_DATABASE}" -P "${MYSQL_PORT}"
 }
@@ -1265,10 +1369,9 @@ restoredb() {
         exit 1
     fi
 
-    # Inject PASS environment var
-    export PASS=${MYSQL_BACKUP_USER_PASSWORD}
-
-    /usr/local/bin/backup_restore_db.sh -t restore \
+    # Provide the password only to the invoked command's environment (not to
+    # twctl's own environment) so it is not exposed via /proc/<pid>/environ.
+    PASS="${MYSQL_BACKUP_USER_PASSWORD}" /usr/local/bin/backup_restore_db.sh -t restore \
         -u "${MYSQL_BACKUP_USER}" -d "${MYSQL_DATABASE}" \
         -f -i "${FILENAME}" -h "${MYSQL_HOST}" -P "${MYSQL_PORT}"
 }
@@ -1334,6 +1437,7 @@ pull_images_single() {
 pull_images_cluster() {
     pull_images_base
 
+    # shellcheck source=/dev/null
     . "${CLUSTER_CONFIG_DIR}/cluster.conf"
     if [ -n "${REGISTRY}" ] && [ -x /usr/local/bin/twimg ]; then
         echo
@@ -1362,14 +1466,26 @@ run_migrations_base() {
     fetch_image_versions "${TAG}"
     echo "Running database migrations"
     echo
+    # Pass secrets via a private env-file instead of -e so they do not appear
+    # in the host process list. Non-secret variables stay as -e for clarity.
+    local _mig_env
+    _mig_env="$(_new_tmpfile)"
+    {
+        printf 'MYSQL_PASSWORD=%s\n' "${MYSQL_PASS}"
+        printf 'ORA_PASSWORD=%s\n'   "${ORA_PASSWORD}"
+        printf 'REDIS_PASSWORD=%s\n' "${REDIS_PASSWORD}"
+        printf 'AESKEY=%s\n'         "${AESKEY}"
+    } > "${_mig_env}"
     docker run --rm --network host -e MODE=migration --name teamwire-migrations \
         --log-driver syslog --log-opt syslog-facility=local6 --log-opt tag=teamwire-migrations \
+        --env-file "${_mig_env}" \
         -e MYSQL_HOST="${MYSQL_HOST}" -e MYSQL_PORT="${MYSQL_PORT}" -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
-        -e MYSQL_USER="${MYSQL_USER}" -e MYSQL_PASSWORD="${MYSQL_PASS}" \
+        -e MYSQL_USER="${MYSQL_USER}" \
         -e ORA_HOST="${ORA_HOST}" -e ORA_PORT="${ORA_PORT}" -e ORA_DATABASE="${ORA_DATABASE}" \
-        -e ORA_USER="${ORA_USER}" -e ORA_PASSWORD="${ORA_PASSWORD}" \
-        -e REDIS_URI="${REDIS_URI}" -e REDIS_PASSWORD="${REDIS_PASSWORD}"\
-        -e AESKEY="${AESKEY}" -e VAULT_ADDR="${VAULT_ADDR}" "${PRFX}teamwire/backend:${BACKEND_VERSION}" 2>&1
+        -e ORA_USER="${ORA_USER}" \
+        -e REDIS_URI="${REDIS_URI}" \
+        -e VAULT_ADDR="${VAULT_ADDR}" "${PRFX}teamwire/backend:${BACKEND_VERSION}" 2>&1
+    rm -f "${_mig_env}"
 
 }
 
@@ -1405,7 +1521,7 @@ _get_nomad_environment() {
 }
 status_cluster() {
     if [ "${OPTION}" = "--clean" ]; then
-        curl -m ${DFLT_TMOUT} -XPUT -H "X-Nomad-Token: ${NOMAD_TOKEN}" http://127.0.0.1:4646/v1/system/gc
+        nomad_curl -m ${DFLT_TMOUT} -XPUT http://127.0.0.1:4646/v1/system/gc
         echo "Container history cleaned"
     else
         ${NOMAD} status "$(_get_nomad_environment)" && \
@@ -1566,14 +1682,14 @@ archiving() {
     case ${OPTION} in
             add)
                     if hash archiving 2>/dev/null; then
-                        sudo bash -c "archiving -add -tag ${TAG} -file ${FILENAME}"
+                        sudo "$(type -P archiving)" -add -tag "${TAG}" -file "${FILENAME}"
                     else
                         echo "Archiving app not found"
                     fi
                     ;;
             remove)
                     if hash archiving 2>/dev/null; then
-                        sudo bash -c "archiving -del -tag ${TAG} -file ${FILENAME}"
+                        sudo "$(type -P archiving)" -del -tag "${TAG}" -file "${FILENAME}"
                     else
                         echo "Archiving app not found"
                     fi
@@ -1721,6 +1837,18 @@ if [ -z "${TASK}" ]; then
     echo
     help
     exit 1
+fi
+
+# Reject tags containing characters that could break out of the shell/ansible
+# command strings and URLs the tag is later embedded into.
+if [ -n "${TAG}" ]; then
+    case "${TAG}" in
+        *[!A-Za-z0-9._/-]*)
+            echo "ERROR: Invalid characters in tag '${TAG}'."
+            echo "       Allowed characters: letters, digits, '.', '_', '/', '-'."
+            exit 1
+            ;;
+    esac
 fi
 
 if [ "${TAG_REQUIRED}" = "yes" ] && [ -z "${TAG}" ]; then

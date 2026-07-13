@@ -45,3 +45,8 @@
   ansible.builtin.service:
     name: auditd
     state: restarted
+
+- name: Reload sshd
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded
