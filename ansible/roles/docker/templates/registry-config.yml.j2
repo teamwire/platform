@@ -9,6 +9,9 @@ storage:
         rootdirectory: /var/lib/registry
 http:
     addr: :5000
+    tls:
+        certificate: /etc/distribution/tls/registry.crt
+        key: /etc/distribution/tls/registry.key
     headers:
         X-Content-Type-Options: [nosniff]
 health:

@@ -1,5 +1,6 @@
 ---
 registry_dir: /data/registry
+registry_certs_dir: /data/registry-certs
 registry_config: registry-config.yml.j2
 use_teamwire_registry: true
 
