@@ -480,11 +480,9 @@ is_legacy_installation() {
 
 check_if_external_database_is_used() {
     local check_mysql_host
-    local check_oracle_host
     check_mysql_host="$(_get_config_value mysql_host)"
-    check_oracle_host="$(_get_config_value oracle_host)"
 
-    if [[ -n "${check_mysql_host}" || -n "${check_oracle_host}" ]]; then
+    if [[ -n "${check_mysql_host}" ]]; then
       return 0
     else
       return 1
@@ -798,7 +796,7 @@ get_database_configuration() {
     if [ "${INSTALLATION}" == "cluster" ]; then
         # shellcheck source=/dev/null
         . "${CLUSTER_CONFIG_DIR}/cluster.conf"
-        if [ -z "${MYSQL_HOST}" ] && [ -z "${ORA_HOST}" ]; then
+        if [ -z "${MYSQL_HOST}" ]; then
             MYSQL_HOST=galera.service.consul
         fi
     else
@@ -807,24 +805,20 @@ get_database_configuration() {
         MYSQL_DATABASE="$(_get_config_value teamwire_db_name)"
         MYSQL_USER="$(_get_config_value teamwire_db_user)"
         MYSQL_BACKUP_USER="$(_get_config_value teamwire_db_backup_user)"
-        ORA_HOST="$(_get_config_value oracle_host)"
-        ORA_PORT="$(_get_config_value oracle_port)"
-        ORA_DATABASE="$(_get_config_value teamwire_db_name)"
-        ORA_USER="$(_get_config_value teamwire_db_user)"
 
-        if [ -z "${MYSQL_HOST}" ] && [ -z "${ORA_HOST}" ]; then
+        if [ -z "${MYSQL_HOST}" ]; then
             MYSQL_HOST=127.0.0.1
         fi
 
-        if [ -z "${MYSQL_PORT}" ] && [ -z "${ORA_PORT}" ]; then
+        if [ -z "${MYSQL_PORT}" ]; then
             MYSQL_PORT=3306
         fi
 
-        if [ -z "${MYSQL_DATABASE}" ] && [ -z "${ORA_DATABASE}" ]; then
+        if [ -z "${MYSQL_DATABASE}" ]; then
             MYSQL_DATABASE=teamwire
         fi
 
-        if [ -z "${MYSQL_USER}" ] && [ -z "${ORA_USER}" ]; then
+        if [ -z "${MYSQL_USER}" ]; then
             MYSQL_USER=teamwire
         fi
         if [ -z "${MYSQL_BACKUP_USER}" ]; then
@@ -834,8 +828,6 @@ get_database_configuration() {
 
     if [ -n "${MYSQL_HOST}" ]; then
         MYSQL_PASS="${DB_PASSWORD}"
-    elif [ -n "${ORA_HOST}" ]; then
-        ORA_PASSWORD="${DB_PASSWORD}"
     fi
 }
 
@@ -1344,11 +1336,6 @@ backupdb() {
 
     get_database_configuration
 
-    if [ -n "${ORA_HOST}" ]; then
-        echo "Backing up of Oracle databases is not supported."
-        exit 1
-    fi
-
     # Provide the password only to the invoked command's environment (not to
     # twctl's own environment) so it is not exposed via /proc/<pid>/environ.
     PASS="${MYSQL_BACKUP_USER_PASSWORD}" /usr/local/bin/backup_restore_db.sh -t backup \
@@ -1363,11 +1350,6 @@ restoredb() {
     fi
 
     get_database_configuration
-
-    if [ -n "${ORA_HOST}" ]; then
-        echo "Restoration of Oracle databases is not supported."
-        exit 1
-    fi
 
     # Provide the password only to the invoked command's environment (not to
     # twctl's own environment) so it is not exposed via /proc/<pid>/environ.
@@ -1472,7 +1454,6 @@ run_migrations_base() {
     _mig_env="$(_new_tmpfile)"
     {
         printf 'MYSQL_PASSWORD=%s\n' "${MYSQL_PASS}"
-        printf 'ORA_PASSWORD=%s\n'   "${ORA_PASSWORD}"
         printf 'REDIS_PASSWORD=%s\n' "${REDIS_PASSWORD}"
         printf 'AESKEY=%s\n'         "${AESKEY}"
     } > "${_mig_env}"
@@ -1481,8 +1462,6 @@ run_migrations_base() {
         --env-file "${_mig_env}" \
         -e MYSQL_HOST="${MYSQL_HOST}" -e MYSQL_PORT="${MYSQL_PORT}" -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
         -e MYSQL_USER="${MYSQL_USER}" \
-        -e ORA_HOST="${ORA_HOST}" -e ORA_PORT="${ORA_PORT}" -e ORA_DATABASE="${ORA_DATABASE}" \
-        -e ORA_USER="${ORA_USER}" \
         -e REDIS_URI="${REDIS_URI}" \
         -e VAULT_ADDR="${VAULT_ADDR}" "${PRFX}teamwire/backend:${BACKEND_VERSION}" 2>&1
     rm -f "${_mig_env}"

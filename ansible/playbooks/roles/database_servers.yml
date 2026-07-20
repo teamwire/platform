@@ -45,4 +45,3 @@
         tasks_from: maxscale
       when:
         - mysql_host is not defined
-        - oracle_host is not defined
