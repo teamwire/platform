@@ -1,0 +1,17 @@
+---
+- name: Create Docker Registry TLS certificate directory
+  ansible.builtin.file:
+    path: "{{ registry_certs_dir }}"
+    state: directory
+    mode: 0750
+
+- name: Install Vault-issued certificate and private key for the Docker Registry
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    remote_src: true
+    dest: "{{ item.dest }}"
+    mode: 0644
+  loop:
+    - { src: /var/lib/vault/ssl/vault.crt, dest: "{{ registry_certs_dir }}/registry.crt" }
+    - { src: /var/lib/vault/ssl/vault.pem, dest: "{{ registry_certs_dir }}/registry.key" }
+  notify: Restart registry

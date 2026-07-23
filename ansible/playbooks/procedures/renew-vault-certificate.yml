@@ -69,6 +69,17 @@
     - name: Flush handlers
       ansible.builtin.meta: flush_handlers
 
+- name: Deploy and configure Docker Registry TLS Certificate
+  hosts: docker_registry
+  tasks:
+    - name: Include Docker Registry TLS Configuration
+      ansible.builtin.include_role:
+        name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/docker"
+        tasks_from: registry
+
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
 - name: Renew Vault SSL certificate message
   hosts: management_servers
   tasks:
@@ -78,5 +89,6 @@
           - "The Vault SSL certificate has now been renewed and is valid for 2 years, this procedure may be re-run at any point"
           - "IMPORTANT: Vault must be unsealed via twctl secrets unseal"
           - "The unseal operation must be performed twice to fully unlock Vault and if on a cluster system, this will need to be performed on all hosts in the hashi_servers group"
+          - "The Docker Registry TLS certificate (if configured) has also been renewed"
           - "If you encounter any issues, please email support@teamwire.eu"
       run_once: true
