@@ -23,7 +23,7 @@
   tasks:
     - name: Check if group_vars/all exists
       ansible.builtin.stat:
-        path: "{{ inventory_dir }}/group_vars/all"
+        path: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/group_vars/all"
       register: group_vars_all_file
 
     - name: Assert that group_vars/all exists
