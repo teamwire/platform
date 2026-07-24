@@ -16,6 +16,27 @@
           - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v4.yml"
         success_msg: Ansible {{ ansible_version.full }} matches expected version.
 
+- name: Check that a group_vars/all configuration file exists
+  hosts: 127.0.0.1
+  connection: local
+  become: false
+  tasks:
+    - name: Check if group_vars/all exists
+      ansible.builtin.stat:
+        path: "{{ inventory_dir }}/group_vars/all"
+      register: group_vars_all_file
+
+    - name: Assert that group_vars/all exists
+      ansible.builtin.fail:
+        msg:
+          - "The group_vars/all configuration file does not exist."
+          - "Please create a valid group_vars/all configuration file before running this playbook."
+          - "Use group_vars/all.example as a starting point and reference for the correct syntax."
+          - "Further details on the required configuration can be found in the wiki."
+      when:
+        - not group_vars_all_file.stat.exists
+        - packer_build_name is not defined
+
 - name: Check Hashi stack hardening has been applied
   hosts: 127.0.0.1
   connection: local
