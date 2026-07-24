@@ -113,6 +113,20 @@
         - config_done is defined
         - mysql_host is not defined
 
+- name: Archive the Ansible log for this run
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Check if an Ansible log file exists for this run
+      ansible.builtin.stat:
+        path: "{{ inventory_dir }}/ansible.log"
+      register: current_log_file
+
+    - name: Rename the Ansible log file with a completion timestamp
+      ansible.builtin.command: >
+        mv "{{ inventory_dir }}/ansible.log" "{{ inventory_dir }}/ansible-{{ ansible_date_time.iso8601 }}.log"
+      when: current_log_file.stat.exists
+
 - name: Set current tag (COMPLETE) in /etc/platform_version
   hosts: all
   tasks:
