@@ -80,12 +80,13 @@
   tasks:
     - name: Check if an Ansible log file exists for this run
       ansible.builtin.stat:
-        path: "{{ inventory_dir }}/ansible.log"
+        path: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/ansible.log"
       register: current_log_file
 
     - name: Rename the Ansible log file with a completion timestamp
       ansible.builtin.command: >
-        mv "{{ inventory_dir }}/ansible.log" "{{ inventory_dir }}/ansible-{{ ansible_date_time.iso8601 }}.log"
+        mv "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/ansible.log"
+        "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/ansible-{{ ansible_date_time.iso8601 }}.log"
       when: current_log_file.stat.exists
 
 - name: Set complete tag
