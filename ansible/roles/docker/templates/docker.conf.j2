@@ -3,7 +3,7 @@ ExecStart=
 ExecStart=/usr/bin/dockerd -H unix:// --userland-proxy=false
 {%- if 'docker_registry' in groups and disable_private_connection is not defined %}
 {%- for host in groups.docker_registry | sort %}
- --registry-mirror http://{{ host }}:5000 --insecure-registry {{ host }}:5000
+ --registry-mirror https://{{ host }}:5000 --insecure-registry {{ host }}:5000
 {%- endfor %}
 {%- endif %}
 {%- if 'hashi_servers' in groups %}

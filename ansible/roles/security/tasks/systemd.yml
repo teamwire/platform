@@ -67,7 +67,7 @@
         - Reload systemd
         - Restart MariaDB
   when:
-    - ( groups['all'] | length == 1 and mysql_host is not defined and oracle_host is not defined ) or
+    - ( groups['all'] | length == 1 and mysql_host is not defined) or
       ( "database_servers" in groups and inventory_hostname in groups['database_servers'] )
 
 # ------------------------------------------------------------------------------

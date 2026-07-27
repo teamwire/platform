@@ -99,6 +99,39 @@ Release tag on GitHub:
 
 # ------------------------------------------------------------------------------
 #
+# Release tag on Forgejo
+#
+# ------------------------------------------------------------------------------
+
+Release tag on Forgejo:
+  stage: release-tag
+  script:
+    - LAST_DIGIT="${CI_COMMIT_TAG##*.}"
+    - git remote remove forgejo 2>/dev/null || true
+    - git remote add forgejo "https://oauth2:${FORGEJO_TOKEN}@forgejo.teamwire.eu/teamwire/platform.git"
+    - git push forgejo ${CI_COMMIT_TAG}
+    - git fetch origin master
+    - git checkout -b master origin/master
+    - git push forgejo master
+    - |
+      if [ "$LAST_DIGIT" = "0" ]; then
+        TAG_MESSAGE="Teamwire on-premise platform release ${CI_COMMIT_TAG}"
+        echo "Creating Forgejo release for ${CI_COMMIT_TAG}"
+        curl -fL \
+          -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: token ${FORGEJO_TOKEN}" \
+          "https://forgejo.teamwire.eu/api/v1/repos/teamwire/platform/releases" \
+          -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"target_commitish\":\"master\",\"name\":\"${CI_COMMIT_TAG}\",\"body\":\"${TAG_MESSAGE}\",\"draft\":false,\"prerelease\":false}"
+      else
+        echo "Skipping Forgejo release creation for patch ${CI_COMMIT_TAG}"
+      fi
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+(\.\d+)?$/
+      when: manual
+
+# ------------------------------------------------------------------------------
+#
 # Deploy to Cloud
 #
 # ------------------------------------------------------------------------------

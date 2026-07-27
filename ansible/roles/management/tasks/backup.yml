@@ -99,14 +99,17 @@
   become: false
   run_once: true
 
-- name: Check if Ansible log file exists
-  ansible.builtin.stat:
-    path: "{{ inventory_dir }}/ansible.log"
-  register: log_file
+- name: Find archived Ansible log files from previous runs
+  ansible.builtin.find:
+    paths: "{{ inventory_dir }}"
+    patterns: "ansible-*.log"
+  register: archived_log_files
+  run_once: true
 
-- name: Backup Ansible log file
-  ansible.builtin.command: mv {{ inventory_dir }}/ansible.log "{{ backup_directory.path }}/"
-  when:
-    - log_file.stat.exists
-    - tw_dev_mode is undefined or tw_dev_mode | lower != "true"
+- name: Backup archived Ansible log files
+  ansible.builtin.command: mv "{{ item.path }}" "{{ backup_directory.path }}/"
+  loop: "{{ archived_log_files.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: tw_dev_mode is undefined or tw_dev_mode | lower != "true"
   run_once: true

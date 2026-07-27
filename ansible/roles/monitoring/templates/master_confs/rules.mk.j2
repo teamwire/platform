@@ -194,6 +194,21 @@ static_checks['uptime'] = [
 { 'value': ('uptime', None, {'max': (7776000, 10368000)}), 'condition': {}, 'options': {'disabled': False}},
 ] + static_checks['uptime']
 
+# ------------------------------------------------------------------------------
+# Check Network Interfaces
+# ------------------------------------------------------------------------------
+static_checks.setdefault('if', [])
+
+static_checks['if'] = [
+{% if groups['all'] | length() == 1 %}
+{'value': ('lnx_if', '{{ ansible_default_ipv4.interface }}', {}), 'condition': {}, 'options': {'disabled': False}},
+{% else %}
+{'value': ('lnx_if', '{{ private_ip | addr_to_if(hostvars[inventory_hostname]) }}', {}), 'condition': {}, 'options': {'disabled': False}},
+{% if ansible_default_ipv4.address != private_ip %}
+{'value': ('lnx_if', '{{ ansible_default_ipv4.address | addr_to_if(hostvars[inventory_hostname]) }}', {}), 'condition': {}, 'options': {'disabled': False}},
+{% endif %}
+{% endif %}
+] + static_checks['if']
 
 # ------------------------------------------------------------------------------
 # Check SSL Certificates

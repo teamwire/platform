@@ -16,6 +16,27 @@
           - If running a clustered-server setup, run "ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-v4.yml"
         success_msg: Ansible {{ ansible_version.full }} matches expected version.
 
+- name: Check that a group_vars/all configuration file exists
+  hosts: 127.0.0.1
+  connection: local
+  become: false
+  tasks:
+    - name: Check if group_vars/all exists
+      ansible.builtin.stat:
+        path: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/group_vars/all"
+      register: group_vars_all_file
+
+    - name: Assert that group_vars/all exists
+      ansible.builtin.fail:
+        msg:
+          - "The group_vars/all configuration file does not exist."
+          - "Please create a valid group_vars/all configuration file before running this playbook."
+          - "Use group_vars/all.example as a starting point and reference for the correct syntax."
+          - "Further details on the required configuration can be found in the wiki."
+      when:
+        - not group_vars_all_file.stat.exists
+        - packer_build_name is not defined
+
 - name: Check Hashi stack hardening has been applied
   hosts: 127.0.0.1
   connection: local
@@ -533,7 +554,6 @@
         - teamwire_db_user is defined or
           teamwire_db_backup_user is defined
         - mysql_host is undefined
-        - oracle_host is undefined
 
 # ------------------------------------------------------------------------------
 # Ensure to check the requirements for enable_tls_mysql
@@ -574,7 +594,6 @@
           ansible.builtin.assert:
             that:
               - mysql_host is undefined
-              - oracle_host is undefined
             msg:
               - "In case you have defined an external database ensure to disable the SSL connection to the database."
               - 'Set the variable enable_tls_mysql to false.'

@@ -18,6 +18,9 @@
   register: stat_local_registry_htpasswd
   notify: Create local registry credentials
 
+- name: Install Docker Registry TLS certificate
+  ansible.builtin.include_tasks: registry-tls.yml
+
 - name: Write Docker registry config file
   ansible.builtin.template:
     src: "{{ registry_config }}"
@@ -39,7 +42,11 @@
     log_options:
       tag: docker-registry
       syslog-facility: local6
-    volumes: "{{ registry_dir }}:/var/lib/registry,{{ registry_dir }}/config.yml:/etc/docker/registry/config.yml"
+    volumes:
+      - "{{ registry_dir }}:/var/lib/registry"
+      - "{{ registry_dir }}/config.yml:/etc/distribution/config.yml"
+      - "{{ registry_certs_dir }}/registry.crt:/etc/distribution/tls/registry.crt:ro"
+      - "{{ registry_certs_dir }}/registry.key:/etc/distribution/tls/registry.key:ro"
     env:
       REGISTRY_AUTH: htpasswd
       REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
