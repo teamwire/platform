@@ -1,2 +1,7 @@
 ---
 enablemotd: true
+registry_cleanup_default_excludes:
+  - "*proxysql"
+  - "*check-mk-raw"
+  - "*nginx"
+  - "*registry"
