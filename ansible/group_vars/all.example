@@ -319,6 +319,11 @@ system_email_recipient:"
 # monitoring_db_user: "monitor
 # monitoring_db_password: "your secure password"
 
+# Absolute free-space warning threshold for the root ("/") filesystem, in GB. Critical
+# is automatically set to half of this value. Defaults to 20 (i.e. warn at 20GB free,
+# critical at 10GB free).
+# monitoring_disk_space_warning_gb: 20
+
 ##############################################################################
 ## NOMAD ALLOCATION & SETTINGS
 ##############################################################################
