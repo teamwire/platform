@@ -902,28 +902,31 @@ help() {
     echo
     echo "Actions:"
     echo
-    echo "show-tags       Show available backend tags"
-    echo "pull            Pull containers for a given tag (requires tag)"
-    echo "migrate         Run database migrations (requires tag)"
-    echo "setup           Configure and run Teamwire containers (requires tag)"
-    echo "start           Start all stopped Teamwire containers"
-    echo "restart         Stop and restart all containers"
-    echo "stop            Stop all running Teamwire containers"
-    echo "status          Show status of Teamwire containers (--clean can be specified on clusters to clean container history)"
-    echo "rm              Remove all stopped Teamwire containers"
-    echo "backupdb        Create a backup of the database (requires file name)"
-    echo "restoredb       Restore a backup of the database (requires file name)"
-    echo "secrets         Manage Vault and its secrets"
-    echo "version         Show version information"
-    echo "report          Create a report (system information & logs. --file can be specified for the file name)."
-    echo "                See twctl report --help for more details about how to include certain logs timeframes."
-    echo "connectivity    Test external connections"
-    echo "archiving       Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
-    echo "ha-log          Show content of haproxy.log. Pipe to less -R for pager with colour support"
-    echo "voip            Manage voip containers {start|stop|restart|status}"
-    echo "dashboard       Manage dashboard containers {start|stop|restart|status}"
-    echo "webclient       Manage webclient containers {start|stop|restart|status}"
-    echo "proxysql        Manage proxysql containers {start|stop|restart|status}"
+    echo "show-tags         Show available backend tags"
+    echo "pull              Pull containers for a given tag (requires tag)"
+    echo "migrate           Run database migrations (requires tag)"
+    echo "setup             Configure and run Teamwire containers (requires tag)"
+    echo "start             Start all stopped Teamwire containers"
+    echo "restart           Stop and restart all containers"
+    echo "stop              Stop all running Teamwire containers"
+    echo "status            Show status of Teamwire containers (--clean can be specified on clusters to clean container history)"
+    echo "rm                Remove all stopped Teamwire containers"
+    echo "backupdb          Create a backup of the database (requires file name)"
+    echo "restoredb         Restore a backup of the database (requires file name)"
+    echo "secrets           Manage Vault and its secrets"
+    echo "version           Show version information"
+    echo "report            Create a report (system information & logs. --file can be specified for the file name)."
+    echo "                  See twctl report --help for more details about how to include certain logs timeframes."
+    echo "connectivity      Test external connections"
+    echo "archiving         Manage organisation archiving {add|remove|list|help} (requires tag and file name)"
+    echo "ha-log            Show content of haproxy.log. Pipe to less -R for pager with colour support"
+    echo "voip              Manage voip containers {start|stop|restart|status}"
+    echo "dashboard         Manage dashboard containers {start|stop|restart|status}"
+    echo "webclient         Manage webclient containers {start|stop|restart|status}"
+    echo "proxysql          Manage proxysql containers {start|stop|restart|status}"
+    echo "cleanup_registry  List/delete old images from the Docker Registry and reclaim disk"
+    echo "                  space (requires tag as the age threshold, e.g. --tag \"3 months\")."
+    echo "                  See twctl cleanup_registry --help for more details."
 }
 
 test_server_condition_for_preflight_check() {
@@ -1328,6 +1331,253 @@ create_report() {
     echo
 }
 
+show_help_for_cleanup_registry(){
+    echo "Command line options for twctl cleanup_registry:"
+    echo ""
+    echo "--tag ARGUMENT (or -t)  Age threshold, e.g. \"3 months\", \"90 days\", \"1 year\"."
+    echo "                        Lists every image older than this, asks for"
+    echo "                        confirmation, then deletes the confirmed images and"
+    echo "                        runs garbage collection to reclaim disk space."
+    echo "--exclude REPO[,REPO...] Additional repositories (or shell glob patterns, e.g."
+    echo "                        \"teamwire/*\") to protect from deletion for this run only,"
+    echo "                        on top of the default excludes below."
+    echo "--list-all              Lists every image in the registry, ignoring the age"
+    echo "                        threshold. Pure read-only inventory overview - nothing"
+    echo "                        is ever deleted, and the excludes below do not apply"
+    echo "                        (everything is shown). Cannot be combined with --tag."
+    echo "--help                  Displays this message"
+    echo
+    echo "Without --tag or --list-all nothing is listed or changed - this message is"
+    echo "shown instead. Deleting a manifest does not free disk space by itself;"
+    echo "garbage collection runs automatically as part of this command after a"
+    echo "confirmed deletion, followed by a restart of the registry container (briefly"
+    echo "interrupts registry availability) to clear its in-memory blob cache - without"
+    echo "this, pushes for since-collected image digests can silently fail to store"
+    echo "their content while still being reported as successful."
+    echo
+    echo "Repositories are never considered for deletion if listed in"
+    echo "/usr/local/share/twctl/registry_cleanup_excludes.conf (deployed from the"
+    echo "registry_cleanup_default_excludes variable, see group_vars/all), or passed"
+    echo "via --exclude."
+    echo
+    echo "Match against the repository path exactly as shown by --list-all - some"
+    echo "images are stored with their original pull source as part of the path"
+    echo "(e.g. \"harbor.teamwire.eu/teamwire/backend\"). A leading \"*\" glob (e.g."
+    echo "\"*teamwire/backend\") matches regardless of that prefix."
+    echo
+    echo "Examples:"
+    echo "      twctl cleanup_registry --list-all"
+    echo "      twctl cleanup_registry --tag \"3 months\""
+    echo "      twctl cleanup_registry --tag \"90 days\" --exclude \"*teamwire/dashboard\""
+    exit 0
+}
+
+cleanup_registry() {
+    if [ -z "${TAG}" ] && [ "${LIST_ALL}" != "/bin/true" ]; then
+        show_help_for_cleanup_registry
+    fi
+
+    if [ -n "${TAG}" ] && [ "${LIST_ALL}" == "/bin/true" ]; then
+        echo "ERROR: --list-all is a pure inventory overview and cannot be combined with --tag." >&2
+        echo "       Use -t/--tag alone to select a deletable subset instead." >&2
+        return 1
+    fi
+
+    if [ -n "${TAG}" ]; then
+        _reject_shell_metachars "${TAG}" "--tag argument"
+    fi
+
+    local registry_host
+    registry_host=$(awk '/^\[docker_registry\]/{f=1;next}/^\[/{f=0}f && NF{print $1; exit}' "${ANSIBLE_DIR}/${INVENTORY_FILE}")
+
+    if [ -z "${registry_host}" ]; then
+        echo "No docker_registry host configured in ${INVENTORY_FILE} - nothing to clean up."
+        return 0
+    fi
+
+    local registry_password
+    registry_password="$(vault_read_secrets registry/password)"
+
+    local _registry_auth_cfg
+    _registry_auth_cfg="$(_new_tmpfile)"
+    printf 'user = "teamwire:%s"\n' "${registry_password}" > "${_registry_auth_cfg}"
+    registry_curl() {
+        curl --config "${_registry_auth_cfg}" -sk "$@"
+    }
+
+    local threshold_epoch=""
+    if [ "${LIST_ALL}" != "/bin/true" ]; then
+        threshold_epoch=$(date -d "${TAG} ago" -u +%s) || {
+            echo "ERROR: could not parse '${TAG}' as an age (try e.g. \"3 months\", \"90 days\")." >&2
+            return 1
+        }
+    fi
+
+    # Exclude list: repositories that must never be deleted, regardless of age.
+    # Baseline comes from the file the management role deploys (rendered from
+    # the registry_cleanup_default_excludes role default / group_vars/all
+    # override); --exclude adds one-off repos/patterns for this run only.
+    local exclude_repos=()
+    local default_exclude_file="/usr/local/share/twctl/registry_cleanup_excludes.conf"
+    if [ -f "${default_exclude_file}" ]; then
+        local _line
+        while IFS= read -r _line; do
+            [ -z "${_line}" ] && continue
+            exclude_repos+=("${_line}")
+        done < "${default_exclude_file}"
+    fi
+
+    if [ -n "${EXCLUDE}" ]; then
+        local _pattern _exclude_patterns
+        IFS=',' read -r -a _exclude_patterns <<< "${EXCLUDE}"
+        for _pattern in "${_exclude_patterns[@]}"; do
+            case "${_pattern}" in
+                *[!A-Za-z0-9._/*-]*)
+                    echo "ERROR: invalid characters in --exclude pattern '${_pattern}'." >&2
+                    return 1
+                    ;;
+            esac
+            exclude_repos+=("${_pattern}")
+        done
+    fi
+
+    _is_excluded_repo() {
+        local repo="$1"
+        local pattern
+        for pattern in "${exclude_repos[@]}"; do
+            # shellcheck disable=SC2053
+            [[ "${repo}" == ${pattern} ]] && return 0
+        done
+        return 1
+    }
+
+    if [ "${LIST_ALL}" != "/bin/true" ] && [ "${#exclude_repos[@]}" -gt 0 ]; then
+        echo "Excluded repositories (never deleted): ${exclude_repos[*]}"
+        echo
+    fi
+
+    if [ "${LIST_ALL}" == "/bin/true" ]; then
+        echo "Scanning https://${registry_host}:5000 - listing every image (--list-all, no age filter)"
+    else
+        echo "Scanning https://${registry_host}:5000 for images created before $(date -u -d "@${threshold_epoch}" '+%Y-%m-%d %H:%M UTC') (older than: ${TAG})"
+    fi
+    echo
+
+    local repos
+    mapfile -t repos < <(registry_curl "https://${registry_host}:5000/v2/_catalog?n=1000" | jq -r '.repositories[]?')
+
+    if [ "${#repos[@]}" -eq 0 ]; then
+        echo "No repositories found (check connectivity/credentials to the registry)."
+        return 0
+    fi
+
+    local candidates_file
+    candidates_file=$(_new_tmpfile)
+
+    printf '%-35s %-20s %-15s %-25s\n' "REPOSITORY" "TAG" "DIGEST" "CREATED"
+    printf '%s\n' "--------------------------------------------------------------------------------------------------"
+
+    local repo tag tags digest config_digest created created_epoch
+    for repo in "${repos[@]}"; do
+        if [ "${LIST_ALL}" != "/bin/true" ] && _is_excluded_repo "${repo}"; then
+            continue
+        fi
+
+        mapfile -t tags < <(registry_curl "https://${registry_host}:5000/v2/${repo}/tags/list" | jq -r '.tags[]? // empty')
+        for tag in "${tags[@]}"; do
+            [ -z "${tag}" ] && continue
+
+            digest=$(registry_curl -sI -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+                "https://${registry_host}:5000/v2/${repo}/manifests/${tag}" | grep -i docker-content-digest | tr -d '\r' | awk '{print $2}')
+            [ -z "${digest}" ] && continue
+
+            config_digest=$(registry_curl -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+                "https://${registry_host}:5000/v2/${repo}/manifests/${tag}" | jq -r '.config.digest // empty')
+            [ -z "${config_digest}" ] && continue
+
+            created=$(registry_curl "https://${registry_host}:5000/v2/${repo}/blobs/${config_digest}" | jq -r '.created // empty')
+
+            if [ -z "${created}" ]; then
+                if [ "${LIST_ALL}" == "/bin/true" ]; then
+                    printf '%-35s %-20s %-15s %-25s\n' "${repo}" "${tag}" "${digest:7:12}" "unknown"
+                fi
+                continue
+            fi
+
+            created_epoch=$(date -d "${created}" +%s 2>/dev/null) || continue
+
+            if [ "${LIST_ALL}" == "/bin/true" ] || [ "${created_epoch}" -lt "${threshold_epoch}" ]; then
+                printf '%-35s %-20s %-15s %-25s\n' "${repo}" "${tag}" "${digest:7:12}" "${created}"
+                printf '%s\t%s\t%s\t%s\n' "${repo}" "${tag}" "${digest}" "${created}" >> "${candidates_file}"
+            fi
+        done
+    done
+
+    local count
+    count=$(wc -l < "${candidates_file}" | tr -d ' ')
+    echo
+
+    if [ "${LIST_ALL}" == "/bin/true" ]; then
+        echo "${count} image(s) total."
+        return 0
+    fi
+
+    echo "${count} image(s) found older than ${TAG}."
+
+    if [ "${count}" -eq 0 ]; then
+        return 0
+    fi
+
+    local dup_digests
+    dup_digests=$(cut -f3 "${candidates_file}" | sort | uniq -d)
+    if [ -n "${dup_digests}" ]; then
+        echo
+        echo "NOTE: the following digests are shared by more than one listed tag -"
+        echo "deleting any one of them deletes ALL tags pointing at that digest:"
+        echo "${dup_digests}"
+    fi
+
+    echo
+    local confirm
+    read -r -p "Type 'yes' to delete the ${count} image(s) listed above and run garbage collection: " confirm
+    if [ "${confirm}" != "yes" ]; then
+        echo "Aborted, nothing deleted."
+        return 0
+    fi
+
+    echo
+    local http_code
+    while IFS=$'\t' read -r repo tag digest created; do
+        echo -n "Deleting ${repo}:${tag} (${digest})... "
+        http_code=$(registry_curl -o /dev/null -w '%{http_code}' -X DELETE "https://${registry_host}:5000/v2/${repo}/manifests/${digest}")
+        if [ "${http_code}" == "202" ]; then
+            echo "OK"
+        else
+            echo "FAILED (HTTP ${http_code})"
+        fi
+    done < "${candidates_file}"
+
+    echo
+    echo "Manifests unlinked. Running garbage collection on ${registry_host} to reclaim disk space..."
+    echo
+    ansible docker_registry -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell \
+        -a "docker exec docker-registry registry garbage-collect --delete-untagged /etc/distribution/config.yml"
+
+    # The registry's storage.cache.blobdescriptor is in-memory (registry-config.yml.j2).
+    # garbage-collect runs as a separate 'docker exec' process and can delete blobs the
+    # running registry server still believes exist in its cache - without a restart, the
+    # next push for a since-collected digest gets a fast, misleading 201 (server thinks
+    # the content is already there and skips writing it) while the blob is actually
+    # missing on disk, breaking that image until the container happens to restart.
+    echo
+    echo "Restarting the registry to clear its in-memory blob cache..."
+    ansible docker_registry -i "${ANSIBLE_DIR}/${INVENTORY_FILE}" -b -m shell \
+        -a "docker restart docker-registry"
+
+    echo
+    echo "Done. Disk space has been reclaimed."
+}
+
 backupdb() {
     if [ -f "${FILENAME}" ]; then
         echo "${FILENAME} exists, please specify a name that doesn't exist!"
@@ -1715,6 +1965,13 @@ while [ $# -gt 0 ]; do
             FULL=/bin/true
             shift
             ;;
+        --exclude)
+            EXCLUDE=$2
+            shift
+            ;;
+        --list-all)
+            LIST_ALL=/bin/true
+            ;;
         pull)
             TASK="pull_images"
             TAG_REQUIRED=yes
@@ -1773,6 +2030,14 @@ while [ $# -gt 0 ]; do
         connectivity)
             TASK="connectivity_test"
             ;;
+        cleanup_registry)
+            if [ "$2" == "--help" ] || [ "$2" == "-h" ]; then
+                TASK="show_help_for_cleanup_registry"
+                break
+            else
+                TASK="cleanup_registry"
+            fi
+            ;;
         archiving)
             if [ "$2" == "list" ];then
                 sudo cat /data/archiving/archiving.conf
@@ -1819,8 +2084,10 @@ if [ -z "${TASK}" ]; then
 fi
 
 # Reject tags containing characters that could break out of the shell/ansible
-# command strings and URLs the tag is later embedded into.
-if [ -n "${TAG}" ]; then
+# command strings and URLs the tag is later embedded into. cleanup_registry
+# uses --tag for an age string (e.g. "3 months") instead of a release tag, and
+# validates it itself via _reject_shell_metachars, which allows spaces.
+if [ -n "${TAG}" ] && [ "${TASK}" != "cleanup_registry" ] && [ "${TASK}" != "show_help_for_cleanup_registry" ]; then
     case "${TAG}" in
         *[!A-Za-z0-9._/-]*)
             echo "ERROR: Invalid characters in tag '${TAG}'."

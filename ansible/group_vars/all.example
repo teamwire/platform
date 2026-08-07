@@ -407,6 +407,16 @@ system_email_recipient:"
 # Set this to true if you wish to enable ssh agent forwarding
 # enable_ssh_agent_forwarding: "false"
 
+# Repositories that "twctl cleanup_registry" must never delete images from,
+# regardless of the age threshold given on the command line. Defaults to an
+# empty list. Entries must match the repository path exactly as shown by
+# "twctl cleanup_registry --list-all" - some images are stored with their
+# original pull source as part of the path (e.g.
+# "harbor.teamwire.eu/teamwire/backend"). A leading "*" glob (e.g.
+# "*teamwire/backend") matches regardless of that prefix.
+# registry_cleanup_default_excludes:
+#   - "*teamwire/backend"
+
 ##############################################################################
 ## DEBUGGING
 ##############################################################################
