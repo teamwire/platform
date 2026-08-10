@@ -26,3 +26,5 @@ monitoring_db_user: "monitor"
 # ------------------------------------------------------------------------------
 monitoring_sender_address: "{{ sender_address.split('<')[1] | default(sender_address) | replace('>', '') }}"
 monitoring_mail_subject_tag: "TW Monitoring:"
+
+monitoring_disk_space_warning_gb: 20

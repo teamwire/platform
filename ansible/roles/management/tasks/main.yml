@@ -36,6 +36,22 @@
     owner: root
     group: root
 
+- name: Ensure the twctl data directory exists
+  ansible.builtin.file:
+    path: /usr/local/share/twctl
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Deploy the default registry cleanup exclude list for twctl
+  ansible.builtin.template:
+    src: registry_cleanup_excludes.conf.j2
+    dest: /usr/local/share/twctl/registry_cleanup_excludes.conf
+    mode: 0644
+    owner: root
+    group: root
+
 - name: Install new motd
   ansible.builtin.copy:
     src: motd.sh

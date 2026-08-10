@@ -242,6 +242,17 @@
       run_once: true
       when: worker_gunicorn_max_requests is defined
 
+    - name: Assert monitoring_disk_space_warning_gb is a positive integer
+      ansible.builtin.assert:
+        that:
+          - monitoring_disk_space_warning_gb is integer
+          - monitoring_disk_space_warning_gb > 0
+        msg: >-
+          Invalid value for configuration option `monitoring_disk_space_warning_gb`.
+          Please make sure your value is a positive, unquoted integer (e.g. 20).
+      run_once: true
+      when: monitoring_disk_space_warning_gb is defined
+
     - name: Assert channel_group_expiry variable is valid.
       ansible.builtin.assert:
         that:

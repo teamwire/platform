@@ -319,6 +319,11 @@ system_email_recipient:"
 # monitoring_db_user: "monitor
 # monitoring_db_password: "your secure password"
 
+# Absolute free-space warning threshold for the root ("/") filesystem, in GB. Critical
+# is automatically set to half of this value. Defaults to 20 (i.e. warn at 20GB free,
+# critical at 10GB free).
+# monitoring_disk_space_warning_gb: 20
+
 ##############################################################################
 ## NOMAD ALLOCATION & SETTINGS
 ##############################################################################
@@ -406,6 +411,16 @@ system_email_recipient:"
 # By default ssh agent forwarding is disabled
 # Set this to true if you wish to enable ssh agent forwarding
 # enable_ssh_agent_forwarding: "false"
+
+# Repositories that "twctl cleanup_registry" must never delete images from,
+# regardless of the age threshold given on the command line. Defaults to an
+# empty list. Entries must match the repository path exactly as shown by
+# "twctl cleanup_registry --list-all" - some images are stored with their
+# original pull source as part of the path (e.g.
+# "harbor.teamwire.eu/teamwire/backend"). A leading "*" glob (e.g.
+# "*teamwire/backend") matches regardless of that prefix.
+# registry_cleanup_default_excludes:
+#   - "*teamwire/backend"
 
 ##############################################################################
 ## DEBUGGING

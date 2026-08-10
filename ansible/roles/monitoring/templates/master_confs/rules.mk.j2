@@ -86,6 +86,16 @@ static_checks['memory_linux'] = [
 static_checks.setdefault('memory_linux', [])
 
 # ------------------------------------------------------------------------------
+# Check disk space on / (absolute GB free instead of Checkmk's % default, which
+# triggers far too early on large disks)
+# ------------------------------------------------------------------------------
+static_checks.setdefault('filesystem', [])
+
+static_checks['filesystem'] = [
+{'value': ('df', '/', {'levels': (-{{ (monitoring_disk_space_warning_gb * 1024) | int }}, -{{ (monitoring_disk_space_warning_gb * 1024 / 2) | int }})}), 'condition': {}, 'options': {'disabled': False}},
+] + static_checks['filesystem']
+
+# ------------------------------------------------------------------------------
 # Check NTP
 # ------------------------------------------------------------------------------
 static_checks.setdefault('ntp_time', [])
