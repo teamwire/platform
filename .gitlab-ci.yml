@@ -204,41 +204,6 @@ Roles dir test:
 #
 # ------------------------------------------------------------------------------
 
-Packer Build vmware test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD packer/build-vmware.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
-Packer ansible fact script test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/create_ansible_facts.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
-Packer network fix script test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/fix-network.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
-Packer shrink test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/shrink-image.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
-Packer unique test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/make-unique.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
-Packer guest tools test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/vm-guest-tools.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
-Offline installation test:
-  stage: shellcheck
-  script: /bin/bash -c "$SHELLCHECK_CMD packer/scripts/prepare-offline-installation.sh"
-  needs: ['Ensure shellcheck docker image exists']
-
 TWCTL test:
   stage: shellcheck
   script: /bin/bash -c "$SHELLCHECK_CMD ansible/roles/management/files/twctl"
