@@ -130,6 +130,7 @@
   when:
     - not ansible_local.offline_mode.stat.exists
     - config_done is defined
+    - not skip_network_requirements is defined
 
 - name: Check overall requirements
   hosts: all
