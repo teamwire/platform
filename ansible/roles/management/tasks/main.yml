@@ -6,12 +6,20 @@
       - git
     state: present
 
-- name: Check out the teamwire/platform git repository
+- name: Check out the teamwire/platform git repository if not already present
   ansible.builtin.git: # noqa latest[git]
-    repo: https://github.com/teamwire/platform.git
+    repo: "{{ ansible_local.general_facts.platform_git_repo }}"
     depth: 1
     dest: /home/teamwire/platform
     update: false
+  notify: Fix ownership of git checkout
+
+- name: Set the git remote URL
+  community.general.git_config:
+    name: remote.origin.url
+    scope: local
+    repo: /home/teamwire/platform
+    value: "{{ ansible_local.general_facts.platform_git_repo }}"
   notify: Fix ownership of git checkout
 
 - name: Check config file status
