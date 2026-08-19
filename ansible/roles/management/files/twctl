@@ -1863,16 +1863,16 @@ get_latest_tag() {
   local latestFile
   latestFile="/etc/latest_remote_github_version"
 
-  if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact && { [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]]; }; then
+  if jq -e '.stat.exists == true' /etc/ansible/facts.d/offline_mode.fact &>/dev/null; then
+     sudo bash -c "echo 'N/A' > ${latestFile}"
+     sudo chmod 0644 "${latestFile}"
+  elif [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]]; then
      local HEAD
      HEAD=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep 'HEAD' | awk '{print $1}')
      local LATEST
      LATEST=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep "${HEAD}" | grep -v -i 'HEAD' | awk '{print $2}')
 
      sudo bash -c "echo $(grep -oP '[0-9]+\.[0-9]+' <<< "${LATEST}") > ${latestFile}"
-     sudo chmod 0644 "${latestFile}"
-  else
-     sudo bash -c "echo 'N/A' > ${latestFile}"
      sudo chmod 0644 "${latestFile}"
   fi
 }
