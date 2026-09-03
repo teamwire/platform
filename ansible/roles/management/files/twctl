@@ -1880,8 +1880,12 @@ get_latest_tag() {
 version() {
 check_registry
 get_latest_tag
+local offline_mode
+offline_mode=$(jq -r '.stat.exists // false' /etc/ansible/facts.d/offline_mode.fact 2>/dev/null)
+
         echo "#### Version information ####
 Installation type: ${INSTALLATION}
+Offline Image: ${offline_mode}
 Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $(</etc/latest_remote_github_version)
