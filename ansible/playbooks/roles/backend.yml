@@ -19,3 +19,11 @@
     - name: Include backend role
       ansible.builtin.include_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend"
+
+- name: Configure additional backend hosts
+  hosts: backend_servers:local
+  tasks:
+    - name: Import add_additional_host tasks for backend_servers
+      ansible.builtin.import_tasks: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/backend/tasks/add_additional_host.yml"
+      when:
+        - groups['all'] | length > 1
