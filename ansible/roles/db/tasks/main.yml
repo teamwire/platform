@@ -163,7 +163,7 @@
     dbname: "{{ item.0.value.dbname }}"
   when:
     - config_done is defined
-    - use_proxysql is undefined
+    - (use_proxysql is undefined or use_proxysql == "false")
     - groups['all'] | length > 1
 
 # ------------------------------------------------------------------------------

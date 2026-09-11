@@ -26,7 +26,7 @@ Container%20VoIP%20Prosody sudo {{ monitoring_agent_custom_check_dir }}check_doc
 Platform%20Deployment%20Status {{ monitoring_agent_custom_check_dir }}/check_platform_deployment.sh
 {% endif %}
 
-{% if use_proxysql is defined and groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] %}
+{% if use_proxysql is defined and use_proxysql != "false" and groups['management_servers'] is defined and inventory_hostname in groups['management_servers'] %}
 # check nomad allocations for nomad jobs {{ monitoring_agent_custom_check_dir }}/check_nomad_job.sh
 Nomad%20Job%20teamwire-proxysql {{ monitoring_agent_custom_check_dir }}/check_nomad_job.sh teamwire-proxysql
 {% endif %}
