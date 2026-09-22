@@ -412,6 +412,11 @@ system_email_recipient:"
 # Set this to true if you wish to enable ssh agent forwarding
 # enable_ssh_agent_forwarding: "false"
 
+# Use the dynamic Teamwire git repository source
+# By default the platform keeps the git remote it was cloned with
+# Set this to true if you wish to use the remote dynamically provided by Teamwire
+# enable_tw_repository: "false"
+
 # Repositories that "twctl cleanup_registry" must never delete images from,
 # regardless of the age threshold given on the command line. Defaults to an
 # empty list. Entries must match the repository path exactly as shown by

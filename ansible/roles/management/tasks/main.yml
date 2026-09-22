@@ -14,6 +14,17 @@
     update: false
   notify: Fix ownership of git checkout
 
+- name: Set the git remote URL
+  community.general.git_config:
+    name: remote.origin.url
+    scope: local
+    repo: /home/teamwire/platform
+    value: "{{ ansible_local.general_facts.platform_git_repo }}"
+  when:
+    - not ansible_local.offline_mode.stat.exists
+    - enable_tw_repository | default('false') | bool
+  notify: Fix ownership of git checkout
+
 - name: Check config file status
   ansible.builtin.stat:
     path: /home/teamwire/platform/ansible/group_vars/all

@@ -57,6 +57,19 @@
       with_items: "{{ ansible_local.general_facts.network_url_check.teamwire_registry }}"
       when: use_teamwire_registry | default('true') | bool
 
+    - name: Check Teamwire git repository connectivity # noqa command-instead-of-module
+      ansible.builtin.command: 'curl -s -o /dev/null -L --connect-timeout 5 --max-time 15 --retry 1 -w "%{http_code} %{http_version}\n" {{ item }}'
+      environment:
+        http_proxy: "{{ http_proxy | default('') }}"
+        https_proxy: "{{ http_proxy | default('') }}"
+      register: curl_teamwire_git_check
+      failed_when:
+        - curl_teamwire_git_check.rc != 0 or curl_teamwire_git_check.stdout.split()[0] == "000"
+      changed_when: false
+      ignore_errors: true
+      with_items: "{{ [ansible_local.general_facts.platform_git_repo] }}"
+      when: enable_tw_repository | default('false') | bool
+
 # ------------------------------------------------------------------------------
 # Evaluate what failed where
 # ------------------------------------------------------------------------------
@@ -67,7 +80,8 @@
           {{
             (curl_check.results | default([]) +
              curl_cluster_check.results | default([]) +
-             curl_teamwire_registry_check.results | default([]) )
+             curl_teamwire_registry_check.results | default([]) +
+             curl_teamwire_git_check.results | default([]) )
             | selectattr('failed', 'defined')
             | selectattr('failed', 'sameas', true)
             | map(attribute='item') | list

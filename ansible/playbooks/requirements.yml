@@ -356,6 +356,18 @@
       when:
         - enable_ssh_agent_forwarding is defined
 
+    - name: Ensure enable_tw_repository is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - enable_tw_repository is string
+          - enable_tw_repository is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_tw_repository is set to lower quoted true or false when enabled
+      run_once: true
+      when:
+        - enable_tw_repository is defined
+        - not ansible_local.offline_mode.stat.exists
+
     - name: Ensure enable_stun is a string when enabled
       ansible.builtin.assert:
         that:
