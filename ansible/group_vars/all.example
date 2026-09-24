@@ -247,6 +247,12 @@ allow_user_query: "no"
 # The default value is "true".
 # mysql_tls_admin_enabled: "true"
 
+# Enable ProxySQL as a database connector on the backend servers.
+# Note:
+# - This only applies to cluster setups without an external database.
+# - Requires TLS for MySQL (`enable_tls_mysql` must NOT be set to false).
+# use_proxysql: "true"
+
 # The default ProxySQL RAM allocation 256 can be overridden.
 # On backend servers, the value is used as defined. On the management server,
 # it is automatically multiplied by a factor of 1.5.
