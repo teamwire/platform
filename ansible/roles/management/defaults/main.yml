@@ -1,5 +1,6 @@
 ---
 enablemotd: true
+enable_tw_repository: false
 registry_cleanup_default_excludes:
   - "*proxysql"
   - "*check-mk-raw"

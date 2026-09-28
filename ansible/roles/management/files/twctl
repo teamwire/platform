@@ -1863,7 +1863,10 @@ get_latest_tag() {
   local latestFile
   latestFile="/etc/latest_remote_github_version"
 
-  if grep -q 'false' /etc/ansible/facts.d/offline_mode.fact && { [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]]; }; then
+  if jq -e '.stat.exists == true' /etc/ansible/facts.d/offline_mode.fact &>/dev/null; then
+     sudo bash -c "echo 'N/A' > ${latestFile}"
+     sudo chmod 0644 "${latestFile}"
+  elif [ ! -e "${latestFile}" ] || [[ $(find "/etc/latest_remote_github_version" -mtime +1 -print) ]]; then
      local HEAD
      HEAD=$(git --git-dir=${ANSIBLE_DIR}/../.git ls-remote 2>/dev/null | grep 'HEAD' | awk '{print $1}')
      local LATEST
@@ -1871,17 +1874,18 @@ get_latest_tag() {
 
      sudo bash -c "echo $(grep -oP '[0-9]+\.[0-9]+' <<< "${LATEST}") > ${latestFile}"
      sudo chmod 0644 "${latestFile}"
-  else
-     sudo bash -c "echo 'N/A' > ${latestFile}"
-     sudo chmod 0644 "${latestFile}"
   fi
 }
 
 version() {
 check_registry
 get_latest_tag
+local offline_mode
+offline_mode=$(jq -r '.stat.exists // false' /etc/ansible/facts.d/offline_mode.fact 2>/dev/null)
+
         echo "#### Version information ####
 Installation type: ${INSTALLATION}
+Offline Image: ${offline_mode}
 Platform (checkout): $(git --git-dir=${ANSIBLE_DIR}/../.git describe --always)
 Platform (applied) : $(cat /etc/platform_version 2>/dev/null)
 Platform (latest)  : $(</etc/latest_remote_github_version)

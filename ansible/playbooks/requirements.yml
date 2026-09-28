@@ -130,6 +130,7 @@
   when:
     - not ansible_local.offline_mode.stat.exists
     - config_done is defined
+    - not skip_network_requirements is defined
 
 - name: Check overall requirements
   hosts: all
@@ -355,6 +356,18 @@
       when:
         - enable_ssh_agent_forwarding is defined
 
+    - name: Ensure enable_tw_repository is a string when enabled
+      ansible.builtin.assert:
+        that:
+          - enable_tw_repository is string
+          - enable_tw_repository is in ['true', 'false']
+        msg: >-
+          Ensure value from enable_tw_repository is set to lower quoted true or false when enabled
+      run_once: true
+      when:
+        - enable_tw_repository is defined
+        - not ansible_local.offline_mode.stat.exists
+
     - name: Ensure enable_stun is a string when enabled
       ansible.builtin.assert:
         that:
@@ -567,6 +580,23 @@
         - mysql_host is undefined
 
 # ------------------------------------------------------------------------------
+# Ensure to check the requirements for use_proxysql
+# ------------------------------------------------------------------------------
+    - name: Assert use_proxysql_is valid
+      ansible.builtin.assert:
+        that:
+          - use_proxysql is string
+          - use_proxysql is in ['true', 'false']
+        msg: >-
+          Invalid value for configuration option `use_proxysql`.
+          Please ensure your value is quoted lowercase and is either "true" or "false".
+      run_once: true
+      when:
+        - use_proxysql is defined
+        - groups['all'] | length > 1
+        - groups.database_servers is defined
+
+# ------------------------------------------------------------------------------
 # Ensure to check the requirements for enable_tls_mysql
 # ------------------------------------------------------------------------------
     - name: Assert enable_tls_mysql is valid
@@ -581,6 +611,7 @@
       when:
         - enable_tls_mysql is defined
         - not (use_proxysql is defined and
+               use_proxysql != "false" and
                groups['all'] | length > 1 and
                groups.database_servers is defined)
 
@@ -596,6 +627,7 @@
       when:
         - enable_tls_mysql is defined
         - use_proxysql is defined
+        - use_proxysql != "false"
         - groups['all'] | length() > 1
         - groups.database_servers is defined
 
