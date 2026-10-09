@@ -19,7 +19,9 @@
       ansible.builtin.include_role:
         name: "{{ teamwire_platform_dir if teamwire_platform_dir is defined else (ansible_inventory_sources[0] | dirname) }}/roles/mysqlproxy"
         tasks_from: reconfigure_proxysql
-      when: use_proxysql | default(false) | bool
+      when:
+        - groups['all'] | length() > 1
+        - groups.database_servers is defined
 
 - name: Configure ProxySQL
   hosts: local:management_servers

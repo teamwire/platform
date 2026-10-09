@@ -59,8 +59,8 @@
           - "It seems like you enabled tls connections for mysql but the database does not need a restart at the moment."
       with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
       when:
-        - enable_tls_mysql is undefined or
-          enable_tls_mysql | lower == "true"
+        - ansible_local.general_facts.enable_tls_mysql is undefined or
+          ansible_local.general_facts.enable_tls_mysql | lower == "true"
         - inventory_hostname == groups['database_servers'] | sort | first
       run_once: true
 
@@ -72,8 +72,8 @@
           - "It seems like you do not have tls connections for mysql enabled and the database does not need a restart at the moment."
       with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
       when:
-        - enable_tls_mysql is defined
-        - enable_tls_mysql | lower != "true"
+        - ansible_local.general_facts.enable_tls_mysql is defined
+        - ansible_local.general_facts.enable_tls_mysql | lower != "true"
         - inventory_hostname == groups['database_servers'] | sort | first
       run_once: true
 
