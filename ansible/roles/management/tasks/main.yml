@@ -8,7 +8,7 @@
 
 - name: Check out the teamwire/platform git repository if not already present
   ansible.builtin.git: # noqa latest[git]
-    repo: "{{ ansible_local.general_facts.platform_git_repo }}"
+    repo: "{{ platform_internal_git_repo | default(ansible_local.general_facts.platform_git_repo) }}"
     depth: 1
     dest: /home/teamwire/platform
     update: false
@@ -19,10 +19,9 @@
     name: remote.origin.url
     scope: local
     repo: /home/teamwire/platform
-    value: "{{ ansible_local.general_facts.platform_git_repo }}"
+    value: "{{ platform_internal_git_repo | default(ansible_local.general_facts.platform_git_repo) }}"
   when:
     - not ansible_local.offline_mode.stat.exists
-    - enable_tw_repository | default('false') | bool
   notify: Fix ownership of git checkout
 
 - name: Check config file status
