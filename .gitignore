@@ -13,3 +13,4 @@ ansible/playbooks/procedures/debian.cnf
 .gitlab/*
 .local
 ansible/ansible.log
+.claude/
