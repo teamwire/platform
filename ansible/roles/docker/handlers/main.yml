@@ -7,6 +7,12 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
+- name: Restart containerd
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+    daemon_reload: true
+
 - name: Restart docker
   ansible.builtin.systemd:
     name: docker
