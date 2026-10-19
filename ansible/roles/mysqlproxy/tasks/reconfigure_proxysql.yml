@@ -11,6 +11,9 @@
     - name: Register docker registry
       ansible.builtin.set_fact:
         local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
+      when:
+        - config_done is defined
+        - groups.docker_registry is defined
 
     - name: Write ProxySQL config files
       ansible.builtin.template:
