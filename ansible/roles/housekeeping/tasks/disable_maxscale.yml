@@ -1,0 +1,6 @@
+---
+- name: Stop and disable MaxScale (superseded by ProxySQL)
+  ansible.builtin.service:
+    name: maxscale
+    state: stopped
+    enabled: false

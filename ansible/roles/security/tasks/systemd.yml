@@ -35,16 +35,16 @@
             is_enable_tls_mysql_applied_to_cluster: '{{ true if item.Value | lower == "yes" else false }}'
           with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
           when:
-            - enable_tls_mysql is undefined or
-              enable_tls_mysql | lower == "true"
+            - ansible_local.general_facts.enable_tls_mysql is undefined or
+              ansible_local.general_facts.enable_tls_mysql | lower == "true"
 
         - name: Set fact if state of ssl matches enable_tls_mysql set to false
           ansible.builtin.set_fact:
             is_enable_tls_mysql_applied_to_cluster: '{{ true if item.Value | lower == "disabled" else false }}'
           with_items: "{{ hostvars[groups['database_servers'] | sort | first].mysql_have_ssl.query_result }}"
           when:
-            - enable_tls_mysql is defined
-            - enable_tls_mysql | lower != "true"
+            - ansible_local.general_facts.enable_tls_mysql is defined
+            - ansible_local.general_facts.enable_tls_mysql | lower != "true"
       when:
         - '"database_servers" in groups'
 

@@ -96,7 +96,7 @@
   when:
     - groups['all'] | length > 1
     - item.User == backup_username
-    - (use_proxysql is undefined or use_proxysql == "false")
+    - (ansible_local.general_facts.use_proxysql is undefined or ansible_local.general_facts.use_proxysql == "false")
     - item.Host != "localhost"
     - item.Host != hostvars[groups['management_servers'] | sort | first].private_ip
 
@@ -112,8 +112,8 @@
   when:
     - groups['all'] | length > 1
     - item.User == backup_username
-    - use_proxysql is defined
-    - use_proxysql != "false"
+    - ansible_local.general_facts.use_proxysql is defined
+    - ansible_local.general_facts.use_proxysql != "false"
     - item.Host != hostvars[groups['management_servers'] | sort | first].private_ip
 
 # ------------------------------------------------------------------------------
