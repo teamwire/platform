@@ -150,6 +150,26 @@
     - Reload systemd
     - Restart docker
 
+- name: Create systemd drop-in directory for containerd
+  ansible.builtin.file:
+    name: /etc/systemd/system/containerd.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Restore containerd file descriptor limits
+  ansible.builtin.copy:
+    src: containerd-limitnofile.conf
+    dest: /etc/systemd/system/containerd.service.d/10-limitnofile.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Reload systemd
+    - Restart containerd
+    - Restart docker
+
 - name: Configure journald docker driver
   ansible.builtin.copy:
     src: daemon.json
