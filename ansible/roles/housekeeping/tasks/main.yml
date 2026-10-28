@@ -40,3 +40,11 @@
 - name: Remove the Hashi stack hardening marker
   ansible.builtin.include_tasks: remove_hashicorp_hardening_marker.yml
   when: groups['all'] | length() == 1 or inventory_hostname in groups['management_servers']
+
+# Remove stale ProxySQL configs left behind on shared storage from before
+# configs moved to host-local /etc/proxysql/
+- name: Remove stale ProxySQL configs from shared storage
+  ansible.builtin.include_tasks: cleanup_proxysql_shared_config.yml
+  when:
+    - groups['all'] | length() > 1
+    - groups.database_servers is defined

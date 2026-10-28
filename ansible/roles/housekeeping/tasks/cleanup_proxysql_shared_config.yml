@@ -1,0 +1,13 @@
+---
+# /data/proxysql/proxysql.cnf and /data/proxysql/proxysql_manager.cnf are
+# leftovers from before configs moved to host-local /etc/proxysql/ (shared
+# storage can't hold host-varying content such as private_ip or per-Hub-
+# environment credentials). Remove the stale shared copies so they can't be
+# mistaken for the files actually in use.
+- name: Remove stale ProxySQL configs from shared storage
+  ansible.builtin.file:
+    path: "/data/proxysql/{{ item }}"
+    state: absent
+  loop:
+    - proxysql.cnf
+    - proxysql_manager.cnf
