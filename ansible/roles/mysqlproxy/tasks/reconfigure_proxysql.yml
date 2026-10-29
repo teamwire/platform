@@ -84,11 +84,11 @@
         - proxysql_cnf_write.changed
 
     - name: Restart teamwire-proxysql nomad job to pick up the new config
-      throttle: 1
       ansible.builtin.command:
         cmd: nomad job restart -on-error=fail teamwire-proxysql
       environment:
         NOMAD_TOKEN: "{{ management_token.stdout }}"
+      run_once: true
       when:
         - groups['all'] | length > 1
         - proxysql_cnf_write.changed

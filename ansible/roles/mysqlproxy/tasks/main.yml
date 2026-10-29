@@ -43,9 +43,9 @@
     owner: teamwire
     group: root
     mode: '0644'
-  loop:
-    - { src: 'proxysql.cnf.j2', dest: 'proxysql.cnf' }
-    - { src: 'proxysql_manager.cnf.j2', dest: 'proxysql_manager.cnf' }
+  loop: "{{ [{'src': 'proxysql.cnf.j2', 'dest': 'proxysql.cnf'}] +
+         ([{'src': 'proxysql_manager.cnf.j2', 'dest': 'proxysql_manager.cnf'}]
+         if inventory_hostname in groups['management_servers'] else []) }}"
   notify: Restart teamwire-proxysql nomad job
 
 - name: Login to the docker registry
