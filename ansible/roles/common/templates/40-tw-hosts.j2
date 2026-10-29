@@ -1,0 +1,3 @@
+{% for item in static_hosts | default(ansible_local.general_facts.static_hosts | default([])) -%}
+address=/{{ item.hostname }}/{{ item.ip }}
+{% endfor -%}

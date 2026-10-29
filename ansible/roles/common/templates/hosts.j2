@@ -24,3 +24,9 @@ ff02::2 ip6-allrouters
 
 {% endfor %}
 {% endif %}
+
+{% if groups['all'] | length() == 1 %}
+{% for item in static_hosts | default(ansible_local.general_facts.static_hosts | default([])) %}
+{{ item.ip }} {{ item.hostname }}
+{% endfor %}
+{% endif %}
