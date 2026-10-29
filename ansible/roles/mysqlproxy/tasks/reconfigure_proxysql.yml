@@ -1,7 +1,11 @@
 ---
-- name: Check if ProxySQL config exists
+# /data/proxysql/tw-proxysql.nomad (unlike the .cnf files, still written to
+# shared storage - see "Write ProxySQL nomad job" below) reliably signals
+# "ProxySQL has already been deployed once by the management play", which
+# runs after this one - not whether the current config is up to date.
+- name: Check if ProxySQL was already deployed
   ansible.builtin.stat:
-    path: /data/proxysql/proxysql.cnf
+    path: /data/proxysql/tw-proxysql.nomad
   register: proxysql_conf_status
   run_once: true
 
@@ -15,17 +19,33 @@
         - config_done is defined
         - groups.docker_registry is defined
 
+    - name: Create the host-local ProxySQL config directory
+      ansible.builtin.file:
+        path: /etc/proxysql
+        owner: root
+        group: root
+        mode: 0755
+        state: directory
+
     - name: Write ProxySQL config files
       ansible.builtin.template:
         src: "{{ inventory_dir }}/roles/mysqlproxy/templates/{{ item.src }}"
-        dest: "/data/proxysql/{{ item.dest }}"
+        dest: "/etc/proxysql/{{ item.dest }}"
         owner: teamwire
         group: root
         mode: 0644
-      loop:
-        - { src: 'proxysql.cnf.j2', dest: 'proxysql.cnf' }
-        - { src: 'proxysql_manager.cnf.j2', dest: 'proxysql_manager.cnf' }
-        - { src: 'tw-proxysql.nomad.j2', dest: 'tw-proxysql.nomad' }
+      loop: "{{ [{'src': 'proxysql.cnf.j2', 'dest': 'proxysql.cnf'}] +
+             ([{'src': 'proxysql_manager.cnf.j2', 'dest': 'proxysql_manager.cnf'}]
+             if inventory_hostname in groups['management_servers'] else []) }}"
+      register: proxysql_cnf_write
+
+    - name: Write ProxySQL nomad job
+      ansible.builtin.template:
+        src: "{{ inventory_dir }}/roles/mysqlproxy/templates/tw-proxysql.nomad.j2"
+        dest: /data/proxysql/tw-proxysql.nomad
+        owner: teamwire
+        group: root
+        mode: 0644
       run_once: true
 
     - name: Determine ProxySQL container name
@@ -52,4 +72,24 @@
           SAVE MYSQL QUERY RULES TO DISK;
           SAVE MYSQL VARIABLES TO DISK;
           "
+      when: detected_container.stdout | trim != ''
+
+    - name: Read nomad management token
+      ansible.builtin.command: vault kv get -field=value secret/nomad/management_token
+      register: management_token
+      changed_when: false
+      delegate_to: "{{ groups.hashi_servers | sort | first }}"
+      when:
+        - groups['all'] | length > 1
+        - proxysql_cnf_write.changed
+
+    - name: Restart teamwire-proxysql nomad job to pick up the new config
+      throttle: 1
+      ansible.builtin.command:
+        cmd: nomad job restart -on-error=fail teamwire-proxysql
+      environment:
+        NOMAD_TOKEN: "{{ management_token.stdout }}"
+      when:
+        - groups['all'] | length > 1
+        - proxysql_cnf_write.changed
   when: proxysql_conf_status.stat.exists

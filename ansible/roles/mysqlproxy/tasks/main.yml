@@ -8,6 +8,15 @@
   when: config_done is defined
   run_once: true
 
+- name: Create the host-local ProxySQL config directory
+  ansible.builtin.file:
+    path: /etc/proxysql
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+  when: config_done is defined
+
 - name: Register docker registry
   ansible.builtin.set_fact:
     local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
@@ -30,14 +39,13 @@
 - name: Write ProxySQL config files
   ansible.builtin.template:
     src: "{{ inventory_dir }}/roles/mysqlproxy/templates/{{ item.src }}"
-    dest: "/data/proxysql/{{ item.dest }}"
+    dest: "/etc/proxysql/{{ item.dest }}"
     owner: teamwire
     group: root
     mode: '0644'
   loop:
     - { src: 'proxysql.cnf.j2', dest: 'proxysql.cnf' }
     - { src: 'proxysql_manager.cnf.j2', dest: 'proxysql_manager.cnf' }
-  run_once: true
   notify: Restart teamwire-proxysql nomad job
 
 - name: Login to the docker registry
