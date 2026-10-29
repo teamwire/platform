@@ -5,6 +5,8 @@
     cmd: nomad job restart -on-error=fail teamwire-proxysql
   environment:
     NOMAD_TOKEN: "{{ management_token.stdout }}"
+  run_once: true
+  delegate_to: "{{ groups['management_servers'] | sort | first }}"
   when: teamwire_proxysql_nomad_file is not changed
 
 - name: Run ProxySQL nomad job
@@ -14,5 +16,6 @@
   become_user: teamwire
   run_once: true
   changed_when: true
+  delegate_to: "{{ groups['management_servers'] | sort | first }}"
   environment:
     NOMAD_TOKEN: "{{ management_token.stdout }}"

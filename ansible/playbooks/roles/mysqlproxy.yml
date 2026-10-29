@@ -13,7 +13,7 @@
         - secrets_read is not defined
 
 - name: Reconfigure ProxySQL
-  hosts: local:backend_servers
+  hosts: local:backend_servers:management_servers
   tasks:
     - name: Write ProxySQL config files
       ansible.builtin.include_role:
@@ -24,8 +24,7 @@
         - groups.database_servers is defined
 
 - name: Configure ProxySQL
-  hosts: local:management_servers
-  serial: 1
+  hosts: local:backend_servers:management_servers
   tasks:
     - name: Deploy and configure ProxySQL
       ansible.builtin.import_role:
