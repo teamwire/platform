@@ -20,6 +20,7 @@
 - name: Register docker registry
   ansible.builtin.set_fact:
     local_registry: "{{ groups['docker_registry'] | sort | first }}:5000/"
+  run_once: true
   when:
     - config_done is defined
     - groups.docker_registry is defined
@@ -88,6 +89,7 @@
   register: management_token
   changed_when: false
   delegate_to: "{{ groups.hashi_servers | sort | first }}"
+  run_once: true
   when: groups['all'] | length > 1
 
 - name: Check value Memory Oversubscription
@@ -95,6 +97,7 @@
   register: memory_oversubscription_value
   changed_when: false
   delegate_to: "{{ groups.hashi_servers | sort | first }}"
+  run_once: true
   when: groups['all'] | length > 1
   environment:
     NOMAD_TOKEN: "{{ management_token.stdout }}"
@@ -105,6 +108,7 @@
   when:
     - groups['all'] | length > 1
     - memory_oversubscription_value.stdout == "false"
+  run_once: true
   environment:
     NOMAD_TOKEN: "{{ management_token.stdout }}"
 
