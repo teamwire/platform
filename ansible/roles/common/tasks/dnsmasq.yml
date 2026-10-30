@@ -19,6 +19,15 @@
     - Restart dnsmasq
     - Recheck if dnsmasq is already installed (cluster only)
 
+- name: Configure dnsmasq static host addresses
+  ansible.builtin.template:
+    src: 40-tw-hosts.j2
+    dest: /etc/dnsmasq.d/40-tw-hosts
+    mode: 0644
+    owner: root
+    group: root
+  notify: Restart dnsmasq
+
 - name: Configure dnsmasq to listen on private_ip and localhost
   ansible.builtin.template:
     src: 01-address.j2
