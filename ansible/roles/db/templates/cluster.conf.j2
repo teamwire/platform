@@ -3,12 +3,12 @@ wsrep_on=ON
 wsrep_provider=/usr/lib/galera/libgalera_smm.so
 wsrep_cluster_name="teamwire"
 wsrep_cluster_address="gcomm://{% for host in groups['database_servers'] | sort %}{{ hostvars[host].private_ip }}{{"," if not loop.last else ""}}{% endfor %}"
-wsrep_sst_method=mariabackup{{ '\n' -}}
+wsrep_sst_method=mariabackup
 wsrep_sst_auth=mariabackup:{{ xtrabackup_password }}
 wsrep_node_address="{{ private_ip }}"
 wsrep_node_name="{{ inventory_hostname }}"
 {% if ansible_local.general_facts.enable_tls_mysql is undefined or ansible_local.general_facts.enable_tls_mysql | lower == "true" %}
-wsrep_provider_options="socket.ssl_cert=/etc/mysql/ssl/server.pem; socket.ssl_key=/etc/mysql/ssl/private_key.pem; socket.ssl_ca=/etc/mysql/ssl/intermediate_and_root.pem"
+wsrep_provider_options="socket.ssl_cert=/etc/mysql/ssl/server.pem; socket.ssl_key=/etc/mysql/ssl/private_key.pem; socket.ssl_ca=/etc/mysql/ssl/intermediate_and_root.pem; evs.join_retrans_period=PT3S; evs.inactive_timeout=PT30S; evs.suspect_timeout=PT10S"
 {% endif %}
 
 binlog_format=row
@@ -17,3 +17,11 @@ innodb_autoinc_lock_mode=2
 innodb_flush_log_at_trx_commit=0
 query_cache_type=0
 query_cache_size=0
+
+{% if ansible_local.general_facts.enable_tls_mysql is undefined or ansible_local.general_facts.enable_tls_mysql | lower == "true" %}
+[sst]
+encrypt=4
+ssl-ca=/etc/mysql/ssl/intermediate_and_root.pem
+ssl-cert=/etc/mysql/ssl/server.pem
+ssl-key=/etc/mysql/ssl/private_key.pem
+{% endif %}
