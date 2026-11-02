@@ -1,5 +1,8 @@
 server {
-    listen 8000 default_server ssl;
+    # Same address checkmk_url (roles/monitoring/vars/main.yml) uses for
+    # agents/other cluster hosts to reach this host - required so agent
+    # package/plugin downloads (roles/monitoring/tasks/agent.yml) keep working.
+    listen {{ ansible_default_ipv4.address if groups['all'] | length == 1 else private_ip }}:8000 default_server ssl;
     server_name _;
 
     ssl_certificate /etc/nginx/ssl/server_and_intermediate_and_root.crt;

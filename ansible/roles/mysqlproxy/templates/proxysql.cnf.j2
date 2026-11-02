@@ -50,6 +50,8 @@ mysql_galera_hostgroups =
     }
 )
 
+{% set hub_env = tw_environments[inventory_hostname] if (tw_environments is defined and inventory_hostname in tw_environments) else None %}
+{% set hub_db = mysql_databases[hub_env] if hub_env is not none else None %}
 mysql_users =
 (
     {
@@ -59,14 +61,14 @@ mysql_users =
         active            = 1
     },
     {
-        username          = "{{ teamwire_db_user | default('teamwire') }}"
-        password          = "{{ teamwire_db_password }}"
+        username          = "{{ hub_db.username if hub_db is not none else (teamwire_db_user | default('teamwire')) }}"
+        password          = "{{ hub_db.password if hub_db is not none else teamwire_db_password }}"
         default_hostgroup = 10
         active            = 1
     },
     {
-        username          = "{{ teamwire_db_backup_user | default('backup') }}"
-        password          = "{{ mysql_backup_user_password }}"
+        username          = "{{ hub_db.backup_username if hub_db is not none else (teamwire_db_backup_user | default('backup')) }}"
+        password          = "{{ hub_db.backup_password if hub_db is not none else mysql_backup_user_password }}"
         default_hostgroup = 10
         active            = 1
     }

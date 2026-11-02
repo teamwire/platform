@@ -15,6 +15,7 @@ workflow:
     # More info in the ticket ITOPS-1791
 
 stages:
+  - test
   - hub-deploy
   - cloud-deploy
   - release-tag
@@ -23,6 +24,11 @@ stages:
   - shellcheck
   - Golint
   - imagebuild
+
+include:
+  - project: 'teamwire/security/ci-templates'
+    ref: 'v1.0.0'
+    file: '/security-scan.gitlab-ci.yml'
 
 default:
   tags:

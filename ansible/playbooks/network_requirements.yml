@@ -68,7 +68,7 @@
       changed_when: false
       ignore_errors: true
       with_items: "{{ [ansible_local.general_facts.platform_git_repo] }}"
-      when: enable_tw_repository | default('false') | bool
+      when: platform_internal_git_repo is not defined
 
 # ------------------------------------------------------------------------------
 # Evaluate what failed where

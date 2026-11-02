@@ -236,22 +236,11 @@ allow_user_query: "no"
 # for example:
 # innodb_buffer_pool_size: 6
 
-# To enable tls for the connection to the mysql server you have to set
-# following variable to "true"
-# The setting will only have an effect on cluster setups.
-# enable_tls_mysql: "false"
-
 # If tls connections to the mysql server are enabled it is possible
 # to enable/disable a commandlet to check the connections and the state
 # of the database servers on the backend_servers.
 # The default value is "true".
 # mysql_tls_admin_enabled: "true"
-
-# Enable ProxySQL as a database connector on the backend servers.
-# Note:
-# - This only applies to cluster setups without an external database.
-# - Requires TLS for MySQL (`enable_tls_mysql` must NOT be set to false).
-# use_proxysql: "true"
 
 # The default ProxySQL RAM allocation 256 can be overridden.
 # On backend servers, the value is used as defined. On the management server,
@@ -417,11 +406,6 @@ system_email_recipient:"
 # By default ssh agent forwarding is disabled
 # Set this to true if you wish to enable ssh agent forwarding
 # enable_ssh_agent_forwarding: "false"
-
-# Use the dynamic Teamwire git repository source
-# By default the platform keeps the git remote it was cloned with
-# Set this to true if you wish to use the remote dynamically provided by Teamwire
-# enable_tw_repository: "false"
 
 # Repositories that "twctl cleanup_registry" must never delete images from,
 # regardless of the age threshold given on the command line. Defaults to an
